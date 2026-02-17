@@ -2,7 +2,7 @@
 
 ## Suno AI Style Prompt
 ```
-Hindi devotional bhajan, raw emotional male vocal cracking with pain, solo harmonium intro building to dholak and manjira, Rajasthani folk devotional, BPM 100, Chotu Singh Rawna style, gut-wrenching surrender bhajan, voice breaking with tears, intimate temple night vibe, minimal production letting vocals carry emotion, group chorus joining on hook only, acoustic devotional masterpiece
+Emotional Hindi bhajan, slow soulful male vocals, harmonium melody with soft dholak beat, devotional folk song, Khatu Shyam bhajan, sad spiritual crying vocals, BPM 95, Indian devotional music, temple evening aarti ambiance, gentle manjira and bells, deep bass harmonium drone, verse-chorus structure with group chanting on chorus, vocals gradually rising in intensity, Rajasthani bhajan singing style, reverb on vocals for spiritual depth, acoustic unplugged devotional feel
 ```
 
 ## Lyrics
