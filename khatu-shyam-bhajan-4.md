@@ -2,7 +2,7 @@
 
 ## Suno AI Style Prompt
 ```
-Emotional Hindi bhajan, slow soulful male vocals, harmonium melody with soft dholak beat, devotional folk song, Khatu Shyam bhajan, sad spiritual crying vocals, BPM 95, Indian devotional music, temple evening aarti ambiance, gentle manjira and bells, deep bass harmonium drone, verse-chorus structure with group chanting on chorus, vocals gradually rising in intensity, Rajasthani bhajan singing style, reverb on vocals for spiritual depth, acoustic unplugged devotional feel
+Powerful Hindi devotional bhajan, energetic passionate male vocals, fast dholak and nagada beats driving rhythm, Rajasthani folk bhajan with high energy, BPM 130, loud harmonium with punchy bass, live jagran kirtan feel, strong manjira clapping rhythm, male lead with powerful group chorus chanting together, building energy each verse getting louder and faster, goosebump devotional anthem, crowd singing along vibe, Khatu Shyam bhajan with full band energy, dramatic pauses before hook drops, celebration of faith not sadness
 ```
 
 ## Lyrics
