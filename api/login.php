@@ -45,6 +45,11 @@ if ($loginType === 'customer') {
             $websiteUrl = $setting['setting_value'];
         }
         
+        // Calculate actual totals from mason_visits table
+        $totalsStmt = $pdo->prepare("SELECT COUNT(id) as total_visits, COALESCE(SUM(rewards), 0) as total_rewards FROM mason_visits WHERE mason_id = ?");
+        $totalsStmt->execute([$customer['id']]);
+        $totals = $totalsStmt->fetch();
+        
         $response = [
             'success' => true,
             'token' => $token,
@@ -52,10 +57,16 @@ if ($loginType === 'customer') {
                 'id' => $customer['id'],
                 'name' => $customer['name'],
                 'mobile' => $customer['mobile'],
+                'email' => $customer['email'] ?? '',
+                'photo' => $customer['photo'] ?? '',
+                'address' => $customer['address'] ?? '',
+                'customer_tier' => $customer['customer_tier'] ?? 'Silver',
+                'reference_by' => $customer['reference_by'] ?? 'Direct',
                 'role' => 'customer',
-                'total_visits' => $customer['total_visits'] ?? 0,
-                'total_rewards' => $customer['total_rewards'] ?? 0,
-                'website_url' => $websiteUrl
+                'total_visits' => $totals['total_visits'],
+                'total_rewards' => $totals['total_rewards'],
+                'website_url' => $websiteUrl,
+                'created_at' => $customer['created_at'] ?? ''
             ]
         ];
         

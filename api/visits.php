@@ -105,5 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     
     $visitId = $pdo->lastInsertId();
     
+    // Update masons table totals to keep in sync
+    $stmt = $pdo->prepare("UPDATE masons SET total_visits = total_visits + 1, total_rewards = total_rewards + ? WHERE id = ?");
+    $stmt->execute([$rewards, $input['customer_id']]);
+    
     echo json_encode(['success' => true, 'message' => 'Visit added successfully', 'visit_id' => $visitId]);
 }

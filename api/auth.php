@@ -34,7 +34,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'refresh') {
     
     // Check if this is a customer token
     if ($tokenData['user_type'] === 'customer') {
-        $stmt = $pdo->prepare("SELECT m.*, cc.name as category_name FROM masons m LEFT JOIN customer_categories cc ON m.category_id = cc.id WHERE m.id = ? AND m.status = 'active'");
+        $stmt = $pdo->prepare("SELECT m.*, cc.name as category_name, COALESCE(SUM(v.rewards), 0) as calc_total_rewards, COUNT(v.id) as calc_total_visits FROM masons m LEFT JOIN customer_categories cc ON m.category_id = cc.id LEFT JOIN mason_visits v ON m.id = v.mason_id WHERE m.id = ? AND m.status = 'active' GROUP BY m.id");
         $stmt->execute([$tokenData['user_id']]);
         $customer = $stmt->fetch();
         
@@ -53,10 +53,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'refresh') {
                     'id' => $customer['id'],
                     'name' => $customer['name'],
                     'mobile' => $customer['mobile'],
+                    'email' => $customer['email'] ?? '',
+                    'photo' => $customer['photo'] ?? '',
+                    'address' => $customer['address'] ?? '',
+                    'category_name' => $customer['category_name'] ?? '',
+                    'customer_tier' => $customer['customer_tier'] ?? 'Silver',
+                    'reference_by' => $customer['reference_by'] ?? 'Direct',
                     'role' => 'customer',
-                    'total_visits' => $customer['total_visits'] ?? 0,
-                    'total_rewards' => $customer['total_rewards'] ?? 0,
-                    'website_url' => $websiteUrl
+                    'total_visits' => $customer['calc_total_visits'],
+                    'total_rewards' => $customer['calc_total_rewards'],
+                    'website_url' => $websiteUrl,
+                    'created_at' => $customer['created_at'] ?? ''
                 ]
             ]);
             exit;
