@@ -47,7 +47,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
 
   Future<void> _openWebsite() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final websiteUrl = auth.user?['website_url'] ?? 'https://jptiles.kkhsmedia.com';
+    final websiteUrl = auth.user?['website_url'] ?? 'https://jptiles.in';
     
     final uri = Uri.parse(websiteUrl);
     if (await canLaunchUrl(uri)) {
@@ -165,7 +165,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                         radius: 60,
                         backgroundColor: const Color(0xFF2d2d2d),
                         backgroundImage: user?['photo'] != null && user!['photo'].toString().isNotEmpty
-                            ? NetworkImage('https://jptiles.kkhsmedia.com/uploads/customers/${user['photo']}')
+                            ? NetworkImage('https://jptiles.in/uploads/customers/${user['photo']}')
                             : null,
                         child: user?['photo'] == null || user!['photo'].toString().isEmpty
                             ? const Icon(Icons.person, size: 60, color: Color(0xFFc9a227))
@@ -205,9 +205,9 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildStatItem('Visits', '${user?['total_visits'] ?? 0}'),
+                          _buildStatItem('Visits', '${_visits.length}'),
                           Container(width: 1, height: 40, color: Colors.grey),
-                          _buildStatItem('Rewards', '${user?['total_rewards'] ?? 0}'),
+                          _buildStatItem('Rewards', '${_calculateTotalRewards()}'),
                         ],
                       ),
                     ),
@@ -579,6 +579,17 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         ],
       ),
     );
+  }
+
+  String _calculateTotalRewards() {
+    double total = 0;
+    for (var visit in _visits) {
+      final rewards = visit['rewards'];
+      if (rewards != null) {
+        total += double.tryParse(rewards.toString()) ?? 0;
+      }
+    }
+    return total.toStringAsFixed(2);
   }
 
   String _formatDate(String? dateStr) {
