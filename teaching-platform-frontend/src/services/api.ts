@@ -140,6 +140,10 @@ export const adminAPI = {
     request('/api/admin/add-teacher', { method: 'POST', body: data }),
   addStudent: (data: Record<string, unknown>) =>
     request('/api/admin/add-student', { method: 'POST', body: data }),
+  editUser: (userId: number, data: Record<string, unknown>) =>
+    request(`/api/admin/users/${userId}/edit`, { method: 'PUT', body: data }),
+  editTeacher: (userId: number, data: Record<string, unknown>) =>
+    request(`/api/admin/teachers/${userId}/edit`, { method: 'PUT', body: data }),
   seedBulk: () =>
     request('/api/admin/seed-bulk', { method: 'POST' }),
   listClasses: (params?: Record<string, string | number>) => {

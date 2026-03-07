@@ -4,7 +4,8 @@ import {
   Users, BookOpen, IndianRupee, Shield, CheckCircle, XCircle, AlertCircle, Ticket,
   TrendingUp, ArrowUpRight, ArrowDownRight, UserPlus, Search,
   BarChart3, Wallet, Clock, Calendar, MapPin, RefreshCw, X,
-  Activity, Banknote, GraduationCap, MessageSquare, CreditCard, Building2, Send
+  Activity, Banknote, GraduationCap, MessageSquare, CreditCard, Building2, Send,
+  Edit3, Save
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -38,6 +39,17 @@ export default function AdminDashboard() {
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [addTeacherMsg, setAddTeacherMsg] = useState({ type: '', text: '' });
 
+  // Edit states
+  const [editingTeacher, setEditingTeacher] = useState<any>(null);
+  const [editTeacherForm, setEditTeacherForm] = useState<any>({});
+  const [savingTeacher, setSavingTeacher] = useState(false);
+  const [editTeacherMsg, setEditTeacherMsg] = useState({ type: '', text: '' });
+
+  const [editingStudent, setEditingStudent] = useState<any>(null);
+  const [editStudentForm, setEditStudentForm] = useState<any>({});
+  const [savingStudent, setSavingStudent] = useState(false);
+  const [editStudentMsg, setEditStudentMsg] = useState({ type: '', text: '' });
+
   useEffect(() => {
     loadDashboard();
     subjectAPI.list().then(setSubjects).catch(() => {});
@@ -50,6 +62,11 @@ export default function AdminDashboard() {
     if (tab === 'classes') loadClasses();
     if (tab === 'tickets') loadTickets();
   }, [tab]);
+
+  // Auto-reload on filter change for payments
+  useEffect(() => {
+    if (tab === 'payments') loadPayments();
+  }, [paymentFilter]);
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -191,6 +208,72 @@ export default function AdminDashboard() {
     }));
   };
 
+  // Edit Teacher
+  const openEditTeacher = (teacher: any) => {
+    setEditingTeacher(teacher);
+    setEditTeacherForm({
+      full_name: teacher.full_name || '',
+      email: teacher.email || '',
+      phone: teacher.phone || '',
+      city: teacher.city || '',
+      state: teacher.state || '',
+      bio: teacher.teacher_profile?.bio || '',
+      experience_years: teacher.teacher_profile?.experience_years || 0,
+      hourly_rate: teacher.teacher_profile?.hourly_rate || 0,
+      qualification: teacher.teacher_profile?.qualification || '',
+      bank_name: teacher.teacher_profile?.bank_name || '',
+      bank_account: teacher.teacher_profile?.bank_account || '',
+      bank_ifsc: teacher.teacher_profile?.bank_ifsc || '',
+      upi_id: teacher.teacher_profile?.upi_id || '',
+    });
+    setEditTeacherMsg({ type: '', text: '' });
+  };
+
+  const handleSaveTeacher = async () => {
+    if (!editingTeacher) return;
+    setSavingTeacher(true);
+    setEditTeacherMsg({ type: '', text: '' });
+    try {
+      await adminAPI.editTeacher(editingTeacher.id, editTeacherForm);
+      setEditTeacherMsg({ type: 'success', text: 'Teacher updated successfully!' });
+      loadTeachers();
+      setTimeout(() => { setEditingTeacher(null); setEditTeacherMsg({ type: '', text: '' }); }, 1200);
+    } catch (err: any) {
+      setEditTeacherMsg({ type: 'error', text: err.message || 'Failed to update' });
+    } finally {
+      setSavingTeacher(false);
+    }
+  };
+
+  // Edit Student
+  const openEditStudent = (student: any) => {
+    setEditingStudent(student);
+    setEditStudentForm({
+      full_name: student.full_name || '',
+      email: student.email || '',
+      phone: student.phone || '',
+      city: student.city || '',
+      state: student.state || '',
+    });
+    setEditStudentMsg({ type: '', text: '' });
+  };
+
+  const handleSaveStudent = async () => {
+    if (!editingStudent) return;
+    setSavingStudent(true);
+    setEditStudentMsg({ type: '', text: '' });
+    try {
+      await adminAPI.editUser(editingStudent.id, editStudentForm);
+      setEditStudentMsg({ type: 'success', text: 'Student updated successfully!' });
+      loadStudents();
+      setTimeout(() => { setEditingStudent(null); setEditStudentMsg({ type: '', text: '' }); }, 1200);
+    } catch (err: any) {
+      setEditStudentMsg({ type: 'error', text: err.message || 'Failed to update' });
+    } finally {
+      setSavingStudent(false);
+    }
+  };
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={16} /> },
     { id: 'teachers', label: 'Teachers', icon: <Users size={16} /> },
@@ -199,6 +282,8 @@ export default function AdminDashboard() {
     { id: 'classes', label: 'Classes', icon: <BookOpen size={16} /> },
     { id: 'tickets', label: 'Tickets', icon: <Ticket size={16} /> },
   ];
+
+  const inputCls = "w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
@@ -352,84 +437,44 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Escrow & Financial */}
+                {/* Escrow Status */}
                 <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                   <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-bold text-gray-800 flex items-center gap-2"><Banknote size={18} className="text-green-500" /> Financial Overview</h3>
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2"><Wallet size={18} className="text-emerald-500" /> Escrow Status</h3>
                   </div>
                   <div className="space-y-4">
-                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-amber-600 font-medium mb-1">IN ESCROW</p>
-                          <p className="text-2xl font-bold text-amber-700">Rs {dashboard.escrow_amount}</p>
-                        </div>
-                        <div className="w-10 h-10 bg-amber-200 rounded-xl flex items-center justify-center">
-                          <Clock size={20} className="text-amber-700" />
-                        </div>
+                    <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <Clock size={16} className="text-amber-500" />
+                        <span className="text-sm text-gray-600">In Escrow</span>
                       </div>
-                      <p className="text-xs text-amber-500 mt-2">Payments held safely</p>
+                      <span className="font-bold text-amber-700">Rs {dashboard.escrow_amount}</span>
                     </div>
-                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-green-600 font-medium mb-1">PLATFORM EARNINGS</p>
-                          <p className="text-2xl font-bold text-green-700">Rs {dashboard.total_revenue}</p>
-                        </div>
-                        <div className="w-10 h-10 bg-green-200 rounded-xl flex items-center justify-center">
-                          <TrendingUp size={20} className="text-green-700" />
-                        </div>
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <ArrowUpRight size={16} className="text-green-500" />
+                        <span className="text-sm text-gray-600">Platform Earnings</span>
                       </div>
-                      <p className="text-xs text-green-500 mt-2">10% commission earned</p>
+                      <span className="font-bold text-green-700">Rs {dashboard.total_revenue}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <Ticket size={16} className="text-red-500" />
+                        <span className="text-sm text-gray-600">Open Tickets</span>
+                      </div>
+                      <span className="font-bold text-red-700">{dashboard.open_tickets}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Quick Actions & Support */}
-                <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-bold text-gray-800 flex items-center gap-2"><MessageSquare size={18} className="text-red-500" /> Support & Actions</h3>
-                  </div>
-                  <div className="space-y-4">
-                    <div className={`p-4 rounded-xl border ${dashboard.open_tickets > 0 ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-gray-500 font-medium mb-1">OPEN TICKETS</p>
-                          <p className={`text-2xl font-bold ${dashboard.open_tickets > 0 ? 'text-red-600' : 'text-gray-400'}`}>{dashboard.open_tickets}</p>
-                        </div>
-                        <Ticket size={24} className={dashboard.open_tickets > 0 ? 'text-red-400' : 'text-gray-300'} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setTab('teachers')} className="p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-center transition">
-                        <Users size={20} className="text-emerald-600 mx-auto mb-1" />
-                        <p className="text-xs font-medium text-emerald-700">Teachers</p>
-                      </button>
-                      <button onClick={() => setTab('students')} className="p-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-center transition">
-                        <GraduationCap size={20} className="text-blue-600 mx-auto mb-1" />
-                        <p className="text-xs font-medium text-blue-700">Students</p>
-                      </button>
-                      <button onClick={() => setShowAddTeacher(true)} className="p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-center transition">
-                        <UserPlus size={20} className="text-emerald-600 mx-auto mb-1" />
-                        <p className="text-xs font-medium text-emerald-600">Add Teacher</p>
-                      </button>
-                      <button onClick={() => setShowAddStudent(true)} className="p-3 bg-purple-50 hover:bg-purple-100 rounded-xl text-center transition">
-                        <UserPlus size={20} className="text-purple-600 mx-auto mb-1" />
-                        <p className="text-xs font-medium text-purple-600">Add Student</p>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Bookings */}
-              {dashboard.recent_bookings?.length > 0 && (
+                {/* Recent Bookings */}
                 <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                   <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <Calendar size={18} className="text-emerald-500" /> Recent Bookings
                   </h3>
                   <div className="space-y-3">
-                    {dashboard.recent_bookings.map((b: any) => (
+                    {dashboard.recent_bookings?.length === 0 && <p className="text-gray-400 text-sm text-center py-4">No bookings yet</p>}
+                    {dashboard.recent_bookings?.map((b: any) => (
                       <div key={b.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl hover:from-emerald-50 hover:to-teal-50 transition">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold">
@@ -449,7 +494,7 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           )
         )}
@@ -557,6 +602,10 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex flex-col gap-1.5">
+                            <button onClick={() => openEditTeacher(u)}
+                              className="px-3 py-1.5 bg-blue-100 text-blue-700 text-xs rounded-lg hover:bg-blue-200 font-medium transition flex items-center gap-1">
+                              <Edit3 size={12} /> Edit
+                            </button>
                             {u.teacher_profile && !u.teacher_profile.is_approved && (
                               <button onClick={() => handleUserAction(u.id, 'approve', 'teacher')}
                                 className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs rounded-lg hover:from-green-600 hover:to-emerald-700 font-medium shadow-sm transition flex items-center gap-1">
@@ -671,6 +720,10 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex flex-col gap-1.5">
+                            <button onClick={() => openEditStudent(u)}
+                              className="px-3 py-1.5 bg-blue-100 text-blue-700 text-xs rounded-lg hover:bg-blue-200 font-medium transition flex items-center gap-1">
+                              <Edit3 size={12} /> Edit
+                            </button>
                             {u.is_active ? (
                               <button onClick={() => handleUserAction(u.id, 'suspend', 'student')}
                                 className="px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded-lg hover:bg-red-200 font-medium transition flex items-center gap-1">
@@ -738,103 +791,96 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold text-emerald-700">Rs {paymentStats.total_platform_fee}</div>
                   <p className="text-xs text-emerald-400 mt-1">10% commission</p>
                 </div>
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div className="bg-white rounded-2xl p-5 border border-gray-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <BarChart3 size={16} className="text-gray-500" />
+                    <CreditCard size={16} className="text-gray-500" />
                     <span className="text-xs text-gray-600 font-semibold uppercase">Total</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-800">{paymentStats.total_transactions}</div>
+                  <div className="text-2xl font-bold text-gray-900">{paymentStats.total_count}</div>
                   <p className="text-xs text-gray-400 mt-1">Transactions</p>
                 </div>
               </div>
             )}
 
-            {/* Filter */}
-            <div className="flex gap-2">
+            {/* Filter Buttons */}
+            <div className="flex gap-2 flex-wrap">
               {['', 'escrow', 'released', 'refunded'].map(f => (
-                <button key={f} onClick={() => { setPaymentFilter(f); setTimeout(loadPayments, 100); }}
+                <button key={f} onClick={() => setPaymentFilter(f)}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
                     paymentFilter === f
-                      ? 'bg-slate-800 text-white shadow'
-                      : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'
-                  }`}
-                >{f || 'All'}</button>
+                      ? 'bg-slate-900 text-white shadow-lg'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}>
+                  {f || 'All'}
+                </button>
               ))}
             </div>
 
-            {/* Payments Table */}
+            {/* Payment Table */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-              <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2"><IndianRupee size={18} className="text-green-500" /> All Transactions ({payments.length})</h3>
-                <p className="text-xs text-gray-400 mt-1">Pay-In from students, Pay-Out to teachers</p>
+              <div className="p-4 border-b border-gray-100">
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                  <CreditCard size={18} className="text-emerald-500" />
+                  {paymentFilter ? `${paymentFilter.charAt(0).toUpperCase() + paymentFilter.slice(1)} Transactions` : 'All Transactions'} ({payments.length})
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">Pay-In from students, Pay-Out to teachers</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100">
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Class</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pay-In (Student)</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pay-Out (Teacher)</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fee (10%)</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Teacher Gets</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Payout</th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    <tr className="border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Class</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Pay-In (Student)</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Pay-Out (Teacher)</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Amount</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fee (10%)</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Teacher Gets</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Payout</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {payments.map(p => (
                       <tr key={p.id} className="hover:bg-emerald-50/30 transition">
                         <td className="px-5 py-4">
-                          <p className="text-sm font-medium text-gray-800">{p.class_title}</p>
+                          <p className="text-sm font-medium text-gray-800">{p.class_title || 'N/A'}</p>
                           <p className="text-xs text-gray-400">{new Date(p.created_at).toLocaleDateString()}</p>
                           {p.transaction_id && <p className="text-xs text-gray-300 font-mono">{p.transaction_id}</p>}
                         </td>
                         <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <ArrowDownRight size={14} className="text-green-500" />
-                            <div>
-                              <span className="text-sm text-gray-700 block">{p.student_name}</span>
-                              {p.card_last4 && (
-                                <span className="text-xs text-gray-400 flex items-center gap-1">
-                                  <CreditCard size={10} /> {p.card_brand} ****{p.card_last4}
-                                </span>
-                              )}
-                            </div>
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard size={12} className="text-blue-400" />
+                            <span className="text-sm text-gray-600">{p.student_name || 'Unknown'}</span>
                           </div>
+                          {p.card_last4 && <p className="text-xs text-gray-400 mt-0.5"><CreditCard size={10} className="inline" /> {p.card_brand} ****{p.card_last4}</p>}
                         </td>
                         <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <ArrowUpRight size={14} className="text-blue-500" />
-                            <span className="text-sm text-gray-700">{p.teacher_name}</span>
+                          <div className="flex items-center gap-1.5">
+                            <Banknote size={12} className="text-emerald-400" />
+                            <span className="text-sm text-gray-600">{p.teacher_name || 'Unknown'}</span>
                           </div>
                         </td>
                         <td className="px-5 py-4 text-sm font-bold text-gray-800">Rs {p.amount}</td>
-                        <td className="px-5 py-4 text-sm font-medium text-emerald-600">Rs {p.platform_fee}</td>
-                        <td className="px-5 py-4 text-sm font-medium text-green-600">Rs {p.teacher_amount}</td>
+                        <td className="px-5 py-4 text-sm text-red-500">Rs {p.platform_fee}</td>
+                        <td className="px-5 py-4 text-sm font-bold text-emerald-600">Rs {p.teacher_amount}</td>
                         <td className="px-5 py-4">
                           <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
                             p.status === 'escrow' ? 'bg-amber-100 text-amber-700' :
                             p.status === 'released' ? 'bg-green-100 text-green-700' :
-                            'bg-red-100 text-red-700'
+                            p.status === 'refunded' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-700'
                           }`}>{p.status}</span>
                         </td>
                         <td className="px-5 py-4">
                           {p.payout_reference ? (
                             <div className="text-xs space-y-0.5">
-                              <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium flex items-center gap-1 w-fit">
-                                <CheckCircle size={10} /> Paid Out
-                              </span>
+                              <span className="flex items-center gap-1 text-green-500"><CheckCircle size={10} /> Paid Out</span>
                               <p className="text-gray-400 font-mono">{p.payout_reference}</p>
-                              <p className="text-gray-400">{p.payout_method === 'upi' ? 'UPI' : 'Bank Transfer'}</p>
-                              {p.payout_at && <p className="text-gray-300">{new Date(p.payout_at).toLocaleDateString()}</p>}
+                              <p className="text-gray-400">{p.payout_method === 'bank_transfer' ? 'Bank Transfer' : 'UPI'}</p>
+                              {p.paid_out_at && <p className="text-gray-400">{new Date(p.paid_out_at).toLocaleDateString()}</p>}
                             </div>
-                          ) : p.status === 'released' ? (
-                            <span className="text-xs text-amber-500 font-medium">Pending Payout</span>
-                          ) : (
-                            <span className="text-xs text-gray-300">-</span>
-                          )}
+                          ) : <span className="text-xs text-gray-400">-</span>}
                         </td>
                         <td className="px-5 py-4">
                           {p.status === 'escrow' && (
@@ -1025,47 +1071,43 @@ export default function AdminDashboard() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                   <input type="text" value={addTeacherForm.full_name}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, full_name: e.target.value })}
-                    placeholder="Teacher's full name"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    placeholder="Teacher's full name" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input type="email" value={addTeacherForm.email}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, email: e.target.value })}
-                    placeholder="teacher@email.com"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    placeholder="teacher@email.com" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input type="tel" value={addTeacherForm.phone}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, phone: e.target.value })}
-                    placeholder="9876543210"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    placeholder="9876543210" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                   <input type="text" value={addTeacherForm.city}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, city: e.target.value })}
-                    placeholder="e.g. Jaipur"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    placeholder="e.g. Jaipur" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                   <input type="text" value={addTeacherForm.state}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, state: e.target.value })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <input type="text" value={addTeacherForm.password}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, password: e.target.value })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Qualification</label>
                   <select value={addTeacherForm.qualification}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, qualification: e.target.value })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
+                    className={inputCls}>
                     {['B.Ed', 'M.Ed', 'B.Sc + B.Ed', 'M.Sc + B.Ed', 'M.A + B.Ed', 'Ph.D', 'MBA', 'B.Tech', 'MCA', 'M.Sc', 'M.A'].map(q => (
                       <option key={q} value={q}>{q}</option>
                     ))}
@@ -1075,21 +1117,20 @@ export default function AdminDashboard() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
                   <input type="number" value={addTeacherForm.experience_years} min={0} max={40}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, experience_years: Number(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate (Rs)</label>
                   <input type="number" value={addTeacherForm.hourly_rate} min={50} max={5000}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, hourly_rate: Number(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                    className={inputCls} />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
                   <textarea value={addTeacherForm.bio}
                     onChange={e => setAddTeacherForm({ ...addTeacherForm, bio: e.target.value })}
                     placeholder="Brief description about the teacher..."
-                    rows={2}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none" />
+                    rows={2} className={inputCls + ' resize-none'} />
                 </div>
               </div>
 
@@ -1101,29 +1142,25 @@ export default function AdminDashboard() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
                     <input type="text" value={addTeacherForm.bank_name}
                       onChange={e => setAddTeacherForm({ ...addTeacherForm, bank_name: e.target.value })}
-                      placeholder="e.g. State Bank of India"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                      placeholder="e.g. State Bank of India" className={inputCls} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
                     <input type="text" value={addTeacherForm.bank_account}
                       onChange={e => setAddTeacherForm({ ...addTeacherForm, bank_account: e.target.value })}
-                      placeholder="e.g. 1234567890123456"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                      placeholder="e.g. 1234567890123456" className={inputCls} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">IFSC Code</label>
                     <input type="text" value={addTeacherForm.bank_ifsc}
                       onChange={e => setAddTeacherForm({ ...addTeacherForm, bank_ifsc: e.target.value })}
-                      placeholder="e.g. SBIN0001234"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                      placeholder="e.g. SBIN0001234" className={inputCls} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
                     <input type="text" value={addTeacherForm.upi_id}
                       onChange={e => setAddTeacherForm({ ...addTeacherForm, upi_id: e.target.value })}
-                      placeholder="e.g. teacher@upi"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" />
+                      placeholder="e.g. teacher@upi" className={inputCls} />
                   </div>
                 </div>
               </div>
@@ -1136,7 +1173,7 @@ export default function AdminDashboard() {
                     <button key={s.id} type="button" onClick={() => toggleSubject(s.id)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                         addTeacherForm.subject_ids.includes(s.id)
-                          ? 'bg-indigo-600 text-white shadow-sm'
+                          ? 'bg-emerald-600 text-white shadow-sm'
                           : 'bg-white text-gray-600 border border-gray-200 hover:bg-emerald-50'
                       }`}
                     >{s.name}</button>
@@ -1165,7 +1202,7 @@ export default function AdminDashboard() {
               )}
 
               <button onClick={handleAddTeacher} disabled={addingTeacher}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-indigo-700 hover:to-purple-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-emerald-700 hover:to-teal-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {addingTeacher ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
@@ -1176,6 +1213,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
       {/* =============== ADD STUDENT MODAL =============== */}
       {showAddStudent && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -1198,41 +1236,37 @@ export default function AdminDashboard() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                   <input type="text" value={addStudentForm.full_name}
                     onChange={e => setAddStudentForm({ ...addStudentForm, full_name: e.target.value })}
-                    placeholder="Student's full name"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    placeholder="Student's full name" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input type="email" value={addStudentForm.email}
                     onChange={e => setAddStudentForm({ ...addStudentForm, email: e.target.value })}
-                    placeholder="student@gmail.com"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    placeholder="student@gmail.com" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input type="tel" value={addStudentForm.phone}
                     onChange={e => setAddStudentForm({ ...addStudentForm, phone: e.target.value })}
-                    placeholder="9876543210"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    placeholder="9876543210" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                   <input type="text" value={addStudentForm.city}
                     onChange={e => setAddStudentForm({ ...addStudentForm, city: e.target.value })}
-                    placeholder="e.g. Delhi"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    placeholder="e.g. Delhi" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                   <input type="text" value={addStudentForm.state}
                     onChange={e => setAddStudentForm({ ...addStudentForm, state: e.target.value })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <input type="text" value={addStudentForm.password}
                     onChange={e => setAddStudentForm({ ...addStudentForm, password: e.target.value })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    className={inputCls} />
                 </div>
               </div>
 
@@ -1246,11 +1280,212 @@ export default function AdminDashboard() {
               )}
 
               <button onClick={handleAddStudent} disabled={addingStudent}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-blue-700 hover:to-indigo-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-emerald-700 hover:to-teal-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {addingStudent ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <><UserPlus size={16} /> Add Student</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =============== EDIT TEACHER MODAL =============== */}
+      {editingTeacher && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b z-10">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <Edit3 size={20} className="text-emerald-600" /> Edit Teacher
+                </h3>
+                <p className="text-sm text-gray-500">Update teacher details and bank information</p>
+              </div>
+              <button onClick={() => { setEditingTeacher(null); setEditTeacherMsg({ type: '', text: '' }); }}
+                className="p-2 hover:bg-gray-100 rounded-full transition">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input type="text" value={editTeacherForm.full_name}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, full_name: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input type="email" value={editTeacherForm.email}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, email: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input type="tel" value={editTeacherForm.phone}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, phone: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input type="text" value={editTeacherForm.city}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, city: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <input type="text" value={editTeacherForm.state}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, state: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate (Rs)</label>
+                  <input type="number" value={editTeacherForm.hourly_rate}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, hourly_rate: Number(e.target.value) })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
+                  <input type="number" value={editTeacherForm.experience_years}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, experience_years: Number(e.target.value) })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Qualification</label>
+                  <input type="text" value={editTeacherForm.qualification}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, qualification: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                  <textarea value={editTeacherForm.bio}
+                    onChange={e => setEditTeacherForm({ ...editTeacherForm, bio: e.target.value })}
+                    rows={2} className={inputCls + ' resize-none'} />
+                </div>
+              </div>
+
+              {/* Bank Details */}
+              <div className="border-t border-gray-200 pt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Banknote size={16} className="text-green-600" /> Bank Details
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                    <input type="text" value={editTeacherForm.bank_name}
+                      onChange={e => setEditTeacherForm({ ...editTeacherForm, bank_name: e.target.value })}
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                    <input type="text" value={editTeacherForm.bank_account}
+                      onChange={e => setEditTeacherForm({ ...editTeacherForm, bank_account: e.target.value })}
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">IFSC Code</label>
+                    <input type="text" value={editTeacherForm.bank_ifsc}
+                      onChange={e => setEditTeacherForm({ ...editTeacherForm, bank_ifsc: e.target.value })}
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
+                    <input type="text" value={editTeacherForm.upi_id}
+                      onChange={e => setEditTeacherForm({ ...editTeacherForm, upi_id: e.target.value })}
+                      className={inputCls} />
+                  </div>
+                </div>
+              </div>
+
+              {editTeacherMsg.text && (
+                <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+                  editTeacherMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {editTeacherMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}
+                  {editTeacherMsg.text}
+                </div>
+              )}
+
+              <button onClick={handleSaveTeacher} disabled={savingTeacher}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-emerald-700 hover:to-teal-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                {savingTeacher ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <><Save size={16} /> Save Changes</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =============== EDIT STUDENT MODAL =============== */}
+      {editingStudent && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b z-10">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <Edit3 size={20} className="text-blue-600" /> Edit Student
+                </h3>
+                <p className="text-sm text-gray-500">Update student details</p>
+              </div>
+              <button onClick={() => { setEditingStudent(null); setEditStudentMsg({ type: '', text: '' }); }}
+                className="p-2 hover:bg-gray-100 rounded-full transition">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input type="text" value={editStudentForm.full_name}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, full_name: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input type="email" value={editStudentForm.email}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, email: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input type="tel" value={editStudentForm.phone}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, phone: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input type="text" value={editStudentForm.city}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, city: e.target.value })}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <input type="text" value={editStudentForm.state}
+                    onChange={e => setEditStudentForm({ ...editStudentForm, state: e.target.value })}
+                    className={inputCls} />
+                </div>
+              </div>
+
+              {editStudentMsg.text && (
+                <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+                  editStudentMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {editStudentMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}
+                  {editStudentMsg.text}
+                </div>
+              )}
+
+              <button onClick={handleSaveStudent} disabled={savingStudent}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-emerald-700 hover:to-teal-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                {savingStudent ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <><Save size={16} /> Save Changes</>
                 )}
               </button>
             </div>

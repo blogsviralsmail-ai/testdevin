@@ -338,8 +338,17 @@ def get_my_classes(
         query += " ORDER BY c.scheduled_at DESC"
 
         classes = conn.execute(query, params).fetchall()
-        return [
-            {
+        result = []
+        for c in classes:
+            # Get booked students for this class
+            booked_students = conn.execute(
+                """SELECT u.full_name, u.email, b.status as booking_status, b.created_at as booked_at
+                   FROM bookings b JOIN users u ON u.id = b.student_id
+                   WHERE b.class_id = ? AND b.status != 'cancelled'
+                   ORDER BY b.created_at DESC""",
+                (c["id"],)
+            ).fetchall()
+            result.append({
                 "id": c["id"],
                 "title": c["title"],
                 "description": c["description"],
@@ -352,9 +361,17 @@ def get_my_classes(
                 "max_students": c["max_students"],
                 "booked_count": c["booked_count"],
                 "price": c["price"],
-                "created_at": c["created_at"]
-            } for c in classes
-        ]
+                "created_at": c["created_at"],
+                "students": [
+                    {
+                        "full_name": s["full_name"],
+                        "email": s["email"],
+                        "booking_status": s["booking_status"],
+                        "booked_at": s["booked_at"]
+                    } for s in booked_students
+                ]
+            })
+        return result
 
 
 @router.get("/my/earnings")
