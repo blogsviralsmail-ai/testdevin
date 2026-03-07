@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://app-tfxbmnjk.fly.dev';
 
 interface RequestOptions {
   method?: string;
@@ -25,7 +25,7 @@ async function request(endpoint: string, options: RequestOptions = {}) {
     config.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
+  const response = await fetch(`${API_URL}${endpoint}`, { ...config, redirect: 'follow' });
 
   if (response.status === 401) {
     localStorage.removeItem('token');
@@ -112,14 +112,14 @@ export const classAPI = {
 // Payments
 export const paymentAPI = {
   list: (status?: string) =>
-    request(`/api/payments${status ? `?status=${status}` : ''}`),
+    request(`/api/payments/${status ? `?status=${status}` : ''}`),
   release: (id: number) =>
     request(`/api/payments/release/${id}`, { method: 'POST' }),
   refund: (id: number) =>
     request(`/api/payments/refund/${id}`, { method: 'POST' }),
   payout: (paymentId: number, method: string = 'bank_transfer') =>
-    request('/api/payments/payout', { method: 'POST', body: { payment_id: paymentId, method } }),
-  stats: () => request('/api/payments/stats'),
+    request('/api/payments/payout/', { method: 'POST', body: { payment_id: paymentId, method } }),
+  stats: () => request('/api/payments/stats/'),
 };
 
 // Admin
@@ -168,7 +168,7 @@ export const supportAPI = {
 
 // Notifications
 export const notificationAPI = {
-  list: () => request('/api/notifications'),
+  list: () => request('/api/notifications/'),
   markAllRead: () => request('/api/notifications/read-all', { method: 'PUT' }),
   markRead: (id: number) => request(`/api/notifications/${id}/read`, { method: 'PUT' }),
 };
