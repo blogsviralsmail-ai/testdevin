@@ -203,11 +203,11 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
       {/* Top Header Bar */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 shadow-2xl">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
                 <Shield size={24} className="text-white" />
               </div>
               <div>
@@ -222,7 +222,7 @@ export default function AdminDashboard() {
               <button onClick={() => setShowAddStudent(true)} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm transition backdrop-blur-sm">
                 <UserPlus size={14} /> Add Student
               </button>
-              <button onClick={() => setShowAddTeacher(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 rounded-xl text-white text-sm font-medium transition shadow-lg">
+              <button onClick={() => setShowAddTeacher(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 rounded-xl text-white text-sm font-medium transition shadow-lg">
                 <UserPlus size={14} /> Add Teacher
               </button>
             </div>
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
           loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <div className="w-12 h-12 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-gray-400">Loading dashboard...</p>
               </div>
             </div>
@@ -325,7 +325,7 @@ export default function AdminDashboard() {
                 {/* Classes Overview */}
                 <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                   <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-bold text-gray-800 flex items-center gap-2"><Activity size={18} className="text-indigo-500" /> Classes Overview</h3>
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2"><Activity size={18} className="text-emerald-500" /> Classes Overview</h3>
                   </div>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
@@ -409,9 +409,9 @@ export default function AdminDashboard() {
                         <GraduationCap size={20} className="text-blue-600 mx-auto mb-1" />
                         <p className="text-xs font-medium text-blue-700">Students</p>
                       </button>
-                      <button onClick={() => setShowAddTeacher(true)} className="p-3 bg-indigo-50 hover:bg-indigo-100 rounded-xl text-center transition">
-                        <UserPlus size={20} className="text-indigo-600 mx-auto mb-1" />
-                        <p className="text-xs font-medium text-indigo-600">Add Teacher</p>
+                      <button onClick={() => setShowAddTeacher(true)} className="p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-center transition">
+                        <UserPlus size={20} className="text-emerald-600 mx-auto mb-1" />
+                        <p className="text-xs font-medium text-emerald-600">Add Teacher</p>
                       </button>
                       <button onClick={() => setShowAddStudent(true)} className="p-3 bg-purple-50 hover:bg-purple-100 rounded-xl text-center transition">
                         <UserPlus size={20} className="text-purple-600 mx-auto mb-1" />
@@ -426,19 +426,19 @@ export default function AdminDashboard() {
               {dashboard.recent_bookings?.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                   <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <Calendar size={18} className="text-indigo-500" /> Recent Bookings
+                    <Calendar size={18} className="text-emerald-500" /> Recent Bookings
                   </h3>
                   <div className="space-y-3">
                     {dashboard.recent_bookings.map((b: any) => (
-                      <div key={b.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl hover:from-indigo-50 hover:to-purple-50 transition">
+                      <div key={b.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl hover:from-emerald-50 hover:to-teal-50 transition">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
+                          <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold">
                             {b.student_name?.charAt(0) || 'S'}
                           </div>
                           <div>
                             <span className="font-medium text-gray-800">{b.student_name}</span>
                             <span className="text-gray-400 mx-2">booked</span>
-                            <span className="text-indigo-600 font-medium">{b.class_title}</span>
+                            <span className="text-emerald-600 font-medium">{b.class_title}</span>
                             <p className="text-xs text-gray-400 mt-0.5">{new Date(b.created_at).toLocaleString()}</p>
                           </div>
                         </div>
@@ -531,7 +531,7 @@ export default function AdminDashboard() {
                               <p className="text-gray-500">{u.teacher_profile.bank_name}</p>
                               <p className="text-gray-500">A/C: <span className="font-mono">{u.teacher_profile.bank_account?.replace(/(.{4})/g, '$1 ')}</span></p>
                               <p className="text-gray-500">IFSC: <span className="font-mono">{u.teacher_profile.bank_ifsc}</span></p>
-                              {u.teacher_profile.upi_id && <p className="text-gray-500">UPI: <span className="font-medium text-indigo-600">{u.teacher_profile.upi_id}</span></p>}
+                              {u.teacher_profile.upi_id && <p className="text-gray-500">UPI: <span className="font-medium text-emerald-600">{u.teacher_profile.upi_id}</span></p>}
                             </div>
                           ) : (
                             <span className="text-xs text-gray-400 italic">Not provided</span>
@@ -608,13 +608,13 @@ export default function AdminDashboard() {
                 <button onClick={loadStudents} className="px-5 py-2.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-xl text-sm font-medium hover:from-slate-900 hover:to-black transition shadow">
                   <Search size={14} className="inline mr-1" /> Search
                 </button>
-                <button onClick={() => setShowAddStudent(true)} className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl text-sm font-medium hover:from-blue-600 hover:to-indigo-700 transition shadow">
+                <button onClick={() => setShowAddStudent(true)} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-700 transition shadow">
                   <UserPlus size={14} className="inline mr-1" /> Add Student
                 </button>
               </div>
             </div>
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-              <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center justify-between">
+              <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50 flex items-center justify-between">
                 <h3 className="font-bold text-blue-800 flex items-center gap-2"><GraduationCap size={18} /> All Students ({students.length})</h3>
               </div>
               <div className="overflow-x-auto">
@@ -634,7 +634,7 @@ export default function AdminDashboard() {
                       <tr key={u.id} className="hover:bg-blue-50/30 transition">
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-400 to-indigo-600">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-emerald-400 to-teal-600">
                               {u.full_name?.charAt(0) || '?'}
                             </div>
                             <div>
@@ -730,13 +730,13 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold text-red-700">Rs {paymentStats.total_refunded}</div>
                   <p className="text-xs text-red-400 mt-1">Returned to students</p>
                 </div>
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-100">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp size={16} className="text-indigo-500" />
-                    <span className="text-xs text-indigo-600 font-semibold uppercase">Platform Fee</span>
+                    <TrendingUp size={16} className="text-emerald-500" />
+                    <span className="text-xs text-emerald-600 font-semibold uppercase">Platform Fee</span>
                   </div>
-                  <div className="text-2xl font-bold text-indigo-700">Rs {paymentStats.total_platform_fee}</div>
-                  <p className="text-xs text-indigo-400 mt-1">10% commission</p>
+                  <div className="text-2xl font-bold text-emerald-700">Rs {paymentStats.total_platform_fee}</div>
+                  <p className="text-xs text-emerald-400 mt-1">10% commission</p>
                 </div>
                 <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
@@ -785,7 +785,7 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {payments.map(p => (
-                      <tr key={p.id} className="hover:bg-indigo-50/30 transition">
+                      <tr key={p.id} className="hover:bg-emerald-50/30 transition">
                         <td className="px-5 py-4">
                           <p className="text-sm font-medium text-gray-800">{p.class_title}</p>
                           <p className="text-xs text-gray-400">{new Date(p.created_at).toLocaleDateString()}</p>
@@ -811,7 +811,7 @@ export default function AdminDashboard() {
                           </div>
                         </td>
                         <td className="px-5 py-4 text-sm font-bold text-gray-800">Rs {p.amount}</td>
-                        <td className="px-5 py-4 text-sm font-medium text-indigo-600">Rs {p.platform_fee}</td>
+                        <td className="px-5 py-4 text-sm font-medium text-emerald-600">Rs {p.platform_fee}</td>
                         <td className="px-5 py-4 text-sm font-medium text-green-600">Rs {p.teacher_amount}</td>
                         <td className="px-5 py-4">
                           <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
@@ -852,7 +852,7 @@ export default function AdminDashboard() {
                           {p.status === 'released' && !p.payout_reference && (
                             <div className="flex flex-col gap-1.5">
                               <button onClick={() => handlePaymentAction(p.id, 'payout_bank')}
-                                className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs rounded-lg hover:from-blue-600 hover:to-indigo-700 font-medium shadow-sm transition flex items-center gap-1">
+                                className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs rounded-lg hover:from-emerald-600 hover:to-teal-700 font-medium shadow-sm transition flex items-center gap-1">
                                 <Building2 size={12} /> Bank Payout
                               </button>
                               <button onClick={() => handlePaymentAction(p.id, 'payout_upi')}
@@ -907,7 +907,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {classes.map(c => (
-                    <tr key={c.id} className="hover:bg-indigo-50/30 transition">
+                    <tr key={c.id} className="hover:bg-emerald-50/30 transition">
                       <td className="px-5 py-4 text-sm font-medium text-gray-800">{c.title}</td>
                       <td className="px-5 py-4"><span className="text-sm bg-purple-50 text-purple-700 px-2 py-1 rounded-lg">{c.subject_name}</span></td>
                       <td className="px-5 py-4 text-sm text-gray-600">{c.teacher_name}</td>
@@ -1010,7 +1010,7 @@ export default function AdminDashboard() {
             <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b z-10">
               <div>
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <UserPlus size={20} className="text-indigo-600" /> Add New Teacher
+                  <UserPlus size={20} className="text-emerald-600" /> Add New Teacher
                 </h3>
                 <p className="text-sm text-gray-500">Create a new teacher account</p>
               </div>
@@ -1137,7 +1137,7 @@ export default function AdminDashboard() {
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                         addTeacherForm.subject_ids.includes(s.id)
                           ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-indigo-50'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-emerald-50'
                       }`}
                     >{s.name}</button>
                   ))}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { studentAPI, paymentAPI } from '../services/api';
-import { BookOpen, Calendar, IndianRupee, Search, Heart, Clock, Video, Star } from 'lucide-react';
+import { BookOpen, Calendar, IndianRupee, Search, Heart, Clock, Video, Star, ArrowRight, User } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -12,29 +12,19 @@ export default function StudentDashboard() {
   const [tab, setTab] = useState('bookings');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [b, f] = await Promise.all([
-        studentAPI.getBookings(),
-        studentAPI.getFavourites()
-      ]);
+      const [b, f] = await Promise.all([studentAPI.getBookings(), studentAPI.getFavourites()]);
       setBookings(b);
       setFavourites(f);
-    } catch (err) {
-      console.error(err);
-    }
-    // Load payments separately so failure doesn't break bookings
+    } catch (err) { console.error(err); }
     try {
       const p = await paymentAPI.list();
       setPayments(p);
-    } catch (err) {
-      console.error('Failed to load payments:', err);
-    }
+    } catch (err) { console.error('Failed to load payments:', err); }
     setLoading(false);
   };
 
@@ -43,148 +33,140 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Welcome */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-6 mb-8">
-          <h1 className="text-2xl font-bold">Welcome, {user?.full_name}!</h1>
-          <p className="text-indigo-200 mt-1">Find teachers, book classes, and start learning</p>
-          <Link to="/search" className="inline-flex items-center gap-2 mt-4 px-5 py-2 bg-white text-indigo-700 rounded-xl font-medium hover:bg-indigo-50 transition">
-            <Search size={18} /> Find Teachers
-          </Link>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Header */}
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 text-white rounded-2xl p-6 md:p-8 mb-8 relative overflow-hidden">
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <User size={22} className="text-emerald-400" />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.full_name}!</h1>
+                <p className="text-slate-400 text-sm">Find teachers, book classes, and start learning</p>
+              </div>
+            </div>
+            <Link to="/search" className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 text-sm">
+              <Search size={16} /> Find Teachers <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { icon: <Calendar size={22} />, num: upcomingClasses.length, label: 'Upcoming', color: 'bg-blue-50 text-blue-600' },
-            { icon: <BookOpen size={22} />, num: completedClasses.length, label: 'Completed', color: 'bg-green-50 text-green-600' },
-            { icon: <IndianRupee size={22} />, num: payments.length, label: 'Payments', color: 'bg-purple-50 text-purple-600' },
-            { icon: <Heart size={22} />, num: favourites.length, label: 'Favourites', color: 'bg-red-50 text-red-600' },
+            { icon: <Calendar size={20} />, num: upcomingClasses.length, label: 'Upcoming', color: 'text-blue-600 bg-blue-50', border: 'border-blue-100' },
+            { icon: <BookOpen size={20} />, num: completedClasses.length, label: 'Completed', color: 'text-emerald-600 bg-emerald-50', border: 'border-emerald-100' },
+            { icon: <IndianRupee size={20} />, num: payments.length, label: 'Payments', color: 'text-purple-600 bg-purple-50', border: 'border-purple-100' },
+            { icon: <Heart size={20} />, num: favourites.length, label: 'Favourites', color: 'text-rose-600 bg-rose-50', border: 'border-rose-100' },
           ].map((s, i) => (
-            <div key={i} className="bg-white rounded-xl shadow-sm p-4">
+            <div key={i} className={`bg-white rounded-xl p-4 border ${s.border}`}>
               <div className={`w-10 h-10 ${s.color} rounded-lg flex items-center justify-center mb-2`}>{s.icon}</div>
-              <div className="text-2xl font-bold text-gray-800">{s.num}</div>
+              <div className="text-2xl font-bold text-gray-900">{s.num}</div>
               <div className="text-sm text-gray-500">{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {['bookings', 'payments', 'favourites'].map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-5 py-2.5 rounded-xl font-medium transition capitalize whitespace-nowrap ${
-                tab === t ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {t}
-            </button>
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-5 py-2.5 rounded-xl font-medium transition capitalize whitespace-nowrap text-sm ${
+                tab === t ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}>{t}</button>
           ))}
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-          </div>
+          <div className="text-center py-12"><div className="w-10 h-10 border-3 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div></div>
         ) : (
           <>
             {/* Bookings Tab */}
             {tab === 'bookings' && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {bookings.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-                    <Calendar size={40} className="mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-500">No bookings yet</p>
-                    <Link to="/search" className="text-indigo-600 font-medium hover:underline mt-2 inline-block">Find Teachers</Link>
+                  <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                    <Calendar size={40} className="mx-auto text-gray-200 mb-3" />
+                    <p className="text-gray-500 font-medium">No bookings yet</p>
+                    <Link to="/search" className="text-emerald-600 font-medium hover:underline mt-2 inline-block text-sm">Find Teachers</Link>
                   </div>
-                ) : (
-                  bookings.map(b => (
-                    <div key={b.id} className="bg-white rounded-xl shadow-sm p-5">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="font-bold text-gray-800">{b.title}</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {b.subject_name} | {b.teacher_name} | {b.class_type}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                            <span className="flex items-center gap-1"><Clock size={14} /> {new Date(b.scheduled_at).toLocaleString()}</span>
-                            <span>{b.duration_minutes} min</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            b.class_status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
-                            b.class_status === 'completed' ? 'bg-green-100 text-green-700' :
-                            b.class_status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {b.class_status}
-                          </span>
-                          {b.payment_status && (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              b.payment_status === 'escrow' ? 'bg-amber-100 text-amber-700' :
-                              b.payment_status === 'released' ? 'bg-green-100 text-green-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {b.payment_status}
-                            </span>
-                          )}
-                          {b.meeting_link && b.class_status === 'scheduled' && (
-                            <a
-                              href={b.meeting_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition"
-                            >
-                              <Video size={14} /> Join
-                            </a>
-                          )}
+                ) : bookings.map(b => (
+                  <div key={b.id} className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-sm transition">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{b.title}</h3>
+                        <p className="text-sm text-gray-500 mt-1">{b.subject_name} &middot; {b.teacher_name} &middot; {b.class_type}</p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                          <span className="flex items-center gap-1"><Clock size={13} /> {new Date(b.scheduled_at).toLocaleString()}</span>
+                          <span>{b.duration_minutes} min</span>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          b.class_status === 'scheduled' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                          b.class_status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                          b.class_status === 'cancelled' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-50 text-gray-700'
+                        }`}>{b.class_status}</span>
+                        {b.payment_status && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            b.payment_status === 'escrow' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                            b.payment_status === 'released' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                            'bg-red-50 text-red-700 border border-red-100'
+                          }`}>{b.payment_status}</span>
+                        )}
+                        {b.meeting_link && b.class_status === 'scheduled' && (
+                          <a href={b.meeting_link} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition">
+                            <Video size={13} /> Join
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  ))
-                )}
+                  </div>
+                ))}
               </div>
             )}
 
             {/* Payments Tab */}
             {tab === 'payments' && (
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 {payments.length === 0 ? (
-                  <div className="text-center py-12">
-                    <IndianRupee size={40} className="mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-500">No payments yet</p>
+                  <div className="text-center py-16">
+                    <IndianRupee size={40} className="mx-auto text-gray-200 mb-3" />
+                    <p className="text-gray-500 font-medium">No payments yet</p>
                   </div>
                 ) : (
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Class</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Amount</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {payments.map(p => (
-                        <tr key={p.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.class_title}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{p.teacher_name}</td>
-                          <td className="px-4 py-3 text-sm font-bold text-gray-800">Rs. {p.amount}</td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              p.status === 'escrow' ? 'bg-amber-100 text-amber-700' :
-                              p.status === 'released' ? 'bg-green-100 text-green-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>{p.status}</span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">{new Date(p.created_at).toLocaleDateString()}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Class</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Teacher</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Amount</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {payments.map(p => (
+                          <tr key={p.id} className="hover:bg-gray-50/50 transition">
+                            <td className="px-5 py-3.5 text-sm font-medium text-gray-900">{p.class_title}</td>
+                            <td className="px-5 py-3.5 text-sm text-gray-600">{p.teacher_name}</td>
+                            <td className="px-5 py-3.5 text-sm font-bold text-gray-900">Rs. {p.amount}</td>
+                            <td className="px-5 py-3.5">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                p.status === 'escrow' ? 'bg-amber-50 text-amber-700' :
+                                p.status === 'released' ? 'bg-emerald-50 text-emerald-700' :
+                                'bg-red-50 text-red-700'
+                              }`}>{p.status}</span>
+                            </td>
+                            <td className="px-5 py-3.5 text-sm text-gray-500">{new Date(p.created_at).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             )}
@@ -193,31 +175,30 @@ export default function StudentDashboard() {
             {tab === 'favourites' && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {favourites.length === 0 ? (
-                  <div className="col-span-full text-center py-12 bg-white rounded-2xl shadow-sm">
-                    <Heart size={40} className="mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-500">No favourites yet</p>
+                  <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-gray-100">
+                    <Heart size={40} className="mx-auto text-gray-200 mb-3" />
+                    <p className="text-gray-500 font-medium">No favourites yet</p>
                   </div>
-                ) : (
-                  favourites.map(f => (
-                    <Link to={`/teacher-profile/${f.teacher_id}`} key={f.teacher_id} className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-lg">
-                          {f.full_name.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-800">{f.full_name}</h3>
-                          <p className="text-sm text-gray-500">{f.city}, {f.state}</p>
-                        </div>
+                ) : favourites.map(f => (
+                  <Link to={`/teacher-profile/${f.teacher_id}`} key={f.teacher_id}
+                    className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-11 h-11 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center text-white font-bold">
+                        {f.full_name.charAt(0)}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-amber-500">
-                          <Star size={14} fill="currentColor" /> {f.rating}
-                        </div>
-                        <div className="text-green-600 font-bold text-sm">Rs. {f.hourly_rate}/hr</div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{f.full_name}</h3>
+                        <p className="text-xs text-gray-500">{f.city}, {f.state}</p>
                       </div>
-                    </Link>
-                  ))
-                )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-amber-500">
+                        <Star size={14} fill="currentColor" /> <span className="text-sm font-medium">{f.rating}</span>
+                      </div>
+                      <div className="text-emerald-600 font-bold text-sm">Rs. {f.hourly_rate}/hr</div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             )}
           </>
