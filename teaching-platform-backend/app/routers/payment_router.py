@@ -79,6 +79,12 @@ def release_payment(payment_id: int, current_user: dict = Depends(require_role("
         if payment["status"] != "escrow":
             raise HTTPException(status_code=400, detail=f"Payment is already {payment['status']}")
 
+        # Look up teacher user_id BEFORE mutations to avoid rollback on failure
+        tp = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
+        if not tp:
+            raise HTTPException(status_code=500, detail="Teacher profile not found for payment")
+        teacher_user_id = tp["user_id"]
+
         now = datetime.utcnow().isoformat()
         conn.execute(
             "UPDATE payments SET status = 'released', released_at = ? WHERE id = ?",
@@ -91,12 +97,6 @@ def release_payment(payment_id: int, current_user: dict = Depends(require_role("
                WHERE id = ?""",
             (payment["teacher_amount"], payment["teacher_id"])
         )
-
-        # Look up actual user_id for notification
-        tp = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
-        if not tp:
-            raise HTTPException(status_code=500, detail="Teacher profile not found for payment")
-        teacher_user_id = tp["user_id"]
 
         # Notify teacher
         conn.execute(
@@ -134,7 +134,7 @@ class PayoutRequest(BaseModel):
     method: str = "bank_transfer"  # bank_transfer, upi
 
 
-@router.post("/payout")
+@router.post("/payout/")
 def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role("admin"))):
     """Process payout to teacher's bank account (dummy)"""
     with get_db() as conn:
@@ -162,18 +162,14 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         if teacher_profile and teacher_profile.get("bank_name"):
             bank_info = f" to {teacher_profile['bank_name']} A/C ***{teacher_profile['bank_account'][-4:] if teacher_profile.get('bank_account') else '****'}"
 
-        # Look up actual user_id for notification
-        tp_user = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
-        if not tp_user:
-            raise HTTPException(status_code=500, detail="Teacher profile not found for payment")
-        teacher_uid = tp_user["user_id"]
-
-        # Notify teacher
-        conn.execute(
-            "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
-            (teacher_uid, "Payout Processed!",
-             f"Payout of Rs. {payment['teacher_amount']}{bank_info} via {req.method}. Ref: {payout_ref}", "payment")
-        )
+        # Reuse teacher_profile fetched above for notification (no redundant query)
+        if teacher_profile:
+            teacher_uid = teacher_profile["user_id"]
+            conn.execute(
+                "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
+                (teacher_uid, "Payout Processed!",
+                 f"Payout of Rs. {payment['teacher_amount']}{bank_info} via {req.method}. Ref: {payout_ref}", "payment")
+            )
 
         return {
             "message": "Payout processed successfully",
@@ -183,7 +179,7 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         }
 
 
-@router.get("/stats")
+@router.get("/stats/")
 def payment_stats(current_user: dict = Depends(require_role("admin"))):
     with get_db() as conn:
         total_escrow = conn.execute(
