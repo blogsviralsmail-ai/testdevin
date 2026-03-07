@@ -19,19 +19,23 @@ export default function StudentDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [b, p, f] = await Promise.all([
+      const [b, f] = await Promise.all([
         studentAPI.getBookings(),
-        paymentAPI.list(),
         studentAPI.getFavourites()
       ]);
       setBookings(b);
-      setPayments(p);
       setFavourites(f);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
+    // Load payments separately so failure doesn't break bookings
+    try {
+      const p = await paymentAPI.list();
+      setPayments(p);
+    } catch (err) {
+      console.error('Failed to load payments:', err);
+    }
+    setLoading(false);
   };
 
   const upcomingClasses = bookings.filter(b => b.class_status === 'scheduled');

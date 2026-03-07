@@ -33,7 +33,7 @@ def list_payments(
             query += " AND p.student_id = ?"
             params.append(current_user["user_id"])
         elif current_user["role"] == "teacher":
-            query += " AND p.teacher_id = ?"
+            query += " AND tp.user_id = ?"
             params.append(current_user["user_id"])
 
         if status:
@@ -85,17 +85,21 @@ def release_payment(payment_id: int, current_user: dict = Depends(require_role("
             (now, payment_id)
         )
 
-        # Update teacher earnings
+        # Update teacher earnings (teacher_id in payments = teacher_profiles.id)
         conn.execute(
             """UPDATE teacher_profiles SET total_earnings = total_earnings + ?
-               WHERE user_id = ?""",
+               WHERE id = ?""",
             (payment["teacher_amount"], payment["teacher_id"])
         )
+
+        # Look up actual user_id for notification
+        tp = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
+        teacher_user_id = tp["user_id"] if tp else payment["teacher_id"]
 
         # Notify teacher
         conn.execute(
             "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
-            (payment["teacher_id"], "Payment Released!",
+            (teacher_user_id, "Payment Released!",
              f"Payment of Rs. {payment['teacher_amount']} has been released to your account.", "payment")
         )
 
@@ -156,10 +160,14 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         if teacher_profile and teacher_profile.get("bank_name"):
             bank_info = f" to {teacher_profile['bank_name']} A/C ***{teacher_profile['bank_account'][-4:] if teacher_profile.get('bank_account') else '****'}"
 
+        # Look up actual user_id for notification
+        tp_user = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
+        teacher_uid = tp_user["user_id"] if tp_user else payment["teacher_id"]
+
         # Notify teacher
         conn.execute(
             "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
-            (payment["teacher_id"], "Payout Processed!",
+            (teacher_uid, "Payout Processed!",
              f"Payout of Rs. {payment['teacher_amount']}{bank_info} via {req.method}. Ref: {payout_ref}", "payment")
         )
 
