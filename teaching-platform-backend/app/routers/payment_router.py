@@ -159,8 +159,9 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         )
 
         bank_info = ""
-        if teacher_profile and teacher_profile.get("bank_name"):
-            bank_info = f" to {teacher_profile['bank_name']} A/C ***{teacher_profile['bank_account'][-4:] if teacher_profile.get('bank_account') else '****'}"
+        if teacher_profile and "bank_name" in teacher_profile.keys() and teacher_profile["bank_name"]:
+            acct = teacher_profile["bank_account"] if "bank_account" in teacher_profile.keys() and teacher_profile["bank_account"] else None
+            bank_info = f" to {teacher_profile['bank_name']} A/C ***{acct[-4:] if acct else '****'}"
 
         # Reuse teacher_profile fetched above for notification (no redundant query)
         if teacher_profile:
