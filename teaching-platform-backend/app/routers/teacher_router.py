@@ -374,7 +374,7 @@ def get_my_earnings(current_user: dict = Depends(require_role("teacher"))):
                JOIN users u ON u.id = p.student_id
                WHERE p.teacher_id = ?
                ORDER BY p.created_at DESC""",
-            (current_user["user_id"],)
+            (profile["id"],)
         ).fetchall()
 
         total_earned = sum(p["teacher_amount"] for p in payments if p["status"] == "released")
