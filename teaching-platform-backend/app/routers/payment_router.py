@@ -94,7 +94,9 @@ def release_payment(payment_id: int, current_user: dict = Depends(require_role("
 
         # Look up actual user_id for notification
         tp = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
-        teacher_user_id = tp["user_id"] if tp else payment["teacher_id"]
+        if not tp:
+            raise HTTPException(status_code=500, detail="Teacher profile not found for payment")
+        teacher_user_id = tp["user_id"]
 
         # Notify teacher
         conn.execute(
@@ -162,7 +164,9 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
 
         # Look up actual user_id for notification
         tp_user = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
-        teacher_uid = tp_user["user_id"] if tp_user else payment["teacher_id"]
+        if not tp_user:
+            raise HTTPException(status_code=500, detail="Teacher profile not found for payment")
+        teacher_uid = tp_user["user_id"]
 
         # Notify teacher
         conn.execute(
