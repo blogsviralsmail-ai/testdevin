@@ -142,9 +142,9 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         if payment["status"] != "released":
             raise HTTPException(status_code=400, detail="Payment must be released before payout")
 
-        # Get teacher bank details
+        # Get teacher bank details (teacher_id in payments = teacher_profiles.id)
         teacher_profile = conn.execute(
-            "SELECT * FROM teacher_profiles WHERE user_id = ?", (payment["teacher_id"],)
+            "SELECT * FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)
         ).fetchone()
 
         payout_ref = f"PAY-{uuid.uuid4().hex[:12].upper()}"
