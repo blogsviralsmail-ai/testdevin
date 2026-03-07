@@ -118,8 +118,8 @@ export const paymentAPI = {
   refund: (id: number) =>
     request(`/api/payments/refund/${id}`, { method: 'POST' }),
   payout: (paymentId: number, method: string = 'bank_transfer') =>
-    request('/api/payments/payout', { method: 'POST', body: { payment_id: paymentId, method } }),
-  stats: () => request('/api/payments/stats'),
+    request('/api/payments/payout/', { method: 'POST', body: { payment_id: paymentId, method } }),
+  stats: () => request('/api/payments/stats/'),
 };
 
 // Admin
