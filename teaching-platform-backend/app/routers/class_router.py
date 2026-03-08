@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from app.models import CreateClass, UpdateClassStatus
 from app.auth import get_current_user, require_role
 from app.database import get_db
+from app.email_service import notify_class_completed
 
 router = APIRouter(prefix="/api/classes", tags=["Classes"])
 
@@ -206,5 +207,20 @@ def update_class_status(class_id: int, req: UpdateClassStatus, current_user: dic
                 "UPDATE bookings SET status = 'attended' WHERE class_id = ? AND status = 'booked'",
                 (class_id,)
             )
+            # Send email notifications for class completion
+            try:
+                teacher_user = conn.execute(
+                    "SELECT u.email, u.full_name FROM users u JOIN teacher_profiles tp ON tp.user_id = u.id WHERE tp.id = ?",
+                    (cls["teacher_id"],)
+                ).fetchone()
+                booked = conn.execute(
+                    "SELECT b.student_id, u.email, u.full_name FROM bookings b JOIN users u ON u.id = b.student_id WHERE b.class_id = ? AND b.status = 'attended'",
+                    (class_id,)
+                ).fetchall()
+                if teacher_user:
+                    for student in booked:
+                        notify_class_completed(student["email"], student["full_name"], teacher_user["email"], teacher_user["full_name"], cls["title"])
+            except Exception:
+                pass
 
         return {"message": f"Class status updated to {req.status}"}

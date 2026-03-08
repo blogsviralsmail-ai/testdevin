@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.auth import get_current_user, require_role
 from app.database import get_db
+from app.email_service import notify_payment_released, notify_payment_refunded, notify_payout_processed
 from datetime import datetime
 import uuid
 
@@ -105,6 +106,14 @@ def release_payment(payment_id: int, current_user: dict = Depends(require_role("
              f"Payment of Rs. {payment['teacher_amount']} has been released to your account.", "payment")
         )
 
+        # Send email notification to teacher
+        try:
+            teacher_user = conn.execute("SELECT email, full_name FROM users WHERE id = ?", (teacher_user_id,)).fetchone()
+            if teacher_user:
+                notify_payment_released(teacher_user["email"], teacher_user["full_name"], payment["teacher_amount"])
+        except Exception:
+            pass
+
         return {"message": "Payment released to teacher successfully", "payment_id": payment_id}
 
 
@@ -125,6 +134,14 @@ def refund_payment(payment_id: int, current_user: dict = Depends(require_role("a
             (payment["student_id"], "Payment Refunded!",
              f"Payment of Rs. {payment['amount']} has been refunded to your account.", "payment")
         )
+
+        # Send email notification to student
+        try:
+            student_user = conn.execute("SELECT email, full_name FROM users WHERE id = ?", (payment["student_id"],)).fetchone()
+            if student_user:
+                notify_payment_refunded(student_user["email"], student_user["full_name"], payment["amount"])
+        except Exception:
+            pass
 
         return {"message": "Payment refunded to student successfully"}
 
@@ -171,6 +188,15 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
                 (teacher_uid, "Payout Processed!",
                  f"Payout of Rs. {payment['teacher_amount']}{bank_info} via {req.method}. Ref: {payout_ref}", "payment")
             )
+
+        # Send payout email notification
+        try:
+            if teacher_profile:
+                teacher_user = conn.execute("SELECT email, full_name FROM users WHERE id = ?", (teacher_profile["user_id"],)).fetchone()
+                if teacher_user:
+                    notify_payout_processed(teacher_user["email"], teacher_user["full_name"], payment["teacher_amount"], req.method, payout_ref)
+        except Exception:
+            pass
 
         return {
             "message": "Payout processed successfully",

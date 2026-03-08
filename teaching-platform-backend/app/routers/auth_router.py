@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from app.models import RegisterRequest, LoginRequest, TokenResponse
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
 from app.database import get_db
+from app.email_service import notify_student_registration, notify_teacher_registration
 import json
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -41,6 +42,16 @@ def register(req: RegisterRequest):
             "state": req.state
         }
         token = create_access_token({"user_id": user_id, "email": req.email, "role": req.role})
+
+        # Send welcome email
+        try:
+            if req.role == "student":
+                notify_student_registration(req.email, req.full_name)
+            elif req.role == "teacher":
+                notify_teacher_registration(req.email, req.full_name)
+        except Exception:
+            pass  # Don't block registration if email fails
+
         return {"access_token": token, "token_type": "bearer", "user": user}
 
 

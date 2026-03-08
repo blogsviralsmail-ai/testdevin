@@ -177,6 +177,21 @@ export const notificationAPI = {
   markRead: (id: number) => request(`/api/notifications/${id}/read`, { method: 'PUT' }),
 };
 
+// Settings (Admin)
+export const settingsAPI = {
+  getSiteSettings: () => request('/api/admin/settings/site'),
+  updateSiteSettings: (data: Record<string, string>) =>
+    request('/api/admin/settings/site', { method: 'PUT', body: data }),
+  getEmailConfig: () => request('/api/admin/settings/email'),
+  updateEmailConfig: (data: Record<string, unknown>) =>
+    request('/api/admin/settings/email', { method: 'PUT', body: data }),
+  sendTestEmail: (to_email: string) =>
+    request('/api/admin/settings/email/test', { method: 'POST', body: { to_email } }),
+  getNotificationSettings: () => request('/api/admin/settings/notifications'),
+  updateNotificationSettings: (settings: Record<string, boolean>) =>
+    request('/api/admin/settings/notifications', { method: 'PUT', body: { settings } }),
+};
+
 // Subjects
 export const subjectAPI = {
   list: () => request('/api/subjects'),

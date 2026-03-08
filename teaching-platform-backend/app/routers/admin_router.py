@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.auth import require_role, hash_password
 from app.database import get_db
+from app.email_service import notify_teacher_approval
 import json
 import random
 
@@ -145,6 +146,11 @@ def update_user_status(
                 "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
                 (user_id, "Profile Approved!", "Your teacher profile has been approved. You can now create classes.", "system")
             )
+            # Send email notification
+            try:
+                notify_teacher_approval(user["email"], user["full_name"])
+            except Exception:
+                pass
         elif action == "suspend":
             conn.execute("UPDATE users SET is_active = 0 WHERE id = ?", (user_id,))
         elif action == "activate":

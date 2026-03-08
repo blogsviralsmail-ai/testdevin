@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from app.models import BookClassRequest, BookTeacherRequest, CreateReview
 from app.auth import get_current_user, require_role
 from app.database import get_db
+from app.email_service import notify_new_booking, notify_payment_received
 
 router = APIRouter(prefix="/api/students", tags=["Students"])
 
@@ -103,13 +104,22 @@ def book_teacher(req: BookTeacherRequest, current_user: dict = Depends(require_r
         )
 
         # Notify teacher
-        student = conn.execute("SELECT full_name FROM users WHERE id = ?", (current_user["user_id"],)).fetchone()
+        student = conn.execute("SELECT full_name, email FROM users WHERE id = ?", (current_user["user_id"],)).fetchone()
         conn.execute(
             "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
             (teacher["user_id"], "New Booking!",
              f"{student['full_name']} has booked a {subject['name']} class on {req.scheduled_date} at {req.scheduled_time}",
              "booking")
         )
+
+        # Send email notifications
+        try:
+            teacher_email_row = conn.execute("SELECT email FROM users WHERE id = ?", (teacher["user_id"],)).fetchone()
+            if teacher_email_row and student:
+                notify_new_booking(student["email"], student["full_name"], teacher_email_row["email"], teacher["teacher_name"], title, scheduled_at)
+                notify_payment_received(student["email"], student["full_name"], price, title)
+        except Exception:
+            pass
 
         return {
             "message": "Class booked successfully!",

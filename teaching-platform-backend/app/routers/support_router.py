@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from app.models import CreateTicket, TicketReply, UpdateTicketStatus
 from app.auth import get_current_user, require_role
 from app.database import get_db
+from app.email_service import notify_support_ticket_update
 
 router = APIRouter(prefix="/api/support", tags=["Support"])
 
@@ -150,5 +151,13 @@ def update_ticket_status(ticket_id: int, req: UpdateTicketStatus, current_user: 
             (ticket["user_id"], "Ticket Updated",
              f"Your support ticket #{ticket_id} has been marked as {req.status}.", "support")
         )
+
+        # Send email notification
+        try:
+            user = conn.execute("SELECT email, full_name FROM users WHERE id = ?", (ticket["user_id"],)).fetchone()
+            if user:
+                notify_support_ticket_update(user["email"], user["full_name"], ticket["subject"], req.status)
+        except Exception:
+            pass
 
         return {"message": f"Ticket status updated to {req.status}"}

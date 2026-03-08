@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI, paymentAPI, supportAPI, subjectAPI } from '../services/api';
+import { adminAPI, paymentAPI, supportAPI, subjectAPI, settingsAPI } from '../services/api';
 import {
   Users, BookOpen, IndianRupee, Shield, CheckCircle, XCircle, AlertCircle, Ticket,
   TrendingUp, ArrowUpRight, ArrowDownRight, UserPlus, Search,
@@ -50,6 +50,14 @@ export default function AdminDashboard() {
   const [savingStudent, setSavingStudent] = useState(false);
   const [editStudentMsg, setEditStudentMsg] = useState({ type: '', text: '' });
 
+  // Settings state
+  const [siteSettings, setSiteSettings] = useState({ platform_name: '', support_email: '', commission_rate: '', currency: '', platform_description: '' });
+  const [emailConfig, setEmailConfig] = useState({ smtp_host: '', smtp_port: 587, smtp_username: '', smtp_password: '', sender_name: '', sender_email: '', is_enabled: false });
+  const [notifSettings, setNotifSettings] = useState<Record<string, boolean>>({});
+  const [savingSettings, setSavingSettings] = useState('');
+  const [settingsMsg, setSettingsMsg] = useState({ section: '', type: '', text: '' });
+  const [testEmail, setTestEmail] = useState('');
+
   useEffect(() => {
     loadDashboard();
     subjectAPI.list().then(setSubjects).catch(() => {});
@@ -61,6 +69,7 @@ export default function AdminDashboard() {
     if (tab === 'payments') loadPayments();
     if (tab === 'classes') loadClasses();
     if (tab === 'tickets') loadTickets();
+    if (tab === 'settings') loadSettings();
   }, [tab]);
 
   // Auto-reload on filter change for payments
@@ -114,6 +123,62 @@ export default function AdminDashboard() {
       const data = await supportAPI.listTickets();
       setTickets(data);
     } catch (err) { console.error(err); }
+  };
+
+  const loadSettings = async () => {
+    try {
+      const [site, email, notif] = await Promise.all([
+        settingsAPI.getSiteSettings(),
+        settingsAPI.getEmailConfig(),
+        settingsAPI.getNotificationSettings()
+      ]);
+      setSiteSettings({ platform_name: site.platform_name || '', support_email: site.support_email || '', commission_rate: site.commission_rate || '', currency: site.currency || '', platform_description: site.platform_description || '' });
+      setEmailConfig({ smtp_host: email.smtp_host || '', smtp_port: email.smtp_port || 587, smtp_username: email.smtp_username || '', smtp_password: '', sender_name: email.sender_name || '', sender_email: email.sender_email || '', is_enabled: !!email.is_enabled });
+      setNotifSettings(notif);
+    } catch (err) { console.error(err); }
+  };
+
+  const saveSiteSettings = async () => {
+    setSavingSettings('site');
+    try {
+      await settingsAPI.updateSiteSettings(siteSettings);
+      setSettingsMsg({ section: 'site', type: 'success', text: 'Settings saved!' });
+    } catch (err) { setSettingsMsg({ section: 'site', type: 'error', text: err instanceof Error ? err.message : 'Failed' }); }
+    finally { setSavingSettings(''); setTimeout(() => setSettingsMsg({ section: '', type: '', text: '' }), 3000); }
+  };
+
+  const saveEmailConfig = async () => {
+    setSavingSettings('email');
+    try {
+      const data: Record<string, unknown> = { smtp_host: emailConfig.smtp_host, smtp_port: emailConfig.smtp_port, smtp_username: emailConfig.smtp_username, sender_name: emailConfig.sender_name, sender_email: emailConfig.sender_email, is_enabled: emailConfig.is_enabled };
+      if (emailConfig.smtp_password) data.smtp_password = emailConfig.smtp_password;
+      await settingsAPI.updateEmailConfig(data);
+      setSettingsMsg({ section: 'email', type: 'success', text: 'Email config saved!' });
+    } catch (err) { setSettingsMsg({ section: 'email', type: 'error', text: err instanceof Error ? err.message : 'Failed' }); }
+    finally { setSavingSettings(''); setTimeout(() => setSettingsMsg({ section: '', type: '', text: '' }), 3000); }
+  };
+
+  const handleTestEmail = async () => {
+    if (!testEmail) { alert('Enter an email address'); return; }
+    setSavingSettings('test');
+    try {
+      await settingsAPI.sendTestEmail(testEmail);
+      setSettingsMsg({ section: 'email', type: 'success', text: 'Test email sent!' });
+    } catch (err) { setSettingsMsg({ section: 'email', type: 'error', text: err instanceof Error ? err.message : 'Failed to send' }); }
+    finally { setSavingSettings(''); setTimeout(() => setSettingsMsg({ section: '', type: '', text: '' }), 3000); }
+  };
+
+  const saveNotifSettings = async () => {
+    setSavingSettings('notif');
+    try {
+      await settingsAPI.updateNotificationSettings(notifSettings);
+      setSettingsMsg({ section: 'notif', type: 'success', text: 'Notification settings saved!' });
+    } catch (err) { setSettingsMsg({ section: 'notif', type: 'error', text: err instanceof Error ? err.message : 'Failed' }); }
+    finally { setSavingSettings(''); setTimeout(() => setSettingsMsg({ section: '', type: '', text: '' }), 3000); }
+  };
+
+  const toggleNotif = (key: string) => {
+    setNotifSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleUserAction = async (userId: number, action: string, role: string) => {
@@ -1065,75 +1130,93 @@ export default function AdminDashboard() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Platform Name</label>
-                  <input type="text" defaultValue="GuruConnect" className={inputCls} />
+                  <input type="text" value={siteSettings.platform_name} onChange={e => setSiteSettings({ ...siteSettings, platform_name: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Support Email</label>
-                  <input type="email" defaultValue="support@guruplatform.com" className={inputCls} />
+                  <input type="email" value={siteSettings.support_email} onChange={e => setSiteSettings({ ...siteSettings, support_email: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Commission Rate (%)</label>
-                  <input type="number" defaultValue={10} min={0} max={50} className={inputCls} />
+                  <input type="number" value={siteSettings.commission_rate} onChange={e => setSiteSettings({ ...siteSettings, commission_rate: e.target.value })} min={0} max={50} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Currency</label>
-                  <input type="text" defaultValue="INR (Rs)" className={inputCls} />
+                  <input type="text" value={siteSettings.currency} onChange={e => setSiteSettings({ ...siteSettings, currency: e.target.value })} className={inputCls} />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Platform Description</label>
-                  <textarea rows={2} defaultValue="India's premier online teaching platform connecting students with expert teachers" className={inputCls + " resize-none"} />
+                  <textarea rows={2} value={siteSettings.platform_description} onChange={e => setSiteSettings({ ...siteSettings, platform_description: e.target.value })} className={inputCls + " resize-none"} />
                 </div>
               </div>
+              {settingsMsg.section === 'site' && settingsMsg.text && (
+                <div className={`mt-3 px-4 py-2 rounded-xl text-sm font-medium ${settingsMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {settingsMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}{settingsMsg.text}
+                </div>
+              )}
               <div className="mt-4 flex justify-end">
-                <button className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2">
-                  <Save size={16} /> Save Settings
+                <button onClick={saveSiteSettings} disabled={savingSettings === 'site'} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2 disabled:opacity-50">
+                  {savingSettings === 'site' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Settings
                 </button>
               </div>
             </div>
 
             {/* Email Configuration */}
             <div className="glass rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center">
-                  <Mail size={20} className="text-cyan-400" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center">
+                    <Mail size={20} className="text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white">Email Configuration (SMTP)</h3>
+                    <p className="text-sm text-slate-400">Configure email server for notifications</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-white">Email Configuration (SMTP)</h3>
-                  <p className="text-sm text-slate-400">Configure email server for notifications</p>
-                </div>
+                <button onClick={() => setEmailConfig({ ...emailConfig, is_enabled: !emailConfig.is_enabled })} className={`w-14 h-8 rounded-full transition-all relative ${emailConfig.is_enabled ? 'bg-emerald-500' : 'bg-white/10'}`}>
+                  <div className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-all shadow ${emailConfig.is_enabled ? 'right-1' : 'left-1'}`} />
+                </button>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">SMTP Server</label>
-                  <input type="text" placeholder="smtp.gmail.com" className={inputCls} />
+                  <input type="text" value={emailConfig.smtp_host} onChange={e => setEmailConfig({ ...emailConfig, smtp_host: e.target.value })} placeholder="smtp.gmail.com" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">SMTP Port</label>
-                  <input type="number" placeholder="587" className={inputCls} />
+                  <input type="number" value={emailConfig.smtp_port} onChange={e => setEmailConfig({ ...emailConfig, smtp_port: Number(e.target.value) })} placeholder="587" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">SMTP Username</label>
-                  <input type="text" placeholder="your-email@gmail.com" className={inputCls} />
+                  <input type="text" value={emailConfig.smtp_username} onChange={e => setEmailConfig({ ...emailConfig, smtp_username: e.target.value })} placeholder="your-email@gmail.com" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">SMTP Password</label>
-                  <input type="password" placeholder="App password" className={inputCls} />
+                  <input type="password" value={emailConfig.smtp_password} onChange={e => setEmailConfig({ ...emailConfig, smtp_password: e.target.value })} placeholder="App password" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Sender Name</label>
-                  <input type="text" placeholder="GuruConnect" className={inputCls} />
+                  <input type="text" value={emailConfig.sender_name} onChange={e => setEmailConfig({ ...emailConfig, sender_name: e.target.value })} placeholder="GuruConnect" className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Sender Email</label>
-                  <input type="email" placeholder="noreply@guruplatform.com" className={inputCls} />
+                  <input type="email" value={emailConfig.sender_email} onChange={e => setEmailConfig({ ...emailConfig, sender_email: e.target.value })} placeholder="noreply@guruplatform.com" className={inputCls} />
                 </div>
               </div>
+              {settingsMsg.section === 'email' && settingsMsg.text && (
+                <div className={`mt-3 px-4 py-2 rounded-xl text-sm font-medium ${settingsMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {settingsMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}{settingsMsg.text}
+                </div>
+              )}
               <div className="mt-4 flex items-center justify-between">
-                <button className="px-5 py-2.5 glass text-cyan-400 rounded-xl font-bold text-sm hover:bg-white/10 transition border border-cyan-500/20 flex items-center gap-2">
-                  <Mail size={16} /> Send Test Email
-                </button>
-                <button className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2">
-                  <Save size={16} /> Save Email Config
+                <div className="flex items-center gap-2">
+                  <input type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)} placeholder="test@gmail.com" className={inputCls + ' w-56'} />
+                  <button onClick={handleTestEmail} disabled={savingSettings === 'test'} className="px-5 py-2.5 glass text-cyan-400 rounded-xl font-bold text-sm hover:bg-white/10 transition border border-cyan-500/20 flex items-center gap-2 disabled:opacity-50">
+                    {savingSettings === 'test' ? <div className="w-4 h-4 border-2 border-cyan-300/30 border-t-cyan-400 rounded-full animate-spin" /> : <Send size={16} />} Test
+                  </button>
+                </div>
+                <button onClick={saveEmailConfig} disabled={savingSettings === 'email'} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2 disabled:opacity-50">
+                  {savingSettings === 'email' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Email Config
                 </button>
               </div>
             </div>
@@ -1151,32 +1234,37 @@ export default function AdminDashboard() {
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'New Student Registration', desc: 'Send welcome email when a student registers', enabled: true },
-                  { label: 'New Teacher Registration', desc: 'Send welcome email when a teacher registers', enabled: true },
-                  { label: 'Teacher Approval', desc: 'Notify teacher when their profile is approved', enabled: true },
-                  { label: 'New Booking', desc: 'Notify both student and teacher when a class is booked', enabled: true },
-                  { label: 'Payment Received', desc: 'Notify student when payment is confirmed in escrow', enabled: true },
-                  { label: 'Payment Released', desc: 'Notify teacher when payment is released from escrow', enabled: true },
-                  { label: 'Payment Refunded', desc: 'Notify student when payment is refunded', enabled: true },
-                  { label: 'Class Reminder', desc: 'Send reminder 30 minutes before class starts', enabled: false },
-                  { label: 'Class Completed', desc: 'Notify both parties when class is marked complete', enabled: true },
-                  { label: 'Support Ticket Update', desc: 'Notify user when their support ticket is updated', enabled: true },
-                  { label: 'Payout Processed', desc: 'Notify teacher when bank payout is processed', enabled: true },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition">
+                  { key: 'new_student_registration', label: 'New Student Registration', desc: 'Send welcome email when a student registers' },
+                  { key: 'new_teacher_registration', label: 'New Teacher Registration', desc: 'Send welcome email when a teacher registers' },
+                  { key: 'teacher_approval', label: 'Teacher Approval', desc: 'Notify teacher when their profile is approved' },
+                  { key: 'new_booking', label: 'New Booking', desc: 'Notify both student and teacher when a class is booked' },
+                  { key: 'payment_received', label: 'Payment Received', desc: 'Notify student when payment is confirmed in escrow' },
+                  { key: 'payment_released', label: 'Payment Released', desc: 'Notify teacher when payment is released from escrow' },
+                  { key: 'payment_refunded', label: 'Payment Refunded', desc: 'Notify student when payment is refunded' },
+                  { key: 'class_reminder', label: 'Class Reminder', desc: 'Send reminder 30 minutes before class starts' },
+                  { key: 'class_completed', label: 'Class Completed', desc: 'Notify both parties when class is marked complete' },
+                  { key: 'support_ticket_update', label: 'Support Ticket Update', desc: 'Notify user when their support ticket is updated' },
+                  { key: 'payout_processed', label: 'Payout Processed', desc: 'Notify teacher when bank payout is processed' },
+                ].map((item) => (
+                  <div key={item.key} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition">
                     <div>
                       <p className="font-medium text-white text-sm">{item.label}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
                     </div>
-                    <button className={`w-12 h-7 rounded-full transition-all relative ${item.enabled ? 'bg-emerald-500' : 'bg-white/10'}`}>
-                      <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all shadow ${item.enabled ? 'right-1' : 'left-1'}`} />
+                    <button onClick={() => toggleNotif(item.key)} className={`w-12 h-7 rounded-full transition-all relative ${notifSettings[item.key] ? 'bg-emerald-500' : 'bg-white/10'}`}>
+                      <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all shadow ${notifSettings[item.key] ? 'right-1' : 'left-1'}`} />
                     </button>
                   </div>
                 ))}
               </div>
+              {settingsMsg.section === 'notif' && settingsMsg.text && (
+                <div className={`mt-3 px-4 py-2 rounded-xl text-sm font-medium ${settingsMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {settingsMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}{settingsMsg.text}
+                </div>
+              )}
               <div className="mt-4 flex justify-end">
-                <button className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2">
-                  <Save size={16} /> Save Notification Settings
+                <button onClick={saveNotifSettings} disabled={savingSettings === 'notif'} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2 disabled:opacity-50">
+                  {savingSettings === 'notif' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Notification Settings
                 </button>
               </div>
             </div>
