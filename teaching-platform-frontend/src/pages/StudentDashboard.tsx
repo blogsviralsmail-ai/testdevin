@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { studentAPI, paymentAPI } from '../services/api';
-import { BookOpen, Calendar, IndianRupee, Search, Heart, Clock, Video, Star, ArrowRight, User } from 'lucide-react';
+import { BookOpen, Calendar, IndianRupee, Search, Heart, Clock, Video, Star, ArrowRight, User, Bell, AlertCircle } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -11,8 +11,31 @@ export default function StudentDashboard() {
   const [favourites, setFavourites] = useState<any[]>([]);
   const [tab, setTab] = useState('bookings');
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [waitMessage, setWaitMessage] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
+
+  // Poll for notifications every 15 seconds
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/notifications/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const classStarted = data.filter((n: any) => n.type === 'class_started' && !n.is_read);
+          setNotifications(classStarted);
+        }
+      } catch (err) { /* ignore */ }
+    };
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -51,6 +74,32 @@ export default function StudentDashboard() {
             </Link>
           </div>
         </div>
+
+        {/* Wait Message Toast */}
+        {waitMessage && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 animate-pulse">
+            <AlertCircle size={20} className="text-amber-600 flex-shrink-0" />
+            <span className="text-amber-800 font-medium text-sm">{waitMessage}</span>
+          </div>
+        )}
+
+        {/* Teacher Joined Notifications */}
+        {notifications.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {notifications.map((n: any) => (
+              <div key={n.id} className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Bell size={18} className="text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-green-800 text-sm">{n.title}</p>
+                  <p className="text-green-700 text-xs">{n.message}</p>
+                </div>
+                <Video size={18} className="text-green-600 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -115,11 +164,24 @@ export default function StudentDashboard() {
                             'bg-red-50 text-red-700 border border-red-100'
                           }`}>{b.payment_status}</span>
                         )}
-                        {b.meeting_link && b.class_status === 'scheduled' && (
-                          <a href={b.meeting_link} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition">
-                            <Video size={13} /> Join
-                          </a>
+                        {b.meeting_link && (b.class_status === 'scheduled' || b.class_status === 'in_progress') && (
+                          <button onClick={() => {
+                            const scheduledTime = new Date(b.scheduled_at);
+                            const now = new Date();
+                            const diffMinutes = (scheduledTime.getTime() - now.getTime()) / 60000;
+                            if (b.class_status === 'in_progress' || diffMinutes <= 5) {
+                              window.open(b.meeting_link, '_blank');
+                            } else {
+                              const timeStr = scheduledTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                              setWaitMessage(`Wait till ${timeStr} to join this class`);
+                              setTimeout(() => setWaitMessage(null), 5000);
+                            }
+                          }}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                              b.class_status === 'in_progress' ? 'bg-green-600 text-white hover:bg-green-700 animate-pulse' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                            }`}>
+                            <Video size={13} /> {b.class_status === 'in_progress' ? 'Join Now!' : 'Join'}
+                          </button>
                         )}
                       </div>
                     </div>

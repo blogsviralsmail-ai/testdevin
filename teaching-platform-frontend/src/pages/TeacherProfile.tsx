@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { teacherAPI, studentAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users } from 'lucide-react';
+import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users, AlertCircle } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -45,8 +45,37 @@ export default function TeacherProfile() {
     }
   }, [user, id]);
 
+  // Get available time slots for selected date based on teacher's availability
+  const getAvailableTimeSlots = () => {
+    if (!bookingForm.scheduled_date || !teacher?.availability?.length) return [];
+    const selectedDate = new Date(bookingForm.scheduled_date + 'T00:00:00');
+    const dayOfWeek = selectedDate.getDay(); // 0=Sunday in JS
+    // Convert JS day (0=Sun) to Python day (0=Mon)
+    const pythonDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const dayAvail = teacher.availability.find((a: any) => a.day_of_week === pythonDay);
+    if (!dayAvail) return [];
+    const startHour = parseInt(dayAvail.start_time.split(':')[0]);
+    const endHour = parseInt(dayAvail.end_time.split(':')[0]);
+    const slots: string[] = [];
+    for (let h = startHour; h < endHour; h++) {
+      slots.push(`${h.toString().padStart(2, '0')}:00`);
+    }
+    return slots;
+  };
+
+  const isDayAvailable = () => {
+    if (!bookingForm.scheduled_date || !teacher?.availability?.length) return true;
+    const selectedDate = new Date(bookingForm.scheduled_date + 'T00:00:00');
+    const dayOfWeek = selectedDate.getDay();
+    const pythonDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    return teacher.availability.some((a: any) => a.day_of_week === pythonDay);
+  };
+
+  const availableSlots = getAvailableTimeSlots();
+  const dayIsAvailable = isDayAvailable();
+
   const toggleFav = async () => {
-    if (!user) return navigate('/login');
+    if (!user) return navigate('/register');
     try {
       if (isFav) await studentAPI.removeFavourite(Number(id));
       else await studentAPI.addFavourite(Number(id));
@@ -55,10 +84,19 @@ export default function TeacherProfile() {
   };
 
   const handleProceedToPayment = () => {
-    if (!user) return navigate('/login');
+    if (!user) return navigate('/register');
     if (user.role !== 'student') return;
     if (!bookingForm.subject_id || !bookingForm.scheduled_date || !bookingForm.scheduled_time) {
       setBookingError('Please fill all required fields');
+      return;
+    }
+    // Validate slot availability
+    if (bookingForm.scheduled_date && !dayIsAvailable) {
+      setBookingError('Teacher is not available on this day. Please select another date.');
+      return;
+    }
+    if (bookingForm.scheduled_date && availableSlots.length > 0 && !availableSlots.includes(bookingForm.scheduled_time)) {
+      setBookingError('Selected time is not within teacher\'s available hours.');
       return;
     }
     setBookingError('');
@@ -181,7 +219,7 @@ export default function TeacherProfile() {
                 </button>
               )}
               {(!user || user.role === 'student') && (
-                <button onClick={() => user ? setShowBooking(true) : navigate('/login')}
+                <button onClick={() => user ? setShowBooking(true) : navigate('/register')}
                   className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2">
                   <Video size={18} /> Book Class
                 </button>
@@ -248,7 +286,7 @@ export default function TeacherProfile() {
                 <div className="text-center mb-4">
                   <div className="text-3xl font-bold text-gray-900">Rs {teacher.hourly_rate}<span className="text-base font-normal text-gray-500">/hr</span></div>
                 </div>
-                <button onClick={() => user ? setShowBooking(true) : navigate('/login')}
+                <button onClick={() => user ? setShowBooking(true) : navigate('/register')}
                   className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2">
                   <Video size={18} /> Book a Class
                 </button>
@@ -334,10 +372,25 @@ export default function TeacherProfile() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Time *</label>
-                    <select value={bookingForm.scheduled_time} onChange={e => setBookingForm({ ...bookingForm, scheduled_time: e.target.value })}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
-                      {['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'].map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                    {bookingForm.scheduled_date && !dayIsAvailable ? (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                        <AlertCircle size={16} />
+                        Teacher is not available on {new Date(bookingForm.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })}. Please select another date.
+                      </div>
+                    ) : bookingForm.scheduled_date && availableSlots.length > 0 ? (
+                      <select value={bookingForm.scheduled_time} onChange={e => setBookingForm({ ...bookingForm, scheduled_time: e.target.value })}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
+                        {availableSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    ) : (
+                      <select value={bookingForm.scheduled_time} onChange={e => setBookingForm({ ...bookingForm, scheduled_time: e.target.value })}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
+                        {['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'].map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    )}
+                    {bookingForm.scheduled_date && availableSlots.length > 0 && (
+                      <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1"><Clock size={10} /> Available: {teacher?.availability?.find((a: any) => a.day_of_week === (new Date(bookingForm.scheduled_date + 'T00:00:00').getDay() === 0 ? 6 : new Date(bookingForm.scheduled_date + 'T00:00:00').getDay() - 1))?.start_time} - {teacher?.availability?.find((a: any) => a.day_of_week === (new Date(bookingForm.scheduled_date + 'T00:00:00').getDay() === 0 ? 6 : new Date(bookingForm.scheduled_date + 'T00:00:00').getDay() - 1))?.end_time}</p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>

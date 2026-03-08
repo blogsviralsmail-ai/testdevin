@@ -179,6 +179,22 @@ def update_class_status(class_id: int, req: UpdateClassStatus, current_user: dic
 
         conn.execute("UPDATE classes SET status = ? WHERE id = ?", (req.status, class_id))
 
+        if req.status == "in_progress":
+            # Notify all booked students that teacher has started the class
+            booked_students = conn.execute(
+                """SELECT b.student_id FROM bookings b
+                   WHERE b.class_id = ? AND b.status = 'booked'""",
+                (class_id,)
+            ).fetchall()
+            for student in booked_students:
+                conn.execute(
+                    "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
+                    (student["student_id"],
+                     "Class Started! Join Now",
+                     f"Your teacher has started the class: {cls['title']}. Join the meeting now!",
+                     "class_started")
+                )
+
         if req.status == "completed":
             # Update teacher stats
             conn.execute(

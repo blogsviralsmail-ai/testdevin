@@ -31,6 +31,34 @@ def book_teacher(req: BookTeacherRequest, current_user: dict = Depends(require_r
 
         subject = conn.execute("SELECT name FROM subjects WHERE id = ?", (req.subject_id,)).fetchone()
 
+        # Check teacher availability for the selected day
+        from datetime import datetime as dt
+        selected_date = dt.strptime(req.scheduled_date, "%Y-%m-%d")
+        day_of_week = selected_date.weekday()  # 0=Monday, 6=Sunday
+        availability = conn.execute(
+            "SELECT start_time, end_time FROM teacher_availability WHERE teacher_id = ? AND day_of_week = ?",
+            (req.teacher_id, day_of_week)
+        ).fetchone()
+        if not availability:
+            raise HTTPException(status_code=400, detail=f"Teacher is not available on {selected_date.strftime('%A')}")
+
+        # Check if selected time is within available hours
+        req_hour = int(req.scheduled_time.split(':')[0])
+        avail_start = int(availability['start_time'].split(':')[0])
+        avail_end = int(availability['end_time'].split(':')[0])
+        if req_hour < avail_start or req_hour >= avail_end:
+            raise HTTPException(status_code=400, detail=f"Teacher is only available from {availability['start_time']} to {availability['end_time']} on this day")
+
+        # Check for double booking - same teacher, same date/time
+        scheduled_at_check = f"{req.scheduled_date} {req.scheduled_time}:00"
+        existing_class = conn.execute(
+            """SELECT c.id FROM classes c
+               WHERE c.teacher_id = ? AND c.scheduled_at = ? AND c.status != 'cancelled'""",
+            (req.teacher_id, scheduled_at_check)
+        ).fetchone()
+        if existing_class:
+            raise HTTPException(status_code=400, detail="This time slot is already booked. Please choose a different time.")
+
         # Calculate price based on teacher's hourly rate and duration
         price = round(teacher["hourly_rate"] * (req.duration_minutes / 60), 2)
 
