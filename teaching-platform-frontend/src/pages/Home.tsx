@@ -33,7 +33,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div className="animate-slideUp">
               <div className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full text-emerald-400 text-sm font-medium mb-8 animate-glow">
-                <Sparkles size={16} className="animate-pulse" /> AI-Powered Teaching Platform
+                <Sparkles size={16} className="animate-pulse" /> India's No.1 Student Coaching Platform
               </div>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-tight mb-8">
                 <span className="block">Future of</span>
