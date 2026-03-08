@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://app-tfxbmnjk.fly.dev';
 
 interface RequestOptions {
   method?: string;
@@ -25,7 +25,7 @@ async function request(endpoint: string, options: RequestOptions = {}) {
     config.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
+  const response = await fetch(`${API_URL}${endpoint}`, { ...config, redirect: 'follow' });
 
   if (response.status === 401) {
     localStorage.removeItem('token');
@@ -112,14 +112,14 @@ export const classAPI = {
 // Payments
 export const paymentAPI = {
   list: (status?: string) =>
-    request(`/api/payments${status ? `?status=${status}` : ''}`),
+    request(`/api/payments/${status ? `?status=${status}` : ''}`),
   release: (id: number) =>
     request(`/api/payments/release/${id}`, { method: 'POST' }),
   refund: (id: number) =>
     request(`/api/payments/refund/${id}`, { method: 'POST' }),
   payout: (paymentId: number, method: string = 'bank_transfer') =>
-    request('/api/payments/payout', { method: 'POST', body: { payment_id: paymentId, method } }),
-  stats: () => request('/api/payments/stats'),
+    request('/api/payments/payout/', { method: 'POST', body: { payment_id: paymentId, method } }),
+  stats: () => request('/api/payments/stats/'),
 };
 
 // Admin
@@ -140,6 +140,10 @@ export const adminAPI = {
     request('/api/admin/add-teacher', { method: 'POST', body: data }),
   addStudent: (data: Record<string, unknown>) =>
     request('/api/admin/add-student', { method: 'POST', body: data }),
+  editUser: (userId: number, data: Record<string, unknown>) =>
+    request(`/api/admin/users/${userId}/edit`, { method: 'PUT', body: data }),
+  editTeacher: (userId: number, data: Record<string, unknown>) =>
+    request(`/api/admin/teachers/${userId}/edit`, { method: 'PUT', body: data }),
   seedBulk: () =>
     request('/api/admin/seed-bulk', { method: 'POST' }),
   listClasses: (params?: Record<string, string | number>) => {
@@ -168,9 +172,82 @@ export const supportAPI = {
 
 // Notifications
 export const notificationAPI = {
-  list: () => request('/api/notifications'),
+  list: () => request('/api/notifications/'),
   markAllRead: () => request('/api/notifications/read-all', { method: 'PUT' }),
   markRead: (id: number) => request(`/api/notifications/${id}/read`, { method: 'PUT' }),
+};
+
+// Settings (Admin)
+export const settingsAPI = {
+  getSiteSettings: () => request('/api/admin/settings/site'),
+  updateSiteSettings: (data: Record<string, string>) =>
+    request('/api/admin/settings/site', { method: 'PUT', body: data }),
+  getEmailConfig: () => request('/api/admin/settings/email'),
+  updateEmailConfig: (data: Record<string, unknown>) =>
+    request('/api/admin/settings/email', { method: 'PUT', body: data }),
+  sendTestEmail: (to_email: string) =>
+    request('/api/admin/settings/email/test', { method: 'POST', body: { to_email } }),
+  getNotificationSettings: () => request('/api/admin/settings/notifications'),
+  updateNotificationSettings: (settings: Record<string, boolean>) =>
+    request('/api/admin/settings/notifications', { method: 'PUT', body: { settings } }),
+};
+
+// CSV Download/Upload (Admin)
+const API_BASE = import.meta.env.VITE_API_URL || 'https://app-tfxbmnjk.fly.dev';
+
+export const csvAPI = {
+  download: async (section: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/api/admin/csv/${section}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+      redirect: 'follow',
+    });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${section}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  },
+  upload: async (section: string, file: File) => {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/api/admin/csv/${section}/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
+      throw new Error(err.detail || 'Upload failed');
+    }
+    return res.json();
+  },
+};
+
+// Payment Gateways (Admin)
+export const gatewayAPI = {
+  list: () => request('/api/admin/gateways/'),
+  get: (id: number) => request(`/api/admin/gateways/${id}`),
+  create: (data: Record<string, unknown>) =>
+    request('/api/admin/gateways/', { method: 'POST', body: data }),
+  update: (id: number, data: Record<string, unknown>) =>
+    request(`/api/admin/gateways/${id}`, { method: 'PUT', body: data }),
+  delete: (id: number) =>
+    request(`/api/admin/gateways/${id}`, { method: 'DELETE' }),
+  setPrimary: (id: number) =>
+    request(`/api/admin/gateways/${id}/primary`, { method: 'POST' }),
+  toggle: (id: number) =>
+    request(`/api/admin/gateways/${id}/toggle`, { method: 'POST' }),
+  test: (id: number) =>
+    request(`/api/admin/gateways/${id}/test`, { method: 'POST' }),
+  getAvailable: () => request('/api/payment-gateways/available'),
+  initiate: (data: { gateway_id: number; booking_id: number; amount: number; payment_method?: string }) =>
+    request('/api/payment-gateways/initiate', { method: 'POST', body: data }),
 };
 
 // Subjects

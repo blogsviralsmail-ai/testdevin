@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.auth import require_role, hash_password
 from app.database import get_db
+from app.email_service import notify_teacher_approval
 import json
 import random
 
@@ -80,8 +81,8 @@ def list_users(
             query += " AND u.role = ?"
             params.append(role)
         if search:
-            query += " AND (LOWER(u.full_name) LIKE LOWER(?) OR LOWER(u.email) LIKE LOWER(?))"
-            params.extend([f"%{search}%", f"%{search}%"])
+            query += " AND (LOWER(u.full_name) LIKE LOWER(?) OR LOWER(u.email) LIKE LOWER(?) OR u.phone LIKE ?)"
+            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
 
         count_query = f"SELECT COUNT(*) as total FROM ({query})"
         total = conn.execute(count_query, params).fetchone()["total"]
@@ -145,6 +146,11 @@ def update_user_status(
                 "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
                 (user_id, "Profile Approved!", "Your teacher profile has been approved. You can now create classes.", "system")
             )
+            # Send email notification
+            try:
+                notify_teacher_approval(user["email"], user["full_name"])
+            except Exception:
+                pass
         elif action == "suspend":
             conn.execute("UPDATE users SET is_active = 0 WHERE id = ?", (user_id,))
         elif action == "activate":
@@ -424,6 +430,92 @@ def seed_bulk(current_user: dict = Depends(require_role("admin"))):
             "total_teachers": existing_teachers + teachers_added,
             "total_students": existing_students + students_added
         }
+
+
+class AdminEditUser(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+
+
+class AdminEditTeacher(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    bio: Optional[str] = None
+    experience_years: Optional[int] = None
+    hourly_rate: Optional[float] = None
+    qualification: Optional[str] = None
+    languages: Optional[list[str]] = None
+    bank_name: Optional[str] = None
+    bank_account: Optional[str] = None
+    bank_ifsc: Optional[str] = None
+    upi_id: Optional[str] = None
+
+
+@router.put("/users/{user_id}/edit")
+def edit_user(user_id: int, req: AdminEditUser, current_user: dict = Depends(require_role("admin"))):
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        updates = []
+        params = []
+        for field in ["full_name", "email", "phone", "city", "state"]:
+            val = getattr(req, field)
+            if val is not None:
+                updates.append(f"{field} = ?")
+                params.append(val)
+
+        if updates:
+            params.append(user_id)
+            conn.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", params)
+
+        return {"message": "User updated successfully"}
+
+
+@router.put("/teachers/{user_id}/edit")
+def edit_teacher(user_id: int, req: AdminEditTeacher, current_user: dict = Depends(require_role("admin"))):
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Update user fields
+        user_updates = []
+        user_params = []
+        for field in ["full_name", "email", "phone", "city", "state"]:
+            val = getattr(req, field)
+            if val is not None:
+                user_updates.append(f"{field} = ?")
+                user_params.append(val)
+        if user_updates:
+            user_params.append(user_id)
+            conn.execute(f"UPDATE users SET {', '.join(user_updates)} WHERE id = ?", user_params)
+
+        # Update teacher profile fields
+        profile = conn.execute("SELECT id FROM teacher_profiles WHERE user_id = ?", (user_id,)).fetchone()
+        if profile:
+            prof_updates = []
+            prof_params = []
+            for field in ["bio", "experience_years", "hourly_rate", "qualification", "bank_name", "bank_account", "bank_ifsc", "upi_id"]:
+                val = getattr(req, field)
+                if val is not None:
+                    prof_updates.append(f"{field} = ?")
+                    prof_params.append(val)
+            if req.languages is not None:
+                prof_updates.append("languages = ?")
+                prof_params.append(json.dumps(req.languages))
+            if prof_updates:
+                prof_params.append(profile["id"])
+                conn.execute(f"UPDATE teacher_profiles SET {', '.join(prof_updates)} WHERE id = ?", prof_params)
+
+        return {"message": "Teacher updated successfully"}
 
 
 @router.get("/classes")

@@ -24,6 +24,16 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
   return <>{children}</>;
 }
 
+function AuthRedirect({ user }: { user: { role: string } }) {
+  const redirectPath = localStorage.getItem('authRedirect');
+  if (redirectPath) {
+    localStorage.removeItem('authRedirect');
+    return <Navigate to={redirectPath} />;
+  }
+  const defaultPath = user.role === 'admin' ? '/admin' : user.role === 'teacher' ? '/teacher' : '/student';
+  return <Navigate to={defaultPath} />;
+}
+
 function AppRoutes() {
   const { user } = useAuth();
 
@@ -32,8 +42,8 @@ function AppRoutes() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : user.role === 'teacher' ? '/teacher' : '/student'} /> : <Login />} />
-        <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+        <Route path="/login" element={user ? <AuthRedirect user={user} /> : <Login />} />
+        <Route path="/register" element={user ? <AuthRedirect user={user} /> : <Register />} />
         <Route path="/search" element={<SearchTeachers />} />
         <Route path="/teacher-profile/:id" element={<TeacherProfile />} />
         <Route path="/student" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />

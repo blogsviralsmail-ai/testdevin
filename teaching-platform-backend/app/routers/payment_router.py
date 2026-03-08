@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.auth import get_current_user, require_role
 from app.database import get_db
+from app.email_service import notify_payment_released, notify_payment_refunded, notify_payout_processed
 from datetime import datetime
 import uuid
 
@@ -33,7 +34,7 @@ def list_payments(
             query += " AND p.student_id = ?"
             params.append(current_user["user_id"])
         elif current_user["role"] == "teacher":
-            query += " AND p.teacher_id = ?"
+            query += " AND tp.user_id = ?"
             params.append(current_user["user_id"])
 
         if status:
@@ -79,25 +80,39 @@ def release_payment(payment_id: int, current_user: dict = Depends(require_role("
         if payment["status"] != "escrow":
             raise HTTPException(status_code=400, detail=f"Payment is already {payment['status']}")
 
+        # Look up teacher user_id BEFORE mutations to avoid rollback on failure
+        tp = conn.execute("SELECT user_id FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)).fetchone()
+        if not tp:
+            raise HTTPException(status_code=500, detail="Teacher profile not found for payment")
+        teacher_user_id = tp["user_id"]
+
         now = datetime.utcnow().isoformat()
         conn.execute(
             "UPDATE payments SET status = 'released', released_at = ? WHERE id = ?",
             (now, payment_id)
         )
 
-        # Update teacher earnings
+        # Update teacher earnings (teacher_id in payments = teacher_profiles.id)
         conn.execute(
             """UPDATE teacher_profiles SET total_earnings = total_earnings + ?
-               WHERE user_id = ?""",
+               WHERE id = ?""",
             (payment["teacher_amount"], payment["teacher_id"])
         )
 
         # Notify teacher
         conn.execute(
             "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
-            (payment["teacher_id"], "Payment Released!",
+            (teacher_user_id, "Payment Released!",
              f"Payment of Rs. {payment['teacher_amount']} has been released to your account.", "payment")
         )
+
+        # Send email notification to teacher
+        try:
+            teacher_user = conn.execute("SELECT email, full_name FROM users WHERE id = ?", (teacher_user_id,)).fetchone()
+            if teacher_user:
+                notify_payment_released(teacher_user["email"], teacher_user["full_name"], payment["teacher_amount"])
+        except Exception:
+            pass
 
         return {"message": "Payment released to teacher successfully", "payment_id": payment_id}
 
@@ -120,6 +135,14 @@ def refund_payment(payment_id: int, current_user: dict = Depends(require_role("a
              f"Payment of Rs. {payment['amount']} has been refunded to your account.", "payment")
         )
 
+        # Send email notification to student
+        try:
+            student_user = conn.execute("SELECT email, full_name FROM users WHERE id = ?", (payment["student_id"],)).fetchone()
+            if student_user:
+                notify_payment_refunded(student_user["email"], student_user["full_name"], payment["amount"])
+        except Exception:
+            pass
+
         return {"message": "Payment refunded to student successfully"}
 
 
@@ -128,7 +151,7 @@ class PayoutRequest(BaseModel):
     method: str = "bank_transfer"  # bank_transfer, upi
 
 
-@router.post("/payout")
+@router.post("/payout/")
 def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role("admin"))):
     """Process payout to teacher's bank account (dummy)"""
     with get_db() as conn:
@@ -138,9 +161,9 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         if payment["status"] != "released":
             raise HTTPException(status_code=400, detail="Payment must be released before payout")
 
-        # Get teacher bank details
+        # Get teacher bank details (teacher_id in payments = teacher_profiles.id)
         teacher_profile = conn.execute(
-            "SELECT * FROM teacher_profiles WHERE user_id = ?", (payment["teacher_id"],)
+            "SELECT * FROM teacher_profiles WHERE id = ?", (payment["teacher_id"],)
         ).fetchone()
 
         payout_ref = f"PAY-{uuid.uuid4().hex[:12].upper()}"
@@ -153,15 +176,27 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         )
 
         bank_info = ""
-        if teacher_profile and teacher_profile.get("bank_name"):
-            bank_info = f" to {teacher_profile['bank_name']} A/C ***{teacher_profile['bank_account'][-4:] if teacher_profile.get('bank_account') else '****'}"
+        if teacher_profile and "bank_name" in teacher_profile.keys() and teacher_profile["bank_name"]:
+            acct = teacher_profile["bank_account"] if "bank_account" in teacher_profile.keys() and teacher_profile["bank_account"] else None
+            bank_info = f" to {teacher_profile['bank_name']} A/C ***{acct[-4:] if acct else '****'}"
 
-        # Notify teacher
-        conn.execute(
-            "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
-            (payment["teacher_id"], "Payout Processed!",
-             f"Payout of Rs. {payment['teacher_amount']}{bank_info} via {req.method}. Ref: {payout_ref}", "payment")
-        )
+        # Reuse teacher_profile fetched above for notification (no redundant query)
+        if teacher_profile:
+            teacher_uid = teacher_profile["user_id"]
+            conn.execute(
+                "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
+                (teacher_uid, "Payout Processed!",
+                 f"Payout of Rs. {payment['teacher_amount']}{bank_info} via {req.method}. Ref: {payout_ref}", "payment")
+            )
+
+        # Send payout email notification
+        try:
+            if teacher_profile:
+                teacher_user = conn.execute("SELECT email, full_name FROM users WHERE id = ?", (teacher_profile["user_id"],)).fetchone()
+                if teacher_user:
+                    notify_payout_processed(teacher_user["email"], teacher_user["full_name"], payment["teacher_amount"], req.method, payout_ref)
+        except Exception:
+            pass
 
         return {
             "message": "Payout processed successfully",
@@ -171,7 +206,7 @@ def process_payout(req: PayoutRequest, current_user: dict = Depends(require_role
         }
 
 
-@router.get("/stats")
+@router.get("/stats/")
 def payment_stats(current_user: dict = Depends(require_role("admin"))):
     with get_db() as conn:
         total_escrow = conn.execute(

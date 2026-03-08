@@ -199,6 +199,51 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS site_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS email_config (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        smtp_host TEXT DEFAULT '',
+        smtp_port INTEGER DEFAULT 587,
+        smtp_username TEXT DEFAULT '',
+        smtp_password TEXT DEFAULT '',
+        sender_name TEXT DEFAULT 'GuruConnect',
+        sender_email TEXT DEFAULT '',
+        is_enabled INTEGER DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS email_notification_settings (
+        key TEXT PRIMARY KEY,
+        is_enabled INTEGER DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payment_gateways (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        gateway_type TEXT NOT NULL CHECK(gateway_type IN ('razorpay', 'phonepe', 'cashfree', 'payu', 'instamojo', 'custom_upi', 'cash')),
+        display_name TEXT NOT NULL,
+        api_key TEXT DEFAULT '',
+        api_secret TEXT DEFAULT '',
+        merchant_id TEXT DEFAULT '',
+        extra_config TEXT DEFAULT '{}',
+        is_enabled INTEGER DEFAULT 0,
+        is_primary INTEGER DEFAULT 0,
+        supports_upi INTEGER DEFAULT 1,
+        supports_cards INTEGER DEFAULT 0,
+        supports_netbanking INTEGER DEFAULT 0,
+        upi_intent INTEGER DEFAULT 0,
+        custom_upi_id TEXT DEFAULT '',
+        custom_qr_data TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
     """)
 
     # Migration: add bank details columns if they don't exist
@@ -256,6 +301,58 @@ def init_db():
     ]
     for subj in default_subjects:
         cursor.execute("INSERT OR IGNORE INTO subjects (name) VALUES (?)", (subj,))
+
+    # Seed default site settings
+    default_settings = [
+        ('platform_name', 'GuruConnect'),
+        ('support_email', 'support@guruplatform.com'),
+        ('commission_rate', '10'),
+        ('currency', 'INR (Rs)'),
+        ('platform_description', "India's premier online teaching platform connecting students with expert teachers"),
+    ]
+    for key, value in default_settings:
+        cursor.execute("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)", (key, value))
+
+    # Seed default email config
+    cursor.execute("INSERT OR IGNORE INTO email_config (id, smtp_host, smtp_port, sender_name) VALUES (1, '', 587, 'GuruConnect')")
+
+    # Seed default email notification settings
+    default_notif_settings = [
+        'new_student_registration', 'new_teacher_registration', 'teacher_approval',
+        'new_booking', 'payment_received', 'payment_released', 'payment_refunded',
+        'class_reminder', 'class_completed', 'support_ticket_update', 'payout_processed'
+    ]
+    for key in default_notif_settings:
+        cursor.execute("INSERT OR IGNORE INTO email_notification_settings (key, is_enabled) VALUES (?, 1)", (key,))
+    # Class reminder off by default
+    cursor.execute("UPDATE email_notification_settings SET is_enabled = 0 WHERE key = 'class_reminder' AND is_enabled = 1")
+
+    # Migration: add gateway columns to payments table
+    try:
+        cursor.execute("ALTER TABLE payments ADD COLUMN gateway_id INTEGER")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE payments ADD COLUMN gateway_name TEXT")
+    except Exception:
+        pass
+
+    # Seed default payment gateways
+    existing_gateways = cursor.execute("SELECT COUNT(*) FROM payment_gateways").fetchone()[0]
+    if existing_gateways == 0:
+        default_gateways = [
+            ('RazorPay', 'razorpay', 'RazorPay (UPI + Cards)', '', '', '', '{"upi_mode": "intent"}', 0, 0, 1, 1, 1, 1, '', ''),
+            ('PhonePe', 'phonepe', 'PhonePe Payment Gateway', '', '', '', '{}', 0, 0, 1, 0, 0, 0, '', ''),
+            ('Cashfree', 'cashfree', 'Cashfree Payments', '', '', '', '{}', 0, 0, 1, 1, 1, 0, '', ''),
+            ('PayU', 'payu', 'PayU Money', '', '', '', '{}', 0, 0, 1, 1, 1, 0, '', ''),
+            ('Instamojo', 'instamojo', 'Instamojo', '', '', '', '{}', 0, 0, 1, 0, 0, 0, '', ''),
+            ('Custom UPI', 'custom_upi', 'Custom UPI QR / VPA', '', '', '', '{}', 0, 0, 1, 0, 0, 0, '', ''),
+        ]
+        for g in default_gateways:
+            cursor.execute(
+                """INSERT INTO payment_gateways (name, gateway_type, display_name, api_key, api_secret, merchant_id, extra_config, is_enabled, is_primary, supports_upi, supports_cards, supports_netbanking, upi_intent, custom_upi_id, custom_qr_data)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", g
+            )
 
     # Seed admin user
     from app.auth import hash_password
