@@ -158,6 +158,7 @@ export default function TeacherProfile() {
   const [bookingError, setBookingError] = useState('');
   const [availableGateways, setAvailableGateways] = useState<any[]>([]);
   const [selectedGateway, setSelectedGateway] = useState<any>(null);
+  const [showCalendar, setShowCalendar] = useState(true);
 
   useEffect(() => {
     gatewayAPI.getAvailable().then(gws => {
@@ -514,21 +515,33 @@ export default function TeacherProfile() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Date *</label>
-                    {bookingForm.scheduled_date && (
-                      <div className="flex items-center gap-2 mb-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
+                    {bookingForm.scheduled_date ? (
+                      <button type="button" onClick={() => setShowCalendar(!showCalendar)}
+                        className="flex items-center gap-2 w-full bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5 hover:bg-emerald-500/15 transition cursor-pointer">
                         <Calendar size={14} className="text-emerald-400" />
                         <span className="text-sm font-medium text-white">
                           {new Date(bookingForm.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </span>
-                        <button type="button" onClick={() => setBookingForm({ ...bookingForm, scheduled_date: '' })} className="ml-auto text-slate-400 hover:text-white transition"><X size={14} /></button>
+                        <span className="ml-auto text-xs text-slate-400">{showCalendar ? 'Hide' : 'Change'}</span>
+                        <ChevronRight size={14} className={`text-slate-400 transition-transform ${showCalendar ? 'rotate-90' : ''}`} />
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => setShowCalendar(true)}
+                        className="flex items-center gap-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 hover:bg-white/10 transition cursor-pointer">
+                        <Calendar size={14} className="text-slate-400" />
+                        <span className="text-sm text-slate-400">Select a date</span>
+                      </button>
+                    )}
+                    {showCalendar && (
+                      <div className="mt-2">
+                        <CustomCalendar
+                          value={bookingForm.scheduled_date}
+                          onChange={(date) => { setBookingForm({ ...bookingForm, scheduled_date: date }); setShowCalendar(false); }}
+                          minDate={getMinDate()}
+                          availability={teacher?.availability || []}
+                        />
                       </div>
                     )}
-                    <CustomCalendar
-                      value={bookingForm.scheduled_date}
-                      onChange={(date) => setBookingForm({ ...bookingForm, scheduled_date: date })}
-                      minDate={getMinDate()}
-                      availability={teacher?.availability || []}
-                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Time *</label>
