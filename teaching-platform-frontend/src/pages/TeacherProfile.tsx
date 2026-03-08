@@ -86,7 +86,7 @@ export default function TeacherProfile() {
   const dayIsAvailable = isDayAvailable();
 
   const redirectToRegister = () => {
-    navigate(`/register?redirect=/teacher/${id}`);
+    navigate(`/register?redirect=/teacher-profile/${id}`);
   };
 
   const toggleFav = async () => {
