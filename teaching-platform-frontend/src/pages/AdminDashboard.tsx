@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { adminAPI, paymentAPI, supportAPI, subjectAPI, settingsAPI } from '../services/api';
+import { adminAPI, paymentAPI, supportAPI, subjectAPI, settingsAPI, csvAPI } from '../services/api';
 import {
   Users, BookOpen, IndianRupee, Shield, CheckCircle, XCircle, AlertCircle, Ticket,
   TrendingUp, ArrowUpRight, ArrowDownRight, UserPlus, Search,
   BarChart3, Wallet, Clock, Calendar, MapPin, RefreshCw, X,
   Activity, Banknote, GraduationCap, MessageSquare, CreditCard, Building2, Send,
-  Edit3, Save, Settings, Mail, Globe, Bell
+  Edit3, Save, Settings, Mail, Globe, Bell, Download, Upload
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -57,6 +57,46 @@ export default function AdminDashboard() {
   const [savingSettings, setSavingSettings] = useState('');
   const [settingsMsg, setSettingsMsg] = useState({ section: '', type: '', text: '' });
   const [testEmail, setTestEmail] = useState('');
+
+  // CSV states
+  const [csvLoading, setCsvLoading] = useState('');
+  const [csvMsg, setCsvMsg] = useState({ type: '', text: '' });
+  const fileInputRef = (section: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      setCsvLoading(section);
+      setCsvMsg({ type: '', text: '' });
+      try {
+        const res = await csvAPI.upload(section, file);
+        setCsvMsg({ type: 'success', text: res.message || 'Upload successful!' });
+        // Reload relevant data
+        if (section === 'teachers') loadTeachers();
+        if (section === 'students') loadStudents();
+        if (section === 'settings') loadSettings();
+      } catch (err: unknown) {
+        setCsvMsg({ type: 'error', text: err instanceof Error ? err.message : 'Upload failed' });
+      } finally {
+        setCsvLoading('');
+      }
+    };
+    input.click();
+  };
+  const handleCsvDownload = async (section: string) => {
+    setCsvLoading(`dl-${section}`);
+    setCsvMsg({ type: '', text: '' });
+    try {
+      await csvAPI.download(section);
+      setCsvMsg({ type: 'success', text: `${section}.csv downloaded!` });
+    } catch {
+      setCsvMsg({ type: 'error', text: 'Download failed' });
+    } finally {
+      setCsvLoading('');
+    }
+  };
 
   useEffect(() => {
     loadDashboard();
@@ -367,13 +407,13 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => { loadDashboard(); }} className="flex items-center gap-2 px-4 py-2 glass hover:bg-white/10 rounded-xl text-white text-sm transition">
+              <button onClick={() => { loadDashboard(); }} className="btn-3d btn-3d-glass">
                 <RefreshCw size={14} /> Refresh
               </button>
-              <button onClick={() => setShowAddStudent(true)} className="flex items-center gap-2 px-4 py-2 glass hover:bg-white/10 rounded-xl text-white text-sm transition">
+              <button onClick={() => setShowAddStudent(true)} className="btn-3d btn-3d-glass">
                 <UserPlus size={14} /> Add Student
               </button>
-              <button onClick={() => setShowAddTeacher(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 rounded-xl text-white text-sm font-bold transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform">
+              <button onClick={() => setShowAddTeacher(true)} className="btn-3d btn-3d-emerald">
                 <UserPlus size={14} /> Add Teacher
               </button>
             </div>
@@ -578,13 +618,24 @@ export default function AdminDashboard() {
                     onKeyDown={(e) => e.key === 'Enter' && loadTeachers()}
                     className="bg-transparent text-sm outline-none flex-1 text-white placeholder-slate-500" />
                 </div>
-                <button onClick={loadTeachers} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:from-emerald-400 hover:to-teal-400 transition shadow">
-                  <Search size={14} className="inline mr-1" /> Search
+                <button onClick={loadTeachers} className="btn-3d btn-3d-emerald">
+                  <Search size={14} /> Search
                 </button>
-                <button onClick={() => setShowAddTeacher(true)} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:from-emerald-400 hover:to-teal-400 transition shadow">
-                  <UserPlus size={14} className="inline mr-1" /> Add Teacher
+                <button onClick={() => setShowAddTeacher(true)} className="btn-3d btn-3d-emerald">
+                  <UserPlus size={14} /> Add Teacher
+                </button>
+                <button onClick={() => handleCsvDownload('teachers')} disabled={csvLoading === 'dl-teachers'} className="btn-3d btn-3d-cyan">
+                  {csvLoading === 'dl-teachers' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={14} />} CSV Download
+                </button>
+                <button onClick={() => fileInputRef('teachers')} disabled={csvLoading === 'teachers'} className="btn-3d btn-3d-amber">
+                  {csvLoading === 'teachers' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Upload size={14} />} CSV Upload
                 </button>
               </div>
+              {csvMsg.text && tab === 'teachers' && (
+                <div className={`mt-3 px-4 py-2 rounded-xl text-sm font-medium ${csvMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {csvMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}{csvMsg.text}
+                </div>
+              )}
             </div>
             <div className="glass rounded-2xl overflow-hidden">
               <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
@@ -720,13 +771,24 @@ export default function AdminDashboard() {
                     onKeyDown={(e) => e.key === 'Enter' && loadStudents()}
                     className="bg-transparent text-sm outline-none flex-1 text-white placeholder-slate-500" />
                 </div>
-                <button onClick={loadStudents} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:from-emerald-400 hover:to-teal-400 transition shadow">
-                  <Search size={14} className="inline mr-1" /> Search
+                <button onClick={loadStudents} className="btn-3d btn-3d-emerald">
+                  <Search size={14} /> Search
                 </button>
-                <button onClick={() => setShowAddStudent(true)} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:from-emerald-400 hover:to-teal-400 transition shadow">
-                  <UserPlus size={14} className="inline mr-1" /> Add Student
+                <button onClick={() => setShowAddStudent(true)} className="btn-3d btn-3d-emerald">
+                  <UserPlus size={14} /> Add Student
+                </button>
+                <button onClick={() => handleCsvDownload('students')} disabled={csvLoading === 'dl-students'} className="btn-3d btn-3d-cyan">
+                  {csvLoading === 'dl-students' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={14} />} CSV Download
+                </button>
+                <button onClick={() => fileInputRef('students')} disabled={csvLoading === 'students'} className="btn-3d btn-3d-amber">
+                  {csvLoading === 'students' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Upload size={14} />} CSV Upload
                 </button>
               </div>
+              {csvMsg.text && tab === 'students' && (
+                <div className={`mt-3 px-4 py-2 rounded-xl text-sm font-medium ${csvMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {csvMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}{csvMsg.text}
+                </div>
+              )}
             </div>
             <div className="glass rounded-2xl overflow-hidden">
               <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
@@ -868,18 +930,23 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* Filter Buttons */}
-            <div className="flex gap-2 flex-wrap">
+            {/* Filter + CSV Buttons */}
+            <div className="flex gap-2 flex-wrap items-center">
               {['', 'escrow', 'released', 'refunded'].map(f => (
                 <button key={f} onClick={() => setPaymentFilter(f)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  className={`btn-3d btn-3d-sm ${
                     paymentFilter === f
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
-                      : 'glass text-slate-400 hover:bg-white/10 border border-white/10'
+                      ? 'btn-3d-emerald'
+                      : 'btn-3d-glass'
                   }`}>
                   {f || 'All'}
                 </button>
               ))}
+              <div className="ml-auto flex gap-2">
+                <button onClick={() => handleCsvDownload('payments')} disabled={csvLoading === 'dl-payments'} className="btn-3d btn-3d-sm btn-3d-cyan">
+                  {csvLoading === 'dl-payments' ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={12} />} CSV Download
+                </button>
+              </div>
             </div>
 
             {/* Payment Table */}
@@ -998,6 +1065,12 @@ export default function AdminDashboard() {
 
         {/* =============== CLASSES TAB =============== */}
         {tab === 'classes' && (
+          <div className="space-y-4">
+            <div className="flex gap-2 flex-wrap items-center">
+              <button onClick={() => handleCsvDownload('classes')} disabled={csvLoading === 'dl-classes'} className="btn-3d btn-3d-cyan">
+                {csvLoading === 'dl-classes' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={14} />} CSV Download Classes
+              </button>
+            </div>
           <div className="glass rounded-2xl overflow-hidden">
             <div className="p-5 bg-white/5 border-b border-white/5">
               <h3 className="font-bold text-white flex items-center gap-2"><BookOpen size={18} className="text-purple-400" /> All Classes</h3>
@@ -1047,16 +1120,22 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+          </div>
         )}
 
         {/* =============== TICKETS TAB =============== */}
         {tab === 'tickets' && (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-4 flex items-center justify-between">
-              <h3 className="font-bold text-white flex items-center gap-2">
-                <Ticket size={18} className="text-red-400" /> Support Tickets
-              </h3>
-              <span className="text-sm text-slate-500">{tickets.length} total</span>
+              <div className="flex items-center gap-3">
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <Ticket size={18} className="text-red-400" /> Support Tickets
+                </h3>
+                <span className="text-sm text-slate-500">{tickets.length} total</span>
+              </div>
+              <button onClick={() => handleCsvDownload('tickets')} disabled={csvLoading === 'dl-tickets'} className="btn-3d btn-3d-sm btn-3d-cyan">
+                {csvLoading === 'dl-tickets' ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={12} />} CSV Download
+              </button>
             </div>
             {tickets.length === 0 ? (
               <div className="text-center py-16 glass rounded-2xl">
@@ -1116,6 +1195,20 @@ export default function AdminDashboard() {
       {/* =============== SETTINGS TAB =============== */}
         {tab === 'settings' && (
           <div className="space-y-6">
+            {/* Settings CSV Buttons */}
+            <div className="flex gap-3 flex-wrap items-center">
+              <button onClick={() => handleCsvDownload('settings')} disabled={csvLoading === 'dl-settings'} className="btn-3d btn-3d-cyan">
+                {csvLoading === 'dl-settings' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={14} />} CSV Download Settings
+              </button>
+              <button onClick={() => fileInputRef('settings')} disabled={csvLoading === 'settings'} className="btn-3d btn-3d-amber">
+                {csvLoading === 'settings' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Upload size={14} />} CSV Upload Settings
+              </button>
+              {csvMsg.text && tab === 'settings' && (
+                <div className={`px-4 py-2 rounded-xl text-sm font-medium ${csvMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {csvMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}{csvMsg.text}
+                </div>
+              )}
+            </div>
             {/* Website Settings */}
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
@@ -1155,7 +1248,7 @@ export default function AdminDashboard() {
                 </div>
               )}
               <div className="mt-4 flex justify-end">
-                <button onClick={saveSiteSettings} disabled={savingSettings === 'site'} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2 disabled:opacity-50">
+                <button onClick={saveSiteSettings} disabled={savingSettings === 'site'} className="btn-3d btn-3d-emerald disabled:opacity-50">
                   {savingSettings === 'site' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Settings
                 </button>
               </div>
@@ -1211,11 +1304,11 @@ export default function AdminDashboard() {
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <input type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)} placeholder="test@gmail.com" className={inputCls + ' w-56'} />
-                  <button onClick={handleTestEmail} disabled={savingSettings === 'test'} className="px-5 py-2.5 glass text-cyan-400 rounded-xl font-bold text-sm hover:bg-white/10 transition border border-cyan-500/20 flex items-center gap-2 disabled:opacity-50">
+                  <button onClick={handleTestEmail} disabled={savingSettings === 'test'} className="btn-3d btn-3d-cyan disabled:opacity-50">
                     {savingSettings === 'test' ? <div className="w-4 h-4 border-2 border-cyan-300/30 border-t-cyan-400 rounded-full animate-spin" /> : <Send size={16} />} Test
                   </button>
                 </div>
-                <button onClick={saveEmailConfig} disabled={savingSettings === 'email'} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2 disabled:opacity-50">
+                <button onClick={saveEmailConfig} disabled={savingSettings === 'email'} className="btn-3d btn-3d-emerald disabled:opacity-50">
                   {savingSettings === 'email' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Email Config
                 </button>
               </div>
@@ -1263,7 +1356,7 @@ export default function AdminDashboard() {
                 </div>
               )}
               <div className="mt-4 flex justify-end">
-                <button onClick={saveNotifSettings} disabled={savingSettings === 'notif'} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/25 hover:scale-105 transform flex items-center gap-2 disabled:opacity-50">
+                <button onClick={saveNotifSettings} disabled={savingSettings === 'notif'} className="btn-3d btn-3d-emerald disabled:opacity-50">
                   {savingSettings === 'notif' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Notification Settings
                 </button>
               </div>

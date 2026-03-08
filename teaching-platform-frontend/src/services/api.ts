@@ -192,6 +192,43 @@ export const settingsAPI = {
     request('/api/admin/settings/notifications', { method: 'PUT', body: { settings } }),
 };
 
+// CSV Download/Upload (Admin)
+const API_BASE = import.meta.env.VITE_API_URL || 'https://app-tfxbmnjk.fly.dev';
+
+export const csvAPI = {
+  download: async (section: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/api/admin/csv/${section}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+      redirect: 'follow',
+    });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${section}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  },
+  upload: async (section: string, file: File) => {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/api/admin/csv/${section}/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
+      throw new Error(err.detail || 'Upload failed');
+    }
+    return res.json();
+  },
+};
+
 // Subjects
 export const subjectAPI = {
   list: () => request('/api/subjects'),
