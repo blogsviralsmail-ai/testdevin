@@ -2,9 +2,141 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { teacherAPI, studentAPI, gatewayAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users, AlertCircle, QrCode, Smartphone, Zap, Wallet, Banknote } from 'lucide-react';
+import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users, AlertCircle, QrCode, Smartphone, Zap, Wallet, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const CAL_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function CustomCalendar({ value, onChange, minDate, availability }: {
+  value: string; onChange: (date: string) => void; minDate: string; availability: any[];
+}) {
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+
+  const min = new Date(minDate + 'T00:00:00');
+
+  const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();
+
+  const isAvailableDay = (date: Date) => {
+    if (!availability || availability.length === 0) return true;
+    const dayOfWeek = date.getDay();
+    const pythonDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    return availability.some((a: any) => a.day_of_week === pythonDay);
+  };
+
+  const isPastDate = (date: Date) => {
+    return date < min;
+  };
+
+  const isSelected = (day: number) => {
+    if (!value) return false;
+    const sel = new Date(value + 'T00:00:00');
+    return sel.getDate() === day && sel.getMonth() === viewMonth && sel.getFullYear() === viewYear;
+  };
+
+  const isToday = (day: number) => {
+    return today.getDate() === day && today.getMonth() === viewMonth && today.getFullYear() === viewYear;
+  };
+
+  const handleDateClick = (day: number) => {
+    const date = new Date(viewYear, viewMonth, day);
+    if (isPastDate(date)) return;
+    const yyyy = viewYear.toString();
+    const mm = (viewMonth + 1).toString().padStart(2, '0');
+    const dd = day.toString().padStart(2, '0');
+    onChange(`${yyyy}-${mm}-${dd}`);
+  };
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
+    else setViewMonth(viewMonth - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
+    else setViewMonth(viewMonth + 1);
+  };
+
+  const canGoPrev = viewYear > today.getFullYear() || (viewYear === today.getFullYear() && viewMonth > today.getMonth());
+
+  const daysInMonth = getDaysInMonth(viewMonth, viewYear);
+  const firstDay = getFirstDayOfMonth(viewMonth, viewYear);
+  const days = [];
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+  return (
+    <div className="bg-slate-800/80 border border-emerald-500/20 rounded-2xl p-4 backdrop-blur-sm shadow-xl shadow-emerald-500/5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <button type="button" onClick={prevMonth} disabled={!canGoPrev}
+          className={`p-2 rounded-xl transition ${canGoPrev ? 'hover:bg-white/10 text-white' : 'text-slate-600 cursor-not-allowed'}`}>
+          <ChevronLeft size={18} />
+        </button>
+        <div className="text-center">
+          <span className="font-bold text-white text-sm">{MONTH_NAMES[viewMonth]}</span>
+          <span className="text-emerald-400 font-bold text-sm ml-2">{viewYear}</span>
+        </div>
+        <button type="button" onClick={nextMonth} className="p-2 rounded-xl hover:bg-white/10 transition text-white">
+          <ChevronRight size={18} />
+        </button>
+      </div>
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {CAL_DAYS.map(d => (
+          <div key={d} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider py-1">{d}</div>
+        ))}
+      </div>
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, idx) => {
+          if (day === null) return <div key={`empty-${idx}`} />;
+          const date = new Date(viewYear, viewMonth, day);
+          const past = isPastDate(date);
+          const available = isAvailableDay(date);
+          const selected = isSelected(day);
+          const todayMark = isToday(day);
+          const clickable = !past;
+
+          return (
+            <button key={day} type="button" onClick={() => clickable && handleDateClick(day)}
+              className={`relative w-full aspect-square flex items-center justify-center rounded-xl text-xs font-medium transition-all duration-200
+                ${past ? 'text-slate-700 cursor-not-allowed' : ''}
+                ${!past && available ? 'text-white hover:bg-emerald-500/20 hover:scale-110 cursor-pointer' : ''}
+                ${!past && !available ? 'text-slate-500 hover:bg-red-500/10 cursor-pointer' : ''}
+                ${selected ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 scale-110 font-bold' : ''}
+                ${todayMark && !selected ? 'ring-1 ring-emerald-500/50' : ''}
+              `}>
+              {day}
+              {!past && available && !selected && (
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-500/60" />
+              )}
+              {!past && !available && !selected && (
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-red-500/40" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-white/5">
+        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-500/60" /> Available
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-red-500/40" /> Unavailable
+        </div>
+        {value && (
+          <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Selected
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function TeacherProfile() {
   const { id } = useParams();
@@ -382,9 +514,21 @@ export default function TeacherProfile() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Date *</label>
-                    <input type="date" min={getMinDate()} value={bookingForm.scheduled_date} onChange={e => setBookingForm({ ...bookingForm, scheduled_date: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm text-white cursor-pointer" />
-                    {!bookingForm.scheduled_date && <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><Calendar size={10} /> Click to open calendar and select date</p>}
+                    {bookingForm.scheduled_date && (
+                      <div className="flex items-center gap-2 mb-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
+                        <Calendar size={14} className="text-emerald-400" />
+                        <span className="text-sm font-medium text-white">
+                          {new Date(bookingForm.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                        <button type="button" onClick={() => setBookingForm({ ...bookingForm, scheduled_date: '' })} className="ml-auto text-slate-400 hover:text-white transition"><X size={14} /></button>
+                      </div>
+                    )}
+                    <CustomCalendar
+                      value={bookingForm.scheduled_date}
+                      onChange={(date) => setBookingForm({ ...bookingForm, scheduled_date: date })}
+                      minDate={getMinDate()}
+                      availability={teacher?.availability || []}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Time *</label>
