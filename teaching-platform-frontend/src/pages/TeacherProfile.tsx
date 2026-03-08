@@ -85,8 +85,12 @@ export default function TeacherProfile() {
   const availableSlots = getAvailableTimeSlots();
   const dayIsAvailable = isDayAvailable();
 
+  const redirectToRegister = () => {
+    navigate(`/register?redirect=/teacher/${id}`);
+  };
+
   const toggleFav = async () => {
-    if (!user) return navigate('/register');
+    if (!user) return redirectToRegister();
     try {
       if (isFav) await studentAPI.removeFavourite(Number(id));
       else await studentAPI.addFavourite(Number(id));
@@ -95,7 +99,7 @@ export default function TeacherProfile() {
   };
 
   const handleProceedToPayment = () => {
-    if (!user) return navigate('/register');
+    if (!user) return redirectToRegister();
     if (user.role !== 'student') return;
     if (!bookingForm.subject_id || !bookingForm.scheduled_date || !bookingForm.scheduled_time) {
       setBookingError('Please fill all required fields');
@@ -236,7 +240,7 @@ export default function TeacherProfile() {
                 </button>
               )}
               {(!user || user.role === 'student') && (
-                <button onClick={() => user ? setShowBooking(true) : navigate('/register')}
+                <button onClick={() => user ? setShowBooking(true) : redirectToRegister()}
                   className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:from-emerald-400 hover:to-teal-400 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 flex items-center gap-2 hover:scale-105 transform">
                   <Video size={18} /> Book Class
                 </button>
@@ -299,7 +303,7 @@ export default function TeacherProfile() {
                 <div className="text-center mb-4">
                   <div className="text-3xl font-black text-white">Rs {teacher.hourly_rate}<span className="text-base font-normal text-slate-400">/hr</span></div>
                 </div>
-                <button onClick={() => user ? setShowBooking(true) : navigate('/register')}
+                <button onClick={() => user ? setShowBooking(true) : redirectToRegister()}
                   className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:from-emerald-400 hover:to-teal-400 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 flex items-center justify-center gap-2 hover:scale-105 transform">
                   <Video size={18} /> Book a Class
                 </button>

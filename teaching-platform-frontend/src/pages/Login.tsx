@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LogIn, Eye, EyeOff, BookOpen, Sparkles } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -18,12 +20,16 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      switch (user.role) {
-        case 'admin': navigate('/admin'); break;
-        case 'teacher': navigate('/teacher'); break;
-        case 'student': navigate('/student'); break;
-        default: navigate('/');
+      if (redirectPath) {
+        navigate(redirectPath);
+      } else {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        switch (user.role) {
+          case 'admin': navigate('/admin'); break;
+          case 'teacher': navigate('/teacher'); break;
+          case 'student': navigate('/student'); break;
+          default: navigate('/');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -85,7 +91,7 @@ export default function Login() {
 
           <div className="mt-6 text-center text-sm text-slate-400">
             Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-emerald-400 font-bold hover:text-emerald-300 transition">Create one</Link>
+            <Link to={`/register${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`} className="text-emerald-400 font-bold hover:text-emerald-300 transition">Create one</Link>
           </div>
 
           <div className="mt-6 p-4 glass rounded-xl text-sm text-slate-400 border border-white/5">

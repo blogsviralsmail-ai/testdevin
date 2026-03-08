@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { UserPlus, Eye, EyeOff, BookOpen, GraduationCap, User } from 'lucide-react';
 
 const RAJASTHAN_CITIES = [
@@ -15,6 +15,8 @@ const RAJASTHAN_CITIES = [
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
   const [form, setForm] = useState({
     full_name: '', email: '', password: '', phone: '',
     role: 'student', city: '', state: 'Rajasthan'
@@ -29,8 +31,13 @@ export default function Register() {
     setLoading(true);
     try {
       await register(form);
-      if (form.role === 'teacher') navigate('/teacher');
-      else navigate('/student');
+      if (redirectPath) {
+        navigate(redirectPath);
+      } else if (form.role === 'teacher') {
+        navigate('/teacher');
+      } else {
+        navigate('/student');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -130,7 +137,7 @@ export default function Register() {
 
           <div className="mt-6 text-center text-sm text-slate-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-emerald-400 font-bold hover:text-emerald-300 transition">Sign in</Link>
+            <Link to={`/login${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`} className="text-emerald-400 font-bold hover:text-emerald-300 transition">Sign in</Link>
           </div>
         </div>
       </div>
