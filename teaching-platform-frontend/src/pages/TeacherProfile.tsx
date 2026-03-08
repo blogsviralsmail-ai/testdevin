@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { teacherAPI, studentAPI, gatewayAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users, AlertCircle, QrCode, Smartphone, Zap, Wallet } from 'lucide-react';
+import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users, AlertCircle, QrCode, Smartphone, Zap, Wallet, Banknote } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -114,18 +114,24 @@ export default function TeacherProfile() {
     setPaymentStep(true);
   };
 
+  const isCashGateway = selectedGateway?.gateway_type === 'cash';
+  const isUpiGateway = selectedGateway && (selectedGateway.gateway_type === 'custom_upi' || (selectedGateway.supports_upi && selectedGateway.upi_intent));
+
   const handleBooking = async () => {
-    if (!bookingForm.card_number || bookingForm.card_number.replace(/\s/g, '').length < 16) {
-      setBookingError('Please enter a valid 16-digit card number'); return;
-    }
-    if (!bookingForm.card_expiry || !/^\d{2}\/\d{2}$/.test(bookingForm.card_expiry)) {
-      setBookingError('Please enter expiry in MM/YY format'); return;
-    }
-    if (!bookingForm.card_cvv || bookingForm.card_cvv.length < 3) {
-      setBookingError('Please enter a valid CVV'); return;
-    }
-    if (!bookingForm.card_name) {
-      setBookingError('Please enter cardholder name'); return;
+    // Skip card validation for Cash and UPI gateways
+    if (!isCashGateway && !isUpiGateway) {
+      if (!bookingForm.card_number || bookingForm.card_number.replace(/\s/g, '').length < 16) {
+        setBookingError('Please enter a valid 16-digit card number'); return;
+      }
+      if (!bookingForm.card_expiry || !/^\d{2}\/\d{2}$/.test(bookingForm.card_expiry)) {
+        setBookingError('Please enter expiry in MM/YY format'); return;
+      }
+      if (!bookingForm.card_cvv || bookingForm.card_cvv.length < 3) {
+        setBookingError('Please enter a valid CVV'); return;
+      }
+      if (!bookingForm.card_name) {
+        setBookingError('Please enter cardholder name'); return;
+      }
     }
     setBookingLoading(true);
     setBookingError('');
@@ -373,7 +379,8 @@ export default function TeacherProfile() {
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Date *</label>
                     <input type="date" min={getMinDate()} value={bookingForm.scheduled_date} onChange={e => setBookingForm({ ...bookingForm, scheduled_date: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm text-white" />
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm text-white cursor-pointer" />
+                    {!bookingForm.scheduled_date && <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><Calendar size={10} /> Click to open calendar and select date</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Time *</label>
@@ -453,6 +460,7 @@ export default function TeacherProfile() {
                                    gw.gateway_type === 'custom_upi' ? <QrCode size={16} className="text-emerald-400" /> :
                                    gw.gateway_type === 'cashfree' ? <Wallet size={16} className="text-cyan-400" /> :
                                    gw.gateway_type === 'payu' ? <IndianRupee size={16} className="text-amber-400" /> :
+                                   gw.gateway_type === 'cash' ? <Banknote size={16} className="text-green-400" /> :
                                    <Zap size={16} className="text-pink-400" />}
                                 </div>
                                 <div className="flex-1">
@@ -477,8 +485,18 @@ export default function TeacherProfile() {
                           <span className="ml-auto bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold">Secure</span>
                         </div>
 
-                        {/* Show UPI info for UPI gateways */}
-                        {selectedGateway && (selectedGateway.gateway_type === 'custom_upi' || (selectedGateway.supports_upi && selectedGateway.upi_intent)) ? (
+                        {/* Show Cash payment info */}
+                        {selectedGateway && selectedGateway.gateway_type === 'cash' ? (
+                          <div className="text-center py-4">
+                            <Banknote size={48} className="text-green-400 mx-auto mb-3" />
+                            <p className="text-white font-medium text-sm">Cash Payment</p>
+                            <p className="text-xs text-slate-400 mt-2">Pay directly to teacher in cash before or after the class</p>
+                            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                              <p className="text-green-400 text-xs font-medium">Amount: Rs {Math.round(teacher.hourly_rate * (bookingForm.duration_minutes / 60))}</p>
+                              <p className="text-slate-500 text-[10px] mt-1">Payment will be marked as pending until confirmed</p>
+                            </div>
+                          </div>
+                        ) : selectedGateway && (selectedGateway.gateway_type === 'custom_upi' || (selectedGateway.supports_upi && selectedGateway.upi_intent)) ? (
                           <div className="text-center py-4">
                             <QrCode size={48} className="text-emerald-400 mx-auto mb-3" />
                             <p className="text-white font-medium text-sm">Pay via UPI</p>
@@ -537,7 +555,7 @@ export default function TeacherProfile() {
                   ) : (
                     <button onClick={handleBooking} disabled={bookingLoading}
                       className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3.5 rounded-xl font-bold hover:from-emerald-400 hover:to-teal-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25">
-                      {bookingLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><CheckCircle size={18} /> Pay Rs {Math.round(teacher.hourly_rate * (bookingForm.duration_minutes / 60))} & Confirm</>}
+                      {bookingLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><CheckCircle size={18} /> {isCashGateway ? `Book & Pay Cash Rs ${Math.round(teacher.hourly_rate * (bookingForm.duration_minutes / 60))}` : `Pay Rs ${Math.round(teacher.hourly_rate * (bookingForm.duration_minutes / 60))} & Confirm`}</>}
                     </button>
                   )}
                 </div>

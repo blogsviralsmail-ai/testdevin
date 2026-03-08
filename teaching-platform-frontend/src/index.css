@@ -140,6 +140,22 @@
 /* Smooth scroll */
 html { scroll-behavior: smooth; }
 
+/* Fix date input calendar picker for dark theme */
+input[type="date"] {
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.8;
+  padding: 4px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0f172a; }

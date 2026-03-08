@@ -208,6 +208,10 @@ def test_gateway(gateway_id: int, user=Depends(require_admin)):
             else:
                 return {"success": False, "message": "Please set UPI ID or QR data"}
 
+        # For cash gateway, always ready
+        if gtype == "cash":
+            return {"success": True, "message": "Cash payment gateway is ready. No API keys needed."}
+
         # For other gateways, check if API keys are configured
         if not api_key:
             return {"success": False, "message": f"API Key not configured for {gw['name']}"}
@@ -382,6 +386,16 @@ def initiate_payment(data: InitiatePaymentRequest, user=Depends(get_current_user
                 "qr_data": qr_data,
                 "amount": data.amount,
                 "status": "created"
+            }
+
+        # === Cash ===
+        if gtype == "cash":
+            return {
+                "gateway": "cash",
+                "transaction_id": txn_id,
+                "amount": data.amount,
+                "status": "created",
+                "message": "Cash payment - to be collected directly"
             }
 
         raise HTTPException(status_code=400, detail="Unsupported gateway type")

@@ -227,7 +227,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS payment_gateways (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        gateway_type TEXT NOT NULL CHECK(gateway_type IN ('razorpay', 'phonepe', 'cashfree', 'payu', 'instamojo', 'custom_upi')),
+        gateway_type TEXT NOT NULL CHECK(gateway_type IN ('razorpay', 'phonepe', 'cashfree', 'payu', 'instamojo', 'custom_upi', 'cash')),
         display_name TEXT NOT NULL,
         api_key TEXT DEFAULT '',
         api_secret TEXT DEFAULT '',
