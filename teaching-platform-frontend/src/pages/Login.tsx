@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { LogIn, Eye, EyeOff, BookOpen, Sparkles } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectPath = searchParams.get('redirect');
   const [email, setEmail] = useState('');
@@ -19,18 +18,11 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
       if (redirectPath) {
-        navigate(redirectPath);
-      } else {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        switch (user.role) {
-          case 'admin': navigate('/admin'); break;
-          case 'teacher': navigate('/teacher'); break;
-          case 'student': navigate('/student'); break;
-          default: navigate('/');
-        }
+        localStorage.setItem('authRedirect', redirectPath);
       }
+      await login(email, password);
+      // Navigation is handled by App.tsx route guard using authRedirect from localStorage
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

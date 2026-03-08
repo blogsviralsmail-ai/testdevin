@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { UserPlus, Eye, EyeOff, BookOpen, GraduationCap, User } from 'lucide-react';
 
 const RAJASTHAN_CITIES = [
@@ -14,7 +14,6 @@ const RAJASTHAN_CITIES = [
 
 export default function Register() {
   const { register } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectPath = searchParams.get('redirect');
   const [form, setForm] = useState({
@@ -30,14 +29,11 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await register(form);
       if (redirectPath) {
-        navigate(redirectPath);
-      } else if (form.role === 'teacher') {
-        navigate('/teacher');
-      } else {
-        navigate('/student');
+        localStorage.setItem('authRedirect', redirectPath);
       }
+      await register(form);
+      // Navigation is handled by App.tsx route guard using authRedirect from localStorage
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
