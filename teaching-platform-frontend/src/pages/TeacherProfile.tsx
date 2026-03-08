@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { teacherAPI, studentAPI } from '../services/api';
+import { teacherAPI, studentAPI, gatewayAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users, AlertCircle } from 'lucide-react';
+import { MapPin, Star, IndianRupee, BookOpen, Clock, Heart, ArrowLeft, Languages, Award, Calendar, X, Video, CheckCircle, CreditCard, Shield, Users, AlertCircle, QrCode, Smartphone, Zap, Wallet } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -24,6 +24,17 @@ export default function TeacherProfile() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<any>(null);
   const [bookingError, setBookingError] = useState('');
+  const [availableGateways, setAvailableGateways] = useState<any[]>([]);
+  const [selectedGateway, setSelectedGateway] = useState<any>(null);
+
+  useEffect(() => {
+    gatewayAPI.getAvailable().then(gws => {
+      setAvailableGateways(gws || []);
+      const primary = (gws || []).find((g: any) => g.is_primary);
+      if (primary) setSelectedGateway(primary);
+      else if (gws && gws.length > 0) setSelectedGateway(gws[0]);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -420,40 +431,93 @@ export default function TeacherProfile() {
                   </div>
 
                   {paymentStep && (
-                    <div className="border-2 border-emerald-500/20 rounded-xl p-4 bg-emerald-500/5">
-                      <div className="flex items-center gap-2 mb-4">
-                        <CreditCard size={18} className="text-emerald-400" />
-                        <h4 className="font-bold text-white text-sm">Payment Details</h4>
-                        <span className="ml-auto bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold">Secure</span>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-400 mb-1">Card Number</label>
-                          <input type="text" value={bookingForm.card_number} onChange={e => setBookingForm({ ...bookingForm, card_number: formatCardNumber(e.target.value) })}
-                            placeholder="4111 1111 1111 1111" maxLength={19}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-mono text-sm tracking-wider text-white placeholder-slate-500" />
-                          <p className="text-xs text-slate-600 mt-1">Test: 4111 1111 1111 1111 (Visa) or 5500 0000 0000 0004 (MC)</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Expiry (MM/YY)</label>
-                            <input type="text" value={bookingForm.card_expiry} onChange={e => setBookingForm({ ...bookingForm, card_expiry: formatExpiry(e.target.value) })}
-                              placeholder="12/28" maxLength={5}
-                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-mono text-sm text-white placeholder-slate-500" />
+                    <div className="space-y-4">
+                      {/* Gateway Selection */}
+                      {availableGateways.length > 0 && (
+                        <div className="border-2 border-cyan-500/20 rounded-xl p-4 bg-cyan-500/5">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Wallet size={16} className="text-cyan-400" />
+                            <h4 className="font-bold text-white text-sm">Choose Payment Method</h4>
                           </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">CVV</label>
-                            <input type="password" value={bookingForm.card_cvv} onChange={e => setBookingForm({ ...bookingForm, card_cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                              placeholder="123" maxLength={4}
-                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-mono text-sm text-white placeholder-slate-500" />
+                          <div className="grid grid-cols-1 gap-2">
+                            {availableGateways.map(gw => (
+                              <button key={gw.id} onClick={() => setSelectedGateway(gw)}
+                                className={`flex items-center gap-3 p-3 rounded-xl border transition text-left w-full ${
+                                  selectedGateway?.id === gw.id
+                                    ? 'border-emerald-500/40 bg-emerald-500/10'
+                                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                                }`}>
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10">
+                                  {gw.gateway_type === 'razorpay' ? <CreditCard size={16} className="text-blue-400" /> :
+                                   gw.gateway_type === 'phonepe' ? <Smartphone size={16} className="text-purple-400" /> :
+                                   gw.gateway_type === 'custom_upi' ? <QrCode size={16} className="text-emerald-400" /> :
+                                   gw.gateway_type === 'cashfree' ? <Wallet size={16} className="text-cyan-400" /> :
+                                   gw.gateway_type === 'payu' ? <IndianRupee size={16} className="text-amber-400" /> :
+                                   <Zap size={16} className="text-pink-400" />}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-white">{gw.display_name}</p>
+                                  <p className="text-[10px] text-slate-500">
+                                    {gw.supports_upi ? 'UPI ' : ''}{gw.supports_cards ? 'Cards ' : ''}{gw.supports_netbanking ? 'NetBanking ' : ''}{gw.upi_intent ? '(Intent)' : ''}
+                                  </p>
+                                </div>
+                                {selectedGateway?.id === gw.id && <CheckCircle size={16} className="text-emerald-400" />}
+                                {gw.is_primary && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold">PRIMARY</span>}
+                              </button>
+                            ))}
                           </div>
                         </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-400 mb-1">Cardholder Name</label>
-                          <input type="text" value={bookingForm.card_name} onChange={e => setBookingForm({ ...bookingForm, card_name: e.target.value })}
-                            placeholder="RAJESH KUMAR"
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm uppercase text-white placeholder-slate-500" />
+                      )}
+
+                      {/* Payment Details - Card form for card-supporting gateways */}
+                      <div className="border-2 border-emerald-500/20 rounded-xl p-4 bg-emerald-500/5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <CreditCard size={18} className="text-emerald-400" />
+                          <h4 className="font-bold text-white text-sm">Payment Details</h4>
+                          <span className="ml-auto bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold">Secure</span>
                         </div>
+
+                        {/* Show UPI info for UPI gateways */}
+                        {selectedGateway && (selectedGateway.gateway_type === 'custom_upi' || (selectedGateway.supports_upi && selectedGateway.upi_intent)) ? (
+                          <div className="text-center py-4">
+                            <QrCode size={48} className="text-emerald-400 mx-auto mb-3" />
+                            <p className="text-white font-medium text-sm">Pay via UPI</p>
+                            {selectedGateway.custom_upi_id && (
+                              <p className="text-emerald-400 text-xs mt-1 font-mono">{selectedGateway.custom_upi_id}</p>
+                            )}
+                            <p className="text-xs text-slate-500 mt-2">You will be redirected to complete UPI payment</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-400 mb-1">Card Number</label>
+                              <input type="text" value={bookingForm.card_number} onChange={e => setBookingForm({ ...bookingForm, card_number: formatCardNumber(e.target.value) })}
+                                placeholder="4111 1111 1111 1111" maxLength={19}
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-mono text-sm tracking-wider text-white placeholder-slate-500" />
+                              <p className="text-xs text-slate-600 mt-1">Test: 4111 1111 1111 1111 (Visa) or 5500 0000 0000 0004 (MC)</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">Expiry (MM/YY)</label>
+                                <input type="text" value={bookingForm.card_expiry} onChange={e => setBookingForm({ ...bookingForm, card_expiry: formatExpiry(e.target.value) })}
+                                  placeholder="12/28" maxLength={5}
+                                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-mono text-sm text-white placeholder-slate-500" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">CVV</label>
+                                <input type="password" value={bookingForm.card_cvv} onChange={e => setBookingForm({ ...bookingForm, card_cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                                  placeholder="123" maxLength={4}
+                                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-mono text-sm text-white placeholder-slate-500" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-400 mb-1">Cardholder Name</label>
+                              <input type="text" value={bookingForm.card_name} onChange={e => setBookingForm({ ...bookingForm, card_name: e.target.value })}
+                                placeholder="RAJESH KUMAR"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm uppercase text-white placeholder-slate-500" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

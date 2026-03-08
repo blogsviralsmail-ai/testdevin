@@ -81,8 +81,8 @@ def list_users(
             query += " AND u.role = ?"
             params.append(role)
         if search:
-            query += " AND (LOWER(u.full_name) LIKE LOWER(?) OR LOWER(u.email) LIKE LOWER(?))"
-            params.extend([f"%{search}%", f"%{search}%"])
+            query += " AND (LOWER(u.full_name) LIKE LOWER(?) OR LOWER(u.email) LIKE LOWER(?) OR u.phone LIKE ?)"
+            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
 
         count_query = f"SELECT COUNT(*) as total FROM ({query})"
         total = conn.execute(count_query, params).fetchone()["total"]

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, get_db
-from app.routers import auth_router, teacher_router, student_router, class_router, payment_router, admin_router, support_router, notification_router, settings_router, csv_router
+from app.routers import auth_router, teacher_router, student_router, class_router, payment_router, admin_router, support_router, notification_router, settings_router, csv_router, gateway_router
 
 app = FastAPI(title="Guru Platform API", version="1.0.0")
 
@@ -25,6 +25,8 @@ app.include_router(support_router.router)
 app.include_router(notification_router.router)
 app.include_router(settings_router.router)
 app.include_router(csv_router.router)
+app.include_router(gateway_router.router)
+app.include_router(gateway_router.public_router)
 
 
 @app.on_event("startup")

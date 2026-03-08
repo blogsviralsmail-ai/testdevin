@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { adminAPI, paymentAPI, supportAPI, subjectAPI, settingsAPI, csvAPI } from '../services/api';
+import { adminAPI, paymentAPI, supportAPI, subjectAPI, settingsAPI, csvAPI, gatewayAPI } from '../services/api';
 import {
   Users, BookOpen, IndianRupee, Shield, CheckCircle, XCircle, AlertCircle, Ticket,
   TrendingUp, ArrowUpRight, ArrowDownRight, UserPlus, Search,
   BarChart3, Wallet, Clock, Calendar, MapPin, RefreshCw, X,
   Activity, Banknote, GraduationCap, MessageSquare, CreditCard, Building2, Send,
-  Edit3, Save, Settings, Mail, Globe, Bell, Download, Upload
+  Edit3, Save, Settings, Mail, Globe, Bell, Download, Upload, Zap, ToggleLeft, ToggleRight, Trash2, TestTube, QrCode, Smartphone, Key
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -58,6 +58,14 @@ export default function AdminDashboard() {
   const [settingsMsg, setSettingsMsg] = useState({ section: '', type: '', text: '' });
   const [testEmail, setTestEmail] = useState('');
 
+  // Gateway states
+  const [gateways, setGateways] = useState<any[]>([]);
+  const [editingGateway, setEditingGateway] = useState<any>(null);
+  const [gwForm, setGwForm] = useState<any>({});
+  const [savingGw, setSavingGw] = useState(false);
+  const [gwMsg, setGwMsg] = useState({ type: '', text: '' });
+  const [testingGw, setTestingGw] = useState<number | null>(null);
+
   // CSV states
   const [csvLoading, setCsvLoading] = useState('');
   const [csvMsg, setCsvMsg] = useState({ type: '', text: '' });
@@ -109,7 +117,7 @@ export default function AdminDashboard() {
     if (tab === 'payments') loadPayments();
     if (tab === 'classes') loadClasses();
     if (tab === 'tickets') loadTickets();
-    if (tab === 'settings') loadSettings();
+    if (tab === 'settings') { loadSettings(); loadGateways(); }
   }, [tab]);
 
   // Auto-reload on filter change for payments
@@ -219,6 +227,83 @@ export default function AdminDashboard() {
 
   const toggleNotif = (key: string) => {
     setNotifSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Gateway functions
+  const loadGateways = async () => {
+    try {
+      const data = await gatewayAPI.list();
+      setGateways(data);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleGwToggle = async (id: number) => {
+    try {
+      await gatewayAPI.toggle(id);
+      loadGateways();
+    } catch (err) { alert(err instanceof Error ? err.message : 'Failed'); }
+  };
+
+  const handleGwPrimary = async (id: number) => {
+    try {
+      await gatewayAPI.setPrimary(id);
+      loadGateways();
+    } catch (err) { alert(err instanceof Error ? err.message : 'Failed'); }
+  };
+
+  const handleGwTest = async (id: number) => {
+    setTestingGw(id);
+    try {
+      const res = await gatewayAPI.test(id);
+      alert(res.success ? `Test Passed: ${res.message}` : `Test Failed: ${res.message}`);
+    } catch (err) { alert(err instanceof Error ? err.message : 'Test failed'); }
+    finally { setTestingGw(null); }
+  };
+
+  const handleGwDelete = async (id: number) => {
+    if (!confirm('Delete this gateway?')) return;
+    try {
+      await gatewayAPI.delete(id);
+      loadGateways();
+    } catch (err) { alert(err instanceof Error ? err.message : 'Failed'); }
+  };
+
+  const openEditGateway = (gw: any) => {
+    setEditingGateway(gw);
+    setGwForm({
+      name: gw.name, display_name: gw.display_name, api_key: gw.api_key || '',
+      api_secret: '', merchant_id: gw.merchant_id || '',
+      supports_upi: gw.supports_upi, supports_cards: gw.supports_cards,
+      supports_netbanking: gw.supports_netbanking, upi_intent: gw.upi_intent,
+      custom_upi_id: gw.custom_upi_id || '', custom_qr_data: gw.custom_qr_data || '',
+    });
+    setGwMsg({ type: '', text: '' });
+  };
+
+  const handleSaveGateway = async () => {
+    if (!editingGateway) return;
+    setSavingGw(true);
+    setGwMsg({ type: '', text: '' });
+    try {
+      const payload: Record<string, unknown> = { ...gwForm };
+      if (!payload.api_secret) delete payload.api_secret; // don't overwrite with empty
+      await gatewayAPI.update(editingGateway.id, payload);
+      setGwMsg({ type: 'success', text: 'Gateway updated!' });
+      loadGateways();
+      setTimeout(() => { setEditingGateway(null); setGwMsg({ type: '', text: '' }); }, 1200);
+    } catch (err: any) {
+      setGwMsg({ type: 'error', text: err.message || 'Failed' });
+    } finally { setSavingGw(false); }
+  };
+
+  const gwTypeIcon = (type: string) => {
+    if (type === 'razorpay') return <CreditCard size={18} className="text-blue-400" />;
+    if (type === 'phonepe') return <Smartphone size={18} className="text-purple-400" />;
+    if (type === 'custom_upi') return <QrCode size={18} className="text-emerald-400" />;
+    if (type === 'cashfree') return <Wallet size={18} className="text-cyan-400" />;
+    if (type === 'payu') return <IndianRupee size={18} className="text-amber-400" />;
+    if (type === 'instamojo') return <Zap size={18} className="text-pink-400" />;
+    return <CreditCard size={18} className="text-slate-400" />;
   };
 
   const handleUserAction = async (userId: number, action: string, role: string) => {
@@ -389,7 +474,7 @@ export default function AdminDashboard() {
     { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
   ];
 
-  const inputCls = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm text-white placeholder-slate-500";
+  const inputCls = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm text-white placeholder-slate-500 outline-none";
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -612,7 +697,7 @@ export default function AdminDashboard() {
               <div className="flex gap-3 flex-wrap items-center">
                 <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/10 flex-1 min-w-64">
                   <Search size={16} className="text-slate-500" />
-                  <input type="text" placeholder="Search teachers by name or email..."
+                  <input type="text" placeholder="Search by name, email, or phone..."
                     value={teacherSearch}
                     onChange={(e) => setTeacherSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && loadTeachers()}
@@ -1361,6 +1446,80 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </div>
+
+            {/* ===== Payment Gateways Management ===== */}
+            <div className="glass rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                  <CreditCard size={20} className="text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white">Payment Gateways</h3>
+                  <p className="text-sm text-slate-400">Manage payment gateways, set API keys, enable/disable, choose primary</p>
+                </div>
+              </div>
+
+              {gateways.length === 0 ? (
+                <p className="text-slate-500 text-sm">No gateways configured. They will be seeded on next server restart.</p>
+              ) : (
+                <div className="space-y-3">
+                  {gateways.map(gw => (
+                    <div key={gw.id} className={`p-4 rounded-xl border transition ${gw.is_enabled ? 'bg-white/5 border-emerald-500/20' : 'bg-white/[0.02] border-white/5 opacity-70'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {gwTypeIcon(gw.gateway_type)}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-sm">{gw.display_name}</span>
+                              {gw.is_primary && (
+                                <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold">PRIMARY</span>
+                              )}
+                              {gw.is_enabled && !gw.is_primary && (
+                                <span className="bg-cyan-500/10 text-cyan-400 text-[10px] px-2 py-0.5 rounded-full font-bold">ENABLED</span>
+                              )}
+                              {!gw.is_enabled && (
+                                <span className="bg-white/5 text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-bold">DISABLED</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {gw.gateway_type} | {gw.supports_upi ? 'UPI' : ''}{gw.supports_cards ? ' Cards' : ''}{gw.supports_netbanking ? ' NetBanking' : ''}{gw.upi_intent ? ' (Intent)' : ''}
+                              {gw.gateway_type === 'custom_upi' && gw.custom_upi_id ? ` | VPA: ${gw.custom_upi_id}` : ''}
+                            </p>
+                            <p className="text-xs text-slate-600 mt-0.5">
+                              {gw.api_key ? `Key: ${gw.api_key.substring(0, 12)}...` : 'No API key set'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleGwToggle(gw.id)} title={gw.is_enabled ? 'Disable' : 'Enable'}
+                            className={`p-2 rounded-lg transition ${gw.is_enabled ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}>
+                            {gw.is_enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                          </button>
+                          {gw.is_enabled && !gw.is_primary && (
+                            <button onClick={() => handleGwPrimary(gw.id)} title="Set as Primary"
+                              className="p-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition">
+                              <Zap size={16} />
+                            </button>
+                          )}
+                          <button onClick={() => handleGwTest(gw.id)} title="Test Connection" disabled={testingGw === gw.id}
+                            className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition">
+                            {testingGw === gw.id ? <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" /> : <TestTube size={16} />}
+                          </button>
+                          <button onClick={() => openEditGateway(gw)} title="Edit / Set Keys"
+                            className="p-2 rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition">
+                            <Key size={16} />
+                          </button>
+                          <button onClick={() => handleGwDelete(gw.id)} title="Delete"
+                            className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1803,6 +1962,97 @@ export default function AdminDashboard() {
                 ) : (
                   <><Save size={16} /> Save Changes</>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* =============== EDIT GATEWAY MODAL =============== */}
+      {editingGateway && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="glass-dark rounded-2xl shadow-2xl border border-white/10 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-slate-900 flex items-center justify-between p-6 border-b z-10">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Key size={20} className="text-amber-400" /> Edit Gateway - {editingGateway.display_name}
+                </h3>
+                <p className="text-sm text-slate-500">Configure API keys and settings</p>
+              </div>
+              <button onClick={() => { setEditingGateway(null); setGwMsg({ type: '', text: '' }); }}
+                className="p-2 hover:bg-white/5 rounded-full transition text-white">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Display Name</label>
+                  <input type="text" value={gwForm.display_name || ''} onChange={e => setGwForm({ ...gwForm, display_name: e.target.value })} className={inputCls} />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">API Key / App ID</label>
+                  <input type="text" value={gwForm.api_key || ''} onChange={e => setGwForm({ ...gwForm, api_key: e.target.value })}
+                    placeholder={editingGateway.gateway_type === 'razorpay' ? 'rzp_live_xxxxx or rzp_test_xxxxx' : editingGateway.gateway_type === 'phonepe' ? 'PhonePe API Key' : 'Enter API Key'}
+                    className={inputCls} />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">API Secret / Salt (leave blank to keep existing)</label>
+                  <input type="password" value={gwForm.api_secret || ''} onChange={e => setGwForm({ ...gwForm, api_secret: e.target.value })}
+                    placeholder="Enter new secret to update" className={inputCls} />
+                </div>
+                {(editingGateway.gateway_type === 'phonepe' || editingGateway.gateway_type === 'cashfree') && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Merchant ID</label>
+                    <input type="text" value={gwForm.merchant_id || ''} onChange={e => setGwForm({ ...gwForm, merchant_id: e.target.value })} placeholder="Enter Merchant ID" className={inputCls} />
+                  </div>
+                )}
+                {editingGateway.gateway_type === 'custom_upi' && (
+                  <>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-slate-300 mb-1">UPI VPA (e.g. merchant@upi)</label>
+                      <input type="text" value={gwForm.custom_upi_id || ''} onChange={e => setGwForm({ ...gwForm, custom_upi_id: e.target.value })}
+                        placeholder="yourname@paytm or yourname@upi" className={inputCls} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-slate-300 mb-1">QR Code Data (UPI deep link or image URL)</label>
+                      <textarea value={gwForm.custom_qr_data || ''} onChange={e => setGwForm({ ...gwForm, custom_qr_data: e.target.value })}
+                        placeholder="upi://pay?pa=yourname@upi&pn=YourName&cu=INR or paste QR image URL" rows={3} className={inputCls + ' resize-none'} />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Feature Toggles */}
+              <div className="border-t border-white/10 pt-4">
+                <h4 className="text-sm font-bold text-slate-300 mb-3">Supported Payment Methods</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: 'supports_upi', label: 'UPI Payments', icon: <QrCode size={14} /> },
+                    { key: 'supports_cards', label: 'Card Payments', icon: <CreditCard size={14} /> },
+                    { key: 'supports_netbanking', label: 'Net Banking', icon: <Building2 size={14} /> },
+                    { key: 'upi_intent', label: 'UPI Intent Mode', icon: <Smartphone size={14} /> },
+                  ].map(item => (
+                    <label key={item.key} className="flex items-center gap-2 p-3 bg-white/5 rounded-xl cursor-pointer border border-white/5 hover:bg-white/10 transition">
+                      <input type="checkbox" checked={!!gwForm[item.key]}
+                        onChange={e => setGwForm({ ...gwForm, [item.key]: e.target.checked })}
+                        className="w-4 h-4 text-emerald-500 rounded" />
+                      <span className="text-slate-400">{item.icon}</span>
+                      <span className="text-sm text-slate-300">{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {gwMsg.text && (
+                <div className={`px-4 py-3 rounded-xl text-sm font-medium ${gwMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {gwMsg.type === 'success' ? <CheckCircle size={14} className="inline mr-1" /> : <AlertCircle size={14} className="inline mr-1" />}
+                  {gwMsg.text}
+                </div>
+              )}
+
+              <button onClick={handleSaveGateway} disabled={savingGw}
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3.5 rounded-xl font-bold text-sm hover:from-emerald-400 hover:to-teal-400 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                {savingGw ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save size={16} /> Save Gateway Settings</>}
               </button>
             </div>
           </div>

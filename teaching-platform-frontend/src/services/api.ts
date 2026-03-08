@@ -229,6 +229,27 @@ export const csvAPI = {
   },
 };
 
+// Payment Gateways (Admin)
+export const gatewayAPI = {
+  list: () => request('/api/admin/gateways/'),
+  get: (id: number) => request(`/api/admin/gateways/${id}`),
+  create: (data: Record<string, unknown>) =>
+    request('/api/admin/gateways/', { method: 'POST', body: data }),
+  update: (id: number, data: Record<string, unknown>) =>
+    request(`/api/admin/gateways/${id}`, { method: 'PUT', body: data }),
+  delete: (id: number) =>
+    request(`/api/admin/gateways/${id}`, { method: 'DELETE' }),
+  setPrimary: (id: number) =>
+    request(`/api/admin/gateways/${id}/primary`, { method: 'POST' }),
+  toggle: (id: number) =>
+    request(`/api/admin/gateways/${id}/toggle`, { method: 'POST' }),
+  test: (id: number) =>
+    request(`/api/admin/gateways/${id}/test`, { method: 'POST' }),
+  getAvailable: () => request('/api/payment-gateways/available'),
+  initiate: (data: { gateway_id: number; booking_id: number; amount: number; payment_method?: string }) =>
+    request('/api/payment-gateways/initiate', { method: 'POST', body: data }),
+};
+
 // Subjects
 export const subjectAPI = {
   list: () => request('/api/subjects'),
