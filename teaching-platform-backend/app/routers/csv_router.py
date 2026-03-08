@@ -209,12 +209,12 @@ def download_payments(current_user: dict = Depends(require_admin())):
     with get_db() as conn:
         rows = conn.execute("""
             SELECT p.id, p.booking_id, p.amount, p.platform_fee, p.teacher_amount, p.status,
-                   p.payment_method, p.transaction_ref, p.payout_ref, p.created_at, p.released_at,
+                   p.payment_method, p.transaction_id, p.payout_reference, p.created_at, p.released_at,
+                   p.card_brand, p.card_last4, p.payout_method,
                    u_student.full_name as student_name, u_student.email as student_email,
                    u_teacher.full_name as teacher_name, u_teacher.email as teacher_email
             FROM payments p
-            LEFT JOIN bookings b ON b.id = p.booking_id
-            LEFT JOIN users u_student ON u_student.id = b.student_id
+            LEFT JOIN users u_student ON u_student.id = p.student_id
             LEFT JOIN teacher_profiles tp ON tp.id = p.teacher_id
             LEFT JOIN users u_teacher ON u_teacher.id = tp.user_id
             ORDER BY p.id DESC
@@ -224,12 +224,13 @@ def download_payments(current_user: dict = Depends(require_admin())):
     writer = csv.writer(output)
     writer.writerow(["id", "booking_id", "student_name", "student_email", "teacher_name", "teacher_email",
                      "amount", "platform_fee", "teacher_amount", "status", "payment_method",
-                     "transaction_ref", "payout_ref", "created_at", "released_at"])
+                     "transaction_id", "payout_reference", "card_brand", "card_last4", "created_at", "released_at"])
     for r in rows:
         writer.writerow([r["id"], r["booking_id"], r["student_name"], r["student_email"],
                          r["teacher_name"], r["teacher_email"],
                          r["amount"], r["platform_fee"], r["teacher_amount"], r["status"],
-                         r["payment_method"], r["transaction_ref"], r["payout_ref"],
+                         r["payment_method"], r["transaction_id"], r["payout_reference"],
+                         r["card_brand"], r["card_last4"],
                          r["created_at"], r["released_at"]])
 
     output.seek(0)
