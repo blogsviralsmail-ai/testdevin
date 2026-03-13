@@ -217,7 +217,7 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(requi
     return {"id": tid, "receipt_no": receipt_no, "message": "Transaction recorded"}
 
 @router.get("/receipts")
-async def list_receipts(student_id: Optional[int] = None, branch_id: Optional[int] = None):
+async def list_receipts(student_id: Optional[int] = None, branch_id: Optional[int] = None, user: dict = Depends(require_admin)):
     conn = get_db()
     query = """SELECT r.*, st.name as student_name, st.enrollment_no, b.name as branch_name
                FROM receipts r JOIN students st ON r.student_id = st.id
@@ -235,7 +235,7 @@ async def list_receipts(student_id: Optional[int] = None, branch_id: Optional[in
     return [dict(r) for r in rows]
 
 @router.get("/fee-records")
-async def list_fee_records(student_id: Optional[int] = None):
+async def list_fee_records(student_id: Optional[int] = None, user: dict = Depends(require_admin)):
     conn = get_db()
     query = """SELECT f.*, st.name as student_name, st.enrollment_no
                FROM fee_records f JOIN students st ON f.student_id = st.id WHERE 1=1"""
@@ -348,6 +348,8 @@ async def get_my_fees(user: dict = Depends(get_current_user)):
 @router.post("/fee-payments")
 async def submit_fee_payment(data: dict, user: dict = Depends(get_current_user)):
     """Student submits a fee payment for approval."""
+    if user.get("role") not in ("student", None):
+        raise HTTPException(status_code=403, detail="Only students can submit fee payments")
     conn = get_db()
     student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user["sub"]),)).fetchone()
     if not student:
@@ -683,7 +685,7 @@ async def delete_fee_payment(pid: int, user: dict = Depends(require_only_admin))
     conn.execute("UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (pid,))
     # If it was approved, also soft delete the corresponding transaction
     if payment["status"] == "approved":
-        if payment.get("payment_mode") == "razorpay":
+        if payment["payment_mode"] == "razorpay":
             # Razorpay transactions use "Razorpay Payment - Order: ..." description
             conn.execute(
                 "UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP "
@@ -740,7 +742,7 @@ async def bulk_delete_fee_payments(req: BulkDeleteRequest, user: dict = Depends(
     for pid in req.ids:
         payment = conn.execute("SELECT * FROM fee_payments WHERE id = ?", (pid,)).fetchone()
         if payment and payment["status"] == "approved":
-            if payment.get("payment_mode") == "razorpay":
+            if payment["payment_mode"] == "razorpay":
                 conn.execute(
                     "UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP "
                     "WHERE student_id = ? AND payment_mode = 'razorpay' AND utr_number = ?",
