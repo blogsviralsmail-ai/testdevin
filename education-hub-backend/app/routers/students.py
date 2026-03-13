@@ -552,21 +552,23 @@ async def bulk_delete_students(data: dict, user: dict = Depends(require_admin)):
         return {"message": "No students selected"}
     conn = get_db()
     placeholders = ",".join(["?"] * len(ids))
-    conn.execute(f"DELETE FROM documents WHERE student_id IN ({placeholders})", ids)
-    conn.execute(f"DELETE FROM transactions WHERE student_id IN ({placeholders})", ids)
-    conn.execute(f"DELETE FROM fee_records WHERE student_id IN ({placeholders})", ids)
-    conn.execute(f"DELETE FROM exam_results WHERE student_id IN ({placeholders})", ids)
-    conn.execute(f"DELETE FROM tickets WHERE student_id IN ({placeholders})", ids)
-    conn.execute(f"DELETE FROM receipts WHERE student_id IN ({placeholders})", ids)
-    conn.execute(f"DELETE FROM fee_payments WHERE student_id IN ({placeholders})", ids)
+    # Delete in correct FK order: children before parents
+    # ticket_messages -> tickets, receipts -> transactions
     try:
         conn.execute(f"DELETE FROM ticket_messages WHERE ticket_id IN (SELECT id FROM tickets WHERE student_id IN ({placeholders}))", ids)
     except Exception:
         pass
+    conn.execute(f"DELETE FROM receipts WHERE student_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM documents WHERE student_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM transactions WHERE student_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM fee_records WHERE student_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM fee_payments WHERE student_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM exam_results WHERE student_id IN ({placeholders})", ids)
     try:
         conn.execute(f"DELETE FROM placement_applications WHERE student_id IN ({placeholders})", ids)
     except Exception:
         pass
+    conn.execute(f"DELETE FROM tickets WHERE student_id IN ({placeholders})", ids)
     conn.execute(f"DELETE FROM students WHERE id IN ({placeholders})", ids)
     conn.commit()
     conn.close()
