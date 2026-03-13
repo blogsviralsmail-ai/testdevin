@@ -522,6 +522,8 @@ async def list_backups(user: dict = Depends(require_admin)):
 async def restore_backup(data: dict, user: dict = Depends(require_admin)):
     from app.database import DB_PATH
     filename = data.get("filename", "")
+    if not filename or "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
     backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
     backup_path = os.path.join(backup_dir, filename)
     if not os.path.exists(backup_path):
@@ -533,6 +535,8 @@ async def restore_backup(data: dict, user: dict = Depends(require_admin)):
 
 @router.delete("/backup/{filename}")
 async def delete_backup(filename: str, user: dict = Depends(require_admin)):
+    if not filename or "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
     from app.database import DB_PATH
     backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
     backup_path = os.path.join(backup_dir, filename)
