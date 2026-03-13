@@ -129,15 +129,23 @@ async def get_applications(jid: int, user: dict = Depends(require_admin)):
     conn.close()
     return [dict(r) for r in rows]
 
+# Allowed resume extensions and max size (5 MB)
+ALLOWED_RESUME_EXTENSIONS = {".pdf", ".doc", ".docx"}
+MAX_RESUME_SIZE = 5 * 1024 * 1024  # 5 MB
+
 @router.post("/upload-resume")
 async def upload_resume(file: UploadFile = File(...)):
-    """Public endpoint - no auth required - for job applicants to upload resume."""
+    """Public endpoint for job applicants to upload resume (PDF/DOC only, max 5 MB)."""
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".pdf"
+    if ext not in ALLOWED_RESUME_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Only PDF and DOC files are allowed. Got: {ext}")
+    content = await file.read()
+    if len(content) > MAX_RESUME_SIZE:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 5 MB.")
     upload_dir = get_upload_dir()
     os.makedirs(os.path.join(upload_dir, "resumes"), exist_ok=True)
-    ext = os.path.splitext(file.filename or "")[1] or ".pdf"
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(upload_dir, "resumes", filename)
-    content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
     return {"url": f"/uploads/resumes/{filename}", "filename": file.filename}

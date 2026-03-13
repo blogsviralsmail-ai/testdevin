@@ -6,12 +6,17 @@ from app.utils.auth import require_admin, get_current_user
 
 router = APIRouter(prefix="/api/settings", tags=["Settings"])
 
+# Keys that must never be exposed to unauthenticated callers
+SENSITIVE_PREFIXES = ("smtp_", "sms_api", "payment_", "razorpay_", "whatsapp_api",
+                      "telegram_", "notification_email", "rzp_order_")
+
 @router.get("")
 async def get_settings():
     conn = get_db()
     rows = conn.execute("SELECT key, value FROM settings").fetchall()
     conn.close()
-    return {r["key"]: r["value"] for r in rows}
+    # Filter out sensitive keys from public endpoint
+    return {r["key"]: r["value"] for r in rows if not r["key"].startswith(SENSITIVE_PREFIXES)}
 
 @router.put("")
 async def update_settings(data: Dict[str, str], user: dict = Depends(require_admin)):
