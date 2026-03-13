@@ -679,7 +679,10 @@ async def get_student_documents(sid: int, user: dict = Depends(get_current_user)
 
 @router.get("/lookup/by-phone/{phone}")
 async def lookup_student_by_phone(phone: str, user: dict = Depends(get_current_user)):
-    """Lookup student by phone number (used as primary identifier)."""
+    """Lookup student by phone number (used as primary identifier). Restricted to admin/center roles."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized to lookup students")
     conn = get_db()
     row = conn.execute(
         """SELECT s.*, u.name as university_name, c.name as category_name, b.name as branch_name 
