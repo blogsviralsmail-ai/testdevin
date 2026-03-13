@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional
-import os, uuid, hmac, hashlib, json, urllib.parse
+import os, uuid, hmac, hashlib, json, urllib.parse, sqlite3
 from datetime import datetime
 from app.database import get_db
 from app.utils.auth import require_admin, require_only_admin, get_current_user
@@ -14,6 +14,20 @@ from app.utils.uploads import get_upload_dir
 from app.utils.image_optimize import optimize_image
 
 router = APIRouter(prefix="/api/accounts", tags=["Accounts"])
+
+
+def _generate_receipt_no(conn, prefix: str, tid: int, sid: int, amount: float) -> str:
+    """Generate a unique receipt number with retry loop to handle race conditions."""
+    for _attempt in range(5):
+        max_num = conn.execute("SELECT MAX(CAST(SUBSTR(receipt_no, -6) AS INTEGER)) FROM receipts").fetchone()[0] or 1000
+        receipt_no = f"{prefix}-{str(max_num + 1).zfill(6)}"
+        try:
+            conn.execute("INSERT INTO receipts (transaction_id, student_id, receipt_no, amount) VALUES (?, ?, ?, ?)",
+                         (tid, sid, receipt_no, amount))
+            return receipt_no
+        except sqlite3.IntegrityError:
+            continue
+    raise HTTPException(status_code=500, detail="Could not generate unique receipt number")
 
 
 def _get_branding(conn) -> dict:
@@ -182,13 +196,10 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(requi
         (sid, data.amount, data.transaction_type, data.utr_number, data.account_name, data.payment_mode, description, data.proof_url, data.status)
     )
     tid = cursor.lastrowid
-    # Auto create receipt with prefix from settings
+    # Auto create receipt with prefix from settings (retry loop for race condition)
     branding = _get_branding(conn)
     prefix = branding.get("receipt_prefix", "ASFF")
-    max_num = conn.execute("SELECT MAX(CAST(SUBSTR(receipt_no, -6) AS INTEGER)) FROM receipts").fetchone()[0] or 1000
-    receipt_no = f"{prefix}-{str(max_num + 1).zfill(6)}"
-    conn.execute("INSERT INTO receipts (transaction_id, student_id, receipt_no, amount) VALUES (?, ?, ?, ?)",
-                 (tid, sid, receipt_no, data.amount))
+    receipt_no = _generate_receipt_no(conn, prefix, tid, sid, data.amount)
     # Update fee record
     fee = conn.execute("SELECT * FROM fee_records WHERE student_id = ?", (sid,)).fetchone()
     if fee:
@@ -425,13 +436,10 @@ async def approve_fee_payment(pid: int, user: dict = Depends(require_admin)):
         (sid, payment["amount"], "credit", payment["utr_number"], payment["payment_mode"], f"Online Fee Payment #{pid}", payment["proof_url"], "completed")
     )
     tid = cursor.lastrowid
-    # Auto create receipt with prefix
+    # Auto create receipt with prefix (retry loop for race condition)
     branding = _get_branding(conn)
     prefix = branding.get("receipt_prefix", "ASFF")
-    max_num = conn.execute("SELECT MAX(CAST(SUBSTR(receipt_no, -6) AS INTEGER)) FROM receipts").fetchone()[0] or 1000
-    receipt_no = f"{prefix}-{str(max_num + 1).zfill(6)}"
-    conn.execute("INSERT INTO receipts (transaction_id, student_id, receipt_no, amount) VALUES (?, ?, ?, ?)",
-                 (tid, sid, receipt_no, payment["amount"]))
+    receipt_no = _generate_receipt_no(conn, prefix, tid, sid, payment["amount"])
     # Update fee record if exists
     fee = conn.execute("SELECT * FROM fee_records WHERE student_id = ?", (sid,)).fetchone()
     if fee:
@@ -570,13 +578,10 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
     )
     tid = cursor.lastrowid
     
-    # Auto create receipt with prefix
+    # Auto create receipt with prefix (retry loop for race condition)
     branding = _get_branding(conn)
     prefix = branding.get("receipt_prefix", "ASFF")
-    max_num = conn.execute("SELECT MAX(CAST(SUBSTR(receipt_no, -6) AS INTEGER)) FROM receipts").fetchone()[0] or 1000
-    receipt_no = f"{prefix}-{str(max_num + 1).zfill(6)}"
-    conn.execute("INSERT INTO receipts (transaction_id, student_id, receipt_no, amount) VALUES (?, ?, ?, ?)",
-                 (tid, sid, receipt_no, float(amount)))
+    receipt_no = _generate_receipt_no(conn, prefix, tid, sid, float(amount))
     
     # Update fee record if exists
     fee = conn.execute("SELECT * FROM fee_records WHERE student_id = ?", (sid,)).fetchone()

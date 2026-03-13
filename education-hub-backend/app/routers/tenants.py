@@ -120,13 +120,12 @@ async def create_tenant(req: CreateTenantRequest, authorization: str = Header(No
     """Create a new tenant (franchise)."""
     get_platform_admin(authorization)
 
-    # Validate slug
-    if not re.match(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$', req.slug) and len(req.slug) > 2:
-        if not re.match(r'^[a-z0-9]+$', req.slug):
-            raise HTTPException(
-                status_code=400,
-                detail="Slug must contain only lowercase letters, numbers, and hyphens. Must start and end with letter/number.",
-            )
+    # Validate slug (single clear regex: alphanumeric start/end, hyphens allowed in middle)
+    if not re.match(r'^[a-z0-9]([a-z0-9-]*[a-z0-9])?$', req.slug):
+        raise HTTPException(
+            status_code=400,
+            detail="Slug must contain only lowercase letters, numbers, and hyphens. Must start and end with letter/number.",
+        )
 
     if len(req.slug) < 2 or len(req.slug) > 50:
         raise HTTPException(status_code=400, detail="Slug must be 2-50 characters")
