@@ -549,7 +549,7 @@ async def update_commission_slab(slab_id: int, data: dict, user: dict = Depends(
 
 
 @router.delete("/commission/slabs/{slab_id}")
-async def delete_commission_slab(slab_id: int, user: dict = Depends(get_current_user)):
+async def delete_commission_slab(slab_id: int, user: dict = Depends(require_admin)):
     """Delete a commission slab."""
     conn = get_db()
     conn.execute("DELETE FROM commission_slabs WHERE id = ?", (slab_id,))
@@ -606,6 +606,11 @@ async def create_commission(data: CenterCommissionCreate, user: dict = Depends(g
     """Add manual commission record for a student (NIOS etc.)."""
     conn = get_db()
     role = user.get("role", "")
+
+    # Only admin and center roles can create commission records
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized to create commission records")
     
     # Determine center_id
     student = conn.execute("SELECT center_id, university_id FROM students WHERE id = ?", (data.student_id,)).fetchone()

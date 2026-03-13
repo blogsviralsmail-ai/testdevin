@@ -36,8 +36,11 @@ def get_current_user(authorization: str = Header(None)):
     token = authorization.split(" ")[1]
     return decode_token(token)
 
+# Allowlist of admin-level roles (used by require_admin)
+ADMIN_ROLES = ("admin", "super_admin", "branch_admin")
+
 def require_admin(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") in ("student", "center"):
+    if current_user.get("role") not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
