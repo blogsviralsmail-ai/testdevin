@@ -41,10 +41,10 @@ class TenantMiddleware(BaseHTTPMiddleware):
                             content={"detail": f"Tenant '{subdomain}' not found or inactive"},
                         )
                 else:
-                    # Set tenant context
-                    current_tenant_db_path.set(get_tenant_db_path(tenant["slug"]))
-                    current_tenant_upload_dir.set(get_tenant_upload_dir(tenant["slug"]))
-                    current_tenant_info.set(tenant)
+                    # Set tenant context - capture tokens for proper cleanup
+                    token_db = current_tenant_db_path.set(get_tenant_db_path(tenant["slug"]))
+                    token_upload = current_tenant_upload_dir.set(get_tenant_upload_dir(tenant["slug"]))
+                    token_info = current_tenant_info.set(tenant)
 
                     # Store tenant info in request state for easy access
                     request.state.tenant = tenant

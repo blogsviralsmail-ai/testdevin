@@ -860,6 +860,16 @@ async def get_student_payments(student_id: int, user: dict = Depends(get_current
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+    # Center ownership check: verify student belongs to this center
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        placeholders = ",".join(["?"] * len(all_ids))
+        student = conn.execute(f"SELECT id FROM students WHERE id = ? AND center_id IN ({placeholders})", [student_id] + all_ids).fetchone()
+        if not student:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Student does not belong to your center")
     # Get fee_payments
     fp_rows = conn.execute(
         """SELECT fp.id, fp.amount, fp.payment_mode, fp.utr_number, fp.status, fp.created_at, fp.remarks as notes, 'student_payment' as source
@@ -899,6 +909,15 @@ async def center_record_payment(student_id: int, data: dict, user: dict = Depend
     if not student:
         conn.close()
         raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Center ownership check: verify student belongs to this center
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        if student["center_id"] not in all_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Student does not belong to your center")
     
     # Create transaction
     description = f"Center fee payment - {payment_mode}" + (f" - {notes}" if notes else "")

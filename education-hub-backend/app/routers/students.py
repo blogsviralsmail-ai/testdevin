@@ -277,6 +277,11 @@ async def get_student(sid: int, user: dict = Depends(get_current_user)):
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="Student not found")
+    # Ownership check: students can only view their own record
+    role = user.get("role", "")
+    if role == "student":
+        if row["user_id"] != int(user.get("sub", 0)):
+            raise HTTPException(status_code=403, detail="Access denied")
     result = dict(row)
     if result.get("form_data"):
         try:
@@ -338,7 +343,7 @@ async def create_student(data: StudentCreate, user: dict = Depends(get_current_u
     return {"id": sid, "enrollment_no": enrollment_no, "message": "Student created successfully"}
 
 @router.put("/{sid}")
-async def update_student(sid: int, data: dict, user: dict = Depends(get_current_user)):
+async def update_student(sid: int, data: dict, user: dict = Depends(require_admin)):
     conn = get_db()
     update_fields = []
     values = []

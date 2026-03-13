@@ -97,6 +97,16 @@ async def get_student_documents(student_id: int, user: dict = Depends(get_curren
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+    # Center ownership check: verify student belongs to this center
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        placeholders = ",".join(["?"] * len(all_ids))
+        student = conn.execute(f"SELECT id FROM students WHERE id = ? AND center_id IN ({placeholders})", [student_id] + all_ids).fetchone()
+        if not student:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Student does not belong to your center")
     rows = conn.execute(
         """SELECT d.*, st.name as student_name, st.enrollment_no, st.phone as student_phone
            FROM documents d JOIN students st ON d.student_id = st.id
