@@ -408,12 +408,6 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
             conn.close()
             raise HTTPException(status_code=400, detail="Is mobile number se ek student pehle se registered hai.")
     
-    # Generate enrollment number using MAX to avoid race conditions
-    import sqlite3
-    max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
-    next_num = (max_row[0] or 1000) + 1
-    enrollment_no = f"EDU{str(next_num).zfill(6)}"
-    
     # Determine admission_source
     admission_source = "self"
     referring_sub_center_id = data.get("sub_center_id")
@@ -426,24 +420,38 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
             actual_center_id = referring_sub_center_id
             admission_source = "chain"
     
-    # Insert student
+    # Generate enrollment number with retry loop to avoid race condition duplicates
+    import sqlite3
     fields = ["enrollment_no", "name", "email", "phone", "university_id", "category_id", "branch_id",
               "session_name", "admission_type", "father_name", "mother_name", "date_of_birth", "gender",
               "current_address", "current_city", "current_state", "current_pincode",
               "aadhar_no", "status", "center_id", "admission_source"]
-    values = [
-        enrollment_no, data.get("name", ""), data.get("email", ""), phone,
-        data.get("university_id"), data.get("category_id"), data.get("branch_id"),
-        data.get("session_name"), data.get("admission_type", "FRESH_ADMISSION"),
-        data.get("father_name"), data.get("mother_name"), data.get("date_of_birth"), data.get("gender"),
-        data.get("current_address"), data.get("current_city"), data.get("current_state"), data.get("current_pincode"),
-        data.get("aadhar_no"), "active", actual_center_id, admission_source
-    ]
     
-    placeholders = ",".join(["?"] * len(fields))
-    field_names = ",".join(fields)
-    cursor = conn.execute(f"INSERT INTO students ({field_names}) VALUES ({placeholders})", values)
-    sid = cursor.lastrowid
+    for _attempt in range(5):
+        max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
+        next_num = (max_row[0] or 1000) + 1
+        enrollment_no = f"EDU{str(next_num).zfill(6)}"
+        
+        values = [
+            enrollment_no, data.get("name", ""), data.get("email", ""), phone,
+            data.get("university_id"), data.get("category_id"), data.get("branch_id"),
+            data.get("session_name"), data.get("admission_type", "FRESH_ADMISSION"),
+            data.get("father_name"), data.get("mother_name"), data.get("date_of_birth"), data.get("gender"),
+            data.get("current_address"), data.get("current_city"), data.get("current_state"), data.get("current_pincode"),
+            data.get("aadhar_no"), "active", actual_center_id, admission_source
+        ]
+        
+        placeholders = ",".join(["?"] * len(fields))
+        field_names = ",".join(fields)
+        try:
+            cursor = conn.execute(f"INSERT INTO students ({field_names}) VALUES ({placeholders})", values)
+            sid = cursor.lastrowid
+            break
+        except sqlite3.IntegrityError:
+            continue
+    else:
+        conn.close()
+        raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
     
     # Handle total_fees if provided
     if data.get("total_fees"):

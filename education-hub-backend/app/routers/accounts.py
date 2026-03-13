@@ -43,10 +43,15 @@ def _get_fee_summary(conn, student_id: int) -> dict:
     fp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM fee_payments WHERE student_id=? AND status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL)", (student_id,)).fetchone()[0]
     txn = conn.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE student_id=? AND transaction_type='credit' AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL)", (student_id,)).fetchone()[0]
     total_paid = fp + txn
-    # Try to fetch optional columns (may not exist in all deployments)
+    # Fetch course/university via JOINs (students table uses FK IDs, not direct columns)
     course = university = father_name = ""
     try:
-        extra = conn.execute("SELECT course, university, father_name FROM students WHERE id = ?", (student_id,)).fetchone()
+        extra = conn.execute(
+            "SELECT s.father_name, c.name as course, u.name as university FROM students s "
+            "LEFT JOIN categories c ON s.category_id = c.id "
+            "LEFT JOIN universities u ON s.university_id = u.id "
+            "WHERE s.id = ?", (student_id,)
+        ).fetchone()
         if extra:
             course = extra["course"] or ""
             university = extra["university"] or ""
@@ -648,12 +653,20 @@ async def delete_transaction(tid: int, user: dict = Depends(require_only_admin))
     conn.execute("UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (tid,))
     # Also soft delete the linked fee_payment if this transaction came from an online payment
     desc = txn["description"] or ""
-    if desc.startswith("Online Fee Payment #") or desc.startswith("Razorpay Payment"):
+    if desc.startswith("Online Fee Payment #"):
         try:
             fp_id = int(desc.split("#")[1].split()[0])
             conn.execute("UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (fp_id,))
         except (ValueError, IndexError):
             pass
+    elif desc.startswith("Razorpay Payment"):
+        # Razorpay descriptions use "Razorpay Payment - Order: {order_id}", no #id
+        # Match by student_id + payment_id (stored as utr_number) + razorpay mode
+        conn.execute(
+            "UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP "
+            "WHERE student_id = ? AND payment_mode = 'razorpay' AND utr_number = ? AND status = 'approved'",
+            (txn["student_id"], txn["utr_number"])
+        )
     conn.commit()
     conn.close()
     return {"message": "Transaction deleted"}
@@ -670,8 +683,16 @@ async def delete_fee_payment(pid: int, user: dict = Depends(require_only_admin))
     conn.execute("UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (pid,))
     # If it was approved, also soft delete the corresponding transaction
     if payment["status"] == "approved":
-        conn.execute("UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE description = ? AND student_id = ?",
-                     (f"Online Fee Payment #{pid}", payment["student_id"]))
+        if payment.get("payment_mode") == "razorpay":
+            # Razorpay transactions use "Razorpay Payment - Order: ..." description
+            conn.execute(
+                "UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP "
+                "WHERE student_id = ? AND payment_mode = 'razorpay' AND utr_number = ?",
+                (payment["student_id"], payment["utr_number"])
+            )
+        else:
+            conn.execute("UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE description = ? AND student_id = ?",
+                         (f"Online Fee Payment #{pid}", payment["student_id"]))
     conn.commit()
     conn.close()
     return {"message": "Fee payment deleted"}
@@ -691,12 +712,18 @@ async def bulk_delete_transactions(req: BulkDeleteRequest, user: dict = Depends(
         txn = conn.execute("SELECT * FROM transactions WHERE id = ?", (tid,)).fetchone()
         if txn:
             desc = txn["description"] or ""
-            if desc.startswith("Online Fee Payment #") or desc.startswith("Razorpay Payment"):
+            if desc.startswith("Online Fee Payment #"):
                 try:
                     fp_id = int(desc.split("#")[1].split()[0])
                     conn.execute("UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (fp_id,))
                 except (ValueError, IndexError):
                     pass
+            elif desc.startswith("Razorpay Payment"):
+                conn.execute(
+                    "UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP "
+                    "WHERE student_id = ? AND payment_mode = 'razorpay' AND utr_number = ? AND status = 'approved'",
+                    (txn["student_id"], txn["utr_number"])
+                )
     conn.execute(f"UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})", req.ids)
     conn.commit()
     conn.close()
@@ -713,8 +740,15 @@ async def bulk_delete_fee_payments(req: BulkDeleteRequest, user: dict = Depends(
     for pid in req.ids:
         payment = conn.execute("SELECT * FROM fee_payments WHERE id = ?", (pid,)).fetchone()
         if payment and payment["status"] == "approved":
-            conn.execute("UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE description = ? AND student_id = ?",
-                         (f"Online Fee Payment #{pid}", payment["student_id"]))
+            if payment.get("payment_mode") == "razorpay":
+                conn.execute(
+                    "UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP "
+                    "WHERE student_id = ? AND payment_mode = 'razorpay' AND utr_number = ?",
+                    (payment["student_id"], payment["utr_number"])
+                )
+            else:
+                conn.execute("UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE description = ? AND student_id = ?",
+                             (f"Online Fee Payment #{pid}", payment["student_id"]))
     conn.execute(f"UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})", req.ids)
     conn.commit()
     conn.close()
