@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import api, { getUser } from "../../lib/api";
-import { Plus, Search, Eye, Edit2, X, ChevronLeft, ChevronRight, Key } from "lucide-react";
+import { Plus, Search, Eye, Edit2, X, ChevronLeft, ChevronRight, Key, User, FileText, IndianRupee } from "lucide-react";
+
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function CenterStudents() {
   const [students, setStudents] = useState<any[]>([]);
@@ -19,6 +21,7 @@ export default function CenterStudents() {
   const [showPasswordModal, setShowPasswordModal] = useState<any>(null);
   const [newPassword, setNewPassword] = useState("");
   const [changingPw, setChangingPw] = useState(false);
+  const [studentDocs, setStudentDocs] = useState<any[]>([]);
   const user = getUser();
   const centerId = user?.center?.id;
 
@@ -71,6 +74,17 @@ export default function CenterStudents() {
     setEditId(s.id);
     if (s.university_id) loadCategories(s.university_id);
     setShowAdd(true);
+  };
+
+  const loadStudentDocs = (studentId: number) => {
+    api.get(`/api/documents/student/${studentId}`)
+      .then(r => setStudentDocs(r.data.documents || r.data || []))
+      .catch(() => setStudentDocs([]));
+  };
+
+  const openView = (s: any) => {
+    setShowView(s);
+    loadStudentDocs(s.id);
   };
 
   const handleChangePassword = async () => {
@@ -157,7 +171,7 @@ export default function CenterStudents() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1">
-                    <button onClick={() => setShowView(s)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View"><Eye className="h-4 w-4" /></button>
+                    <button onClick={() => openView(s)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View"><Eye className="h-4 w-4" /></button>
                     <button onClick={() => openEdit(s)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded" title="Edit"><Edit2 className="h-4 w-4" /></button>
                     <button onClick={() => { setShowPasswordModal(s); setNewPassword(""); }} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Change Password"><Key className="h-4 w-4" /></button>
                   </div>
@@ -203,7 +217,7 @@ export default function CenterStudents() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-                    <input type="text" value={form.password || ""} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm border-blue-300 bg-blue-50" required placeholder="Set student login password" />
+                    <input type="password" value={form.password || ""} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm border-blue-300 bg-blue-50" required placeholder="Set student login password" />
                   </div>
                 </div>
               </>
@@ -431,44 +445,100 @@ export default function CenterStudents() {
         </div>
       )}
 
-      {/* View Modal */}
+      {/* View Modal - Detailed like Admin */}
       {showView && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Student Details</h2>
-              <button onClick={() => setShowView(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowView(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg sm:text-xl font-bold">Student Details</h2>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { openEdit(showView); setShowView(null); }} className="px-3 py-1 bg-emerald-600 text-white text-xs rounded-lg">Edit</button>
+                <button onClick={() => { setShowPasswordModal(showView); setNewPassword(""); setShowView(null); }} className="px-3 py-1 bg-orange-600 text-white text-xs rounded-lg">Password</button>
+                <button onClick={() => setShowView(null)}><X className="h-5 w-5 text-gray-400" /></button>
+              </div>
             </div>
-            <div className="space-y-3">
-              {[
-                ["Student ID (Phone)", showView.phone],
-                ["Enrollment", showView.enrollment_no],
-                ["Name", showView.name],
-                ["Email", showView.email],
-                ["University", showView.university_name],
-                ["Course", showView.category_name],
-                ["Father", showView.father_name],
-                ["Mother", showView.mother_name],
-                ["DOB", showView.date_of_birth],
-                ["Gender", showView.gender],
-                ["Aadhar", showView.aadhar_no],
-                ["Session", showView.session_name],
-                ["Admission Type", showView.admission_type],
-                ["Status", showView.status],
-                ["Center", showView.center_name],
-                ["Source", showView.admission_source],
-                ["Total Fees", showView.total_fees ? `₹${showView.total_fees.toLocaleString()}` : "-"],
-                ["Paid", `₹${(showView.deposit || 0).toLocaleString()}`],
-                ["Address", showView.current_address],
-                ["City", showView.current_city],
-                ["State", showView.current_state],
-              ].filter(([, v]) => v).map(([label, value]) => (
-                <div key={label as string} className="flex justify-between py-1 border-b border-gray-50">
-                  <span className="text-sm text-gray-500">{label}</span>
-                  <span className="text-sm font-medium text-gray-800">{value}</span>
+
+            <div className="flex items-center gap-4 mb-5 pb-4 border-b">
+              {showView.photo ? (
+                <img src={showView.photo.startsWith("/") ? API + showView.photo : showView.photo} alt={showView.name} className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover border-4 border-blue-100" />
+              ) : (
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-blue-100 flex items-center justify-center"><User className="h-8 w-8 text-blue-400" /></div>
+              )}
+              <div>
+                <h3 className="text-lg font-bold">{showView.name}</h3>
+                <p className="text-sm text-gray-500">{showView.email} {showView.phone && `| ${showView.phone}`}</p>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${showView.status === "active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{showView.status}</span>
+              </div>
+            </div>
+
+            {/* Fees Info */}
+            {showView.total_fees > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4 mb-4">
+                <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1"><IndianRupee className="h-4 w-4" /> Fee Details</h4>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div><span className="text-gray-400 text-xs">Total Fees</span><p className="font-bold text-lg text-gray-900">₹{(showView.total_fees || 0).toLocaleString()}</p></div>
+                  <div><span className="text-gray-400 text-xs">Paid</span><p className="font-bold text-lg text-green-600">₹{(showView.deposit || 0).toLocaleString()}</p></div>
+                  <div><span className="text-gray-400 text-xs">Balance</span><p className="font-bold text-lg text-red-600">₹{((showView.total_fees || 0) - (showView.deposit || 0)).toLocaleString()}</p></div>
                 </div>
+              </div>
+            )}
+
+            <h4 className="text-sm font-semibold text-blue-700 mb-2">Personal Information</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-4">
+              {[["University", showView.university_name], ["Course", showView.category_name], ["Enrollment", showView.enrollment_no], ["DOB", showView.date_of_birth], ["Gender", showView.gender], ["Nationality", showView.nationality], ["Aadhar", showView.aadhar_no], ["Blood Group", showView.blood_group], ["Marital Status", showView.marital_status], ["Session", showView.session_name], ["Admission Type", showView.admission_type], ["Source", showView.admission_source], ["Center", showView.center_name]].filter(([,v]) => v).map(([l,v]) => (
+                <div key={l}><span className="text-gray-400 text-xs">{l}</span><p className="font-medium">{v}</p></div>
               ))}
             </div>
+
+            {(showView.father_name || showView.mother_name) && (
+              <>
+                <h4 className="text-sm font-semibold text-pink-700 mb-2">Family Details</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-4">
+                  {[["Father", showView.father_name], ["Mother", showView.mother_name], ["Guardian", showView.guardian_name], ["Occupation", showView.father_occupation], ["Parent Phone", showView.parent_phone], ["Parent Email", showView.parent_email]].filter(([,v]) => v).map(([l,v]) => (
+                    <div key={l}><span className="text-gray-400 text-xs">{l}</span><p className="font-medium">{v}</p></div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {showView.current_address && (
+              <>
+                <h4 className="text-sm font-semibold text-green-700 mb-2">Address</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
+                  <div><span className="text-gray-400 text-xs">Current</span><p className="font-medium">{showView.current_address}, {showView.current_city}, {showView.current_state} {showView.current_pincode}</p></div>
+                  {showView.permanent_address && <div><span className="text-gray-400 text-xs">Permanent</span><p className="font-medium">{showView.permanent_address}, {showView.permanent_city}, {showView.permanent_state} {showView.permanent_pincode}</p></div>}
+                </div>
+              </>
+            )}
+
+            {(showView.tenth_percentage || showView.twelfth_percentage) && (
+              <>
+                <h4 className="text-sm font-semibold text-purple-700 mb-2">Education</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-4">
+                  {[["10th Board", showView.tenth_board], ["10th %", showView.tenth_percentage], ["10th School", showView.tenth_school], ["12th Board", showView.twelfth_board], ["12th %", showView.twelfth_percentage], ["12th School", showView.twelfth_school], ["Degree", showView.graduation_degree], ["Grad %", showView.graduation_percentage]].filter(([,v]) => v).map(([l,v]) => (
+                    <div key={l}><span className="text-gray-400 text-xs">{l}</span><p className="font-medium">{v}</p></div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Documents */}
+            <h4 className="text-sm font-semibold text-orange-700 mb-2 flex items-center gap-1"><FileText className="h-4 w-4" /> Documents</h4>
+            {studentDocs.length > 0 ? (
+              <div className="space-y-2 mb-4">
+                {studentDocs.map((d: any) => (
+                  <div key={d.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                    <div>
+                      <p className="text-sm font-medium capitalize">{(d.doc_type || d.document_type || "").replace(/_/g, " ")}</p>
+                      <p className="text-xs text-gray-500">{d.status} - {d.created_at?.split("T")[0]}</p>
+                    </div>
+                    {(d.file_path || d.file_url) && <a href={((d.file_path || d.file_url) || "").startsWith("/") ? API + (d.file_path || d.file_url) : (d.file_path || d.file_url)} target="_blank" rel="noreferrer" className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">View File</a>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 mb-4">No documents uploaded</p>
+            )}
           </div>
         </div>
       )}
@@ -487,7 +557,7 @@ export default function CenterStudents() {
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">New Password *</label>
-              <input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password"
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password"
                 className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div className="flex justify-end gap-3 mt-6">
