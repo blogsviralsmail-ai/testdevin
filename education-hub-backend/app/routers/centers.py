@@ -374,12 +374,20 @@ async def list_center_students(
         query += " AND s.university_id = ?"
         params.append(university_id)
 
-    # Count
-    count_q = query.replace(
-        f"SELECT s.*, u.name as university_name, c.name as category_name, \n                br.name as branch_name, ct.name as center_name",
-        "SELECT COUNT(*)"
-    )
-    total = conn.execute(count_q, params).fetchone()[0]
+    # Count — use a robust wrapper instead of fragile string replace
+    count_q = f"SELECT COUNT(*) FROM students s LEFT JOIN universities u ON s.university_id = u.id LEFT JOIN categories c ON s.category_id = c.id LEFT JOIN branches br ON s.branch_id = br.id LEFT JOIN centers ct ON s.center_id = ct.id WHERE s.center_id IN ({placeholders})"
+    count_params = list(all_ids)
+    if search:
+        count_q += " AND (s.name LIKE ? OR s.email LIKE ? OR s.phone LIKE ? OR s.enrollment_no LIKE ?)"
+        s2 = f"%{search}%"
+        count_params.extend([s2, s2, s2, s2])
+    if status:
+        count_q += " AND s.status = ?"
+        count_params.append(status)
+    if university_id:
+        count_q += " AND s.university_id = ?"
+        count_params.append(university_id)
+    total = conn.execute(count_q, count_params).fetchone()[0]
 
     query += " ORDER BY s.created_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, (page - 1) * limit])
@@ -605,6 +613,11 @@ async def create_commission_slab(data: CommissionSlabCreate, user: dict = Depend
     """Create commission slab. Admin creates for centers, center creates for sub-centers."""
     conn = get_db()
     role = user.get("role", "")
+    
+    # Authorization check — only admin and center roles can create slabs
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized to create commission slabs")
     
     center_id = None
     if role == "center":
