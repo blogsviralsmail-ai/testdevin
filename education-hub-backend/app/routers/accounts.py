@@ -476,7 +476,6 @@ async def create_razorpay_order(data: dict, user: dict = Depends(get_current_use
     if not student:
         conn.close()
         raise HTTPException(status_code=404, detail="Student record not found")
-    conn.close()
     
     amount_paise = int(float(amount) * 100)  # Razorpay uses paise
     
@@ -494,6 +493,13 @@ async def create_razorpay_order(data: dict, user: dict = Depends(get_current_use
             }
         }
         order = client.order.create(data=order_data)
+        # Store order amount server-side for verification later
+        conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            (f"rzp_order_{order['id']}", str(amount_paise))
+        )
+        conn.commit()
+        conn.close()
         return {
             "order_id": order["id"],
             "amount": amount_paise,
@@ -504,6 +510,7 @@ async def create_razorpay_order(data: dict, user: dict = Depends(get_current_use
             "student_phone": student["phone"] or "",
         }
     except Exception as e:
+        conn.close()
         raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
 
 @router.post("/razorpay/verify")
@@ -512,7 +519,6 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
     razorpay_order_id = data.get("razorpay_order_id", "")
     razorpay_payment_id = data.get("razorpay_payment_id", "")
     razorpay_signature = data.get("razorpay_signature", "")
-    amount = data.get("amount", 0)
     
     if not razorpay_order_id or not razorpay_payment_id or not razorpay_signature:
         raise HTTPException(status_code=400, detail="Missing payment details")
@@ -528,8 +534,16 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
     if expected_signature != razorpay_signature:
         raise HTTPException(status_code=400, detail="Payment verification failed - invalid signature")
     
-    # Payment verified - record it as approved directly
+    # Payment verified - get server-stored amount (not client-supplied)
     conn = get_db()
+    order_amount_row = conn.execute("SELECT value FROM settings WHERE key = ?", (f"rzp_order_{razorpay_order_id}",)).fetchone()
+    if not order_amount_row:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Order not found - possible tampering")
+    amount = int(order_amount_row["value"]) / 100  # Convert paise back to rupees
+    # Clean up the stored order
+    conn.execute("DELETE FROM settings WHERE key = ?", (f"rzp_order_{razorpay_order_id}",))
+    
     student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user["sub"]),)).fetchone()
     if not student:
         conn.close()

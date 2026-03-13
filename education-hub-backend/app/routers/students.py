@@ -165,7 +165,7 @@ async def list_students(
         params.extend([s, s, s, s])
     
     # Count
-    count_query = query.replace("SELECT s.*, u.name as university_name, c.name as category_name, b.name as branch_name", "SELECT COUNT(*)")
+    count_query = f"SELECT COUNT(*) FROM ({query})"
     total = conn.execute(count_query, params).fetchone()[0]
     
     query += " ORDER BY s.created_at DESC LIMIT ? OFFSET ?"
