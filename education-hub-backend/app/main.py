@@ -71,12 +71,16 @@ async def serve_upload(file_path: str):
     """Serve uploaded files - tenant-aware."""
     tenant_upload = current_tenant_upload_dir.get()
     if tenant_upload:
-        full_path = os.path.join(tenant_upload, file_path)
+        full_path = os.path.realpath(os.path.join(tenant_upload, file_path))
+        if not full_path.startswith(os.path.realpath(tenant_upload)):
+            return JSONResponse(status_code=403, content={"detail": "Access denied"})
         if os.path.exists(full_path) and os.path.isfile(full_path):
             return FileResponse(full_path, headers={"Cache-Control": "public, max-age=31536000, immutable"})
     
     # Fallback to default uploads dir
-    default_path = os.path.join(UPLOAD_DIR, file_path)
+    default_path = os.path.realpath(os.path.join(UPLOAD_DIR, file_path))
+    if not default_path.startswith(os.path.realpath(UPLOAD_DIR)):
+        return JSONResponse(status_code=403, content={"detail": "Access denied"})
     if os.path.exists(default_path) and os.path.isfile(default_path):
         return FileResponse(default_path, headers={"Cache-Control": "public, max-age=31536000, immutable"})
     

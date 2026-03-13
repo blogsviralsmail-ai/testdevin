@@ -42,7 +42,7 @@ async def list_enquiries(
     if source:
         query += " AND e.source = ?"
         params.append(source)
-    total = conn.execute(query.replace("SELECT e.*, u.name as university_name, c.name as category_name, usr.name as assigned_name", "SELECT COUNT(*)"), params).fetchone()[0]
+    total = conn.execute(query.replace("SELECT e.*, u.name as university_name, c.name as category_name, c.name as course_name, usr.name as assigned_name", "SELECT COUNT(*)"), params).fetchone()[0]
     query += " ORDER BY e.created_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, (page - 1) * limit])
     rows = conn.execute(query, params).fetchall()

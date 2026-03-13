@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
-from app.utils.auth import hash_password, verify_password, create_access_token
+from app.utils.auth import hash_password, verify_password, create_access_token, get_current_user
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -96,8 +96,8 @@ async def register(req: RegisterRequest):
     user_id = cursor.lastrowid
     conn.commit()
     
-    # Auto-create student record with pending status
-    if req.role == "student":
+    # Auto-create student record with pending status (role is always student)
+    if True:
         count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
         enrollment_no = f"EDU{str(count + 1001).zfill(6)}"
         conn.execute(
@@ -116,8 +116,8 @@ async def register(req: RegisterRequest):
         except Exception as e:
             print(f"Registration email failed: {e}")
     
-    token = create_access_token({"sub": str(user_id), "username": username, "role": req.role, "name": req.name})
-    return {"token": token, "user": {"id": user_id, "username": username, "name": req.name, "email": req.email, "role": req.role}}
+    token = create_access_token({"sub": str(user_id), "username": username, "role": "student", "name": req.name})
+    return {"token": token, "user": {"id": user_id, "username": username, "name": req.name, "email": req.email, "role": "student"}}
 
 @router.post("/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest):
@@ -170,16 +170,17 @@ async def reset_password(req: ResetPasswordRequest):
     return {"message": "Password reset successfully. You can now login with your new password."}
 
 @router.post("/change-password")
-async def change_password(data: dict):
+async def change_password(data: dict, current_user: dict = Depends(get_current_user)):
     conn = get_db()
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (data.get("user_id"),)).fetchone()
+    user_id = int(current_user["sub"])
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     if not user:
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
     if not verify_password(data.get("old_password", ""), user["password_hash"]):
         conn.close()
         raise HTTPException(status_code=400, detail="Old password incorrect")
-    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(data["new_password"]), data["user_id"]))
+    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(data["new_password"]), user_id))
     conn.commit()
     conn.close()
     return {"message": "Password changed successfully"}
