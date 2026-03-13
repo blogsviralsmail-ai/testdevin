@@ -437,13 +437,17 @@ async def bulk_send_whatsapp(data: dict, user: dict = Depends(require_admin)):
     recipients = []
     if target == "students":
         query = "SELECT id, name, phone, email, total_fees, university_id, category_id FROM students WHERE phone IS NOT NULL AND phone != ''"
+        params = []
         if filters.get("status"):
-            query += f" AND status = '{filters['status']}'"
+            query += " AND status = ?"
+            params.append(filters['status'])
         if filters.get("university_id"):
-            query += f" AND university_id = {int(filters['university_id'])}"
+            query += " AND university_id = ?"
+            params.append(int(filters['university_id']))
         if filters.get("category_id"):
-            query += f" AND category_id = {int(filters['category_id'])}"
-        rows = conn.execute(query).fetchall()
+            query += " AND category_id = ?"
+            params.append(int(filters['category_id']))
+        rows = conn.execute(query, params).fetchall()
         for r in rows:
             d = dict(r)
             fp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM fee_payments WHERE student_id=? AND status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL)", (d["id"],)).fetchone()[0]
@@ -454,9 +458,11 @@ async def bulk_send_whatsapp(data: dict, user: dict = Depends(require_admin)):
             recipients.append({"id": d["id"], "name": d["name"], "phone": d["phone"], "message": msg})
     elif target == "leads":
         query = "SELECT id, name, phone, email, status FROM leads WHERE phone IS NOT NULL AND phone != ''"
+        lead_params = []
         if filters.get("status"):
-            query += f" AND status = '{filters['status']}'"
-        rows = conn.execute(query).fetchall()
+            query += " AND status = ?"
+            lead_params.append(filters['status'])
+        rows = conn.execute(query, lead_params).fetchall()
         for r in rows:
             d = dict(r)
             msg = message_template.replace("{name}", d["name"] or "").replace("{status}", d["status"] or "")

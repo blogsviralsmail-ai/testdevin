@@ -267,6 +267,23 @@ async def update_center(center_id: int, data: CenterUpdate, user: dict = Depends
     return {"message": "Center updated"}
 
 
+@router.put("/{center_id}/password")
+async def change_center_password(center_id: int, data: dict, user: dict = Depends(require_admin)):
+    """Admin changes a center's login password."""
+    new_password = data.get("password", "")
+    if not new_password or len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    conn = get_db()
+    center = conn.execute("SELECT * FROM centers WHERE id = ?", (center_id,)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(new_password), center["user_id"]))
+    conn.commit()
+    conn.close()
+    return {"message": f"Password changed for center '{center['name']}'"}
+
+
 @router.delete("/{center_id}")
 async def delete_center(center_id: int, user: dict = Depends(require_admin)):
     """Delete a center and its user account."""

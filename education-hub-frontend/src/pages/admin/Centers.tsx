@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
-import { Building2, Plus, Edit2, Eye, X, Search, Users, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Building2, Plus, Edit2, Eye, X, Search, Users, Trash2, ToggleLeft, ToggleRight, Key } from "lucide-react";
 
 export default function AdminCenters() {
   const [centers, setCenters] = useState<any[]>([]);
@@ -13,6 +13,8 @@ export default function AdminCenters() {
   const [search, setSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState("");
   const [allCenters, setAllCenters] = useState<any[]>([]);
+  const [showPasswordModal, setShowPasswordModal] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   const fetchCenters = useCallback(() => {
     setLoading(true);
@@ -54,6 +56,21 @@ export default function AdminCenters() {
       fetchCenters();
     } catch (err: any) {
       alert(err.response?.data?.detail || "Error deleting center");
+    }
+  };
+
+  const handleChangePassword = async (centerId: number) => {
+    if (!newPassword || newPassword.length < 6) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
+    try {
+      await api.put(`/api/centers/${centerId}/password`, { password: newPassword });
+      alert("Password changed successfully!");
+      setShowPasswordModal(null);
+      setNewPassword("");
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Error changing password");
     }
   };
 
@@ -171,6 +188,7 @@ export default function AdminCenters() {
                   <div className="flex gap-1">
                     <button onClick={() => setShowView(c)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View"><Eye className="h-4 w-4" /></button>
                     <button onClick={() => openEdit(c)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded" title="Edit"><Edit2 className="h-4 w-4" /></button>
+                    <button onClick={() => { setShowPasswordModal(c); setNewPassword(""); }} className="p-1.5 text-amber-600 hover:bg-amber-50 rounded" title="Change Password"><Key className="h-4 w-4" /></button>
                     <button onClick={() => handleDelete(c.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </td>
@@ -275,6 +293,29 @@ export default function AdminCenters() {
                   <span className="text-sm font-medium text-gray-800">{String(value)}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Change Password</h2>
+              <button onClick={() => setShowPasswordModal(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">Center: <strong>{showPasswordModal.name}</strong> ({showPasswordModal.mobile})</p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password (min 6 chars)" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowPasswordModal(null)} className="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+              <button onClick={() => handleChangePassword(showPasswordModal.id)} disabled={!newPassword || newPassword.length < 6}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-amber-700">
+                Change Password
+              </button>
             </div>
           </div>
         </div>

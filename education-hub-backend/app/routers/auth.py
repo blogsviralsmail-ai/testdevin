@@ -49,7 +49,6 @@ async def login(req: LoginRequest):
             permissions = json.loads(role_row["permissions"])
         except Exception:
             permissions = None
-    conn2.close()
     
     token = create_access_token({"sub": str(user["id"]), "username": user["username"], "role": user["role"], "name": user["name"]})
     user_data = {
@@ -74,6 +73,7 @@ async def login(req: LoginRequest):
                 "level": center_row["level"],
                 "parent_center_id": center_row["parent_center_id"]
             }
+    conn2.close()
     return {
         "token": token,
         "user": user_data
@@ -91,7 +91,7 @@ async def register(req: RegisterRequest):
         raise HTTPException(status_code=400, detail="Is mobile number se pehle se account hai. Login karein ya doosra number use karein.")
     cursor = conn.execute(
         "INSERT INTO users (username, email, password_hash, name, phone, role, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (username, req.email, hash_password(req.password), req.name, req.phone, req.role, 1)
+        (username, req.email, hash_password(req.password), req.name, req.phone, "student", 1)
     )
     user_id = cursor.lastrowid
     conn.commit()
