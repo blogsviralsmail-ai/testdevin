@@ -930,8 +930,8 @@ def init_db():
     existing_nios = conn.execute("SELECT id FROM universities WHERE name = 'NIOS Board'").fetchone()
     if not existing_nios:
         cursor.execute(
-            "INSERT INTO universities (name, short_name, description, website, status) VALUES (?, ?, ?, ?, ?)",
-            ("NIOS Board", "NIOS", "National Institute of Open Schooling - 10th and 12th Board Examinations", "https://www.nios.ac.in", "active")
+            "INSERT INTO universities (name, description, website, status) VALUES (?, ?, ?, ?)",
+            ("NIOS Board", "National Institute of Open Schooling - 10th and 12th Board Examinations", "https://www.nios.ac.in", "active")
         )
         nios_id = cursor.lastrowid
         # Add 10th and 12th as categories under NIOS
