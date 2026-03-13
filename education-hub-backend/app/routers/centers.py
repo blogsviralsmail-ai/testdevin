@@ -1022,10 +1022,10 @@ async def approve_center_fee_payment(payment_id: int, user: dict = Depends(get_c
             slab = conn.execute("""SELECT * FROM commission_slabs 
                 WHERE university_id = ? AND (category_id IS NULL OR category_id = ?)
                 ORDER BY category_id DESC LIMIT 1""",
-                (student["university_id"], student.get("category_id"))).fetchone()
+                (student["university_id"], student["category_id"])).fetchone()
             if slab:
                 commission_amount = payment["amount"] * slab["percentage"] / 100
-                if slab.get("max_amount") and commission_amount > slab["max_amount"]:
+                if slab["max_amount"] and commission_amount > slab["max_amount"]:
                     commission_amount = slab["max_amount"]
                 conn.execute("""INSERT INTO center_commissions 
                     (center_id, student_id, slab_id, amount, status, created_at)
@@ -1137,7 +1137,7 @@ async def student_get_center_info(user: dict = Depends(get_current_user)):
     conn = get_db()
     uid = int(user["sub"])
     student = conn.execute("SELECT * FROM students WHERE user_id = ?", (uid,)).fetchone()
-    if not student or not student.get("center_id"):
+    if not student or not student["center_id"]:
         conn.close()
         return {"center_id": None}
     
@@ -1170,7 +1170,7 @@ async def student_get_center_payment_settings(user: dict = Depends(get_current_u
     conn = get_db()
     uid = int(user["sub"])
     student = conn.execute("SELECT * FROM students WHERE user_id = ?", (uid,)).fetchone()
-    if not student or not student.get("center_id"):
+    if not student or not student["center_id"]:
         conn.close()
         raise HTTPException(status_code=404, detail="You are not assigned to any center")
     
@@ -1200,7 +1200,7 @@ async def student_submit_center_fee_payment(data: dict, user: dict = Depends(get
     conn = get_db()
     uid = int(user["sub"])
     student = conn.execute("SELECT * FROM students WHERE user_id = ?", (uid,)).fetchone()
-    if not student or not student.get("center_id"):
+    if not student or not student["center_id"]:
         conn.close()
         raise HTTPException(status_code=404, detail="You are not assigned to any center")
     
@@ -1236,7 +1236,7 @@ async def student_center_fee_summary(user: dict = Depends(get_current_user)):
         conn.close()
         raise HTTPException(status_code=404, detail="Student not found")
     
-    is_center_student = bool(student.get("center_id"))
+    is_center_student = bool(student["center_id"])
     total_fees = student["total_fees"] or 0
     
     if is_center_student:
@@ -1270,7 +1270,7 @@ async def student_center_fee_summary(user: dict = Depends(get_current_user)):
     conn.close()
     return {
         "is_center_student": is_center_student,
-        "center_id": student.get("center_id"),
+        "center_id": student["center_id"],
         "total_fees": total_fees,
         "total_paid": total_paid,
         "balance": total_fees - total_paid,
