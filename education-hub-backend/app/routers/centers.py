@@ -58,15 +58,11 @@ def get_current_center(user: dict):
 
 
 def get_center_and_subcenter_ids(conn, center_id: int) -> list:
-    """Get center_id + all sub-center IDs under it."""
+    """Get center_id + all sub-center IDs under it (full recursive)."""
     ids = [center_id]
     sub_centers = conn.execute("SELECT id FROM centers WHERE parent_center_id = ?", (center_id,)).fetchall()
     for sc in sub_centers:
-        ids.append(sc["id"])
-        # Recursively get sub-sub-centers (if any deeper nesting)
-        deeper = conn.execute("SELECT id FROM centers WHERE parent_center_id = ?", (sc["id"],)).fetchall()
-        for d in deeper:
-            ids.append(d["id"])
+        ids.extend(get_center_and_subcenter_ids(conn, sc["id"]))
     return ids
 
 

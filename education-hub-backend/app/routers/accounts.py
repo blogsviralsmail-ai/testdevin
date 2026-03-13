@@ -939,9 +939,6 @@ async def center_record_payment(student_id: int, data: dict, user: dict = Depend
         conn.execute("UPDATE fee_records SET paid_amount=?, pending_amount=total_fee-?, last_utr=? WHERE student_id=?",
                      (new_paid, new_paid, utr_number, student_id))
     
-    # Update student deposit
-    conn.execute("UPDATE students SET deposit = COALESCE(deposit, 0) + ? WHERE id = ?", (float(amount), student_id))
-    
     # Auto-create commission record if student has center_id
     center_id = student["center_id"]
     if center_id:
