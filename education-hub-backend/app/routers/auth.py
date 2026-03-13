@@ -97,14 +97,24 @@ async def register(req: RegisterRequest):
     conn.commit()
     
     # Auto-create student record with pending status (role is always student)
-    if True:
-        count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
-        enrollment_no = f"EDU{str(count + 1001).zfill(6)}"
-        conn.execute(
-            "INSERT INTO students (user_id, enrollment_no, name, email, phone, university_id, category_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, enrollment_no, req.name, req.email, req.phone, req.university_id, req.category_id, "pending")
-        )
-        conn.commit()
+    # Use MAX(enrollment_no) + retry loop to avoid race condition duplicates
+    import sqlite3
+    for _attempt in range(5):
+        max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
+        next_num = (max_row[0] or 1000) + 1
+        enrollment_no = f"EDU{str(next_num).zfill(6)}"
+        try:
+            conn.execute(
+                "INSERT INTO students (user_id, enrollment_no, name, email, phone, university_id, category_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (user_id, enrollment_no, req.name, req.email, req.phone, req.university_id, req.category_id, "pending")
+            )
+            conn.commit()
+            break
+        except sqlite3.IntegrityError:
+            continue
+    else:
+        conn.close()
+        raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
     
     conn.close()
     

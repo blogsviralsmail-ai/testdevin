@@ -265,7 +265,7 @@ async def download_csv(
     )
 
 @router.get("/{sid}")
-async def get_student(sid: int):
+async def get_student(sid: int, user: dict = Depends(get_current_user)):
     conn = get_db()
     row = conn.execute("""SELECT s.*, u.name as university_name, c.name as category_name, b.name as branch_name 
                           FROM students s 
@@ -293,23 +293,32 @@ async def create_student(data: StudentCreate, user: dict = Depends(get_current_u
         if existing_phone:
             conn.close()
             raise HTTPException(status_code=400, detail="Is mobile number se ek student pehle se registered hai. Ek number se sirf ek student register ho sakta hai.")
-    # Generate enrollment number
-    count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
-    enrollment_no = f"EDU{str(count + 1001).zfill(6)}"
-    
+    # Generate enrollment number using MAX to avoid race conditions
+    import sqlite3
     # If admin creates student, status is active; if student self-registers, pending
     if user.get("role") in ("super_admin", "admin"):
         data.status = "active"
     else:
         data.status = "pending"
     
-    fields = ["enrollment_no"] + ALL_FIELDS
-    values = [enrollment_no] + [getattr(data, f) for f in ALL_FIELDS]
-    placeholders = ", ".join(["?"] * len(fields))
-    field_names = ", ".join(fields)
-    cursor = conn.execute(f"INSERT INTO students ({field_names}) VALUES ({placeholders})", values)
-    sid = cursor.lastrowid
-    conn.commit()
+    for _attempt in range(5):
+        max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
+        next_num = (max_row[0] or 1000) + 1
+        enrollment_no = f"EDU{str(next_num).zfill(6)}"
+        fields = ["enrollment_no"] + ALL_FIELDS
+        values = [enrollment_no] + [getattr(data, f) for f in ALL_FIELDS]
+        placeholders = ", ".join(["?"] * len(fields))
+        field_names = ", ".join(fields)
+        try:
+            cursor = conn.execute(f"INSERT INTO students ({field_names}) VALUES ({placeholders})", values)
+            sid = cursor.lastrowid
+            conn.commit()
+            break
+        except sqlite3.IntegrityError:
+            continue
+    else:
+        conn.close()
+        raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
     
     # If registered by student user, link user_id
     if user.get("role") == "student":
@@ -474,10 +483,8 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
     uid = cursor.lastrowid
     conn.commit()
     
-    # Create student record with all details
-    count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
-    enrollment_no = f"EDU{str(count + 1001).zfill(6)}"
-    
+    # Create student record with all details - use MAX to avoid race condition
+    import sqlite3
     student_fields = {}
     for f in ALL_FIELDS:
         if f in data:
@@ -488,13 +495,24 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
     if "total_fees" in data and data["total_fees"]:
         student_fields["total_fees"] = float(data["total_fees"])
     
-    field_names = ["user_id", "enrollment_no"] + list(student_fields.keys())
-    field_values = [uid, enrollment_no] + list(student_fields.values())
-    placeholders = ", ".join(["?"] * len(field_names))
-    names_str = ", ".join(field_names)
-    cursor = conn.execute(f"INSERT INTO students ({names_str}) VALUES ({placeholders})", field_values)
-    sid = cursor.lastrowid
-    conn.commit()
+    for _attempt in range(5):
+        max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
+        next_num = (max_row[0] or 1000) + 1
+        enrollment_no = f"EDU{str(next_num).zfill(6)}"
+        field_names = ["user_id", "enrollment_no"] + list(student_fields.keys())
+        field_values = [uid, enrollment_no] + list(student_fields.values())
+        placeholders = ", ".join(["?"] * len(field_names))
+        names_str = ", ".join(field_names)
+        try:
+            cursor = conn.execute(f"INSERT INTO students ({names_str}) VALUES ({placeholders})", field_values)
+            sid = cursor.lastrowid
+            conn.commit()
+            break
+        except sqlite3.IntegrityError:
+            continue
+    else:
+        conn.close()
+        raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
     conn.close()
     return {"id": sid, "enrollment_no": enrollment_no, "username": username, "message": "Student created with login credentials"}
 
@@ -503,9 +521,11 @@ async def bulk_upload(data: dict, user: dict = Depends(require_admin)):
     students = data.get("students", [])
     conn = get_db()
     created = 0
+    import sqlite3
     for s in students:
-        count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
-        enrollment_no = f"EDU{str(count + 1001).zfill(6)}"
+        max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
+        next_num = (max_row[0] or 1000) + 1
+        enrollment_no = f"EDU{str(next_num).zfill(6)}"
         # Build dynamic insert with all provided fields
         field_names = ["enrollment_no"]
         field_values = [enrollment_no]
@@ -537,6 +557,16 @@ async def bulk_delete_students(data: dict, user: dict = Depends(require_admin)):
     conn.execute(f"DELETE FROM fee_records WHERE student_id IN ({placeholders})", ids)
     conn.execute(f"DELETE FROM exam_results WHERE student_id IN ({placeholders})", ids)
     conn.execute(f"DELETE FROM tickets WHERE student_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM receipts WHERE student_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM fee_payments WHERE student_id IN ({placeholders})", ids)
+    try:
+        conn.execute(f"DELETE FROM ticket_messages WHERE ticket_id IN (SELECT id FROM tickets WHERE student_id IN ({placeholders}))", ids)
+    except Exception:
+        pass
+    try:
+        conn.execute(f"DELETE FROM placement_applications WHERE student_id IN ({placeholders})", ids)
+    except Exception:
+        pass
     conn.execute(f"DELETE FROM students WHERE id IN ({placeholders})", ids)
     conn.commit()
     conn.close()

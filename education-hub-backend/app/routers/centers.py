@@ -408,9 +408,11 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
             conn.close()
             raise HTTPException(status_code=400, detail="Is mobile number se ek student pehle se registered hai.")
     
-    # Generate enrollment number
-    count = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
-    enrollment_no = f"EDU{str(count + 1001).zfill(6)}"
+    # Generate enrollment number using MAX to avoid race conditions
+    import sqlite3
+    max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
+    next_num = (max_row[0] or 1000) + 1
+    enrollment_no = f"EDU{str(next_num).zfill(6)}"
     
     # Determine admission_source
     admission_source = "self"

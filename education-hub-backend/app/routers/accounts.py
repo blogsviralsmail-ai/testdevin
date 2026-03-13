@@ -138,7 +138,7 @@ class FeeRecordCreate(BaseModel):
     last_utr: Optional[str] = None
 
 @router.get("/transactions")
-async def list_transactions(student_id: Optional[int] = None, branch_id: Optional[int] = None, page: int = 1, limit: int = 50):
+async def list_transactions(student_id: Optional[int] = None, branch_id: Optional[int] = None, page: int = 1, limit: int = 50, user: dict = Depends(require_admin)):
     conn = get_db()
     query = """SELECT t.*, st.name as student_name, st.phone as student_phone, st.enrollment_no, b.name as branch_name
                FROM transactions t JOIN students st ON t.student_id = st.id
@@ -531,7 +531,7 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
         hashlib.sha256
     ).hexdigest()
     
-    if expected_signature != razorpay_signature:
+    if not hmac.compare_digest(expected_signature, razorpay_signature):
         raise HTTPException(status_code=400, detail="Payment verification failed - invalid signature")
     
     # Payment verified - get server-stored amount (not client-supplied)
@@ -648,7 +648,7 @@ async def delete_transaction(tid: int, user: dict = Depends(require_only_admin))
     conn.execute("UPDATE transactions SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (tid,))
     # Also soft delete the linked fee_payment if this transaction came from an online payment
     desc = txn["description"] or ""
-    if desc.startswith("Online Fee Payment #") or desc.startswith("Razorpay Payment #"):
+    if desc.startswith("Online Fee Payment #") or desc.startswith("Razorpay Payment"):
         try:
             fp_id = int(desc.split("#")[1].split()[0])
             conn.execute("UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (fp_id,))
@@ -691,7 +691,7 @@ async def bulk_delete_transactions(req: BulkDeleteRequest, user: dict = Depends(
         txn = conn.execute("SELECT * FROM transactions WHERE id = ?", (tid,)).fetchone()
         if txn:
             desc = txn["description"] or ""
-            if desc.startswith("Online Fee Payment #") or desc.startswith("Razorpay Payment #"):
+            if desc.startswith("Online Fee Payment #") or desc.startswith("Razorpay Payment"):
                 try:
                     fp_id = int(desc.split("#")[1].split()[0])
                     conn.execute("UPDATE fee_payments SET deleted_by_admin = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?", (fp_id,))
