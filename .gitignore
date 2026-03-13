@@ -1,0 +1,20 @@
+# Ignore everything except backend and frontend
+/*
+!education-hub-backend/
+!education-hub-frontend/
+!.gitignore
+
+# Ignore node_modules and dist in frontend
+education-hub-frontend/node_modules/
+education-hub-frontend/dist/
+
+# Ignore Python cache in backend
+education-hub-backend/__pycache__/
+education-hub-backend/**/__pycache__/
+education-hub-backend/**/**/__pycache__/
+education-hub-backend/*.pyc
+education-hub-backend/.env
+
+# Ignore data files
+*.db
+*.sqlite
