@@ -193,6 +193,11 @@ async def create_center(data: CenterCreate, user: dict = Depends(get_current_use
     conn = get_db()
     role = user.get("role", "")
 
+    # Block students and other non-privileged roles from creating centers
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized to create centers")
+
     # Check duplicate mobile
     existing = conn.execute("SELECT id FROM centers WHERE mobile = ?", (data.mobile,)).fetchone()
     if existing:
@@ -241,6 +246,9 @@ async def update_center(center_id: int, data: CenterUpdate, user: dict = Depends
     
     # Center user can only update their own sub-centers
     role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized to update centers")
     if role == "center":
         center = get_current_center(user)
         target = conn.execute("SELECT * FROM centers WHERE id = ?", (center_id,)).fetchone()
@@ -523,7 +531,7 @@ async def create_commission_slab(data: CommissionSlabCreate, user: dict = Depend
 
 
 @router.put("/commission/slabs/{slab_id}")
-async def update_commission_slab(slab_id: int, data: dict, user: dict = Depends(get_current_user)):
+async def update_commission_slab(slab_id: int, data: dict, user: dict = Depends(require_admin)):
     """Update a commission slab."""
     conn = get_db()
     update_fields = []
