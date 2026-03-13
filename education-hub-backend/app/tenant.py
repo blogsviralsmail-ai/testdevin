@@ -14,7 +14,7 @@ current_tenant_upload_dir = contextvars.ContextVar('current_tenant_upload_dir', 
 current_tenant_info = contextvars.ContextVar('current_tenant_info', default=None)
 
 # Base data directory
-BASE_DATA_DIR = os.environ.get("BASE_DATA_DIR", "/var/www/eduhub/data")
+BASE_DATA_DIR = os.environ.get("BASE_DATA_DIR", os.environ.get("DB_PATH", "/data/app.db").rsplit("/", 1)[0] if os.environ.get("DB_PATH") else "/home/asffeduc/data")
 MASTER_DB_PATH = os.path.join(BASE_DATA_DIR, "master.db")
 TENANTS_DIR = os.path.join(BASE_DATA_DIR, "tenants")
 
