@@ -292,6 +292,10 @@ async def get_student(sid: int, user: dict = Depends(get_current_user)):
 
 @router.post("")
 async def create_student(data: StudentCreate, user: dict = Depends(get_current_user)):
+    # Only admin-level users can create students via this endpoint
+    role = user.get("role", "")
+    if role not in ("super_admin", "admin", "branch_admin"):
+        raise HTTPException(status_code=403, detail="Only admin users can create students via this endpoint")
     conn = get_db()
     # Block duplicate mobile number - one phone = one student
     if data.phone:
@@ -301,11 +305,9 @@ async def create_student(data: StudentCreate, user: dict = Depends(get_current_u
             raise HTTPException(status_code=400, detail="Is mobile number se ek student pehle se registered hai. Ek number se sirf ek student register ho sakta hai.")
     # Generate enrollment number using MAX to avoid race conditions
     import sqlite3
-    # If admin creates student, status is active; if student self-registers, pending
-    if user.get("role") in ("super_admin", "admin"):
+    # Admin-created students are active by default
+    if role in ("super_admin", "admin", "branch_admin"):
         data.status = "active"
-    else:
-        data.status = "pending"
     
     for _attempt in range(5):
         max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
