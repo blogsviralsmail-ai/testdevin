@@ -853,6 +853,121 @@ async def get_receipt_data(receipt_id: int, user: dict = Depends(get_current_use
         "branding": branding,
     }
 
+@router.get("/student/{student_id}/payments")
+async def get_student_payments(student_id: int, user: dict = Depends(get_current_user)):
+    """Get payment history for a specific student. Center and admin can view."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    conn = get_db()
+    # Get fee_payments
+    fp_rows = conn.execute(
+        """SELECT fp.id, fp.amount, fp.payment_mode, fp.utr_number, fp.status, fp.created_at, fp.remarks as notes, 'student_payment' as source
+           FROM fee_payments fp WHERE fp.student_id = ? AND (fp.deleted_by_admin = 0 OR fp.deleted_by_admin IS NULL)
+           ORDER BY fp.created_at DESC""", (student_id,)
+    ).fetchall()
+    # Get admin transactions
+    txn_rows = conn.execute(
+        """SELECT t.id, t.amount, t.payment_mode, t.utr_number, t.status, t.created_at, t.description as notes, 'admin_transaction' as source
+           FROM transactions t WHERE t.student_id = ? AND t.transaction_type = 'credit'
+           AND (t.deleted_by_admin = 0 OR t.deleted_by_admin IS NULL)
+           ORDER BY t.created_at DESC""", (student_id,)
+    ).fetchall()
+    all_payments = [dict(p) for p in fp_rows] + [dict(t) for t in txn_rows]
+    all_payments.sort(key=lambda x: x.get("created_at", "") or "", reverse=True)
+    conn.close()
+    return {"payments": all_payments}
+
+
+@router.post("/student/{student_id}/payment")
+async def center_record_payment(student_id: int, data: dict, user: dict = Depends(get_current_user)):
+    """Center records a fee payment for a student."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized to record payments")
+    
+    amount = data.get("amount", 0)
+    if not amount or float(amount) <= 0:
+        raise HTTPException(status_code=400, detail="Invalid amount")
+    
+    payment_mode = data.get("payment_mode", "cash")
+    notes = data.get("notes", "")
+    utr_number = data.get("utr_number", "")
+    
+    conn = get_db()
+    student = conn.execute("SELECT id, name, phone, center_id FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Create transaction
+    description = f"Center fee payment - {payment_mode}" + (f" - {notes}" if notes else "")
+    cursor = conn.execute(
+        "INSERT INTO transactions (student_id, amount, transaction_type, utr_number, payment_mode, description, status) VALUES (?, ?, 'credit', ?, ?, ?, 'completed')",
+        (student_id, float(amount), utr_number, payment_mode, description)
+    )
+    tid = cursor.lastrowid
+    
+    # Generate receipt
+    branding = _get_branding(conn)
+    prefix = branding.get("receipt_prefix", "ASFF")
+    receipt_no = _generate_receipt_no(conn, prefix, tid, student_id, float(amount))
+    
+    # Update fee record
+    fee = conn.execute("SELECT * FROM fee_records WHERE student_id = ?", (student_id,)).fetchone()
+    if fee:
+        new_paid = fee["paid_amount"] + float(amount)
+        conn.execute("UPDATE fee_records SET paid_amount=?, pending_amount=total_fee-?, last_utr=? WHERE student_id=?",
+                     (new_paid, new_paid, utr_number, student_id))
+    
+    # Update student deposit
+    conn.execute("UPDATE students SET deposit = COALESCE(deposit, 0) + ? WHERE id = ?", (float(amount), student_id))
+    
+    # Auto-create commission record if student has center_id
+    center_id = student["center_id"]
+    if center_id:
+        try:
+            # Find applicable commission slab
+            university_id = conn.execute("SELECT university_id FROM students WHERE id = ?", (student_id,)).fetchone()
+            uni_id = university_id["university_id"] if university_id else None
+            student_count = conn.execute("SELECT COUNT(*) FROM students WHERE center_id = ?", (center_id,)).fetchone()[0]
+            slab = conn.execute(
+                "SELECT commission_amount FROM commission_slabs WHERE (center_id IS NULL OR center_id = ?) AND (university_id IS NULL OR university_id = ?) AND min_admissions <= ? AND (max_admissions IS NULL OR max_admissions >= ?) ORDER BY commission_amount DESC LIMIT 1",
+                (center_id, uni_id, student_count, student_count)
+            ).fetchone()
+            if slab:
+                comm_amount = slab["commission_amount"]
+                conn.execute(
+                    "INSERT INTO center_commissions (center_id, student_id, university_id, amount, commission_type, notes) VALUES (?, ?, ?, ?, 'per_student', ?)",
+                    (center_id, student_id, uni_id, comm_amount, f"Auto-commission on fee payment of Rs.{float(amount):,.0f}")
+                )
+        except Exception as e:
+            print(f"Commission auto-create error: {e}")
+    
+    conn.commit()
+    
+    # Send notifications
+    try:
+        from app.utils.notifications import send_notification
+        send_notification(conn, "payment", "Center Fee Payment",
+            f"Student: {student['name']}\nAmount: Rs.{float(amount):,.0f}\nReceipt: {receipt_no}\nMode: {payment_mode}",
+            "/admin/accounts")
+    except Exception:
+        pass
+    
+    conn.close()
+    
+    # Send receipt notifications
+    try:
+        notify_conn = get_db()
+        _send_receipt_notifications(notify_conn, student_id, receipt_no, float(amount), payment_mode, utr_number)
+        notify_conn.close()
+    except Exception:
+        pass
+    
+    return {"receipt_no": receipt_no, "message": f"Payment of Rs.{float(amount):,.0f} recorded for {student['name']}"}
+
+
 @router.get("/branch-report")
 async def branch_report(user: dict = Depends(require_admin)):
     conn = get_db()

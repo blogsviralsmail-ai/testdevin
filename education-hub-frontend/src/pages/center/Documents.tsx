@@ -42,11 +42,18 @@ export default function CenterDocuments() {
     if (!selectedStudent || !uploadForm.file) return;
     setUploading(true);
     try {
+      // Step 1: Upload file
       const fd = new FormData();
       fd.append("file", uploadForm.file);
-      fd.append("document_type", uploadForm.document_type || "other");
-      fd.append("student_id", selectedStudent.id.toString());
-      await api.post("/api/documents/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const uploadRes = await api.post("/api/documents/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const fileUrl = uploadRes.data.url || uploadRes.data.filename || "";
+      // Step 2: Create document record
+      await api.post("/api/documents", {
+        student_id: selectedStudent.id,
+        doc_type: uploadForm.document_type || "Other",
+        file_path: fileUrl,
+        status: "pending",
+      });
       fetchDocuments(selectedStudent.id);
       setShowUpload(false);
       setUploadForm({});
@@ -116,16 +123,16 @@ export default function CenterDocuments() {
                       <div className="flex items-center gap-3">
                         <FileText className="h-5 w-5 text-emerald-500" />
                         <div>
-                          <p className="text-sm font-medium">{doc.document_type || doc.name}</p>
+                          <p className="text-sm font-medium">{doc.doc_type || doc.document_type || doc.name}</p>
                           <p className="text-xs text-gray-500">{doc.created_at ? new Date(doc.created_at).toLocaleDateString() : ""}</p>
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        {doc.file_url && (
+                        {(doc.file_path || doc.file_url) && (
                           <>
-                            <a href={doc.file_url.startsWith("/") ? API + doc.file_url : doc.file_url} target="_blank" rel="noreferrer"
+                            <a href={(doc.file_path || doc.file_url || "").startsWith("/") ? API + (doc.file_path || doc.file_url) : (doc.file_path || doc.file_url)} target="_blank" rel="noreferrer"
                               className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Eye className="h-4 w-4" /></a>
-                            <a href={doc.file_url.startsWith("/") ? API + doc.file_url : doc.file_url} download
+                            <a href={(doc.file_path || doc.file_url || "").startsWith("/") ? API + (doc.file_path || doc.file_url) : (doc.file_path || doc.file_url)} download
                               className="p-1.5 text-gray-600 hover:bg-gray-100 rounded"><Download className="h-4 w-4" /></a>
                           </>
                         )}

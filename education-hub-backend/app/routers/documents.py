@@ -90,6 +90,22 @@ async def list_documents(
     conn.close()
     return docs
 
+@router.get("/student/{student_id}")
+async def get_student_documents(student_id: int, user: dict = Depends(get_current_user)):
+    """Get documents for a specific student. Center and admin can view."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT d.*, st.name as student_name, st.enrollment_no, st.phone as student_phone
+           FROM documents d JOIN students st ON d.student_id = st.id
+           WHERE d.student_id = ? ORDER BY d.created_at DESC""", (student_id,)
+    ).fetchall()
+    conn.close()
+    return {"documents": [dict(r) for r in rows]}
+
+
 @router.delete("/bulk")
 async def bulk_delete_documents(data: dict, user: dict = Depends(require_admin)):
     ids = data.get("ids", [])

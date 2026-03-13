@@ -130,12 +130,13 @@ async def list_students(
 ):
     conn = get_db()
     query = """SELECT s.*, u.name as university_name, c.name as category_name, b.name as branch_name,
-               ct.name as center_name 
+               ct.name as center_name, pct.name as parent_center_name, s.admission_source
                FROM students s 
                LEFT JOIN universities u ON s.university_id = u.id 
                LEFT JOIN categories c ON s.category_id = c.id 
                LEFT JOIN branches b ON s.branch_id = b.id 
                LEFT JOIN centers ct ON s.center_id = ct.id
+               LEFT JOIN centers pct ON ct.parent_center_id = pct.id
                WHERE 1=1"""
     params = []
     if university_id:

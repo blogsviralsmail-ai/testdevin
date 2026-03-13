@@ -401,20 +401,51 @@ async def list_center_students(
 
 @router.post("/my/students")
 async def center_add_student(data: dict, user: dict = Depends(get_current_user)):
-    """Center adds a student under itself."""
+    """Center adds a student with user account (login credentials) under itself.
+    Phone number is the student ID / username for login."""
     if user.get("role") != "center":
         raise HTTPException(status_code=403, detail="Only center users can use this endpoint")
     
+    from app.utils.auth import hash_password
     center = get_current_center(user)
     conn = get_db()
     
-    # Check duplicate phone
-    phone = data.get("phone")
-    if phone:
-        existing = conn.execute("SELECT id FROM students WHERE phone = ?", (phone,)).fetchone()
-        if existing:
-            conn.close()
-            raise HTTPException(status_code=400, detail="Is mobile number se ek student pehle se registered hai.")
+    # Phone is required - it's the student ID / login username
+    phone = data.get("phone", "").strip()
+    if not phone:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Phone number is required (yahi student ID / login ID hoga)")
+    
+    email = data.get("email", "").strip()
+    password = data.get("password", "").strip()
+    name = data.get("name", "").strip()
+    
+    if not name:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Student name is required")
+    if not password:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Password is required for student login")
+    
+    # Check duplicate phone in students
+    existing = conn.execute("SELECT id FROM students WHERE phone = ?", (phone,)).fetchone()
+    if existing:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Is mobile number se ek student pehle se registered hai.")
+    
+    # Check duplicate username in users (phone = username)
+    existing_user = conn.execute("SELECT id FROM users WHERE username = ?", (phone,)).fetchone()
+    if existing_user:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Is mobile number se pehle se account hai.")
+    
+    # Create user account (phone = username, student role)
+    cursor = conn.execute(
+        "INSERT INTO users (username, email, password_hash, name, phone, role, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (phone, email, hash_password(password), name, phone, "student", 1)
+    )
+    uid = cursor.lastrowid
+    conn.commit()
     
     # Determine admission_source
     admission_source = "self"
@@ -428,31 +459,52 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
             actual_center_id = referring_sub_center_id
             admission_source = "chain"
     
-    # Generate enrollment number with retry loop to avoid race condition duplicates
+    # Build student record with ALL fields (same as admin form)
     import sqlite3
-    fields = ["enrollment_no", "name", "email", "phone", "university_id", "category_id", "branch_id",
-              "session_name", "admission_type", "father_name", "mother_name", "date_of_birth", "gender",
-              "current_address", "current_city", "current_state", "current_pincode",
-              "aadhar_no", "status", "center_id", "admission_source"]
+    
+    # All possible student fields from the form
+    ALL_STUDENT_FIELDS = [
+        "name", "email", "phone", "university_id", "category_id", "branch_id",
+        "session_name", "admission_type", "father_name", "mother_name", "date_of_birth", "gender",
+        "category_type", "nationality", "aadhar_no", "marital_status",
+        "guardian_name", "father_occupation", "parent_phone", "parent_email",
+        "current_address", "current_city", "current_state", "current_pincode",
+        "permanent_address", "permanent_city", "permanent_state", "permanent_pincode",
+        "tenth_board", "tenth_year", "tenth_percentage", "tenth_school",
+        "twelfth_board", "twelfth_year", "twelfth_percentage", "twelfth_school",
+        "graduation_university", "graduation_year", "graduation_percentage", "graduation_degree",
+        "post_graduation_university", "post_graduation_year", "post_graduation_percentage", "post_graduation_degree",
+        "blood_group", "disability", "disability_type",
+        "hostel_required", "transport_required", "pickup_location",
+        "extra_curricular", "achievements",
+    ]
+    
+    student_data = {}
+    for f in ALL_STUDENT_FIELDS:
+        if f in data and data[f] is not None and data[f] != "":
+            student_data[f] = data[f]
+    
+    # Force required fields
+    student_data["name"] = name
+    student_data["email"] = email
+    student_data["phone"] = phone
+    student_data["status"] = "active"
+    student_data["center_id"] = actual_center_id
+    student_data["admission_source"] = admission_source
+    if "admission_type" not in student_data:
+        student_data["admission_type"] = "FRESH_ADMISSION"
     
     for _attempt in range(5):
         max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
         next_num = (max_row[0] or 1000) + 1
         enrollment_no = f"EDU{str(next_num).zfill(6)}"
         
-        values = [
-            enrollment_no, data.get("name", ""), data.get("email", ""), phone,
-            data.get("university_id"), data.get("category_id"), data.get("branch_id"),
-            data.get("session_name"), data.get("admission_type", "FRESH_ADMISSION"),
-            data.get("father_name"), data.get("mother_name"), data.get("date_of_birth"), data.get("gender"),
-            data.get("current_address"), data.get("current_city"), data.get("current_state"), data.get("current_pincode"),
-            data.get("aadhar_no"), "active", actual_center_id, admission_source
-        ]
-        
-        placeholders = ",".join(["?"] * len(fields))
-        field_names = ",".join(fields)
+        field_names = ["user_id", "enrollment_no"] + list(student_data.keys())
+        field_values = [uid, enrollment_no] + list(student_data.values())
+        placeholders = ",".join(["?"] * len(field_names))
+        names_str = ",".join(field_names)
         try:
-            cursor = conn.execute(f"INSERT INTO students ({field_names}) VALUES ({placeholders})", values)
+            cursor = conn.execute(f"INSERT INTO students ({names_str}) VALUES ({placeholders})", field_values)
             sid = cursor.lastrowid
             break
         except sqlite3.IntegrityError:
@@ -467,7 +519,47 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
     
     conn.commit()
     conn.close()
-    return {"id": sid, "enrollment_no": enrollment_no, "message": "Student added successfully"}
+    return {"id": sid, "enrollment_no": enrollment_no, "username": phone, "message": "Student added with login credentials (Phone = Student ID)"}
+
+
+@router.put("/my/students/{student_id}/password")
+async def center_change_student_password(student_id: int, data: dict, user: dict = Depends(get_current_user)):
+    """Center changes a student's login password."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can use this endpoint")
+    
+    new_password = data.get("password", "")
+    if not new_password or len(new_password) < 4:
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
+    
+    center = get_current_center(user)
+    conn = get_db()
+    
+    # Verify student belongs to this center or its sub-centers
+    all_ids = get_center_and_subcenter_ids(conn, center["id"])
+    placeholders = ",".join(["?"] * len(all_ids))
+    student = conn.execute(f"SELECT * FROM students WHERE id = ? AND center_id IN ({placeholders})", [student_id] + all_ids).fetchone()
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found under your center")
+    
+    # Find user account for this student
+    user_id = student["user_id"] if student["user_id"] else None
+    if not user_id:
+        # Try to find by phone
+        u = conn.execute("SELECT id FROM users WHERE username = ? AND role = 'student'", (student["phone"],)).fetchone()
+        if u:
+            user_id = u["id"]
+    
+    if not user_id:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Student has no login account. Re-add student to create login.")
+    
+    from app.utils.auth import hash_password as hp
+    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hp(new_password), user_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"Password changed for student '{student['name']}'"}
 
 
 # ══════════════════════════════════════════════════════════════════
