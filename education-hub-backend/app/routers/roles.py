@@ -99,6 +99,11 @@ async def create_role_user(data: UserWithRole, user: dict = Depends(require_admi
         role_row = conn.execute("SELECT name FROM roles WHERE id = ?", (data.role_id,)).fetchone()
         if role_row:
             role_name = role_row["name"]
+    # Prevent privilege escalation: branch_admin cannot create super_admin or admin users
+    caller_role = user.get("role", "")
+    if caller_role == "branch_admin" and role_name in ("super_admin", "admin"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="branch_admin cannot create users with admin or super_admin role")
     cursor = conn.execute(
         "INSERT INTO users (username, email, password_hash, name, phone, role, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (data.username, data.email, hash_password(data.password), data.name, data.phone, role_name, 1)
@@ -118,6 +123,11 @@ async def update_role_user(uid: int, data: dict, user: dict = Depends(require_ad
         role_row = conn.execute("SELECT name FROM roles WHERE id = ?", (data["role_id"],)).fetchone()
         if role_row:
             role_name = role_row["name"]
+    # Prevent privilege escalation: branch_admin cannot assign super_admin or admin roles
+    caller_role = user.get("role", "")
+    if caller_role == "branch_admin" and role_name in ("super_admin", "admin"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="branch_admin cannot assign admin or super_admin role")
     if data.get("name"):
         conn.execute("UPDATE users SET name=?, email=?, phone=?, role=? WHERE id=?",
                      (data.get("name"), data.get("email", ""), data.get("phone", ""), role_name, uid))

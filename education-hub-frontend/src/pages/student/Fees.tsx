@@ -59,8 +59,20 @@ export default function StudentFees() {
   const [activeTab, setActiveTab] = useState<"history" | "deleted" | "receipts">("history");
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
   const [downloadingReceipt, setDownloadingReceipt] = useState<number | null>(null);
+  // Center student detection
+  const [isCenterStudent, setIsCenterStudent] = useState(false);
+  const [_centerPaySettings, setCenterPaySettings] = useState<Record<string, unknown>>({});
 
-  useEffect(() => { loadFees(); loadRazorpayScript(); loadPaymentSettings(); loadDeletedPayments(); loadReceipts(); }, []);
+  useEffect(() => {
+    loadFees(); loadRazorpayScript(); loadPaymentSettings(); loadDeletedPayments(); loadReceipts();
+    // Check if student belongs to a center
+    api.get("/api/centers/student/my-center-info").then(r => {
+      if (r.data && r.data.center_id) {
+        setIsCenterStudent(true);
+        setCenterPaySettings(r.data.payment_settings || {});
+      }
+    }).catch(() => {});
+  }, []);
 
   async function loadReceipts() {
     try {
@@ -360,14 +372,17 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
     setSubmitting(true);
     setMsg("");
     try {
-      await api.post("/api/accounts/fee-payments", {
+      // If center student, submit to center endpoint; otherwise submit to admin endpoint
+      const endpoint = isCenterStudent ? "/api/centers/student/fee-payment" : "/api/accounts/fee-payments";
+      await api.post(endpoint, {
         amount: parseFloat(form.amount),
         payment_mode: form.payment_mode,
         utr_number: form.utr_number,
         proof_url: form.proof_url,
         remarks: form.remarks,
       });
-      setMsg("Payment submitted successfully! It will be verified by the accounts team.");
+      const approver = isCenterStudent ? "center" : "accounts team";
+      setMsg(`Payment submitted successfully! It will be verified by the ${approver}.`);
       setForm({ amount: "", payment_mode: "upi", utr_number: "", proof_url: "", remarks: "" });
       setShowPayForm(false);
       loadFees();

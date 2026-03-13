@@ -881,6 +881,42 @@ def init_db():
         FOREIGN KEY (approved_by) REFERENCES users(id)
     )""")
 
+    # Center payment settings table (QR code + bank details per center)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS center_payment_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        center_id INTEGER NOT NULL UNIQUE,
+        upi_id TEXT,
+        upi_qr_url TEXT,
+        bank_name TEXT,
+        account_number TEXT,
+        ifsc_code TEXT,
+        account_holder_name TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (center_id) REFERENCES centers(id)
+    )""")
+
+    # Center fee payments table (student payments to center, center approves)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS center_fee_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        center_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        payment_mode TEXT DEFAULT 'upi',
+        utr_number TEXT,
+        proof_url TEXT,
+        remarks TEXT,
+        status TEXT DEFAULT 'pending',
+        approved_by INTEGER,
+        approved_at TEXT,
+        rejection_reason TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES students(id),
+        FOREIGN KEY (center_id) REFERENCES centers(id),
+        FOREIGN KEY (approved_by) REFERENCES users(id)
+    )""")
+
     # Add total_fees column to students if not exists
     try:
         cursor.execute("ALTER TABLE students ADD COLUMN total_fees REAL DEFAULT 0")

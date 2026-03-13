@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional, List
 from app.database import get_db
 from app.utils.auth import require_admin, get_current_user, hash_password, require_only_admin
 import json
+import os
+import uuid
 from datetime import datetime
 
 router = APIRouter(prefix="/api/centers", tags=["Centers"])
@@ -844,3 +846,443 @@ async def auto_promote_passed_students(data: dict, user: dict = Depends(require_
     conn.commit()
     conn.close()
     return {"message": f"{promoted} students auto-promoted from {from_session} to {to_session}", "promoted_count": promoted}
+
+
+# ===================== CENTER PAYMENT SETTINGS =====================
+
+@router.get("/my/payment-settings")
+async def get_center_payment_settings(user: dict = Depends(get_current_user)):
+    """Get current center's payment settings (QR code + bank details)."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    settings = conn.execute("SELECT * FROM center_payment_settings WHERE center_id = ?", (center["id"],)).fetchone()
+    conn.close()
+    if settings:
+        return dict(settings)
+    return {"center_id": center["id"], "upi_id": None, "upi_qr_url": None, "bank_name": None, "account_number": None, "ifsc_code": None, "account_holder_name": None}
+
+
+@router.put("/my/payment-settings")
+async def update_center_payment_settings(data: dict, user: dict = Depends(get_current_user)):
+    """Update center's payment settings (QR code URL, UPI ID, bank details)."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    
+    existing = conn.execute("SELECT id FROM center_payment_settings WHERE center_id = ?", (center["id"],)).fetchone()
+    if existing:
+        conn.execute("""UPDATE center_payment_settings SET 
+            upi_id = ?, upi_qr_url = ?, bank_name = ?, account_number = ?, 
+            ifsc_code = ?, account_holder_name = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE center_id = ?""",
+            (data.get("upi_id"), data.get("upi_qr_url"), data.get("bank_name"),
+             data.get("account_number"), data.get("ifsc_code"), data.get("account_holder_name"),
+             center["id"]))
+    else:
+        conn.execute("""INSERT INTO center_payment_settings 
+            (center_id, upi_id, upi_qr_url, bank_name, account_number, ifsc_code, account_holder_name)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (center["id"], data.get("upi_id"), data.get("upi_qr_url"), data.get("bank_name"),
+             data.get("account_number"), data.get("ifsc_code"), data.get("account_holder_name")))
+    conn.commit()
+    conn.close()
+    return {"message": "Payment settings updated successfully"}
+
+
+@router.post("/my/payment-settings/upload-qr")
+async def upload_center_qr(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Upload QR code image for center payment settings."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    conn.close()
+    
+    from app.utils.uploads import get_upload_dir
+    upload_dir = get_upload_dir()
+    qr_dir = os.path.join(upload_dir, "center_qr")
+    os.makedirs(qr_dir, exist_ok=True)
+    
+    ext = os.path.splitext(file.filename or "qr.png")[1] or ".png"
+    filename = f"center_{center['id']}_{uuid.uuid4().hex[:8]}{ext}"
+    filepath = os.path.join(qr_dir, filename)
+    
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    qr_url = f"/uploads/center_qr/{filename}"
+    return {"qr_url": qr_url, "message": "QR code uploaded successfully"}
+
+
+# ===================== CENTER FEE PAYMENTS MANAGEMENT =====================
+
+@router.get("/my/fee-payments")
+async def list_center_fee_payments(
+    status: Optional[str] = None,
+    page: int = 1,
+    limit: int = 50,
+    user: dict = Depends(get_current_user)
+):
+    """List all fee payment requests for center's students."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    
+    center_ids = get_center_and_subcenter_ids(conn, center["id"])
+    placeholders = ",".join(["?"] * len(center_ids))
+    
+    query = f"""SELECT cfp.*, s.name as student_name, s.phone as student_phone, 
+                s.enrollment_no, c.name as center_name
+                FROM center_fee_payments cfp
+                JOIN students s ON cfp.student_id = s.id
+                JOIN centers c ON cfp.center_id = c.id
+                WHERE cfp.center_id IN ({placeholders})"""
+    params = list(center_ids)
+    
+    if status:
+        query += " AND cfp.status = ?"
+        params.append(status)
+    
+    count_query = f"SELECT COUNT(*) FROM ({query})"
+    total = conn.execute(count_query, params).fetchone()[0]
+    
+    query += " ORDER BY cfp.created_at DESC LIMIT ? OFFSET ?"
+    params.extend([limit, (page - 1) * limit])
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    
+    return {"payments": [dict(r) for r in rows], "total": total, "page": page, "limit": limit}
+
+
+@router.put("/my/fee-payments/{payment_id}/approve")
+async def approve_center_fee_payment(payment_id: int, user: dict = Depends(get_current_user)):
+    """Approve a student's fee payment request."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    
+    payment = conn.execute("SELECT * FROM center_fee_payments WHERE id = ?", (payment_id,)).fetchone()
+    if not payment:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Verify this payment belongs to center or sub-center
+    center_ids = get_center_and_subcenter_ids(conn, center["id"])
+    if payment["center_id"] not in center_ids:
+        conn.close()
+        raise HTTPException(status_code=403, detail="This payment does not belong to your center")
+    
+    if payment["status"] != "pending":
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Payment is already {payment['status']}")
+    
+    conn.execute("""UPDATE center_fee_payments SET status = 'approved', 
+        approved_by = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ?""",
+        (int(user["sub"]), payment_id))
+    conn.commit()
+    
+    # Auto-create commission record if applicable
+    try:
+        student = conn.execute("SELECT * FROM students WHERE id = ?", (payment["student_id"],)).fetchone()
+        if student:
+            slab = conn.execute("""SELECT * FROM commission_slabs 
+                WHERE university_id = ? AND (category_id IS NULL OR category_id = ?)
+                ORDER BY category_id DESC LIMIT 1""",
+                (student["university_id"], student.get("category_id"))).fetchone()
+            if slab:
+                commission_amount = payment["amount"] * slab["percentage"] / 100
+                if slab.get("max_amount") and commission_amount > slab["max_amount"]:
+                    commission_amount = slab["max_amount"]
+                conn.execute("""INSERT INTO center_commissions 
+                    (center_id, student_id, slab_id, amount, status, created_at)
+                    VALUES (?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)""",
+                    (payment["center_id"], payment["student_id"], slab["id"], commission_amount))
+                conn.commit()
+    except Exception as e:
+        print(f"Auto-commission creation failed: {e}")
+    
+    conn.close()
+    return {"message": "Payment approved successfully"}
+
+
+@router.put("/my/fee-payments/{payment_id}/reject")
+async def reject_center_fee_payment(payment_id: int, data: dict, user: dict = Depends(get_current_user)):
+    """Reject a student's fee payment request."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    
+    payment = conn.execute("SELECT * FROM center_fee_payments WHERE id = ?", (payment_id,)).fetchone()
+    if not payment:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    center_ids = get_center_and_subcenter_ids(conn, center["id"])
+    if payment["center_id"] not in center_ids:
+        conn.close()
+        raise HTTPException(status_code=403, detail="This payment does not belong to your center")
+    
+    if payment["status"] != "pending":
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Payment is already {payment['status']}")
+    
+    conn.execute("""UPDATE center_fee_payments SET status = 'rejected', 
+        rejection_reason = ?, approved_by = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ?""",
+        (data.get("reason", ""), int(user["sub"]), payment_id))
+    conn.commit()
+    conn.close()
+    return {"message": "Payment rejected"}
+
+
+# ===================== CENTER STUDENT FEE SUMMARY =====================
+
+@router.get("/my/students/{student_id}/fees")
+async def center_student_fee_summary(student_id: int, user: dict = Depends(get_current_user)):
+    """Get fee summary for a specific student under this center."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    
+    # Verify student belongs to center or sub-center
+    center_ids = get_center_and_subcenter_ids(conn, center["id"])
+    student = conn.execute("SELECT * FROM students WHERE id = ? AND center_id IN ({})".format(
+        ",".join(["?"] * len(center_ids))), [student_id] + center_ids).fetchone()
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found under your center")
+    
+    # Get total fees
+    total_fees = student["total_fees"] or 0
+    
+    # Get total paid from center_fee_payments (approved only)
+    paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM center_fee_payments 
+        WHERE student_id = ? AND status = 'approved'""", (student_id,)).fetchone()[0]
+    
+    # Also include admin-recorded payments if any
+    admin_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM transactions 
+        WHERE student_id = ? AND transaction_type = 'credit' 
+        AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student_id,)).fetchone()[0]
+    
+    # Also include admin fee_payments (approved)
+    admin_fp = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM fee_payments 
+        WHERE student_id = ? AND status = 'approved' 
+        AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student_id,)).fetchone()[0]
+    
+    total_paid = paid + admin_paid + admin_fp
+    
+    # Get payment history
+    payments = conn.execute("""SELECT * FROM center_fee_payments 
+        WHERE student_id = ? ORDER BY created_at DESC""", (student_id,)).fetchall()
+    
+    conn.close()
+    return {
+        "student_id": student_id,
+        "student_name": student["name"],
+        "total_fees": total_fees,
+        "total_paid": total_paid,
+        "balance": total_fees - total_paid,
+        "center_payments": [dict(p) for p in payments]
+    }
+
+
+# ===================== STUDENT-FACING: CENTER PAYMENT INFO =====================
+
+@router.get("/student/my-center-info")
+async def student_get_center_info(user: dict = Depends(get_current_user)):
+    """Student checks if they belong to a center and gets center payment settings."""
+    if user.get("role") != "student":
+        raise HTTPException(status_code=403, detail="Only students can access this")
+    conn = get_db()
+    uid = int(user["sub"])
+    student = conn.execute("SELECT * FROM students WHERE user_id = ?", (uid,)).fetchone()
+    if not student or not student.get("center_id"):
+        conn.close()
+        return {"center_id": None}
+    
+    center = conn.execute("SELECT name FROM centers WHERE id = ?", (student["center_id"],)).fetchone()
+    settings = conn.execute("SELECT * FROM center_payment_settings WHERE center_id = ?", 
+                            (student["center_id"],)).fetchone()
+    conn.close()
+    
+    result = {"center_id": student["center_id"], "center_name": center["name"] if center else "Unknown"}
+    if settings:
+        result["payment_settings"] = {
+            "upi_id": settings["upi_id"],
+            "upi_qr_url": settings["upi_qr_url"],
+            "bank_name": settings["bank_name"],
+            "account_number": settings["account_number"],
+            "ifsc_code": settings["ifsc_code"],
+            "account_holder_name": settings["account_holder_name"],
+        }
+    else:
+        result["payment_settings"] = {}
+    return result
+
+
+@router.get("/student/payment-settings")
+async def student_get_center_payment_settings(user: dict = Depends(get_current_user)):
+    """Student fetches their center's payment settings (QR + bank details).
+    Only works for students who belong to a center."""
+    if user.get("role") != "student":
+        raise HTTPException(status_code=403, detail="Only students can access this")
+    conn = get_db()
+    uid = int(user["sub"])
+    student = conn.execute("SELECT * FROM students WHERE user_id = ?", (uid,)).fetchone()
+    if not student or not student.get("center_id"):
+        conn.close()
+        raise HTTPException(status_code=404, detail="You are not assigned to any center")
+    
+    settings = conn.execute("SELECT * FROM center_payment_settings WHERE center_id = ?", 
+                            (student["center_id"],)).fetchone()
+    center = conn.execute("SELECT name FROM centers WHERE id = ?", (student["center_id"],)).fetchone()
+    conn.close()
+    
+    result = {"center_name": center["name"] if center else "Unknown", "center_id": student["center_id"]}
+    if settings:
+        result.update({
+            "upi_id": settings["upi_id"],
+            "upi_qr_url": settings["upi_qr_url"],
+            "bank_name": settings["bank_name"],
+            "account_number": settings["account_number"],
+            "ifsc_code": settings["ifsc_code"],
+            "account_holder_name": settings["account_holder_name"],
+        })
+    return result
+
+
+@router.post("/student/fee-payment")
+async def student_submit_center_fee_payment(data: dict, user: dict = Depends(get_current_user)):
+    """Student submits a fee payment to their center (UPI/bank/cash)."""
+    if user.get("role") != "student":
+        raise HTTPException(status_code=403, detail="Only students can access this")
+    conn = get_db()
+    uid = int(user["sub"])
+    student = conn.execute("SELECT * FROM students WHERE user_id = ?", (uid,)).fetchone()
+    if not student or not student.get("center_id"):
+        conn.close()
+        raise HTTPException(status_code=404, detail="You are not assigned to any center")
+    
+    amount = data.get("amount")
+    if not amount or float(amount) <= 0:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+    
+    payment_mode = data.get("payment_mode", "upi")
+    if payment_mode not in ("upi", "bank_transfer", "cash"):
+        conn.close()
+        raise HTTPException(status_code=400, detail="Payment mode must be upi, bank_transfer, or cash")
+    
+    conn.execute("""INSERT INTO center_fee_payments 
+        (student_id, center_id, amount, payment_mode, utr_number, proof_url, remarks, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')""",
+        (student["id"], student["center_id"], float(amount), payment_mode,
+         data.get("utr_number"), data.get("proof_url"), data.get("remarks")))
+    conn.commit()
+    conn.close()
+    return {"message": "Payment submitted successfully. Waiting for center approval."}
+
+
+@router.get("/student/fee-summary")
+async def student_center_fee_summary(user: dict = Depends(get_current_user)):
+    """Student gets their fee summary from center."""
+    if user.get("role") != "student":
+        raise HTTPException(status_code=403, detail="Only students can access this")
+    conn = get_db()
+    uid = int(user["sub"])
+    student = conn.execute("SELECT * FROM students WHERE user_id = ?", (uid,)).fetchone()
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    is_center_student = bool(student.get("center_id"))
+    total_fees = student["total_fees"] or 0
+    
+    if is_center_student:
+        # Center student: payments from center_fee_payments
+        center_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM center_fee_payments 
+            WHERE student_id = ? AND status = 'approved'""", (student["id"],)).fetchone()[0]
+        # Also include any admin payments
+        admin_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM transactions 
+            WHERE student_id = ? AND transaction_type = 'credit' 
+            AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student["id"],)).fetchone()[0]
+        admin_fp = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM fee_payments 
+            WHERE student_id = ? AND status = 'approved' 
+            AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student["id"],)).fetchone()[0]
+        total_paid = center_paid + admin_paid + admin_fp
+        
+        payments = conn.execute("""SELECT * FROM center_fee_payments 
+            WHERE student_id = ? ORDER BY created_at DESC""", (student["id"],)).fetchall()
+    else:
+        # Admin student: payments from fee_payments + transactions
+        fp_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM fee_payments 
+            WHERE student_id = ? AND status = 'approved' 
+            AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student["id"],)).fetchone()[0]
+        admin_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM transactions 
+            WHERE student_id = ? AND transaction_type = 'credit' 
+            AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student["id"],)).fetchone()[0]
+        total_paid = fp_paid + admin_paid
+        
+        payments = conn.execute("""SELECT * FROM fee_payments 
+            WHERE student_id = ? ORDER BY created_at DESC""", (student["id"],)).fetchall()
+    
+    conn.close()
+    return {
+        "is_center_student": is_center_student,
+        "center_id": student.get("center_id"),
+        "total_fees": total_fees,
+        "total_paid": total_paid,
+        "balance": total_fees - total_paid,
+        "payments": [dict(p) for p in payments]
+    }
+
+
+@router.post("/student/upload-proof")
+async def student_upload_payment_proof(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Student uploads payment proof image."""
+    if user.get("role") != "student":
+        raise HTTPException(status_code=403, detail="Only students can access this")
+    
+    from app.utils.uploads import get_upload_dir
+    upload_dir = get_upload_dir()
+    proof_dir = os.path.join(upload_dir, "payment_proofs")
+    os.makedirs(proof_dir, exist_ok=True)
+    
+    ext = os.path.splitext(file.filename or "proof.png")[1] or ".png"
+    filename = f"proof_{uuid.uuid4().hex[:8]}{ext}"
+    filepath = os.path.join(proof_dir, filename)
+    
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    proof_url = f"/uploads/payment_proofs/{filename}"
+    return {"proof_url": proof_url, "message": "Proof uploaded successfully"}
