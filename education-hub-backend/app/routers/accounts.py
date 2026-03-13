@@ -348,7 +348,7 @@ async def get_my_fees(user: dict = Depends(get_current_user)):
 @router.post("/fee-payments")
 async def submit_fee_payment(data: dict, user: dict = Depends(get_current_user)):
     """Student submits a fee payment for approval."""
-    if user.get("role") not in ("student", None):
+    if user.get("role") != "student":
         raise HTTPException(status_code=403, detail="Only students can submit fee payments")
     conn = get_db()
     student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user["sub"]),)).fetchone()
