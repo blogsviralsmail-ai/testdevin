@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api, { getUser } from "../../lib/api";
-import { FileText, Upload, Eye, X, Search, CheckCircle, XCircle, Calendar, StickyNote, Phone } from "lucide-react";
+import { Plus, X, FileText, Upload, CheckCircle, XCircle, Eye, Search, Trash2, Phone, Calendar, StickyNote } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -30,12 +30,14 @@ export default function CenterDocuments() {
   const [filterStatus, setFilterStatus] = useState("");
   const [phoneSearch, setPhoneSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [showUpload, setShowUpload] = useState(false);
-  const [uploadForm, setUploadForm] = useState<Record<string, any>>({});
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ student_id: "", document_type: "marksheet", notes: "", phone: "", fee_access: "without_fees", fee_percent_required: "" as string | number });
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [matchedStudents, setMatchedStudents] = useState<any[]>([]);
+  const [studentName, setStudentName] = useState("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showDispatch, setShowDispatch] = useState<number | null>(null);
   const [dispatchForm, setDispatchForm] = useState({ date: new Date().toISOString().split("T")[0], note: "" });
   const [showStatusChange, setShowStatusChange] = useState<number | null>(null);
@@ -84,47 +86,64 @@ export default function CenterDocuments() {
   useEffect(() => { loadDocs(); }, [loadDocs]);
 
   const searchByPhone = (phone: string) => {
-    setUploadForm(prev => ({ ...prev, phone }));
-    setSelectedStudent(null);
+    setForm(prev => ({ ...prev, phone }));
+    setStudentName("");
     if (phone.length >= 3) {
       const matches = students.filter(s => (s.phone || "").includes(phone) || (s.name || "").toLowerCase().includes(phone.toLowerCase()));
       setMatchedStudents(matches.slice(0, 10));
       if (phone.length >= 10) {
         const exact = matches.find((s: any) => s.phone === phone);
-        if (exact) { setSelectedStudent(exact); setMatchedStudents([]); }
+        if (exact) { setForm(prev => ({ ...prev, student_id: exact.id.toString() })); setStudentName(exact.name); setMatchedStudents([]); }
       }
     } else { setMatchedStudents([]); }
   };
 
-  const selectStudentForUpload = (s: any) => {
-    setSelectedStudent(s);
-    setUploadForm(prev => ({ ...prev, phone: s.phone || "" }));
+  const selectStudent = (s: any) => {
+    setForm(prev => ({ ...prev, student_id: s.id.toString(), phone: s.phone || "" }));
+    setStudentName(s.name);
     setMatchedStudents([]);
   };
 
-  const handleUpload = async () => {
-    if (!selectedStudent || !uploadForm.file) return;
-    setUploading(true);
+  const toggleSelect = (id: number) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  const toggleAll = () => setSelectedIds(prev => prev.length === docs.length ? [] : docs.map(d => d.id));
+  const bulkDelete = async () => {
+    if (!selectedIds.length || !confirm(`Delete ${selectedIds.length} documents?`)) return;
     try {
-      const fd = new FormData();
-      fd.append("file", uploadForm.file);
-      const uploadRes = await api.post("/api/documents/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      const fileUrl = uploadRes.data.url || uploadRes.data.filename || "";
-      await api.post("/api/documents", {
-        student_id: selectedStudent.id,
-        doc_type: uploadForm.document_type || "other",
-        file_path: fileUrl,
-        status: "approved",
-        notes: uploadForm.notes || "",
-      });
+      await api.delete("/api/documents/bulk", { data: { ids: selectedIds } });
+      setSelectedIds([]);
       loadDocs();
-      setShowUpload(false);
-      setUploadForm({});
-      setSelectedStudent(null);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || "Upload failed");
-    } finally {
+    } catch { alert("Delete failed"); }
+  };
+
+  const handleSave = async () => {
+    let file_path = "";
+    if (uploadFile) {
+      setUploading(true);
+      try {
+        const fd = new FormData();
+        fd.append("file", uploadFile);
+        const res = await api.post("/api/documents/upload", fd);
+        file_path = res.data.url || res.data.file_path || "";
+      } catch { /* empty */ }
       setUploading(false);
+    }
+    try {
+      await api.post("/api/documents", {
+        student_id: form.student_id ? parseInt(form.student_id) : null,
+        doc_type: form.document_type,
+        file_path,
+        status: "approved",
+        notes: form.notes,
+        fee_access: form.fee_access,
+        fee_percent_required: form.fee_access === "after_fees" ? (Number(form.fee_percent_required) || 0) : 0,
+      });
+      setShowForm(false);
+      setUploadFile(null);
+      setStudentName("");
+      setMatchedStudents([]);
+      loadDocs();
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || "Failed to add document");
     }
   };
 
@@ -155,13 +174,18 @@ export default function CenterDocuments() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <FileText className="h-7 w-7 text-orange-600" /> Documents ({docs.length})
-        </h1>
-        <button onClick={() => { setShowUpload(true); setUploadForm({}); setSelectedStudent(null); setMatchedStudents([]); }}
-          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm font-medium">
-          <Upload className="h-4 w-4" /> Upload Document
-        </button>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><FileText className="h-7 w-7 text-orange-600" /> Documents ({docs.length})</h1>
+        <div className="flex gap-2 flex-wrap">
+          {selectedIds.length > 0 && (
+            <button onClick={bulkDelete} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-1">
+              <Trash2 className="h-4 w-4" /> Delete ({selectedIds.length})
+            </button>
+          )}
+          <button onClick={() => { setShowForm(true); setForm({ student_id: "", document_type: "marksheet", notes: "", phone: "", fee_access: "without_fees", fee_percent_required: "" }); setStudentName(""); setUploadFile(null); }}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">
+            <Plus className="h-4 w-4" /> Add Document
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -186,8 +210,9 @@ export default function CenterDocuments() {
         <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50 border-b">
             <tr>
+              <th className="px-3 py-3 w-10"><input type="checkbox" checked={selectedIds.length === docs.length && docs.length > 0} onChange={toggleAll} /></th>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Document</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Student</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Student</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Mobile</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Status</th>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Date & Note</th>
@@ -197,29 +222,21 @@ export default function CenterDocuments() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
-              <tr><td colSpan={7} className="text-center py-8 text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={8} className="text-center py-8 text-gray-400">Loading...</td></tr>
             ) : docs.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-8 text-gray-400">No documents found</td></tr>
+              <tr><td colSpan={8} className="text-center py-8 text-gray-400">No documents found</td></tr>
             ) : docs.map((d) => (
-              <tr key={d.id} className="hover:bg-gray-50">
+              <tr key={d.id} className={`hover:bg-gray-50 ${selectedIds.includes(d.id) ? "bg-blue-50" : ""}`}>
+                <td className="px-3 py-3"><input type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => toggleSelect(d.id)} /></td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <FileText className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm capitalize">{(d.doc_type || d.document_type || "").replace(/_/g, " ")}</p>
-                      <p className="text-xs text-gray-500">#{d.id}</p>
-                    </div>
+                    <div className="h-9 w-9 bg-orange-100 rounded-lg flex items-center justify-center"><FileText className="h-4 w-4 text-orange-600" /></div>
+                    <div><p className="font-medium text-sm capitalize">{(d.doc_type || d.document_type || "").replace(/_/g, " ")}</p><p className="text-xs text-gray-500">#{d.id}</p></div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600">{d.student_name || "-"}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{d.student_name || "-"}</td>
                 <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{d.student_phone || "-"}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[d.status] || "bg-gray-100 text-gray-700"}`}>
-                    {STATUS_LABELS[d.status] || d.status}
-                  </span>
-                </td>
+                <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[d.status] || "bg-gray-100 text-gray-700"}`}>{STATUS_LABELS[d.status] || d.status}</span></td>
                 <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell">
                   {d.status_date && <div className="font-medium text-gray-700">Date: {formatDate(d.status_date)}</div>}
                   {d.dispatched_date && <div>Dispatched: {formatDate(d.dispatched_date)}</div>}
@@ -240,12 +257,8 @@ export default function CenterDocuments() {
                   <div className="flex flex-wrap gap-1 justify-end">
                     {d.status === "pending_review" && (
                       <>
-                        <button onClick={() => handleApprove(d.id)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded hover:bg-green-100 inline-flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />Approve
-                        </button>
-                        <button onClick={() => handleReject(d.id)} className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100 inline-flex items-center gap-1">
-                          <XCircle className="h-3 w-3" />Reject
-                        </button>
+                        <button onClick={() => handleApprove(d.id)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded hover:bg-green-100 inline-flex items-center gap-1"><CheckCircle className="h-3 w-3" />Approve</button>
+                        <button onClick={() => handleReject(d.id)} className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100 inline-flex items-center gap-1"><XCircle className="h-3 w-3" />Reject</button>
                       </>
                     )}
                     {d.status !== "dispatched" && d.status !== "received" && d.status !== "pending_review" && (
@@ -271,7 +284,7 @@ export default function CenterDocuments() {
         </table>
       </div>
 
-      {/* Dispatch Modal */}
+      {/* Dispatch Modal with Date & Note */}
       {showDispatch && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md p-6">
@@ -309,16 +322,14 @@ export default function CenterDocuments() {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">New Status</label>
-                <select value={statusForm.status} onChange={e => setStatusForm({ ...statusForm, status: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm">
+                <select value={statusForm.status} onChange={e => setStatusForm({ ...statusForm, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                   <option value="">Select Status</option>
                   {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input type="date" value={statusForm.date} onChange={e => setStatusForm({ ...statusForm, date: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm" />
+                <input type="date" value={statusForm.date} onChange={e => setStatusForm({ ...statusForm, date: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
@@ -334,29 +345,27 @@ export default function CenterDocuments() {
         </div>
       )}
 
-      {/* Upload Document Modal */}
-      {showUpload && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Upload Document</h2>
-              <button onClick={() => { setShowUpload(false); setMatchedStudents([]); setSelectedStudent(null); }}>
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
+      {/* Add Document Modal — matching admin exactly */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Add Document</h2>
+              <button onClick={() => { setShowForm(false); setMatchedStudents([]); setStudentName(""); }}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <div className="space-y-4">
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Student (search by phone or name)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student Mobile Number</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input type="text" value={uploadForm.phone || ""} onChange={(e) => searchByPhone(e.target.value)}
-                    placeholder="Enter mobile number or name..."
+                  <input type="text" value={form.phone} onChange={(e) => searchByPhone(e.target.value)}
+                    placeholder="Enter mobile number to find student..."
                     className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />
                 </div>
                 {matchedStudents.length > 0 && (
                   <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg max-h-40 overflow-y-auto">
                     {matchedStudents.map((s: any) => (
-                      <button key={s.id} onClick={() => selectStudentForUpload(s)}
+                      <button key={s.id} onClick={() => selectStudent(s)}
                         className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm border-b last:border-0">
                         <span className="font-medium">{s.name}</span> <span className="text-gray-500">| {s.phone}</span>
                       </button>
@@ -364,37 +373,60 @@ export default function CenterDocuments() {
                   </div>
                 )}
               </div>
-              {selectedStudent && (
+              {studentName && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
-                  <span className="text-green-700 font-medium">Student: {selectedStudent.name}</span>{" "}
-                  <span className="text-green-600">({selectedStudent.phone})</span>
+                  <span className="text-green-700 font-medium">Student: {studentName}</span>{" "}
+                  <span className="text-green-600">(ID: {form.student_id})</span>
                 </div>
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
-                <select value={uploadForm.document_type || ""} onChange={e => setUploadForm(f => ({ ...f, document_type: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm">
-                  <option value="">Select Type</option>
+                <select value={form.document_type} onChange={(e) => setForm({ ...form, document_type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm">
                   {DOC_TYPES.map((t) => <option key={t} value={t.toLowerCase().replace(/\s+/g, "_")}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-                <textarea value={uploadForm.notes || ""} onChange={e => setUploadForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm" rows={2} />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" rows={2} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Upload File (PDF/Image)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fee Access Control</label>
+                <div className="flex gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="fee_access" value="without_fees" checked={form.fee_access === "without_fees"}
+                      onChange={() => setForm({ ...form, fee_access: "without_fees", fee_percent_required: 0 })} className="text-blue-600" />
+                    <span className="text-sm">Without Fees (Free Access)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="fee_access" value="after_fees" checked={form.fee_access === "after_fees"}
+                      onChange={() => setForm({ ...form, fee_access: "after_fees" })} className="text-blue-600" />
+                    <span className="text-sm">After Fees</span>
+                  </label>
+                </div>
+                {form.fee_access === "after_fees" && (
+                  <div className="mt-2">
+                    <label className="block text-xs text-gray-600 mb-1">Required Fee % (student must pay this % of total fees to view)</label>
+                    <input type="number" min="1" max="100" value={form.fee_percent_required}
+                      onChange={(e) => setForm({ ...form, fee_percent_required: e.target.value === "" ? "" : parseInt(e.target.value) || 0 })}
+                      placeholder="e.g. 80, 90, 100"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Upload Document (PDF/Image)</label>
                 <label className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 text-sm w-fit">
                   <Upload className="h-4 w-4" />
-                  {uploadForm.file ? uploadForm.file.name : "Choose File"}
+                  {uploadFile ? uploadFile.name : "Choose File"}
                   <input type="file" accept="image/*,.pdf,.doc,.docx" className="hidden"
-                    onChange={(e) => setUploadForm(f => ({ ...f, file: e.target.files?.[0] }))} />
+                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
                 </label>
               </div>
-              <button onClick={handleUpload} disabled={uploading || !selectedStudent || !uploadForm.file}
-                className="w-full bg-emerald-600 text-white py-2.5 rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 text-sm">
-                {uploading ? "Uploading..." : "Upload Document"}
+              <button onClick={handleSave} disabled={uploading || !form.student_id}
+                className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 text-sm">
+                {uploading ? "Uploading..." : "Add Document"}
               </button>
             </div>
           </div>
