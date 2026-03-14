@@ -555,7 +555,7 @@ async def approve_fee_payment(pid: int, user: dict = Depends(require_admin)):
     )
     tid = cursor.lastrowid
     # Auto create receipt with prefix (retry loop for race condition)
-    branding = _get_branding(conn)
+    branding = _get_branding_for_student(conn, sid)
     prefix = branding.get("receipt_prefix", "ASFF")
     receipt_no = _generate_receipt_no(conn, prefix, tid, sid, payment["amount"])
     # Update fee record if exists
@@ -682,9 +682,6 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
         # Fallback for legacy format (plain amount string)
         amount = int(order_amount_row["value"]) / 100
         stored_student_id = None
-    # Clean up the stored order
-    conn.execute("DELETE FROM settings WHERE key = ?", (f"rzp_order_{razorpay_order_id}",))
-    
     student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user["sub"]),)).fetchone()
     if not student:
         conn.close()
@@ -710,7 +707,7 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
     tid = cursor.lastrowid
     
     # Auto create receipt with prefix (retry loop for race condition)
-    branding = _get_branding(conn)
+    branding = _get_branding_for_student(conn, sid)
     prefix = branding.get("receipt_prefix", "ASFF")
     receipt_no = _generate_receipt_no(conn, prefix, tid, sid, float(amount))
     
@@ -721,6 +718,8 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
         conn.execute("UPDATE fee_records SET paid_amount=?, pending_amount=total_fee-?, last_utr=? WHERE student_id=?",
                      (new_paid, new_paid, razorpay_payment_id, sid))
     
+    # Clean up the stored Razorpay order after all validation and recording succeeds
+    conn.execute("DELETE FROM settings WHERE key = ?", (f"rzp_order_{razorpay_order_id}",))
     conn.commit()
     conn.close()
     # Send receipt email + WhatsApp (after closing connection to avoid DB lock)
