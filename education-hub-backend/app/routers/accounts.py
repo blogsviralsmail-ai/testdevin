@@ -177,7 +177,10 @@ async def list_transactions(student_id: Optional[int] = None, branch_id: Optiona
     return {"transactions": [dict(r) for r in rows], "total": total}
 
 @router.post("/transactions")
-async def create_transaction(data: TransactionCreate, user: dict = Depends(require_admin)):
+async def create_transaction(data: TransactionCreate, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized to create transactions")
     conn = get_db()
     # Resolve student_id from phone if provided
     sid = data.student_id
@@ -190,6 +193,15 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(requi
     if not sid:
         conn.close()
         raise HTTPException(status_code=400, detail="Student phone or ID required")
+    # Center ownership check: verify student belongs to this center
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        student_check = conn.execute("SELECT center_id FROM students WHERE id = ?", (sid,)).fetchone()
+        if not student_check or student_check["center_id"] not in all_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Student does not belong to your center")
     description = data.description or data.notes or ""
     cursor = conn.execute(
         "INSERT INTO transactions (student_id, amount, transaction_type, utr_number, account_name, payment_mode, description, proof_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -228,7 +240,10 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(requi
     return {"id": tid, "receipt_no": receipt_no, "message": "Transaction recorded"}
 
 @router.get("/receipts")
-async def list_receipts(student_id: Optional[int] = None, branch_id: Optional[int] = None, user: dict = Depends(require_admin)):
+async def list_receipts(student_id: Optional[int] = None, branch_id: Optional[int] = None, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     query = """SELECT r.*, st.name as student_name, st.enrollment_no, b.name as branch_name
                FROM receipts r JOIN students st ON r.student_id = st.id

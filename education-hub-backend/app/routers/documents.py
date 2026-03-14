@@ -117,7 +117,10 @@ async def get_student_documents(student_id: int, user: dict = Depends(get_curren
 
 
 @router.delete("/bulk")
-async def bulk_delete_documents(data: dict, user: dict = Depends(require_admin)):
+async def bulk_delete_documents(data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     ids = data.get("ids", [])
     if not ids:
         return {"message": "No documents selected"}
@@ -153,7 +156,7 @@ async def create_document(data: DocumentCreate, user: dict = Depends(get_current
         student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user["sub"]),)).fetchone()
         if student:
             data.student_id = student["id"]
-    elif user.get("role") in ("super_admin", "admin"):
+    elif user.get("role") in ("super_admin", "admin", "branch_admin", "center"):
         doc_status = data.status or "approved"
     
     file_path = data.file_path or data.file_url or ""
@@ -179,7 +182,10 @@ async def create_document(data: DocumentCreate, user: dict = Depends(get_current
     return {"id": did, "message": "Document record created"}
 
 @router.put("/{did}")
-async def update_document(did: int, data: DocumentCreate, user: dict = Depends(require_admin)):
+async def update_document(did: int, data: DocumentCreate, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     fee_access = data.fee_access if data.fee_access in ("without_fees", "after_fees") else "without_fees"
     fee_pct = data.fee_percent_required if fee_access == "after_fees" else 0
@@ -192,7 +198,10 @@ async def update_document(did: int, data: DocumentCreate, user: dict = Depends(r
     return {"message": "Document updated"}
 
 @router.put("/{did}/dispatch")
-async def dispatch_document(did: int, data: dict, user: dict = Depends(require_admin)):
+async def dispatch_document(did: int, data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     note = data.get("note", "")
     date = data.get("date", "")
@@ -202,7 +211,10 @@ async def dispatch_document(did: int, data: dict, user: dict = Depends(require_a
     return {"message": "Document marked as dispatched"}
 
 @router.put("/{did}/receive")
-async def receive_document(did: int, data: dict, user: dict = Depends(require_admin)):
+async def receive_document(did: int, data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     conn.execute("UPDATE documents SET status='received', received_date=? WHERE id=?", (data.get("date", ""), did))
     conn.commit()
@@ -210,7 +222,10 @@ async def receive_document(did: int, data: dict, user: dict = Depends(require_ad
     return {"message": "Document marked as received"}
 
 @router.put("/{did}/status")
-async def change_document_status(did: int, data: dict, user: dict = Depends(require_admin)):
+async def change_document_status(did: int, data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     new_status = data.get("status", "")
     date = data.get("date", "")
     note = data.get("note", "")
@@ -227,7 +242,10 @@ async def change_document_status(did: int, data: dict, user: dict = Depends(requ
     return {"message": f"Document status changed to {new_status}"}
 
 @router.put("/{did}/approve")
-async def approve_document(did: int, data: dict = None, user: dict = Depends(require_admin)):
+async def approve_document(did: int, data: dict = None, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     from datetime import datetime
     today = datetime.now().strftime("%Y-%m-%d")
@@ -237,7 +255,10 @@ async def approve_document(did: int, data: dict = None, user: dict = Depends(req
     return {"message": "Document approved"}
 
 @router.put("/{did}/reject")
-async def reject_document(did: int, data: dict = None, user: dict = Depends(require_admin)):
+async def reject_document(did: int, data: dict = None, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     from datetime import datetime
     today = datetime.now().strftime("%Y-%m-%d")
