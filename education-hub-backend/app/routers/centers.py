@@ -337,6 +337,7 @@ async def delete_center(center_id: int, user: dict = Depends(require_admin)):
 async def list_center_students(
     center_id: int,
     include_sub: bool = True,
+    sub_centers_only: bool = False,
     search: Optional[str] = None,
     status: Optional[str] = None,
     university_id: Optional[int] = None,
@@ -344,10 +345,18 @@ async def list_center_students(
     limit: int = 50,
     user: dict = Depends(get_current_user)
 ):
-    """List students for a center (and optionally its sub-centers)."""
+    """List students for a center (and optionally its sub-centers).
+    sub_centers_only=true returns ONLY sub-center students (excludes parent center's own students).
+    """
     conn = get_db()
     
-    if include_sub:
+    if sub_centers_only:
+        all_ids = get_center_and_subcenter_ids(conn, center_id)
+        all_ids = [cid for cid in all_ids if cid != center_id]
+        if not all_ids:
+            conn.close()
+            return {"students": [], "total": 0, "page": page, "limit": limit}
+    elif include_sub:
         all_ids = get_center_and_subcenter_ids(conn, center_id)
     else:
         all_ids = [center_id]
