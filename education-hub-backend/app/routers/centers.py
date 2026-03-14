@@ -1118,9 +1118,10 @@ async def center_student_fee_summary(student_id: int, user: dict = Depends(get_c
     paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM center_fee_payments 
         WHERE student_id = ? AND status = 'approved'""", (student_id,)).fetchone()[0]
     
-    # Also include admin-recorded payments if any
+    # Also include admin-recorded payments if any (exclude mirror transactions to avoid double-counting)
     admin_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM transactions 
         WHERE student_id = ? AND transaction_type = 'credit' 
+        AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%'
         AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student_id,)).fetchone()[0]
     
     # Also include admin fee_payments (approved)
@@ -1261,9 +1262,10 @@ async def student_center_fee_summary(user: dict = Depends(get_current_user)):
         # Center student: payments from center_fee_payments
         center_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM center_fee_payments 
             WHERE student_id = ? AND status = 'approved'""", (student["id"],)).fetchone()[0]
-        # Also include any admin payments
+        # Also include any admin payments (exclude mirror transactions to avoid double-counting)
         admin_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM transactions 
             WHERE student_id = ? AND transaction_type = 'credit' 
+            AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%'
             AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student["id"],)).fetchone()[0]
         admin_fp = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM fee_payments 
             WHERE student_id = ? AND status = 'approved' 
@@ -1273,12 +1275,13 @@ async def student_center_fee_summary(user: dict = Depends(get_current_user)):
         payments = conn.execute("""SELECT * FROM center_fee_payments 
             WHERE student_id = ? ORDER BY created_at DESC""", (student["id"],)).fetchall()
     else:
-        # Admin student: payments from fee_payments + transactions
+        # Admin student: payments from fee_payments + transactions (exclude mirrors)
         fp_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM fee_payments 
             WHERE student_id = ? AND status = 'approved' 
             AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student["id"],)).fetchone()[0]
         admin_paid = conn.execute("""SELECT COALESCE(SUM(amount), 0) FROM transactions 
             WHERE student_id = ? AND transaction_type = 'credit' 
+            AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%'
             AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)""", (student["id"],)).fetchone()[0]
         total_paid = fp_paid + admin_paid
         
