@@ -15,6 +15,7 @@ class ExamCreate(BaseModel):
     venue: Optional[str] = None
     exam_type: str = "regular"
     status: str = "scheduled"
+    visibility: str = "all"
 
 class ExamResultCreate(BaseModel):
     exam_id: int
@@ -25,13 +26,32 @@ class ExamResultCreate(BaseModel):
     is_mark_back: bool = False
 
 @router.get("")
-async def list_exams(session_id: Optional[int] = None, category_id: Optional[int] = None, exam_type: Optional[str] = None):
+async def list_exams(session_id: Optional[int] = None, category_id: Optional[int] = None, exam_type: Optional[str] = None, center_id: Optional[int] = None, visibility: Optional[str] = None, user: dict = Depends(get_current_user)):
     conn = get_db()
-    query = """SELECT e.*, s.name as session_name, c.name as category_name, u.name as university_name
+    query = """SELECT e.*, s.name as session_name, c.name as category_name, u.name as university_name, ct.name as center_name
                FROM exams e LEFT JOIN sessions s ON e.session_id = s.id 
                LEFT JOIN categories c ON e.category_id = c.id
-               LEFT JOIN universities u ON c.university_id = u.id WHERE 1=1"""
+               LEFT JOIN universities u ON c.university_id = u.id
+               LEFT JOIN centers ct ON e.center_id = ct.id WHERE 1=1"""
     params = []
+    role = user.get("role", "")
+    if role == "center":
+        # Center sees: admin exams with visibility='all' + own center exams
+        cid = user.get("center_id")
+        if cid:
+            query += " AND (e.center_id = ? OR (e.center_id IS NULL AND (e.visibility = 'all' OR e.visibility IS NULL)))"
+            params.append(cid)
+    elif role == "student":
+        # Student sees exams relevant to their course
+        pass
+    else:
+        # Admin can filter
+        if center_id:
+            query += " AND e.center_id = ?"
+            params.append(center_id)
+        if visibility:
+            query += " AND e.visibility = ?"
+            params.append(visibility)
     if session_id:
         query += " AND e.session_id = ?"
         params.append(session_id)
@@ -56,11 +76,19 @@ async def get_exam(eid: int):
     return dict(row)
 
 @router.post("")
-async def create_exam(data: ExamCreate, user: dict = Depends(require_admin)):
+async def create_exam(data: ExamCreate, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    center_id = None
+    if role == "center":
+        center_id = user.get("center_id")
+        if not center_id:
+            raise HTTPException(status_code=403, detail="Center ID not found")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized to create exams")
     conn = get_db()
     cursor = conn.execute(
-        "INSERT INTO exams (session_id, category_id, name, exam_date, exam_time, venue, exam_type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (data.session_id, data.category_id, data.name, data.exam_date, data.exam_time, data.venue, data.exam_type, data.status)
+        "INSERT INTO exams (session_id, category_id, name, exam_date, exam_time, venue, exam_type, status, center_id, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (data.session_id, data.category_id, data.name, data.exam_date, data.exam_time, data.venue, data.exam_type, data.status, center_id, data.visibility)
     )
     conn.commit()
     eid = cursor.lastrowid
@@ -68,19 +96,37 @@ async def create_exam(data: ExamCreate, user: dict = Depends(require_admin)):
     return {"id": eid, "message": "Exam created"}
 
 @router.put("/{eid}")
-async def update_exam(eid: int, data: ExamCreate, user: dict = Depends(require_admin)):
+async def update_exam(eid: int, data: ExamCreate, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
     conn = get_db()
+    if role == "center":
+        exam = conn.execute("SELECT center_id FROM exams WHERE id = ?", (eid,)).fetchone()
+        if not exam or exam["center_id"] != user.get("center_id"):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Cannot edit this exam")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn.execute(
-        "UPDATE exams SET session_id=?, category_id=?, name=?, exam_date=?, exam_time=?, venue=?, exam_type=?, status=? WHERE id=?",
-        (data.session_id, data.category_id, data.name, data.exam_date, data.exam_time, data.venue, data.exam_type, data.status, eid)
+        "UPDATE exams SET session_id=?, category_id=?, name=?, exam_date=?, exam_time=?, venue=?, exam_type=?, status=?, visibility=? WHERE id=?",
+        (data.session_id, data.category_id, data.name, data.exam_date, data.exam_time, data.venue, data.exam_type, data.status, data.visibility, eid)
     )
     conn.commit()
     conn.close()
     return {"message": "Exam updated"}
 
 @router.delete("/{eid}")
-async def delete_exam(eid: int, user: dict = Depends(require_admin)):
+async def delete_exam(eid: int, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
     conn = get_db()
+    if role == "center":
+        exam = conn.execute("SELECT center_id FROM exams WHERE id = ?", (eid,)).fetchone()
+        if not exam or exam["center_id"] != user.get("center_id"):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Cannot delete this exam")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn.execute("DELETE FROM exams WHERE id = ?", (eid,))
     conn.commit()
     conn.close()

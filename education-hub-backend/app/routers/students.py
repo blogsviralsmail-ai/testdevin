@@ -158,8 +158,13 @@ async def list_students(
         query += " AND s.center_id = ?"
         params.append(center_id)
     if admission_source:
-        query += " AND s.admission_source = ?"
-        params.append(admission_source)
+        if admission_source == "admin":
+            query += " AND (s.center_id IS NULL)"
+        elif admission_source == "center":
+            query += " AND (s.center_id IS NOT NULL)"
+        else:
+            query += " AND s.admission_source = ?"
+            params.append(admission_source)
     if search:
         query += " AND (s.name LIKE ? OR s.email LIKE ? OR s.phone LIKE ? OR s.enrollment_no LIKE ?)"
         s = f"%{search}%"

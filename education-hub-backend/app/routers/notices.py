@@ -6,17 +6,39 @@ from app.utils.auth import require_admin, get_current_user
 router = APIRouter(prefix="/api/notices", tags=["Notices"])
 
 @router.get("")
-async def list_notices(status: Optional[str] = None, user: dict = Depends(get_current_user)):
+async def list_notices(status: Optional[str] = None, center_id: Optional[int] = None, user: dict = Depends(get_current_user)):
     conn = get_db()
-    query = "SELECT * FROM notices WHERE 1=1"
+    query = "SELECT n.*, c.name as center_name FROM notices n LEFT JOIN centers c ON n.center_id = c.id WHERE 1=1"
     params = []
-    # Students only see published notices
-    if user.get("role") == "student":
-        query += " AND status = 'published'"
-    elif status:
-        query += " AND status = ?"
-        params.append(status)
-    query += " ORDER BY is_pinned DESC, created_at DESC"
+    role = user.get("role", "")
+    # Students only see published notices relevant to them
+    if role == "student":
+        query += " AND n.status = 'published'"
+        # Get student's center_id to filter notices
+        uid = int(user.get("sub", 0))
+        student = conn.execute("SELECT center_id FROM students WHERE user_id = ?", (uid,)).fetchone()
+        if student and student["center_id"]:
+            # Center student sees: admin notices (center_id IS NULL) + own center notices
+            query += " AND (n.center_id IS NULL OR n.center_id = ?)"
+            params.append(student["center_id"])
+        else:
+            # Direct student sees only admin notices
+            query += " AND n.center_id IS NULL"
+    elif role == "center":
+        # Center sees their own notices + admin notices
+        cid = user.get("center_id")
+        if cid:
+            query += " AND (n.center_id IS NULL OR n.center_id = ?)"
+            params.append(cid)
+    else:
+        # Admin sees all notices, optionally filtered
+        if center_id:
+            query += " AND n.center_id = ?"
+            params.append(center_id)
+        if status:
+            query += " AND n.status = ?"
+            params.append(status)
+    query += " ORDER BY n.is_pinned DESC, n.created_at DESC"
     rows = conn.execute(query, params).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -31,14 +53,22 @@ async def get_notice(nid: int, user: dict = Depends(get_current_user)):
     return dict(notice)
 
 @router.post("")
-async def create_notice(data: dict, user: dict = Depends(require_admin)):
+async def create_notice(data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    center_id = None
+    if role == "center":
+        center_id = user.get("center_id")
+        if not center_id:
+            raise HTTPException(status_code=403, detail="Center ID not found")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized to create notices")
     conn = get_db()
     cursor = conn.execute(
-        """INSERT INTO notices (title, content, category, priority, is_pinned, status, attachment_url, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO notices (title, content, category, priority, is_pinned, status, attachment_url, created_by, center_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (data.get("title", ""), data.get("content", ""), data.get("category", "General"),
          data.get("priority", "normal"), data.get("is_pinned", 0), data.get("status", "published"),
-         data.get("attachment_url", ""), int(user["sub"]))
+         data.get("attachment_url", ""), int(user["sub"]), center_id)
     )
     conn.commit()
     nid = cursor.lastrowid
@@ -46,8 +76,18 @@ async def create_notice(data: dict, user: dict = Depends(require_admin)):
     return {"id": nid, "message": "Notice created"}
 
 @router.put("/{nid}")
-async def update_notice(nid: int, data: dict, user: dict = Depends(require_admin)):
+async def update_notice(nid: int, data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
     conn = get_db()
+    # Center can only edit their own notices
+    if role == "center":
+        notice = conn.execute("SELECT center_id FROM notices WHERE id = ?", (nid,)).fetchone()
+        if not notice or notice["center_id"] != user.get("center_id"):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Cannot edit this notice")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn.execute(
         """UPDATE notices SET title=?, content=?, category=?, priority=?, is_pinned=?, status=?, attachment_url=?, updated_at=CURRENT_TIMESTAMP
            WHERE id=?""",
@@ -60,8 +100,17 @@ async def update_notice(nid: int, data: dict, user: dict = Depends(require_admin
     return {"message": "Notice updated"}
 
 @router.delete("/{nid}")
-async def delete_notice(nid: int, user: dict = Depends(require_admin)):
+async def delete_notice(nid: int, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
     conn = get_db()
+    if role == "center":
+        notice = conn.execute("SELECT center_id FROM notices WHERE id = ?", (nid,)).fetchone()
+        if not notice or notice["center_id"] != user.get("center_id"):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Cannot delete this notice")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn.execute("DELETE FROM notices WHERE id = ?", (nid,))
     conn.commit()
     conn.close()

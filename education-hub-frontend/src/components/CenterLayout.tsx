@@ -6,7 +6,7 @@ import axios from "axios";
 const API = import.meta.env.VITE_API_URL || "";
 import {
   LayoutDashboard, Users, FileText, Wallet, Building2,
-  Menu, X, LogOut, ChevronDown, GraduationCap, BarChart3, ChevronRight, Search, CreditCard, MessageSquare
+  Menu, X, LogOut, ChevronDown, GraduationCap, BarChart3, ChevronRight, Search, CreditCard, MessageSquare, Bell, Calendar, Settings
 } from "lucide-react";
 
 interface MenuItem {
@@ -49,9 +49,27 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
+    title: "Communication",
+    items: [
+      { path: "/center/announcements", label: "Announcements", icon: Bell },
+    ],
+  },
+  {
+    title: "Exams",
+    items: [
+      { path: "/center/exam-timetable", label: "Exam Timetable", icon: Calendar },
+    ],
+  },
+  {
     title: "Support",
     items: [
       { path: "/center/support", label: "Support Tickets", icon: MessageSquare },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      { path: "/center/settings", label: "Center Settings", icon: Settings },
     ],
   },
 ];

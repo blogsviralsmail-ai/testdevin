@@ -693,7 +693,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
             <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">{centerTransactions.length} transactions</span>
           </div>
           <div className="p-4 bg-amber-50 border-b border-amber-200 text-sm text-amber-800">
-            <strong>Note:</strong> Center students ki fees sirf center ya student khud jama kar sakta hai. Admin center student ki fees jama nahi kar sakta.
+            <strong>Note:</strong> Fees for center students can only be collected by the center or the student themselves. Admin cannot collect fees for center students.
           </div>
           <table className="w-full">
             <thead className="bg-gray-50 border-b">

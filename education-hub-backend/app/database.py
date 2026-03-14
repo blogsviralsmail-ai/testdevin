@@ -791,6 +791,35 @@ def init_db():
         except:
             pass
 
+    # Add center_id to notices table for center-scoped announcements
+    try:
+        cursor.execute("ALTER TABLE notices ADD COLUMN center_id INTEGER")
+    except:
+        pass
+
+    # Add center_id and visibility to exams table for center-created exams
+    for col_name, col_type in [("center_id", "INTEGER"), ("visibility", "TEXT DEFAULT 'all'")]:
+        try:
+            cursor.execute(f"ALTER TABLE exams ADD COLUMN {col_name} {col_type}")
+        except:
+            pass
+
+    # Center settings table (for receipt/invoice customization)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS center_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        center_id INTEGER NOT NULL UNIQUE,
+        receipt_company_name TEXT,
+        receipt_address TEXT,
+        receipt_phone TEXT,
+        receipt_email TEXT,
+        receipt_logo_url TEXT,
+        receipt_footer TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (center_id) REFERENCES centers(id)
+    )""")
+
     conn.commit()
     
     # Seed default admin

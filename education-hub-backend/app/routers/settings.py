@@ -156,6 +156,39 @@ async def test_telegram(data: dict, user: dict = Depends(require_admin)):
     except Exception as e:
         return {"success": False, "message": f"Error: {str(e)}"}
 
+@router.get("/center-settings/{center_id}")
+async def get_center_settings(center_id: int, user: dict = Depends(get_current_user)):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM center_settings WHERE center_id = ?", (center_id,)).fetchone()
+    conn.close()
+    if row:
+        return dict(row)
+    return {"center_id": center_id, "receipt_company_name": "", "receipt_address": "", "receipt_phone": "", "receipt_email": "", "receipt_logo_url": "", "receipt_footer": ""}
+
+@router.put("/center-settings/{center_id}")
+async def update_center_settings(center_id: int, data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role == "center":
+        if user.get("center_id") != center_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    conn = get_db()
+    existing = conn.execute("SELECT id FROM center_settings WHERE center_id = ?", (center_id,)).fetchone()
+    if existing:
+        conn.execute(
+            """UPDATE center_settings SET receipt_company_name=?, receipt_address=?, receipt_phone=?, receipt_email=?, receipt_logo_url=?, receipt_footer=?, updated_at=CURRENT_TIMESTAMP WHERE center_id=?""",
+            (data.get("receipt_company_name", ""), data.get("receipt_address", ""), data.get("receipt_phone", ""), data.get("receipt_email", ""), data.get("receipt_logo_url", ""), data.get("receipt_footer", ""), center_id)
+        )
+    else:
+        conn.execute(
+            """INSERT INTO center_settings (center_id, receipt_company_name, receipt_address, receipt_phone, receipt_email, receipt_logo_url, receipt_footer) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (center_id, data.get("receipt_company_name", ""), data.get("receipt_address", ""), data.get("receipt_phone", ""), data.get("receipt_email", ""), data.get("receipt_logo_url", ""), data.get("receipt_footer", ""))
+        )
+    conn.commit()
+    conn.close()
+    return {"message": "Center settings updated"}
+
 @router.get("/sessions")
 async def get_sessions():
     conn = get_db()

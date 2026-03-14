@@ -213,7 +213,7 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
         student_check = conn.execute("SELECT center_id FROM students WHERE id = ?", (sid,)).fetchone()
         if student_check and student_check["center_id"]:
             conn.close()
-            raise HTTPException(status_code=403, detail="Center student ki fees sirf center ya student jama kar sakta hai. Admin center student ki fees jama nahi kar sakta.")
+            raise HTTPException(status_code=403, detail="Fees for center students can only be collected by the center or the student themselves. Admin cannot collect fees for center students.")
     description = data.description or data.notes or ""
     cursor = conn.execute(
         "INSERT INTO transactions (student_id, amount, transaction_type, utr_number, account_name, payment_mode, description, proof_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
