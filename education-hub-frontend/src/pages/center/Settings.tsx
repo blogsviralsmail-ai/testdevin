@@ -4,7 +4,7 @@ import { Settings, Save, Building2 } from "lucide-react";
 
 export default function CenterSettings() {
   const user = getUser();
-  const centerId = user?.center_id;
+  const centerId = user?.center?.id;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
@@ -45,7 +45,10 @@ export default function CenterSettings() {
       await api.put(`/api/settings/center-settings/${centerId}`, form);
       setSuccess("Settings saved successfully!");
       setTimeout(() => setSuccess(""), 3000);
-    } catch {}
+    } catch (e: any) {
+      setSuccess("Error: " + (e?.response?.data?.detail || "Failed to save settings"));
+      setTimeout(() => setSuccess(""), 5000);
+    }
     setSaving(false);
   };
 
