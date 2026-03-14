@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api, { getUser } from "../../lib/api";
-import { Settings, Save, Building2 } from "lucide-react";
+import { Settings, Save, Building2, Upload, X, Image } from "lucide-react";
 
 export default function CenterSettings() {
   const user = getUser();
   const centerId = user?.center?.id;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     receipt_company_name: "",
     receipt_address: "",
@@ -50,6 +52,49 @@ export default function CenterSettings() {
       setTimeout(() => setSuccess(""), 5000);
     }
     setSaving(false);
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !centerId) return;
+    if (!file.type.startsWith("image/")) {
+      setSuccess("Error: Please select an image file (PNG, JPG, etc.)");
+      setTimeout(() => setSuccess(""), 5000);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setSuccess("Error: File size must be less than 5MB");
+      setTimeout(() => setSuccess(""), 5000);
+      return;
+    }
+    setUploading(true);
+    setSuccess("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await api.post(`/api/settings/center-settings/${centerId}/upload-logo`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setForm({ ...form, receipt_logo_url: res.data.logo_url });
+      setSuccess("Logo uploaded successfully!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setSuccess("Error: " + (err?.response?.data?.detail || "Failed to upload logo"));
+      setTimeout(() => setSuccess(""), 5000);
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveLogo = () => {
+    setForm({ ...form, receipt_logo_url: "" });
+  };
+
+  const getLogoFullUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+    return base + url;
   };
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin h-8 w-8 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>;
@@ -101,11 +146,34 @@ export default function CenterSettings() {
             </div>
           </div>
 
+          {/* Logo Upload Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL (for receipt header)</label>
-            <input type="text" value={form.receipt_logo_url} onChange={(e) => setForm({ ...form, receipt_logo_url: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-              placeholder="https://example.com/logo.png" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Logo (for receipt header)</label>
+            <div className="flex items-start gap-4">
+              {form.receipt_logo_url ? (
+                <div className="relative flex-shrink-0">
+                  <div className="w-24 h-24 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                    <img src={getLogoFullUrl(form.receipt_logo_url)} alt="Center Logo" className="max-w-full max-h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  </div>
+                  <button onClick={handleRemoveLogo} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-sm" title="Remove logo">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400">
+                  <Image className="h-8 w-8 mb-1" />
+                  <span className="text-xs">No Logo</span>
+                </div>
+              )}
+              <div className="flex-1">
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" id="logo-upload" />
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-emerald-300 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 hover:border-emerald-400 disabled:opacity-50 text-sm font-medium transition-colors">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? "Uploading..." : "Upload Logo"}
+                </button>
+                <p className="mt-1.5 text-xs text-gray-500">PNG, JPG, or SVG. Max 5MB.</p>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -118,7 +186,7 @@ export default function CenterSettings() {
         </div>
 
         {success && (
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">{success}</div>
+          <div className={`mt-4 p-3 rounded-lg text-sm ${success.startsWith("Error") ? "bg-red-50 border border-red-200 text-red-800" : "bg-green-50 border border-green-200 text-green-800"}`}>{success}</div>
         )}
 
         <div className="mt-6 pt-4 border-t flex justify-end">

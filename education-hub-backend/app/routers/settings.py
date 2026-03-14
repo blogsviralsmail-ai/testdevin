@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional, Dict
 from app.database import get_db
 from app.utils.auth import require_admin, get_current_user
+import os, uuid
 
 router = APIRouter(prefix="/api/settings", tags=["Settings"])
 
@@ -190,6 +191,45 @@ async def update_center_settings(center_id: int, data: dict, user: dict = Depend
     conn.commit()
     conn.close()
     return {"message": "Center settings updated"}
+
+@router.post("/center-settings/{center_id}/upload-logo")
+async def upload_center_logo(center_id: int, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Upload logo image for center receipt/invoice header."""
+    role = user.get("role", "")
+    if role == "center":
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
+        if center["id"] != center_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    elif role not in ("super_admin", "admin", "branch_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    from app.utils.uploads import get_upload_dir
+    upload_dir = get_upload_dir()
+    logo_dir = os.path.join(upload_dir, "center_logos")
+    os.makedirs(logo_dir, exist_ok=True)
+
+    ext = os.path.splitext(file.filename or "logo.png")[1] or ".png"
+    filename = f"center_{center_id}_{uuid.uuid4().hex[:8]}{ext}"
+    filepath = os.path.join(logo_dir, filename)
+
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+
+    logo_url = f"/uploads/center_logos/{filename}"
+
+    # Auto-update the center_settings receipt_logo_url
+    conn = get_db()
+    existing = conn.execute("SELECT id FROM center_settings WHERE center_id = ?", (center_id,)).fetchone()
+    if existing:
+        conn.execute("UPDATE center_settings SET receipt_logo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE center_id = ?", (logo_url, center_id))
+    else:
+        conn.execute("INSERT INTO center_settings (center_id, receipt_logo_url) VALUES (?, ?)", (center_id, logo_url))
+    conn.commit()
+    conn.close()
+
+    return {"logo_url": logo_url, "message": "Logo uploaded successfully"}
 
 @router.get("/sessions")
 async def get_sessions():
