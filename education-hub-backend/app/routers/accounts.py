@@ -340,7 +340,7 @@ async def resend_receipt(receipt_id: int, user: dict = Depends(get_current_user)
             raise HTTPException(status_code=403, detail="Not authorized")
 
     txn = None
-    if receipt.get("transaction_id"):
+    if receipt["transaction_id"]:
         txn = conn.execute("SELECT payment_mode, utr_number FROM transactions WHERE id = ?", (receipt["transaction_id"],)).fetchone()
 
     receipt_no = receipt["receipt_no"]
