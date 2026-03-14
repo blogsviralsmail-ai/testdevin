@@ -1278,6 +1278,104 @@ async def student_center_fee_summary(user: dict = Depends(get_current_user)):
     }
 
 
+@router.get("/my/fee-summary")
+async def center_fee_summary(user: dict = Depends(get_current_user)):
+    """Get fee summary for center's students (total fees, total paid, pending)."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    center_ids = get_center_and_subcenter_ids(conn, center["id"])
+    placeholders = ",".join(["?"] * len(center_ids))
+    total_fees = conn.execute(f"SELECT COALESCE(SUM(total_fees), 0) FROM students WHERE center_id IN ({placeholders})", center_ids).fetchone()[0]
+    # Total paid from approved fee_payments
+    fp_total = conn.execute(f"SELECT COALESCE(SUM(fp.amount), 0) FROM fee_payments fp JOIN students s ON fp.student_id = s.id WHERE s.center_id IN ({placeholders}) AND fp.status = 'approved' AND (fp.deleted_by_admin = 0 OR fp.deleted_by_admin IS NULL)", center_ids).fetchone()[0]
+    # Total paid from admin/center transactions
+    txn_total = conn.execute(f"SELECT COALESCE(SUM(t.amount), 0) FROM transactions t JOIN students s ON t.student_id = s.id WHERE s.center_id IN ({placeholders}) AND t.transaction_type = 'credit' AND t.description NOT LIKE 'Online Fee Payment%%' AND t.description NOT LIKE 'Razorpay Payment%%' AND (t.deleted_by_admin = 0 OR t.deleted_by_admin IS NULL)", center_ids).fetchone()[0]
+    total_paid = fp_total + txn_total
+    total_pending = max(0, total_fees - total_paid)
+    conn.close()
+    return {"total_fees": total_fees, "total_paid": total_paid, "total_collected": total_paid, "total_pending": total_pending}
+
+
+@router.get("/my/student-statement")
+async def center_student_statement(phone: str = "", user: dict = Depends(get_current_user)):
+    """Get complete payment statement for a center's student by phone number."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    if not phone:
+        return {"student": None, "payments": [], "message": "Enter mobile number to search"}
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    center_ids = get_center_and_subcenter_ids(conn, center["id"])
+    placeholders_c = ",".join(["?"] * len(center_ids))
+    students = conn.execute(
+        f"SELECT s.id, s.name, s.phone, s.email, s.enrollment_no, s.total_fees, u.name as university_name, c.name as course_name "
+        f"FROM students s LEFT JOIN universities u ON s.university_id = u.id LEFT JOIN categories c ON s.category_id = c.id "
+        f"WHERE s.phone = ? AND s.center_id IN ({placeholders_c}) ORDER BY s.total_fees DESC, s.id DESC",
+        [phone] + list(center_ids)
+    ).fetchall()
+    if not students:
+        conn.close()
+        return {"student": None, "payments": [], "message": "No student found with this mobile number in your center"}
+    student = students[0]
+    student_ids = [s["id"] for s in students]
+    placeholders_s = ",".join(["?"] * len(student_ids))
+    fee_payments = conn.execute(
+        f"SELECT fp.id, fp.amount, fp.payment_mode, fp.utr_number, fp.status, fp.created_at, fp.approved_at, fp.remarks, fp.proof_url, "
+        f"'online' as source FROM fee_payments fp WHERE fp.student_id IN ({placeholders_s}) AND (fp.deleted_by_admin = 0 OR fp.deleted_by_admin IS NULL) ORDER BY fp.created_at DESC", student_ids
+    ).fetchall()
+    transactions = conn.execute(
+        f"SELECT t.id, t.amount, t.payment_mode, t.utr_number, t.status, t.created_at, NULL as approved_at, t.description as remarks, t.proof_url, "
+        f"'admin' as source FROM transactions t WHERE t.student_id IN ({placeholders_s}) AND t.transaction_type = 'credit' "
+        f"AND t.description NOT LIKE 'Online Fee Payment%%' AND t.description NOT LIKE 'Razorpay Payment%%' "
+        f"AND (t.deleted_by_admin = 0 OR t.deleted_by_admin IS NULL) ORDER BY t.created_at DESC", student_ids
+    ).fetchall()
+    all_payments = [dict(p) for p in fee_payments] + [dict(t) for t in transactions]
+    all_payments.sort(key=lambda x: x.get("created_at", "") or "", reverse=True)
+    total_paid_online = sum(p["amount"] for p in fee_payments if p["status"] == "approved")
+    total_paid_admin = sum(t["amount"] for t in transactions)
+    total_paid = total_paid_online + total_paid_admin
+    total_fees = sum(s["total_fees"] or 0 for s in students)
+    conn.close()
+    return {
+        "student": dict(student),
+        "payments": all_payments,
+        "summary": {"total_fees": total_fees, "total_paid": total_paid, "pending": max(0, total_fees - total_paid)},
+        "message": "Statement found"
+    }
+
+
+@router.get("/my/transactions")
+async def list_center_transactions(page: int = 1, limit: int = 50, user: dict = Depends(get_current_user)):
+    """List all transactions for center's students."""
+    if user.get("role") != "center":
+        raise HTTPException(status_code=403, detail="Only center users can access this")
+    conn = get_db()
+    center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+    if not center:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Center not found")
+    center_ids = get_center_and_subcenter_ids(conn, center["id"])
+    placeholders = ",".join(["?"] * len(center_ids))
+    query = f"""SELECT t.*, s.name as student_name, s.phone as student_phone, s.enrollment_no
+                FROM transactions t JOIN students s ON t.student_id = s.id
+                WHERE s.center_id IN ({placeholders}) AND (t.deleted_by_admin = 0 OR t.deleted_by_admin IS NULL)"""
+    params = list(center_ids)
+    total = conn.execute(f"SELECT COUNT(*) FROM ({query})", params).fetchone()[0]
+    query += " ORDER BY t.created_at DESC LIMIT ? OFFSET ?"
+    params.extend([limit, (page - 1) * limit])
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return {"transactions": [dict(r) for r in rows], "total": total}
+
+
 @router.post("/student/upload-proof")
 async def student_upload_payment_proof(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     """Student uploads payment proof image."""
