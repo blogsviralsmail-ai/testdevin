@@ -781,10 +781,10 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                   </select>
                 </div>
 
-                {/* Center Payment Info for center students */}
-                {isCenterStudent && (centerPaySettings.upi_id || centerPaySettings.account_number) && (
+                {/* Center Payment Info - UPI details when UPI selected */}
+                {isCenterStudent && form.payment_mode === "upi" && (centerPaySettings.upi_id || centerPaySettings.upi_qr_url) && (
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-green-800 mb-3">Payment Details - {centerName || 'Your Center'}</p>
+                    <p className="text-sm font-semibold text-green-800 mb-3">UPI Payment - {centerName || 'Your Center'}</p>
                     <div className="space-y-2 text-sm">
                       {centerPaySettings.upi_id && (
                         <div className="flex justify-between"><span className="text-gray-500">UPI ID:</span><span className="font-semibold text-gray-900">{centerPaySettings.upi_id}</span></div>
@@ -796,6 +796,15 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                           <p className="text-xs text-gray-500 mt-2">Scan with any UPI app</p>
                         </div>
                       )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Center Payment Info - Bank details when Bank Transfer selected */}
+                {isCenterStudent && form.payment_mode === "bank_transfer" && (centerPaySettings.account_number || centerPaySettings.account_holder_name) && (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-green-800 mb-3">Bank Details - {centerName || 'Your Center'}</p>
+                    <div className="space-y-2 text-sm">
                       {centerPaySettings.account_holder_name && <div className="flex justify-between"><span className="text-gray-500">Account Name:</span><span className="font-semibold text-gray-900">{centerPaySettings.account_holder_name}</span></div>}
                       {centerPaySettings.bank_name && <div className="flex justify-between"><span className="text-gray-500">Bank:</span><span className="font-semibold text-gray-900">{centerPaySettings.bank_name}</span></div>}
                       {centerPaySettings.account_number && <div className="flex justify-between"><span className="text-gray-500">Account No:</span><span className="font-semibold text-gray-900">{centerPaySettings.account_number}</span></div>}
