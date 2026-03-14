@@ -499,7 +499,10 @@ async def submit_fee_payment(data: dict, user: dict = Depends(get_current_user))
 
 @router.get("/fee-payments")
 async def list_fee_payments(status: Optional[str] = None, user: dict = Depends(get_current_user)):
-    """List fee payments - admin sees all, student sees own."""
+    """List fee payments - admin sees all, center sees own students, student sees own."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center", "student"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     query = """SELECT fp.*, st.name as student_name, st.enrollment_no, st.phone as student_phone,
                       u.name as approved_by_name
@@ -507,7 +510,7 @@ async def list_fee_payments(status: Optional[str] = None, user: dict = Depends(g
                JOIN students st ON fp.student_id = st.id
                LEFT JOIN users u ON fp.approved_by = u.id WHERE (fp.deleted_by_admin = 0 OR fp.deleted_by_admin IS NULL)"""
     params = []
-    if user.get("role") == "student":
+    if role == "student":
         student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user["sub"]),)).fetchone()
         if student:
             query += " AND fp.student_id = ?"
@@ -515,6 +518,13 @@ async def list_fee_payments(status: Optional[str] = None, user: dict = Depends(g
         else:
             conn.close()
             return []
+    elif role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        placeholders = ",".join(["?"] * len(all_ids))
+        query += f" AND st.center_id IN ({placeholders})"
+        params.extend(all_ids)
     if status:
         query += " AND fp.status = ?"
         params.append(status)
