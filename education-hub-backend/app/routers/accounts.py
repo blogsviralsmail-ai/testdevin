@@ -228,15 +228,14 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
     if not sid:
         conn.close()
         raise HTTPException(status_code=400, detail="Student phone or ID required")
-    # Center ownership check: verify student belongs to this center
+    # Center ownership check: verify student belongs to THIS center only (not sub-center students)
     if role == "center":
-        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        from app.routers.centers import get_current_center
         center = get_current_center(user)
-        all_ids = get_center_and_subcenter_ids(conn, center["id"])
         student_check = conn.execute("SELECT center_id FROM students WHERE id = ?", (sid,)).fetchone()
-        if not student_check or student_check["center_id"] not in all_ids:
+        if not student_check or student_check["center_id"] != center["id"]:
             conn.close()
-            raise HTTPException(status_code=403, detail="Student does not belong to your center")
+            raise HTTPException(status_code=403, detail="You can only collect fees for students admitted directly under your center")
     # Admin cannot collect fees for center students - only center or student can
     if role in ("admin", "super_admin", "branch_admin"):
         student_check = conn.execute("SELECT center_id FROM students WHERE id = ?", (sid,)).fetchone()
@@ -1070,14 +1069,13 @@ async def center_record_payment(student_id: int, data: dict, user: dict = Depend
         conn.close()
         raise HTTPException(status_code=404, detail="Student not found")
     
-    # Center ownership check: verify student belongs to this center
+    # Center ownership check: only allow fee collection for students admitted directly under THIS center
     if role == "center":
-        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        from app.routers.centers import get_current_center
         center = get_current_center(user)
-        all_ids = get_center_and_subcenter_ids(conn, center["id"])
-        if student["center_id"] not in all_ids:
+        if student["center_id"] != center["id"]:
             conn.close()
-            raise HTTPException(status_code=403, detail="Student does not belong to your center")
+            raise HTTPException(status_code=403, detail="You can only collect fees for students admitted directly under your center")
     
     # Create transaction
     description = f"Center fee payment - {payment_mode}" + (f" - {notes}" if notes else "")

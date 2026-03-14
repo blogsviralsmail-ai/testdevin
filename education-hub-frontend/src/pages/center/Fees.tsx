@@ -113,7 +113,7 @@ export default function CenterFees() {
   const fetchStudents = useCallback(() => {
     if (!centerId) return;
     setLoading(true);
-    api.get("/api/centers/" + centerId + "/students", { params: { search, limit: 100 } })
+    api.get("/api/centers/" + centerId + "/students", { params: { search, limit: 100, include_sub: false } })
       .then(r => setStudents(r.data.students || []))
       .catch(() => {})
       .finally(() => setLoading(false));
