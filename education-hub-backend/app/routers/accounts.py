@@ -593,10 +593,10 @@ async def create_razorpay_order(data: dict, user: dict = Depends(get_current_use
             }
         }
         order = client.order.create(data=order_data)
-        # Store order amount server-side for verification later
+        # Store order amount + student_id server-side for verification later
         conn.execute(
             "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-            (f"rzp_order_{order['id']}", str(amount_paise))
+            (f"rzp_order_{order['id']}", json.dumps({"amount": amount_paise, "student_id": student["id"]}))
         )
         conn.commit()
         conn.close()
@@ -640,7 +640,15 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
     if not order_amount_row:
         conn.close()
         raise HTTPException(status_code=400, detail="Order not found - possible tampering")
-    amount = int(order_amount_row["value"]) / 100  # Convert paise back to rupees
+    # Parse stored order data (amount + student_id)
+    try:
+        order_data = json.loads(order_amount_row["value"])
+        amount = int(order_data["amount"]) / 100
+        stored_student_id = order_data["student_id"]
+    except (json.JSONDecodeError, KeyError):
+        # Fallback for legacy format (plain amount string)
+        amount = int(order_amount_row["value"]) / 100
+        stored_student_id = None
     # Clean up the stored order
     conn.execute("DELETE FROM settings WHERE key = ?", (f"rzp_order_{razorpay_order_id}",))
     
@@ -649,6 +657,11 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
         conn.close()
         raise HTTPException(status_code=404, detail="Student record not found")
     sid = student["id"]
+    
+    # Verify the order was created by this student
+    if stored_student_id is not None and stored_student_id != sid:
+        conn.close()
+        raise HTTPException(status_code=403, detail="This payment order does not belong to you")
     
     # Insert fee payment as approved (Razorpay verified)
     conn.execute(
