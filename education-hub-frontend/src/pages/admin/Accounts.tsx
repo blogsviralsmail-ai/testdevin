@@ -45,6 +45,7 @@ function fmtCurrency(n: number) {
 
 export default function AdminAccounts() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [centerTransactions, setCenterTransactions] = useState<Transaction[]>([]);
   const [tab, setTab] = useState("transactions");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ student_phone: "", amount: "", transaction_type: "credit", payment_mode: "bank_transfer", utr_number: "", account_details: "", notes: "", proof_url: "" });
@@ -96,7 +97,8 @@ export default function AdminAccounts() {
   };
 
   const load = () => {
-    api.get("/api/accounts/transactions").then((r) => setTransactions(r.data.transactions || []));
+    api.get("/api/accounts/transactions?center_only=false").then((r) => setTransactions(r.data.transactions || []));
+    api.get("/api/accounts/transactions?center_only=true").then((r) => setCenterTransactions(r.data.transactions || [])).catch(() => {});
     api.get("/api/accounts/add-money").then((r) => setSummary(r.data)).catch(() => {});
     api.get("/api/accounts/fee-payments").then((r) => setFeePayments(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     api.get("/api/accounts/receipts").then((r) => {
@@ -534,6 +536,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
 
   const tabs = [
     { id: "transactions", label: "Transactions", count: transactions.length },
+    { id: "center-fees", label: "Center Fees", count: centerTransactions.length },
     { id: "online-fees", label: "Online Payments", count: feePayments.length, badge: pendingPayments.length },
     { id: "student-statement", label: "Student Statement" },
   ];
@@ -677,6 +680,61 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
             </tbody>
           </table>
           {transactions.length === 0 && <div className="p-8 text-center text-gray-500">No transactions found</div>}
+        </div>
+      )}
+
+      {/* Center Fees Tab - Only center student transactions */}
+      {tab === "center-fees" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b bg-gradient-to-r from-green-50 to-emerald-50 flex items-center justify-between">
+            <h3 className="font-semibold text-green-800 flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-green-600" /> Center Students Fee Collection
+            </h3>
+            <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">{centerTransactions.length} transactions</span>
+          </div>
+          <div className="p-4 bg-amber-50 border-b border-amber-200 text-sm text-amber-800">
+            <strong>Note:</strong> Center students ki fees sirf center ya student khud jama kar sakta hai. Admin center student ki fees jama nahi kar sakta.
+          </div>
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Student</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Center</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Amount</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Mode</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">UTR</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Date</th>
+                <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Receipt</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {centerTransactions.map((t: any) => (
+                <tr key={t.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="font-medium text-sm">{t.student_name || "—"}</p>
+                      {t.student_phone && <p className="text-xs text-blue-600 font-mono">{t.student_phone}</p>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">{t.center_name || "—"}</span>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-sm text-green-600">+₹{t.amount?.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{t.payment_mode || "—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{t.utr_number || "—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{t.created_at?.split("T")[0]}</td>
+                  <td className="px-4 py-3 text-right">
+                    {receiptMap[t.id] && (
+                      <button onClick={() => downloadReceipt(receiptMap[t.id])} disabled={downloadingReceipt === receiptMap[t.id]} className="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-xs font-medium disabled:opacity-50 shadow-sm">
+                        <Download className="h-3.5 w-3.5" /> Receipt
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {centerTransactions.length === 0 && <div className="p-8 text-center text-gray-500">No center fee transactions found</div>}
         </div>
       )}
 

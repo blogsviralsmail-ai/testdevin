@@ -157,11 +157,13 @@ class FeeRecordCreate(BaseModel):
     last_utr: Optional[str] = None
 
 @router.get("/transactions")
-async def list_transactions(student_id: Optional[int] = None, branch_id: Optional[int] = None, page: int = 1, limit: int = 50, user: dict = Depends(require_admin)):
+async def list_transactions(student_id: Optional[int] = None, branch_id: Optional[int] = None, center_only: Optional[bool] = None, page: int = 1, limit: int = 50, user: dict = Depends(require_admin)):
     conn = get_db()
-    query = """SELECT t.*, st.name as student_name, st.phone as student_phone, st.enrollment_no, b.name as branch_name
+    query = """SELECT t.*, st.name as student_name, st.phone as student_phone, st.enrollment_no, b.name as branch_name, c.name as center_name
                FROM transactions t JOIN students st ON t.student_id = st.id
-               LEFT JOIN branches b ON st.branch_id = b.id WHERE (t.deleted_by_admin = 0 OR t.deleted_by_admin IS NULL)"""
+               LEFT JOIN branches b ON st.branch_id = b.id
+               LEFT JOIN centers c ON st.center_id = c.id
+               WHERE (t.deleted_by_admin = 0 OR t.deleted_by_admin IS NULL)"""
     params = []
     if student_id:
         query += " AND t.student_id = ?"
@@ -169,7 +171,11 @@ async def list_transactions(student_id: Optional[int] = None, branch_id: Optiona
     if branch_id:
         query += " AND st.branch_id = ?"
         params.append(branch_id)
-    total = conn.execute(query.replace("SELECT t.*, st.name as student_name, st.phone as student_phone, st.enrollment_no, b.name as branch_name", "SELECT COUNT(*)"), params).fetchone()[0]
+    if center_only is True:
+        query += " AND st.center_id IS NOT NULL AND st.center_id > 0"
+    elif center_only is False:
+        query += " AND (st.center_id IS NULL OR st.center_id = 0)"
+    total = conn.execute(query.replace("SELECT t.*, st.name as student_name, st.phone as student_phone, st.enrollment_no, b.name as branch_name, c.name as center_name", "SELECT COUNT(*)"), params).fetchone()[0]
     query += " ORDER BY t.created_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, (page - 1) * limit])
     rows = conn.execute(query, params).fetchall()
@@ -202,6 +208,12 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
         if not student_check or student_check["center_id"] not in all_ids:
             conn.close()
             raise HTTPException(status_code=403, detail="Student does not belong to your center")
+    # Admin cannot collect fees for center students - only center or student can
+    if role in ("admin", "super_admin", "branch_admin"):
+        student_check = conn.execute("SELECT center_id FROM students WHERE id = ?", (sid,)).fetchone()
+        if student_check and student_check["center_id"]:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Center student ki fees sirf center ya student jama kar sakta hai. Admin center student ki fees jama nahi kar sakta.")
     description = data.description or data.notes or ""
     cursor = conn.execute(
         "INSERT INTO transactions (student_id, amount, transaction_type, utr_number, account_name, payment_mode, description, proof_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
