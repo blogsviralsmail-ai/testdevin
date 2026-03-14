@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api, { getUser } from "../../lib/api";
-import { Building2, Plus, Edit2, Eye, X, Search, Users } from "lucide-react";
+import { Building2, Plus, Edit2, Eye, X, Search, Users, KeyRound } from "lucide-react";
 
 export default function CenterSubCenters() {
   const [centers, setCenters] = useState<any[]>([]);
@@ -11,6 +11,9 @@ export default function CenterSubCenters() {
   const [editId, setEditId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [pwModal, setPwModal] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
   const user = getUser();
   const centerId = user?.center?.id;
 
@@ -113,6 +116,9 @@ export default function CenterSubCenters() {
                 <button onClick={() => openEdit(c)} className="flex-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-medium hover:bg-emerald-100 flex items-center justify-center gap-1">
                   <Edit2 className="h-3.5 w-3.5" /> Edit
                 </button>
+                <button onClick={() => { setPwModal(c); setNewPassword(""); }} className="flex-1 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-xs font-medium hover:bg-amber-100 flex items-center justify-center gap-1">
+                  <KeyRound className="h-3.5 w-3.5" /> Password
+                </button>
               </div>
             </div>
           ))}
@@ -201,6 +207,43 @@ export default function CenterSubCenters() {
                   <span className="text-sm font-medium text-gray-800">{value}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Change Password Modal */}
+      {pwModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Change Password</h2>
+              <button onClick={() => setPwModal(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">Change password for <strong>{pwModal.name}</strong></p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password (min 6 chars)" className="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => setPwModal(null)} className="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+              <button
+                disabled={pwSaving || newPassword.length < 6}
+                onClick={async () => {
+                  setPwSaving(true);
+                  try {
+                    await api.put(`/api/centers/${pwModal.id}/password`, { password: newPassword });
+                    alert("Password changed successfully!");
+                    setPwModal(null);
+                  } catch (err: any) {
+                    alert(err.response?.data?.detail || "Failed to change password");
+                  } finally {
+                    setPwSaving(false);
+                  }
+                }}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-amber-700"
+              >
+                {pwSaving ? "Saving..." : "Change Password"}
+              </button>
             </div>
           </div>
         </div>

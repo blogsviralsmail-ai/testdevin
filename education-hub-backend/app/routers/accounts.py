@@ -48,6 +48,29 @@ def _get_branding(conn) -> dict:
     }
 
 
+def _get_branding_for_student(conn, student_id: int) -> dict:
+    """Get branding for a student. If student belongs to a center, use center settings; otherwise use admin settings."""
+    admin_branding = _get_branding(conn)
+    student = conn.execute("SELECT center_id FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not student or not student["center_id"]:
+        return admin_branding
+    center_id = student["center_id"]
+    cs = conn.execute("SELECT * FROM center_settings WHERE center_id = ?", (center_id,)).fetchone()
+    if not cs:
+        # Check if this is a sub-center; use parent center's settings
+        parent = conn.execute("SELECT parent_center_id FROM centers WHERE id = ?", (center_id,)).fetchone()
+        if parent and parent["parent_center_id"]:
+            cs = conn.execute("SELECT * FROM center_settings WHERE center_id = ?", (parent["parent_center_id"],)).fetchone()
+    if cs and cs["receipt_company_name"]:
+        # Override admin branding with center-specific settings
+        admin_branding["company_name"] = cs["receipt_company_name"] or admin_branding["company_name"]
+        admin_branding["company_address"] = cs["receipt_address"] or admin_branding["company_address"]
+        admin_branding["company_phone"] = cs["receipt_phone"] or admin_branding["company_phone"]
+        admin_branding["company_email"] = cs["receipt_email"] or admin_branding["company_email"]
+        admin_branding["receipt_footer"] = cs["receipt_footer"] or admin_branding["receipt_footer"]
+    return admin_branding
+
+
 def _get_fee_summary(conn, student_id: int) -> dict:
     """Calculate fee summary for a student."""
     student = conn.execute("SELECT total_fees, name, email, phone FROM students WHERE id = ?", (student_id,)).fetchone()
@@ -78,7 +101,7 @@ def _get_fee_summary(conn, student_id: int) -> dict:
 def _send_receipt_notifications(conn, student_id: int, receipt_no: str, amount: float, payment_mode: str, utr_number: str):
     """Send receipt via email and WhatsApp (if configured). Runs in background-safe manner."""
     try:
-        branding = _get_branding(conn)
+        branding = _get_branding_for_student(conn, student_id)
         summary = _get_fee_summary(conn, student_id)
         payment_date = datetime.now().strftime("%d-%b-%Y")
 
@@ -221,7 +244,7 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
     )
     tid = cursor.lastrowid
     # Auto create receipt with prefix from settings (retry loop for race condition)
-    branding = _get_branding(conn)
+    branding = _get_branding_for_student(conn, sid)
     prefix = branding.get("receipt_prefix", "ASFF")
     receipt_no = _generate_receipt_no(conn, prefix, tid, sid, data.amount)
     # Update fee record
@@ -948,7 +971,7 @@ async def get_receipt_data(receipt_id: int, user: dict = Depends(get_current_use
         WHERE s.id = ?
     """, (sid,)).fetchone()
     txn = conn.execute("SELECT * FROM transactions WHERE id = ?", (receipt["transaction_id"],)).fetchone() if receipt["transaction_id"] else None
-    branding = _get_branding(conn)
+    branding = _get_branding_for_student(conn, sid)
     summary = _get_fee_summary(conn, sid)
     # Get center name if student belongs to a center
     center_name = ""
@@ -1044,7 +1067,7 @@ async def center_record_payment(student_id: int, data: dict, user: dict = Depend
     tid = cursor.lastrowid
     
     # Generate receipt
-    branding = _get_branding(conn)
+    branding = _get_branding_for_student(conn, student_id)
     prefix = branding.get("receipt_prefix", "ASFF")
     receipt_no = _generate_receipt_no(conn, prefix, tid, student_id, float(amount))
     

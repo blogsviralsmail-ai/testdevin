@@ -274,8 +274,11 @@ async def update_center(center_id: int, data: CenterUpdate, user: dict = Depends
 
 
 @router.put("/{center_id}/password")
-async def change_center_password(center_id: int, data: dict, user: dict = Depends(require_admin)):
-    """Admin changes a center's login password."""
+async def change_center_password(center_id: int, data: dict, user: dict = Depends(get_current_user)):
+    """Admin or parent center changes a center/sub-center's login password."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     new_password = data.get("password", "")
     if not new_password or len(new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
@@ -284,6 +287,12 @@ async def change_center_password(center_id: int, data: dict, user: dict = Depend
     if not center:
         conn.close()
         raise HTTPException(status_code=404, detail="Center not found")
+    # Center user can only change password for their own sub-centers
+    if role == "center":
+        my_center = get_current_center(user)
+        if center["parent_center_id"] != my_center["id"]:
+            conn.close()
+            raise HTTPException(status_code=403, detail="You can only change passwords for your sub-centers")
     conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(new_password), center["user_id"]))
     conn.commit()
     conn.close()
