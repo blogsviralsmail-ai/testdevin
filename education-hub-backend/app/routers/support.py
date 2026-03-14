@@ -50,6 +50,17 @@ async def list_tickets(
     if user.get("role") == "student":
         query += " AND t.student_id IN (SELECT id FROM students WHERE user_id = ?)"
         params.append(int(user["sub"]))
+    elif user.get("role") == "center":
+        # Center can see tickets from their own students
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+        if center:
+            from app.routers.centers import get_center_and_subcenter_ids
+            center_ids = get_center_and_subcenter_ids(conn, center["id"])
+            placeholders = ",".join(["?"] * len(center_ids))
+            query += f" AND t.student_id IN (SELECT id FROM students WHERE center_id IN ({placeholders}))"
+            params.extend(center_ids)
+        else:
+            query += " AND 1=0"  # No center found, show nothing
     query += " ORDER BY t.created_at DESC"
     rows = conn.execute(query, params).fetchall()
     conn.close()
@@ -62,6 +73,16 @@ async def get_ticket(tid: int, user: dict = Depends(get_current_user)):
     if not ticket:
         conn.close()
         raise HTTPException(status_code=404, detail="Ticket not found")
+    # Center can only view tickets from their own students
+    if user.get("role") == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+        if center:
+            from app.routers.centers import get_center_and_subcenter_ids
+            center_ids = get_center_and_subcenter_ids(conn, center["id"])
+            student = conn.execute("SELECT center_id FROM students WHERE id = ?", (ticket["student_id"],)).fetchone() if ticket["student_id"] else None
+            if not student or student["center_id"] not in center_ids:
+                conn.close()
+                raise HTTPException(status_code=403, detail="Not authorized to view this ticket")
     messages = conn.execute("SELECT tm.*, u.name as sender_name, u.role as sender_role FROM ticket_messages tm JOIN users u ON tm.sender_id = u.id WHERE tm.ticket_id = ? ORDER BY tm.created_at", (tid,)).fetchall()
     conn.close()
     return {"ticket": dict(ticket), "messages": [dict(m) for m in messages]}
@@ -112,7 +133,10 @@ async def create_ticket(data: dict, user: dict = Depends(get_current_user)):
     return {"id": tid, "message": "Ticket created"}
 
 @router.put("/tickets/{tid}/status")
-async def update_ticket_status(tid: int, data: dict, user: dict = Depends(require_admin)):
+async def update_ticket_status(tid: int, data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     conn.execute("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (data.get("status"), tid))
     conn.commit()
@@ -152,7 +176,10 @@ async def bulk_delete_tickets(data: dict, user: dict = Depends(require_admin)):
     return {"message": f"Deleted {len(ids)} tickets"}
 
 @router.put("/tickets/{tid}/solution")
-async def add_ticket_solution(tid: int, data: dict, user: dict = Depends(require_admin)):
+async def add_ticket_solution(tid: int, data: dict, user: dict = Depends(get_current_user)):
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     solution = data.get("solution", "")
     conn.execute("UPDATE tickets SET solution = ?, status = 'resolved', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (solution, tid))

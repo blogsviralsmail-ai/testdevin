@@ -855,6 +855,12 @@ async def get_receipt_data(receipt_id: int, user: dict = Depends(get_current_use
     txn = conn.execute("SELECT * FROM transactions WHERE id = ?", (receipt["transaction_id"],)).fetchone() if receipt["transaction_id"] else None
     branding = _get_branding(conn)
     summary = _get_fee_summary(conn, sid)
+    # Get center name if student belongs to a center
+    center_name = ""
+    if student and student["center_id"]:
+        center_row = conn.execute("SELECT name FROM centers WHERE id = ?", (student["center_id"],)).fetchone()
+        if center_row:
+            center_name = center_row["name"]
     conn.close()
     s = dict(student) if student else {}
     t = dict(txn) if txn else {}
@@ -862,7 +868,7 @@ async def get_receipt_data(receipt_id: int, user: dict = Depends(get_current_use
         "receipt_no": receipt["receipt_no"],
         "amount": receipt["amount"],
         "date": receipt["date"],
-        "student": {"name": s.get("name",""), "phone": s.get("phone",""), "email": s.get("email",""), "address": s.get("address",""), "university": s.get("university_name",""), "course": s.get("course_name",""), "branch": s.get("branch_name",""), "father_name": s.get("father_name","")},
+        "student": {"name": s.get("name",""), "phone": s.get("phone",""), "email": s.get("email",""), "address": s.get("address",""), "university": s.get("university_name",""), "course": s.get("course_name",""), "branch": s.get("branch_name",""), "father_name": s.get("father_name",""), "center_name": center_name},
         "payment": {"payment_mode": t.get("payment_mode",""), "utr_number": t.get("utr_number",""), "description": t.get("description","")},
         "fee_summary": {"total_fees": summary["total_fees"], "total_paid": summary["total_paid"], "pending": summary["pending"]},
         "branding": branding,

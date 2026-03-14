@@ -6,7 +6,7 @@ import axios from "axios";
 const API = import.meta.env.VITE_API_URL || "";
 import {
   LayoutDashboard, Users, FileText, Wallet, Building2,
-  Menu, X, LogOut, ChevronDown, GraduationCap, BarChart3, ChevronRight, Search, CreditCard
+  Menu, X, LogOut, ChevronDown, GraduationCap, BarChart3, ChevronRight, Search, CreditCard, MessageSquare
 } from "lucide-react";
 
 interface MenuItem {
@@ -46,6 +46,12 @@ const menuGroups: MenuGroup[] = [
     title: "Commission",
     items: [
       { path: "/center/commission", label: "Commission Report", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      { path: "/center/support", label: "Support Tickets", icon: MessageSquare },
     ],
   },
 ];

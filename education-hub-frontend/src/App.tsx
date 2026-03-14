@@ -75,6 +75,7 @@ import CenterFees from "./pages/center/Fees";
 import CenterSubCenters from "./pages/center/SubCenters";
 import CenterCommission from "./pages/center/Commission";
 import CenterPaymentSettings from "./pages/center/PaymentSettings";
+import CenterSupport from "./pages/center/Support";
 import AdminCenters from "./pages/admin/Centers";
 import AdminCommissionSlabs from "./pages/admin/CommissionSlabs";
 
@@ -147,6 +148,7 @@ function App() {
           <Route path="sub-centers" element={<CenterSubCenters />} />
           <Route path="commission" element={<CenterCommission />} />
           <Route path="payment-settings" element={<CenterPaymentSettings />} />
+          <Route path="support" element={<CenterSupport />} />
         </Route>
         
         <Route path="/student" element={<ProtectedRoute role="student"><StudentLayout /></ProtectedRoute>}>

@@ -61,17 +61,30 @@ export default function StudentFees() {
   const [downloadingReceipt, setDownloadingReceipt] = useState<number | null>(null);
   // Center student detection
   const [isCenterStudent, setIsCenterStudent] = useState(false);
-  const [_centerPaySettings, setCenterPaySettings] = useState<Record<string, unknown>>({});
+  const [centerPaySettings, setCenterPaySettings] = useState<Record<string, string>>({});
+  const [centerName, setCenterName] = useState("");
 
   useEffect(() => {
-    loadFees(); loadRazorpayScript(); loadPaymentSettings(); loadDeletedPayments(); loadReceipts();
+    loadFees(); loadDeletedPayments(); loadReceipts();
     // Check if student belongs to a center
     api.get("/api/centers/student/my-center-info").then(r => {
       if (r.data && r.data.center_id) {
         setIsCenterStudent(true);
-        setCenterPaySettings(r.data.payment_settings || {});
+        setCenterName(r.data.center_name || "");
+        // Load center's payment settings for center students
+        api.get("/api/centers/student/payment-settings").then(ps => {
+          setCenterPaySettings(ps.data || {});
+        }).catch(() => {});
+      } else {
+        // Only load admin payment settings and Razorpay for non-center students
+        loadPaymentSettings();
+        loadRazorpayScript();
       }
-    }).catch(() => {});
+    }).catch(() => {
+      // Not a center student, load admin settings
+      loadPaymentSettings();
+      loadRazorpayScript();
+    });
   }, []);
 
   async function loadReceipts() {
@@ -209,6 +222,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
         ${s.address ? '<div class="info-row"><span class="lbl">Address</span><span class="val">'+s.address+'</span></div>' : ''}
         ${s.phone ? '<div class="info-row"><span class="lbl">Phone</span><span class="val">'+s.phone+'</span></div>' : ''}
         ${s.email ? '<div class="info-row"><span class="lbl">Email</span><span class="val">'+s.email+'</span></div>' : ''}
+        ${s.center_name ? '<div class="info-row"><span class="lbl">Center</span><span class="val" style="color:#059669;font-weight:700">'+s.center_name+'</span></div>' : ''}
       </div>
     </div>
     <div class="info-section">
@@ -680,21 +694,23 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
             {paymentMethod === "choose" && (
               <div className="space-y-3">
                 <p className="text-sm text-gray-600 mb-3">Choose payment method:</p>
-                <button onClick={() => { setPaymentMethod("razorpay"); setRazorpayAmount(""); }}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-blue-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
-                  <div className="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                    <CreditCard className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-900">Pay with Razorpay</p>
-                    <p className="text-xs text-gray-500">UPI, Credit/Debit Card, Net Banking, Wallets</p>
-                  </div>
-                  <div className="ml-auto">
-                    <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">R</span>
+                {!isCenterStudent && (
+                  <button onClick={() => { setPaymentMethod("razorpay"); setRazorpayAmount(""); }}
+                    className="w-full flex items-center gap-4 p-4 border-2 border-blue-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
+                    <div className="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                      <CreditCard className="h-6 w-6 text-blue-600" />
                     </div>
-                  </div>
-                </button>
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900">Pay with Razorpay</p>
+                      <p className="text-xs text-gray-500">UPI, Credit/Debit Card, Net Banking, Wallets</p>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">R</span>
+                      </div>
+                    </div>
+                  </button>
+                )}
                 <button onClick={() => setPaymentMethod("manual")}
                   className="w-full flex items-center gap-4 p-4 border-2 border-green-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all group">
                   <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors">
@@ -702,7 +718,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-gray-900">Manual Payment</p>
-                    <p className="text-xs text-gray-500">Submit UTR/proof after bank transfer or UPI</p>
+                    <p className="text-xs text-gray-500">{isCenterStudent ? `Pay to ${centerName || 'your center'} via UPI or bank transfer` : 'Submit UTR/proof after bank transfer or UPI'}</p>
                   </div>
                 </button>
               </div>
@@ -765,8 +781,31 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                   </select>
                 </div>
 
-                {/* UPI QR Code */}
-                {form.payment_mode === "upi" && paySettings.upi_qr_image && (
+                {/* Center Payment Info for center students */}
+                {isCenterStudent && (centerPaySettings.upi_id || centerPaySettings.account_number) && (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-green-800 mb-3">Payment Details - {centerName || 'Your Center'}</p>
+                    <div className="space-y-2 text-sm">
+                      {centerPaySettings.upi_id && (
+                        <div className="flex justify-between"><span className="text-gray-500">UPI ID:</span><span className="font-semibold text-gray-900">{centerPaySettings.upi_id}</span></div>
+                      )}
+                      {centerPaySettings.upi_qr_url && (
+                        <div className="text-center mt-2">
+                          <img src={centerPaySettings.upi_qr_url.startsWith("/") ? API + centerPaySettings.upi_qr_url : centerPaySettings.upi_qr_url}
+                            alt="UPI QR Code" className="h-48 w-48 mx-auto object-contain rounded-lg border" />
+                          <p className="text-xs text-gray-500 mt-2">Scan with any UPI app</p>
+                        </div>
+                      )}
+                      {centerPaySettings.account_holder_name && <div className="flex justify-between"><span className="text-gray-500">Account Name:</span><span className="font-semibold text-gray-900">{centerPaySettings.account_holder_name}</span></div>}
+                      {centerPaySettings.bank_name && <div className="flex justify-between"><span className="text-gray-500">Bank:</span><span className="font-semibold text-gray-900">{centerPaySettings.bank_name}</span></div>}
+                      {centerPaySettings.account_number && <div className="flex justify-between"><span className="text-gray-500">Account No:</span><span className="font-semibold text-gray-900">{centerPaySettings.account_number}</span></div>}
+                      {centerPaySettings.ifsc_code && <div className="flex justify-between"><span className="text-gray-500">IFSC Code:</span><span className="font-semibold text-gray-900">{centerPaySettings.ifsc_code}</span></div>}
+                    </div>
+                  </div>
+                )}
+
+                {/* UPI QR Code - for non-center students */}
+                {!isCenterStudent && form.payment_mode === "upi" && paySettings.upi_qr_image && (
                   <div className="bg-white border border-blue-200 rounded-xl p-4 text-center">
                     <p className="text-sm font-medium text-blue-700 mb-3">Scan QR Code to Pay</p>
                     <img src={paySettings.upi_qr_image.startsWith("/") ? API + paySettings.upi_qr_image : paySettings.upi_qr_image}
@@ -775,8 +814,8 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                   </div>
                 )}
 
-                {/* Bank Transfer Details */}
-                {form.payment_mode === "bank_transfer" && (paySettings.bank_account_name || paySettings.bank_account_number) && (
+                {/* Bank Transfer Details - for non-center students */}
+                {!isCenterStudent && form.payment_mode === "bank_transfer" && (paySettings.bank_account_name || paySettings.bank_account_number) && (
                   <div className="bg-white border border-blue-200 rounded-xl p-4">
                     <p className="text-sm font-medium text-blue-700 mb-3">Bank Transfer Details</p>
                     <div className="space-y-2 text-sm">
