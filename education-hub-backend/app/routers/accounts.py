@@ -261,6 +261,16 @@ async def list_receipts(student_id: Optional[int] = None, branch_id: Optional[in
                FROM receipts r JOIN students st ON r.student_id = st.id
                LEFT JOIN branches b ON st.branch_id = b.id WHERE 1=1"""
     params = []
+
+    # Center can only see receipts of their students
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        placeholders = ",".join(["?"] * len(all_ids))
+        query += f" AND st.center_id IN ({placeholders})"
+        params.extend(all_ids)
+
     if student_id:
         query += " AND r.student_id = ?"
         params.append(student_id)
@@ -271,6 +281,54 @@ async def list_receipts(student_id: Optional[int] = None, branch_id: Optional[in
     rows = conn.execute(query, params).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+@router.post("/receipts/{receipt_id}/resend")
+async def resend_receipt(receipt_id: int, user: dict = Depends(get_current_user)):
+    """Resend a receipt notification via email/WhatsApp.
+
+    Allowed for admin roles and centers (centers only for their own students).
+    """
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    conn = get_db()
+    receipt = conn.execute("SELECT * FROM receipts WHERE id = ?", (receipt_id,)).fetchone()
+    if not receipt:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    sid = receipt["student_id"]
+
+    # Center ownership check
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        student_check = conn.execute("SELECT center_id FROM students WHERE id = ?", (sid,)).fetchone()
+        if not student_check or student_check["center_id"] not in all_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+    txn = None
+    if receipt.get("transaction_id"):
+        txn = conn.execute("SELECT payment_mode, utr_number FROM transactions WHERE id = ?", (receipt["transaction_id"],)).fetchone()
+
+    receipt_no = receipt["receipt_no"]
+    amount = float(receipt["amount"] or 0)
+    payment_mode = txn["payment_mode"] if txn else ""
+    utr_number = txn["utr_number"] if txn else ""
+    conn.close()
+
+    try:
+        notify_conn = get_db()
+        _send_receipt_notifications(notify_conn, sid, receipt_no, amount, payment_mode, utr_number)
+        notify_conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to resend receipt: {e}")
+
+    return {"message": "Receipt resent"}
 
 @router.get("/fee-records")
 async def list_fee_records(student_id: Optional[int] = None, user: dict = Depends(require_admin)):
@@ -851,10 +909,22 @@ async def get_receipt_data(receipt_id: int, user: dict = Depends(get_current_use
     if not receipt:
         conn.close()
         raise HTTPException(status_code=404, detail="Receipt not found")
+    role = user.get("role", "")
+
     # If student, verify ownership
-    if user.get("role") == "student":
+    if role == "student":
         student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user["sub"]),)).fetchone()
         if not student or student["id"] != receipt["student_id"]:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+    # If center, verify student belongs to center (including sub-centers)
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        student_row = conn.execute("SELECT center_id FROM students WHERE id = ?", (receipt["student_id"],)).fetchone()
+        if not student_row or student_row["center_id"] not in all_ids:
             conn.close()
             raise HTTPException(status_code=403, detail="Not authorized")
     sid = receipt["student_id"]

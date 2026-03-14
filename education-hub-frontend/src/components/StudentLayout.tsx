@@ -24,6 +24,8 @@ export default function StudentLayout() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [studentPhoto, setStudentPhoto] = useState<string | null>(null);
+  const [popups, setPopups] = useState<any[]>([]);
+  const [activePopup, setActivePopup] = useState<any | null>(null);
 
   useEffect(() => {
     api.get("/api/students/me").then(r => {
@@ -32,10 +34,76 @@ export default function StudentLayout() {
     }).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    api.get("/api/popups").then(r => {
+      const list = Array.isArray(r.data) ? r.data : [];
+      setPopups(list);
+      setActivePopup(list[0] || null);
+    }).catch(() => {});
+  }, []);
+
+  const dismissPopup = async () => {
+    if (!activePopup) return;
+    const pid = activePopup.id;
+    try {
+      await api.post(`/api/popups/${pid}/dismiss`, {});
+    } catch (e) {
+      // ignore
+    }
+    const next = popups.filter(p => p.id !== pid);
+    setPopups(next);
+    setActivePopup(next[0] || null);
+  };
+
   useEffect(() => { setMobileMenu(false); }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden w-full max-w-[100vw]">
+      {activePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={dismissPopup} />
+          <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{activePopup.title || "Announcement"}</h2>
+              </div>
+              <button onClick={dismissPopup} className="p-1 rounded hover:bg-gray-100">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {activePopup.image_url && (
+              <img
+                src={(activePopup.image_url || "").startsWith("/") ? API + activePopup.image_url : activePopup.image_url}
+                alt={activePopup.title || "Popup"}
+                className="mt-3 w-full max-h-64 object-contain rounded-lg border"
+              />
+            )}
+
+            {activePopup.content && (
+              <div className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">{activePopup.content}</div>
+            )}
+
+            {activePopup.link_url && (
+              <a
+                href={activePopup.link_url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-block text-sm font-medium text-blue-600 hover:text-blue-800"
+              >
+                {activePopup.link_text || "Open link"}
+              </a>
+            )}
+
+            <div className="mt-5 flex justify-end">
+              <button onClick={dismissPopup} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm fixed top-0 left-0 right-0 z-30">
         <div className="px-4 h-16 flex items-center justify-between">

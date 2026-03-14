@@ -797,12 +797,50 @@ def init_db():
     except:
         pass
 
+    # Add target_audience to notices for admin announcements targeting
+    try:
+        cursor.execute("ALTER TABLE notices ADD COLUMN target_audience TEXT DEFAULT 'all'")
+    except:
+        pass
+
     # Add center_id and visibility to exams table for center-created exams
     for col_name, col_type in [("center_id", "INTEGER"), ("visibility", "TEXT DEFAULT 'all'")]:
         try:
             cursor.execute(f"ALTER TABLE exams ADD COLUMN {col_name} {col_type}")
         except:
             pass
+
+    # Pop-ups table (admin notification pop-ups with target selection)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS popups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT,
+        popup_type TEXT DEFAULT 'info',
+        target_audience TEXT DEFAULT 'all',
+        image_url TEXT,
+        link_url TEXT,
+        link_text TEXT,
+        is_active INTEGER DEFAULT 1,
+        start_date TEXT,
+        end_date TEXT,
+        created_by INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id)
+    )""")
+
+    # Pop-up dismissals (track which users dismissed which pop-ups)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS popup_dismissals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        popup_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        dismissed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (popup_id) REFERENCES popups(id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        UNIQUE(popup_id, user_id)
+    )""")
 
     # Center settings table (for receipt/invoice customization)
     cursor.execute("""

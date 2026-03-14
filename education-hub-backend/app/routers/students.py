@@ -447,16 +447,30 @@ async def reject_student(sid: int, user: dict = Depends(require_admin)):
     return {"message": "Student rejected"}
 
 @router.post("/{sid}/change-status")
-async def change_student_status(sid: int, data: dict, user: dict = Depends(require_admin)):
+async def change_student_status(sid: int, data: dict, user: dict = Depends(get_current_user)):
     """Change student status to any status category."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     new_status = data.get("status", "")
     if not new_status:
         raise HTTPException(status_code=400, detail="Status is required")
+
     conn = get_db()
-    student = conn.execute("SELECT id FROM students WHERE id = ?", (sid,)).fetchone()
+    student = conn.execute("SELECT id, center_id FROM students WHERE id = ?", (sid,)).fetchone()
     if not student:
         conn.close()
         raise HTTPException(status_code=404, detail="Student not found")
+
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        if student["center_id"] not in all_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Not authorized")
+
     conn.execute("UPDATE students SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (new_status, sid))
     conn.commit()
     conn.close()
@@ -594,7 +608,32 @@ async def bulk_delete_students(data: dict, user: dict = Depends(require_admin)):
         conn.execute(f"DELETE FROM center_fee_payments WHERE student_id IN ({placeholders})", ids)
     except Exception:
         pass
+    # Get user_ids before deleting students (to clean up user accounts)
+    user_rows = conn.execute(f"SELECT user_id FROM students WHERE id IN ({placeholders}) AND user_id IS NOT NULL", ids).fetchall()
+    user_ids = [r["user_id"] for r in user_rows if r["user_id"]]
     conn.execute(f"DELETE FROM students WHERE id IN ({placeholders})", ids)
+    # Delete orphan user accounts and related records
+    if user_ids:
+        u_placeholders = ",".join(["?"] * len(user_ids))
+        try:
+            conn.execute(f"DELETE FROM chat_messages WHERE conversation_id IN (SELECT id FROM conversations WHERE student_user_id IN ({u_placeholders}))", user_ids)
+            conn.execute(f"DELETE FROM chat_messages WHERE sender_id IN ({u_placeholders})", user_ids)
+            conn.execute(f"DELETE FROM conversations WHERE student_user_id IN ({u_placeholders})", user_ids)
+        except Exception:
+            pass
+        try:
+            conn.execute(f"DELETE FROM notifications WHERE user_id IN ({u_placeholders})", user_ids)
+        except Exception:
+            pass
+        try:
+            conn.execute(f"DELETE FROM password_reset_tokens WHERE user_id IN ({u_placeholders})", user_ids)
+        except Exception:
+            pass
+        try:
+            conn.execute(f"DELETE FROM popup_dismissals WHERE user_id IN ({u_placeholders})", user_ids)
+        except Exception:
+            pass
+        conn.execute(f"DELETE FROM users WHERE id IN ({u_placeholders}) AND role = 'student'", user_ids)
     conn.commit()
     conn.close()
     return {"message": f"{len(ids)} students deleted"}

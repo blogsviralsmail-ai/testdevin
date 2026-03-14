@@ -31,7 +31,7 @@ app.add_middleware(
 from app.middleware import TenantMiddleware
 app.add_middleware(TenantMiddleware)
 
-from app.routers import auth, universities, categories, form_fields, students, exams, accounts, support, documents, branches, settings, enquiries, seed, team, testimonials, roles, blog, gallery, careers, leads, analytics, communication, student_status, notices, chat, placements, centers
+from app.routers import auth, universities, categories, form_fields, students, exams, accounts, support, documents, branches, settings, enquiries, seed, team, testimonials, roles, blog, gallery, careers, leads, analytics, communication, student_status, notices, chat, placements, centers, popups
 from app.routers import tenants as tenants_router
 
 app.include_router(auth.router)
@@ -61,6 +61,7 @@ app.include_router(notices.router)
 app.include_router(chat.router)
 app.include_router(placements.router)
 app.include_router(centers.router)
+app.include_router(popups.router)
 
 # Platform admin routes (tenant management)
 app.include_router(tenants_router.router)

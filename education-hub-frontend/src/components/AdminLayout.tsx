@@ -9,7 +9,7 @@ import {
   ClipboardList, Wallet, LifeBuoy, FileText, GitBranch,
   Settings, MessageSquare, Menu, X, LogOut, ChevronDown, UsersRound, Star, Shield,
   Upload, Tag, Search,
-  FileText as BlogIcon, Image, Briefcase, Target, BarChart3, Megaphone, ChevronRight
+  FileText as BlogIcon, Image, Briefcase, Target, BarChart3, Megaphone, Bell, ChevronRight
 } from "lucide-react";
 
 interface MenuItem {
@@ -39,6 +39,7 @@ const pathToPermission: Record<string, string> = {
   "/admin/communication": "support",
   "/admin/support": "support",
   "/admin/notices": "support",
+  "/admin/popups": "support",
   "/admin/blog": "testimonials",
   "/admin/gallery": "testimonials",
   "/admin/testimonials": "testimonials",
@@ -91,6 +92,7 @@ const menuGroups: MenuGroup[] = [
       { path: "/admin/communication", label: "Messages & Channels", icon: Megaphone },
       { path: "/admin/support", label: "Support Tickets", icon: LifeBuoy },
       { path: "/admin/notices", label: "Notice Board", icon: Megaphone },
+      { path: "/admin/popups", label: "Pop-up Notifications", icon: Bell },
     ],
   },
   {

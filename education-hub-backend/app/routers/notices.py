@@ -25,11 +25,11 @@ async def list_notices(status: Optional[str] = None, center_id: Optional[int] = 
             # Direct student sees only admin notices
             query += " AND n.center_id IS NULL"
     elif role == "center":
-        # Center sees their own notices + admin notices
+        # Center sees their own notices + admin notices (general or targeted to centers)
         from app.routers.centers import get_current_center
         center = get_current_center(user)
         cid = center["id"]
-        query += " AND (n.center_id IS NULL OR n.center_id = ?)"
+        query += " AND (n.center_id IS NULL OR n.center_id = ? OR n.target_audience = 'centers')"
         params.append(cid)
     else:
         # Admin sees all notices, optionally filtered
@@ -57,19 +57,21 @@ async def get_notice(nid: int, user: dict = Depends(get_current_user)):
 async def create_notice(data: dict, user: dict = Depends(get_current_user)):
     role = user.get("role", "")
     center_id = None
+    target_audience = data.get("target_audience", "all")
     if role == "center":
         from app.routers.centers import get_current_center
         center = get_current_center(user)
         center_id = center["id"]
+        target_audience = "all"  # Centers can't set target_audience
     elif role not in ("super_admin", "admin", "branch_admin"):
         raise HTTPException(status_code=403, detail="Not authorized to create notices")
     conn = get_db()
     cursor = conn.execute(
-        """INSERT INTO notices (title, content, category, priority, is_pinned, status, attachment_url, created_by, center_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO notices (title, content, category, priority, is_pinned, status, attachment_url, created_by, center_id, target_audience)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (data.get("title", ""), data.get("content", ""), data.get("category", "General"),
          data.get("priority", "normal"), data.get("is_pinned", 0), data.get("status", "published"),
-         data.get("attachment_url", ""), int(user["sub"]), center_id)
+         data.get("attachment_url", ""), int(user["sub"]), center_id, target_audience)
     )
     conn.commit()
     nid = cursor.lastrowid
@@ -92,11 +94,11 @@ async def update_notice(nid: int, data: dict, user: dict = Depends(get_current_u
         conn.close()
         raise HTTPException(status_code=403, detail="Not authorized")
     conn.execute(
-        """UPDATE notices SET title=?, content=?, category=?, priority=?, is_pinned=?, status=?, attachment_url=?, updated_at=CURRENT_TIMESTAMP
+        """UPDATE notices SET title=?, content=?, category=?, priority=?, is_pinned=?, status=?, attachment_url=?, target_audience=?, updated_at=CURRENT_TIMESTAMP
            WHERE id=?""",
         (data.get("title", ""), data.get("content", ""), data.get("category", "General"),
          data.get("priority", "normal"), data.get("is_pinned", 0), data.get("status", "published"),
-         data.get("attachment_url", ""), nid)
+         data.get("attachment_url", ""), data.get("target_audience", "all"), nid)
     )
     conn.commit()
     conn.close()

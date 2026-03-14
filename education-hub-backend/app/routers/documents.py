@@ -16,6 +16,35 @@ DOC_TYPES = [
     "Duplicate Degree", "Duplicate Marksheet"
 ]
 
+
+def _require_center_doc_access(conn, user: dict, doc_id: int):
+    """Ensure a center can only access its own students' documents."""
+    from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+
+    center = get_current_center(user)
+    all_ids = get_center_and_subcenter_ids(conn, center["id"])
+
+    row = conn.execute(
+        """SELECT st.center_id
+           FROM documents d JOIN students st ON d.student_id = st.id
+           WHERE d.id = ?""",
+        (doc_id,)
+    ).fetchone()
+    if not row or row["center_id"] not in all_ids:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+
+def _require_center_student_access(conn, user: dict, student_id: int):
+    """Ensure a center can only access its own students."""
+    from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+
+    center = get_current_center(user)
+    all_ids = get_center_and_subcenter_ids(conn, center["id"])
+
+    row = conn.execute("SELECT center_id FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not row or row["center_id"] not in all_ids:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
 class DocumentCreate(BaseModel):
     student_id: int
     doc_type: str
@@ -43,10 +72,20 @@ async def list_documents(
     user: dict = Depends(get_current_user)
 ):
     conn = get_db()
+    role = user.get("role", "")
     query = """SELECT d.*, st.name as student_name, st.enrollment_no, st.phone as student_phone, b.name as branch_name
                FROM documents d JOIN students st ON d.student_id = st.id
                LEFT JOIN branches b ON d.branch_id = b.id WHERE 1=1"""
     params = []
+
+    # Center can only list documents for their students
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        all_ids = get_center_and_subcenter_ids(conn, center["id"])
+        placeholders = ",".join(["?"] * len(all_ids))
+        query += f" AND st.center_id IN ({placeholders})"
+        params.extend(all_ids)
     if doc_type:
         query += " AND d.doc_type = ?"
         params.append(doc_type)
@@ -125,6 +164,11 @@ async def bulk_delete_documents(data: dict, user: dict = Depends(get_current_use
     if not ids:
         return {"message": "No documents selected"}
     conn = get_db()
+
+    if role == "center":
+        for did in ids:
+            _require_center_doc_access(conn, user, int(did))
+
     placeholders = ",".join(["?"] * len(ids))
     conn.execute(f"DELETE FROM documents WHERE id IN ({placeholders})", ids)
     conn.commit()
@@ -158,7 +202,11 @@ async def create_document(data: DocumentCreate, user: dict = Depends(get_current
             data.student_id = student["id"]
     elif user.get("role") in ("super_admin", "admin", "branch_admin", "center"):
         doc_status = data.status or "approved"
-    
+
+    # Center ownership check
+    if user.get("role") == "center":
+        _require_center_student_access(conn, user, int(data.student_id))
+
     file_path = data.file_path or data.file_url or ""
     fee_access = data.fee_access if data.fee_access in ("without_fees", "after_fees") else "without_fees"
     fee_pct = data.fee_percent_required if fee_access == "after_fees" else 0
@@ -187,6 +235,10 @@ async def update_document(did: int, data: DocumentCreate, user: dict = Depends(g
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+
+    if role == "center":
+        _require_center_doc_access(conn, user, did)
+
     fee_access = data.fee_access if data.fee_access in ("without_fees", "after_fees") else "without_fees"
     fee_pct = data.fee_percent_required if fee_access == "after_fees" else 0
     conn.execute(
@@ -203,6 +255,10 @@ async def dispatch_document(did: int, data: dict, user: dict = Depends(get_curre
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+
+    if role == "center":
+        _require_center_doc_access(conn, user, did)
+
     note = data.get("note", "")
     date = data.get("date", "")
     conn.execute("UPDATE documents SET status='dispatched', dispatched_date=?, notes=? WHERE id=?", (date, note, did))
@@ -216,6 +272,10 @@ async def receive_document(did: int, data: dict, user: dict = Depends(get_curren
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+
+    if role == "center":
+        _require_center_doc_access(conn, user, did)
+
     conn.execute("UPDATE documents SET status='received', received_date=? WHERE id=?", (data.get("date", ""), did))
     conn.commit()
     conn.close()
@@ -232,6 +292,10 @@ async def change_document_status(did: int, data: dict, user: dict = Depends(get_
     if not new_status:
         raise HTTPException(status_code=400, detail="Status is required")
     conn = get_db()
+
+    if role == "center":
+        _require_center_doc_access(conn, user, did)
+
     conn.execute("UPDATE documents SET status=?, notes=?, status_date=? WHERE id=?", (new_status, note, date, did))
     if new_status == "dispatched" and date:
         conn.execute("UPDATE documents SET dispatched_date=? WHERE id=?", (date, did))
@@ -247,6 +311,10 @@ async def approve_document(did: int, data: dict = None, user: dict = Depends(get
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+
+    if role == "center":
+        _require_center_doc_access(conn, user, did)
+
     from datetime import datetime
     today = datetime.now().strftime("%Y-%m-%d")
     conn.execute("UPDATE documents SET status='approved', status_date=? WHERE id=?", (today, did))
@@ -260,6 +328,10 @@ async def reject_document(did: int, data: dict = None, user: dict = Depends(get_
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+
+    if role == "center":
+        _require_center_doc_access(conn, user, did)
+
     from datetime import datetime
     today = datetime.now().strftime("%Y-%m-%d")
     conn.execute("UPDATE documents SET status='rejected', status_date=? WHERE id=?", (today, did))

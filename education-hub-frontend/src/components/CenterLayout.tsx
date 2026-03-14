@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { logout, getUser } from "../lib/api";
+import api from "../lib/api";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -80,6 +81,8 @@ export default function CenterLayout() {
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [popups, setPopups] = useState<any[]>([]);
+  const [activePopup, setActivePopup] = useState<any | null>(null);
   const location = useLocation();
   const user = getUser();
 
@@ -88,6 +91,27 @@ export default function CenterLayout() {
       setSiteSettings(r.data || {});
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    api.get("/api/popups").then(r => {
+      const list = Array.isArray(r.data) ? r.data : [];
+      setPopups(list);
+      setActivePopup(list[0] || null);
+    }).catch(() => {});
+  }, []);
+
+  const dismissPopup = async () => {
+    if (!activePopup) return;
+    const pid = activePopup.id;
+    try {
+      await api.post(`/api/popups/${pid}/dismiss`, {});
+    } catch (e) {
+      // ignore
+    }
+    const next = popups.filter(p => p.id !== pid);
+    setPopups(next);
+    setActivePopup(next[0] || null);
+  };
 
   const filteredGroups = searchQuery.trim()
     ? menuGroups
@@ -104,6 +128,51 @@ export default function CenterLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {activePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={dismissPopup} />
+          <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{activePopup.title || "Announcement"}</h2>
+              </div>
+              <button onClick={dismissPopup} className="p-1 rounded hover:bg-gray-100">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {activePopup.image_url && (
+              <img
+                src={(activePopup.image_url || "").startsWith("/") ? API + activePopup.image_url : activePopup.image_url}
+                alt={activePopup.title || "Popup"}
+                className="mt-3 w-full max-h-64 object-contain rounded-lg border"
+              />
+            )}
+
+            {activePopup.content && (
+              <div className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">{activePopup.content}</div>
+            )}
+
+            {activePopup.link_url && (
+              <a
+                href={activePopup.link_url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:text-emerald-900"
+              >
+                {activePopup.link_text || "Open link"}
+              </a>
+            )}
+
+            <div className="mt-5 flex justify-end">
+              <button onClick={dismissPopup} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-emerald-900 text-white transform transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between h-16 px-4 bg-emerald-800">

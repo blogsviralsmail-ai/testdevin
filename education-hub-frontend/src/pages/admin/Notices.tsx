@@ -16,7 +16,7 @@ export default function AdminNotices() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Notice | null>(null);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState({ title: "", content: "", category: "General", priority: "normal", is_pinned: 0, status: "published", attachment_url: "" });
+  const [form, setForm] = useState({ title: "", content: "", category: "General", priority: "normal", is_pinned: 0, status: "published", attachment_url: "", target_audience: "all" });
 
   useEffect(() => { load(); }, []);
 
@@ -26,13 +26,13 @@ export default function AdminNotices() {
 
   function openEdit(n: Notice) {
     setEditing(n);
-    setForm({ title: n.title, content: n.content, category: n.category, priority: n.priority, is_pinned: n.is_pinned, status: n.status, attachment_url: n.attachment_url || "" });
+    setForm({ title: n.title, content: n.content, category: n.category, priority: n.priority, is_pinned: n.is_pinned, status: n.status, attachment_url: n.attachment_url || "", target_audience: (n as any).target_audience || "all" });
     setShowForm(true);
   }
 
   function openNew() {
     setEditing(null);
-    setForm({ title: "", content: "", category: "General", priority: "normal", is_pinned: 0, status: "published", attachment_url: "" });
+    setForm({ title: "", content: "", category: "General", priority: "normal", is_pinned: 0, status: "published", attachment_url: "", target_audience: "all" });
     setShowForm(true);
   }
 
@@ -84,6 +84,11 @@ export default function AdminNotices() {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${priorityColor(n.priority)}`}>{n.priority}</span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{n.category}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${n.status === "published" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>{n.status}</span>
+                  {(n as any).target_audience && (n as any).target_audience !== "all" && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                      Target: {(n as any).target_audience === "centers" ? "All Centers" : (n as any).target_audience}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">{n.content}</p>
                 <p className="text-xs text-gray-400 mt-2">{new Date(n.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
@@ -141,6 +146,15 @@ export default function AdminNotices() {
                   <input type="checkbox" checked={form.is_pinned === 1} onChange={e => setForm({...form, is_pinned: e.target.checked ? 1 : 0})} className="h-4 w-4" />
                   <label className="text-sm">Pin to top</label>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Target Audience</label>
+                <select value={form.target_audience} onChange={e => setForm({...form, target_audience: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <option value="all">All (Students + Centers)</option>
+                  <option value="centers">All Centers Only</option>
+                  <option value="students">Students Only</option>
+                </select>
+                <p className="text-xs text-gray-400 mt-1">Choose who should see this notice</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Attachment URL (optional)</label>

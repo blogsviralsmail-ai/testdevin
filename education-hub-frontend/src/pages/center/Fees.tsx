@@ -63,8 +63,11 @@ export default function CenterFees() {
   const [selectedFees, setSelectedFees] = useState<number[]>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState<number | null>(null);
+  const [resendingReceipt, setResendingReceipt] = useState<number | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [txnStudentFilter, setTxnStudentFilter] = useState("");
+  const [feeStudentFilter, setFeeStudentFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [showPay, setShowPay] = useState<any>(null);
   const [payAmount, setPayAmount] = useState("");
@@ -367,6 +370,19 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
     setDownloadingReceipt(null);
   };
 
+  const resendReceipt = async (receiptId: number) => {
+    if (!confirm("Resend this receipt via email/WhatsApp?")) return;
+    setResendingReceipt(receiptId);
+    try {
+      await api.post(`/api/accounts/receipts/${receiptId}/resend`, {});
+      alert("Receipt resent successfully");
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || "Failed to resend receipt");
+    } finally {
+      setResendingReceipt(null);
+    }
+  };
+
   const downloadTxnCSV = () => {
     const header = ["Date", "Student", "Phone", "Amount", "Type", "Payment Mode", "UTR", "Notes"];
     const rows = transactions.map(t => [fmtDate(t.created_at), t.student_name || "", t.student_phone || "", t.amount.toString(), t.transaction_type, t.payment_mode, t.utr_number || "", t.notes || t.description || ""]);
@@ -611,8 +627,12 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
       {/* Transactions Tab */}
       {tab === "transactions" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
+          <div className="px-4 py-3 border-b bg-gray-50 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              <select value={txnStudentFilter} onChange={e => setTxnStudentFilter(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none min-w-[160px]">
+                <option value="">All Students</option>
+                {students.map(s => <option key={s.id} value={s.phone}>{s.name} ({s.phone})</option>)}
+              </select>
               {isAdmin && selectedTxns.length > 0 && (
                 <button onClick={bulkDeleteTxns} disabled={bulkDeleting} className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 text-xs font-medium disabled:opacity-50">
                   <Trash2 className="h-3 w-3" /> {bulkDeleting ? "Deleting..." : `Delete ${selectedTxns.length}`}
@@ -639,11 +659,11 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">Mode</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">Proof</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Date</th>
-                {isAdmin && <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Action</th>}
+                <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {transactions.map((t) => (
+              {transactions.filter(t => !txnStudentFilter || t.student_phone === txnStudentFilter).map((t) => (
                 <tr key={t.id} className={`hover:bg-gray-50 ${selectedTxns.includes(t.id) ? "bg-blue-50" : ""}`}>
                   {isAdmin && <td className="px-4 py-3 w-10"><input type="checkbox" checked={selectedTxns.includes(t.id)} onChange={() => toggleTxnSelect(t.id)} className="rounded" /></td>}
                   <td className="px-4 py-3">
@@ -670,20 +690,25 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                     {t.proof_url ? <a href={API + t.proof_url} target="_blank" rel="noreferrer" className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 inline-flex items-center gap-1"><FileText className="h-3 w-3" />Proof</a> : "\u2014"}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{t.created_at?.split("T")[0]}</td>
-                  {isAdmin && (
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {receiptMap[t.id] && (
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {receiptMap[t.id] && (
+                        <>
                           <button onClick={() => downloadReceipt(receiptMap[t.id])} disabled={downloadingReceipt === receiptMap[t.id]} className="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-xs font-medium disabled:opacity-50 shadow-sm">
                             <Download className="h-3.5 w-3.5" /> Receipt
                           </button>
-                        )}
+                          <button onClick={() => resendReceipt(receiptMap[t.id])} disabled={resendingReceipt === receiptMap[t.id]} className="inline-flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 text-xs font-medium disabled:opacity-50 shadow-sm">
+                            <Phone className="h-3.5 w-3.5" /> {resendingReceipt === receiptMap[t.id] ? "Sending..." : "Resend"}
+                          </button>
+                        </>
+                      )}
+                      {isAdmin && (
                         <button onClick={() => deleteTransaction(t.id)} disabled={deletingId === t.id} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-50" title="Delete">
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </div>
-                    </td>
-                  )}
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -695,12 +720,16 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
       {/* Online Fees Payment Tab */}
       {tab === "online-fees" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
+          <div className="px-4 py-3 border-b bg-gray-50 flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
               {isAdmin && <input type="checkbox" checked={selectedFees.length === feePayments.length && feePayments.length > 0} onChange={toggleAllFees} className="rounded" />}
               Online Fee Payments from Students
             </h3>
             <div className="flex items-center gap-2">
+              <select value={feeStudentFilter} onChange={e => setFeeStudentFilter(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none min-w-[160px]">
+                <option value="">All Students</option>
+                {students.map(s => <option key={s.id} value={s.phone}>{s.name} ({s.phone})</option>)}
+              </select>
               {isAdmin && selectedFees.length > 0 && (
                 <button onClick={bulkDeleteFees} disabled={bulkDeleting} className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 text-xs font-medium disabled:opacity-50">
                   <Trash2 className="h-3 w-3" /> {bulkDeleting ? "Deleting..." : `Delete ${selectedFees.length}`}
@@ -719,7 +748,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
             <div className="p-8 text-center text-gray-500">No online fee payments yet</div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {feePayments.map((p) => (
+              {feePayments.filter(p => !feeStudentFilter || p.student_phone === feeStudentFilter).map((p) => (
                 <div key={p.id} className={`px-4 py-4 hover:bg-gray-50 ${p.status === "pending" ? "bg-amber-50 border-l-4 border-l-amber-400" : ""} ${selectedFees.includes(p.id) ? "bg-blue-50" : ""}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">

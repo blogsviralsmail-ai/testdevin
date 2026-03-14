@@ -81,6 +81,7 @@ import CenterExamTimetable from "./pages/center/ExamTimetable";
 import CenterSettings from "./pages/center/Settings";
 import AdminCenters from "./pages/admin/Centers";
 import AdminCommissionSlabs from "./pages/admin/CommissionSlabs";
+import AdminPopups from "./pages/admin/Popups";
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role: string }) {
   const user = getUser();
@@ -137,6 +138,7 @@ function App() {
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="communication" element={<AdminCommunication />} />
           <Route path="notices" element={<AdminNotices />} />
+          <Route path="popups" element={<AdminPopups />} />
           <Route path="chat" element={<AdminChat />} />
           <Route path="placements" element={<AdminPlacements />} />
           <Route path="centers" element={<AdminCenters />} />
