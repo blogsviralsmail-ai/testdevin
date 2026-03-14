@@ -26,10 +26,11 @@ async def list_notices(status: Optional[str] = None, center_id: Optional[int] = 
             query += " AND n.center_id IS NULL"
     elif role == "center":
         # Center sees their own notices + admin notices
-        cid = user.get("center_id")
-        if cid:
-            query += " AND (n.center_id IS NULL OR n.center_id = ?)"
-            params.append(cid)
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
+        cid = center["id"]
+        query += " AND (n.center_id IS NULL OR n.center_id = ?)"
+        params.append(cid)
     else:
         # Admin sees all notices, optionally filtered
         if center_id:
@@ -57,9 +58,9 @@ async def create_notice(data: dict, user: dict = Depends(get_current_user)):
     role = user.get("role", "")
     center_id = None
     if role == "center":
-        center_id = user.get("center_id")
-        if not center_id:
-            raise HTTPException(status_code=403, detail="Center ID not found")
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
+        center_id = center["id"]
     elif role not in ("super_admin", "admin", "branch_admin"):
         raise HTTPException(status_code=403, detail="Not authorized to create notices")
     conn = get_db()
@@ -81,8 +82,10 @@ async def update_notice(nid: int, data: dict, user: dict = Depends(get_current_u
     conn = get_db()
     # Center can only edit their own notices
     if role == "center":
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
         notice = conn.execute("SELECT center_id FROM notices WHERE id = ?", (nid,)).fetchone()
-        if not notice or notice["center_id"] != user.get("center_id"):
+        if not notice or notice["center_id"] != center["id"]:
             conn.close()
             raise HTTPException(status_code=403, detail="Cannot edit this notice")
     elif role not in ("super_admin", "admin", "branch_admin"):
@@ -104,8 +107,10 @@ async def delete_notice(nid: int, user: dict = Depends(get_current_user)):
     role = user.get("role", "")
     conn = get_db()
     if role == "center":
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
         notice = conn.execute("SELECT center_id FROM notices WHERE id = ?", (nid,)).fetchone()
-        if not notice or notice["center_id"] != user.get("center_id"):
+        if not notice or notice["center_id"] != center["id"]:
             conn.close()
             raise HTTPException(status_code=403, detail="Cannot delete this notice")
     elif role not in ("super_admin", "admin", "branch_admin"):

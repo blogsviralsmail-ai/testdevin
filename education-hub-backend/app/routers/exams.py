@@ -37,10 +37,11 @@ async def list_exams(session_id: Optional[int] = None, category_id: Optional[int
     role = user.get("role", "")
     if role == "center":
         # Center sees: admin exams with visibility='all' + own center exams
-        cid = user.get("center_id")
-        if cid:
-            query += " AND (e.center_id = ? OR (e.center_id IS NULL AND (e.visibility = 'all' OR e.visibility IS NULL)))"
-            params.append(cid)
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
+        cid = center["id"]
+        query += " AND (e.center_id = ? OR (e.center_id IS NULL AND (e.visibility = 'all' OR e.visibility IS NULL)))"
+        params.append(cid)
     elif role == "student":
         # Student sees exams relevant to their course
         pass
@@ -80,9 +81,9 @@ async def create_exam(data: ExamCreate, user: dict = Depends(get_current_user)):
     role = user.get("role", "")
     center_id = None
     if role == "center":
-        center_id = user.get("center_id")
-        if not center_id:
-            raise HTTPException(status_code=403, detail="Center ID not found")
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
+        center_id = center["id"]
     elif role not in ("super_admin", "admin", "branch_admin"):
         raise HTTPException(status_code=403, detail="Not authorized to create exams")
     conn = get_db()
@@ -100,8 +101,10 @@ async def update_exam(eid: int, data: ExamCreate, user: dict = Depends(get_curre
     role = user.get("role", "")
     conn = get_db()
     if role == "center":
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
         exam = conn.execute("SELECT center_id FROM exams WHERE id = ?", (eid,)).fetchone()
-        if not exam or exam["center_id"] != user.get("center_id"):
+        if not exam or exam["center_id"] != center["id"]:
             conn.close()
             raise HTTPException(status_code=403, detail="Cannot edit this exam")
     elif role not in ("super_admin", "admin", "branch_admin"):
@@ -120,8 +123,10 @@ async def delete_exam(eid: int, user: dict = Depends(get_current_user)):
     role = user.get("role", "")
     conn = get_db()
     if role == "center":
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
         exam = conn.execute("SELECT center_id FROM exams WHERE id = ?", (eid,)).fetchone()
-        if not exam or exam["center_id"] != user.get("center_id"):
+        if not exam or exam["center_id"] != center["id"]:
             conn.close()
             raise HTTPException(status_code=403, detail="Cannot delete this exam")
     elif role not in ("super_admin", "admin", "branch_admin"):

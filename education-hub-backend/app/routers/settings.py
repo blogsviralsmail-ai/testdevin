@@ -169,7 +169,9 @@ async def get_center_settings(center_id: int, user: dict = Depends(get_current_u
 async def update_center_settings(center_id: int, data: dict, user: dict = Depends(get_current_user)):
     role = user.get("role", "")
     if role == "center":
-        if user.get("center_id") != center_id:
+        from app.routers.centers import get_current_center
+        center = get_current_center(user)
+        if center["id"] != center_id:
             raise HTTPException(status_code=403, detail="Not authorized")
     elif role not in ("super_admin", "admin", "branch_admin"):
         raise HTTPException(status_code=403, detail="Not authorized")

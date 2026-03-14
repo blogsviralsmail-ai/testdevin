@@ -392,6 +392,9 @@ async def delete_student(sid: int, user: dict = Depends(require_admin)):
     conn.execute("DELETE FROM exam_results WHERE student_id = ?", (sid,))
     conn.execute("DELETE FROM tickets WHERE student_id = ?", (sid,))
     conn.execute("DELETE FROM placement_applications WHERE student_id = ?", (sid,))
+    # Delete center-related records
+    conn.execute("DELETE FROM center_commissions WHERE student_id = ?", (sid,))
+    conn.execute("DELETE FROM center_fee_payments WHERE student_id = ?", (sid,))
     # Delete user-related records (conversations, chat_messages, notifications, password_reset_tokens)
     if student and student["user_id"]:
         uid = student["user_id"]
@@ -582,6 +585,15 @@ async def bulk_delete_students(data: dict, user: dict = Depends(require_admin)):
     except Exception:
         pass
     conn.execute(f"DELETE FROM tickets WHERE student_id IN ({placeholders})", ids)
+    # Delete center-related records
+    try:
+        conn.execute(f"DELETE FROM center_commissions WHERE student_id IN ({placeholders})", ids)
+    except Exception:
+        pass
+    try:
+        conn.execute(f"DELETE FROM center_fee_payments WHERE student_id IN ({placeholders})", ids)
+    except Exception:
+        pass
     conn.execute(f"DELETE FROM students WHERE id IN ({placeholders})", ids)
     conn.commit()
     conn.close()
