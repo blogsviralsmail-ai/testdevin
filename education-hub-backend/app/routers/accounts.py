@@ -210,6 +210,12 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
     role = user.get("role", "")
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized to create transactions")
+    # Sub-centers cannot create transactions (fee payments)
+    if role == "center":
+        from app.routers.centers import get_current_center
+        _center = get_current_center(user)
+        if _center.get("parent_center_id"):
+            raise HTTPException(status_code=403, detail="Sub-centers cannot make fee payments. Only parent centers can collect fees.")
     conn = get_db()
     # Resolve student_id from phone if provided
     sid = data.student_id
@@ -1043,6 +1049,12 @@ async def center_record_payment(student_id: int, data: dict, user: dict = Depend
     role = user.get("role", "")
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized to record payments")
+    # Sub-centers cannot record fee payments
+    if role == "center":
+        from app.routers.centers import get_current_center
+        _center = get_current_center(user)
+        if _center.get("parent_center_id"):
+            raise HTTPException(status_code=403, detail="Sub-centers cannot make fee payments. Only parent centers can collect fees.")
     
     amount = data.get("amount", 0)
     if not amount or float(amount) <= 0:

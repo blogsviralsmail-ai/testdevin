@@ -81,6 +81,7 @@ export default function CenterFees() {
   const user = getUser();
   const centerId = user?.center?.id;
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
+  const isSubCenter = !!user?.center?.parent_center_id;
 
   const toggleTxnSelect = (id: number) => setSelectedTxns(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const toggleFeeSelect = (id: number) => setSelectedFees(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -512,9 +513,11 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><IndianRupee className="h-6 w-6 text-blue-600" /> Accounts</h1>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">
-          <Plus className="h-4 w-4" /> Add Transaction
-        </button>
+        {!isSubCenter && (
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">
+            <Plus className="h-4 w-4" /> Add Transaction
+          </button>
+        )}
       </div>
 
       {pendingPayments.length > 0 && (
@@ -605,7 +608,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                       <td className="px-4 py-3"><span className={"text-sm font-semibold " + (bal > 0 ? "text-red-600" : "text-green-600")}>{fmtCurrency(bal)}</span></td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {bal > 0 && (
+                          {bal > 0 && !isSubCenter && (
                             <button onClick={() => setShowPay(s)} className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-xs font-medium">
                               <Plus className="h-3 w-3" /> Pay
                             </button>
