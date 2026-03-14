@@ -4,7 +4,7 @@ import { Plus, X, FileText, Upload, CheckCircle, XCircle, Eye, Search, Trash2, P
 
 const API = import.meta.env.VITE_API_URL || "";
 
-const DOC_TYPES = ["Marksheet", "Original Degree", "Transcript", "Bonafide Letter", "Duplicate Degree", "Duplicate Marksheet", "Aadhar Card", "Photo", "Certificate", "Signature", "Other"];
+const DOC_TYPES = ["Marksheet", "Original Degree", "Transcript", "Bonafide Letter", "Duplicate Degree", "Duplicate Marksheet"];
 const ALL_STATUSES = ["pending_review", "approved", "rejected", "pending", "processing", "office_received", "online_available", "dispatched", "received"];
 const STATUS_LABELS: Record<string, string> = {
   pending_review: "Pending Review", approved: "Approved", rejected: "Rejected", pending: "Pending",

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api, { getUser } from "../../lib/api";
-import { Plus, X, Wallet, Upload, FileText, CheckCircle, XCircle, Clock, Eye, Search, Phone, AlertCircle, IndianRupee, Download } from "lucide-react";
+import { Plus, X, Wallet, Upload, FileText, CheckCircle, XCircle, Clock, Eye, Search, Phone, AlertCircle, IndianRupee, Trash2, Download } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -58,6 +58,10 @@ export default function CenterFees() {
   const [stmtPhone, setStmtPhone] = useState("");
   const [statement, setStatement] = useState<StudentStatement | null>(null);
   const [stmtLoading, setStmtLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [selectedTxns, setSelectedTxns] = useState<number[]>([]);
+  const [selectedFees, setSelectedFees] = useState<number[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState<number | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -73,6 +77,34 @@ export default function CenterFees() {
   const [receiptMap, setReceiptMap] = useState<Record<number, number>>({});
   const user = getUser();
   const centerId = user?.center?.id;
+  const isAdmin = user?.role === "super_admin" || user?.role === "admin";
+
+  const toggleTxnSelect = (id: number) => setSelectedTxns(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleFeeSelect = (id: number) => setSelectedFees(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleAllTxns = () => setSelectedTxns(prev => prev.length === transactions.length ? [] : transactions.map(t => t.id));
+  const toggleAllFees = () => setSelectedFees(prev => prev.length === feePayments.length ? [] : feePayments.map(p => p.id));
+
+  const bulkDeleteTxns = async () => {
+    if (!selectedTxns.length || !confirm(`Are you sure you want to delete ${selectedTxns.length} transaction(s)? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      await api.post("/api/accounts/transactions/bulk-delete", { ids: selectedTxns });
+      setSelectedTxns([]);
+      load();
+    } catch (err: any) { alert(err?.response?.data?.detail || "Failed to delete"); }
+    setBulkDeleting(false);
+  };
+
+  const bulkDeleteFees = async () => {
+    if (!selectedFees.length || !confirm(`Are you sure you want to delete ${selectedFees.length} fee payment(s)? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      await api.post("/api/accounts/fee-payments/bulk-delete", { ids: selectedFees });
+      setSelectedFees([]);
+      load();
+    } catch (err: any) { alert(err?.response?.data?.detail || "Failed to delete"); }
+    setBulkDeleting(false);
+  };
 
   const fetchStudents = useCallback(() => {
     if (!centerId) return;
@@ -209,6 +241,30 @@ export default function CenterFees() {
       setStatement(res.data);
     } catch { setStatement(null); }
     setStmtLoading(false);
+  };
+
+  const deleteTransaction = async (tid: number) => {
+    if (!confirm("Are you sure you want to delete this transaction? This cannot be undone.")) return;
+    setDeletingId(tid);
+    try {
+      await api.delete(`/api/accounts/transactions/${tid}`);
+      load();
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || "Failed to delete");
+    }
+    setDeletingId(null);
+  };
+
+  const deleteFeePayment = async (pid: number) => {
+    if (!confirm("Are you sure you want to delete this fee payment? This cannot be undone.")) return;
+    setDeletingId(pid);
+    try {
+      await api.delete(`/api/accounts/fee-payments/${pid}`);
+      load();
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || "Failed to delete");
+    }
+    setDeletingId(null);
   };
 
   const downloadReceipt = async (receiptId: number) => {
@@ -439,7 +495,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><IndianRupee className="h-6 w-6 text-blue-600" /> Fees Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><IndianRupee className="h-6 w-6 text-blue-600" /> Accounts</h1>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">
           <Plus className="h-4 w-4" /> Add Transaction
         </button>
@@ -556,7 +612,13 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
       {tab === "transactions" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">All Transactions</h3>
+            <div className="flex items-center gap-2">
+              {isAdmin && selectedTxns.length > 0 && (
+                <button onClick={bulkDeleteTxns} disabled={bulkDeleting} className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 text-xs font-medium disabled:opacity-50">
+                  <Trash2 className="h-3 w-3" /> {bulkDeleting ? "Deleting..." : `Delete ${selectedTxns.length}`}
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <button onClick={downloadTxnCSV} className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 text-xs font-medium border border-green-200">
                 <Download className="h-3 w-3" /> CSV
@@ -566,69 +628,84 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
               </button>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Student</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Amount</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Type</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">UTR</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">Mode</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">Proof</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Date</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Receipt</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {transactions.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className={"h-9 w-9 rounded-lg flex items-center justify-center " + (t.transaction_type === "credit" ? "bg-green-100" : "bg-red-100")}>
-                          <Wallet className={"h-4 w-4 " + (t.transaction_type === "credit" ? "text-green-600" : "text-red-600")} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{t.student_name || "\u2014"}</p>
-                          {t.student_phone && <p className="text-xs text-blue-600 font-mono">{t.student_phone}</p>}
-                          <p className="text-xs text-gray-500">{t.notes || t.description || ""}</p>
-                        </div>
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                {isAdmin && <th className="px-4 py-3 w-10"><input type="checkbox" checked={selectedTxns.length === transactions.length && transactions.length > 0} onChange={toggleAllTxns} className="rounded" /></th>}
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Student</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Amount</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Type</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">UTR</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">Mode</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden lg:table-cell">Proof</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 hidden md:table-cell">Date</th>
+                {isAdmin && <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Action</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {transactions.map((t) => (
+                <tr key={t.id} className={`hover:bg-gray-50 ${selectedTxns.includes(t.id) ? "bg-blue-50" : ""}`}>
+                  {isAdmin && <td className="px-4 py-3 w-10"><input type="checkbox" checked={selectedTxns.includes(t.id)} onChange={() => toggleTxnSelect(t.id)} className="rounded" /></td>}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${t.transaction_type === "credit" ? "bg-green-100" : "bg-red-100"}`}>
+                        <Wallet className={`h-4 w-4 ${t.transaction_type === "credit" ? "text-green-600" : "text-red-600"}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{t.student_name || "\u2014"}</p>
+                        {t.student_phone && <p className="text-xs text-blue-600 font-mono">{t.student_phone}</p>}
+                        <p className="text-xs text-gray-500">{t.notes || t.description || ""}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-sm">
+                    <span className={t.transaction_type === "credit" ? "text-green-600" : "text-red-600"}>
+                      {t.transaction_type === "credit" ? "+" : "-"}{fmtCurrency(t.amount)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm hidden md:table-cell"><span className={`text-xs px-2 py-1 rounded-full ${t.transaction_type === "credit" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{t.transaction_type}</span></td>
+                  <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{t.utr_number || "\u2014"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{t.payment_mode}</td>
+                  <td className="px-4 py-3 text-sm hidden lg:table-cell">
+                    {t.proof_url ? <a href={API + t.proof_url} target="_blank" rel="noreferrer" className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 inline-flex items-center gap-1"><FileText className="h-3 w-3" />Proof</a> : "\u2014"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{t.created_at?.split("T")[0]}</td>
+                  {isAdmin && (
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {receiptMap[t.id] && (
+                          <button onClick={() => downloadReceipt(receiptMap[t.id])} disabled={downloadingReceipt === receiptMap[t.id]} className="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-xs font-medium disabled:opacity-50 shadow-sm">
+                            <Download className="h-3.5 w-3.5" /> Receipt
+                          </button>
+                        )}
+                        <button onClick={() => deleteTransaction(t.id)} disabled={deletingId === t.id} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-50" title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-sm">
-                      <span className={t.transaction_type === "credit" ? "text-green-600" : "text-red-600"}>
-                        {t.transaction_type === "credit" ? "+" : "-"}{fmtCurrency(t.amount)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm hidden md:table-cell"><span className={"text-xs px-2 py-1 rounded-full " + (t.transaction_type === "credit" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>{t.transaction_type}</span></td>
-                    <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{t.utr_number || "\u2014"}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{t.payment_mode}</td>
-                    <td className="px-4 py-3 text-sm hidden lg:table-cell">
-                      {t.proof_url ? <a href={API + t.proof_url} target="_blank" rel="noreferrer" className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 inline-flex items-center gap-1"><FileText className="h-3 w-3" />Proof</a> : "\u2014"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{fmtDate(t.created_at)}</td>
-                    <td className="px-4 py-3 text-right">
-                      {receiptMap[t.id] && (
-                        <button onClick={() => downloadReceipt(receiptMap[t.id])} disabled={downloadingReceipt === receiptMap[t.id]} className="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-xs font-medium disabled:opacity-50 shadow-sm">
-                          <Download className="h-3.5 w-3.5" /> Receipt
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
           {transactions.length === 0 && <div className="p-8 text-center text-gray-500">No transactions found</div>}
         </div>
       )}
 
-      {/* Online Fees Tab */}
+      {/* Online Fees Payment Tab */}
       {tab === "online-fees" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">Online Fee Payments from Students</h3>
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              {isAdmin && <input type="checkbox" checked={selectedFees.length === feePayments.length && feePayments.length > 0} onChange={toggleAllFees} className="rounded" />}
+              Online Fee Payments from Students
+            </h3>
             <div className="flex items-center gap-2">
+              {isAdmin && selectedFees.length > 0 && (
+                <button onClick={bulkDeleteFees} disabled={bulkDeleting} className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 text-xs font-medium disabled:opacity-50">
+                  <Trash2 className="h-3 w-3" /> {bulkDeleting ? "Deleting..." : `Delete ${selectedFees.length}`}
+                </button>
+              )}
               <button onClick={downloadFeeCSV} className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 text-xs font-medium border border-green-200">
                 <Download className="h-3 w-3" /> CSV
               </button>
@@ -643,10 +720,11 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
           ) : (
             <div className="divide-y divide-gray-100">
               {feePayments.map((p) => (
-                <div key={p.id} className={"px-4 py-4 hover:bg-gray-50 " + (p.status === "pending" ? "bg-amber-50 border-l-4 border-l-amber-400" : "")}>
+                <div key={p.id} className={`px-4 py-4 hover:bg-gray-50 ${p.status === "pending" ? "bg-amber-50 border-l-4 border-l-amber-400" : ""} ${selectedFees.includes(p.id) ? "bg-blue-50" : ""}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={"h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 " + (p.status === "approved" ? "bg-green-100" : p.status === "rejected" ? "bg-red-100" : "bg-amber-100")}>
+                      {isAdmin && <input type="checkbox" checked={selectedFees.includes(p.id)} onChange={() => toggleFeeSelect(p.id)} className="rounded flex-shrink-0" />}
+                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${p.status === "approved" ? "bg-green-100" : p.status === "rejected" ? "bg-red-100" : "bg-amber-100"}`}>
                         {p.status === "approved" ? <CheckCircle className="h-5 w-5 text-green-600" /> :
                          p.status === "rejected" ? <XCircle className="h-5 w-5 text-red-600" /> :
                          <Clock className="h-5 w-5 text-amber-600" />}
@@ -660,9 +738,9 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {p.proof_url && (
-                        <button onClick={() => setProofUrl(p.proof_url)} className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100 inline-flex items-center gap-1">
+                        <a href={API + p.proof_url} target="_blank" rel="noreferrer" className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100 inline-flex items-center gap-1">
                           <Eye className="h-3 w-3" /> Proof
-                        </button>
+                        </a>
                       )}
                       {p.status === "pending" && (
                         <>
@@ -680,6 +758,11 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                           <span className="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full">Rejected</span>
                           {p.rejection_reason && <p className="text-xs text-red-500 mt-1">{p.rejection_reason}</p>}
                         </div>
+                      )}
+                      {isAdmin && (
+                        <button onClick={() => deleteFeePayment(p.id)} disabled={deletingId === p.id} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-50" title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       )}
                     </div>
                   </div>

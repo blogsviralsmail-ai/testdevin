@@ -60,9 +60,8 @@ export default function CenterStudents() {
   const [formStep, setFormStep] = useState(1);
   const [form, setForm] = useState<Record<string, string>>(emptyForm);
   const [formError, setFormError] = useState("");
-  const [showPasswordModal, setShowPasswordModal] = useState<{ sid: number; name: string; phone: string } | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [changingPw, setChangingPw] = useState(false);
+  const [credModal, setCredModal] = useState<{sid: number; username: string} | null>(null);
+  const [credForm, setCredForm] = useState({ username: "", password: "" });
   const [studentDocs, setStudentDocs] = useState<{ id: number; doc_type: string; file_path: string; file_url: string; status: string; created_at: string }[]>([]);
   const [statusCategories, setStatusCategories] = useState<StatusCategory[]>([]);
   const [statusDropdown, setStatusDropdown] = useState<number | null>(null);
@@ -144,24 +143,26 @@ export default function CenterStudents() {
   const handleReject = async (id: number) => { try { await api.post(`/api/students/${id}/reject`); load(); } catch { alert("Action failed"); } };
   const handleDelete = async (id: number) => { if (confirm("Delete this student?")) { try { await api.delete(`/api/students/${id}`); load(); } catch { alert("Action failed"); } } };
 
-  const openPasswordChange = (s: Student) => {
-    setShowPasswordModal({ sid: s.id, name: s.name, phone: s.phone });
-    setNewPassword("");
+  const openCredentials = async (s: Student) => {
+    try {
+      const res = await api.get(`/api/students/${s.id}/credentials`);
+      setCredForm({ username: res.data.username || "", password: "" });
+    } catch {
+      setCredForm({ username: "", password: "" });
+    }
+    setCredModal({ sid: s.id, username: "" });
   };
 
-  const savePassword = async () => {
-    if (!showPasswordModal || !newPassword) return;
-    setChangingPw(true);
+  const saveCredentials = async () => {
+    if (!credModal) return;
     try {
-      await api.put(`/api/centers/my/students/${showPasswordModal.sid}/password`, { password: newPassword });
-      alert("Password changed!");
-      setShowPasswordModal(null);
-      setNewPassword("");
+      await api.put(`/api/students/${credModal.sid}/update-credentials`, credForm);
+      setCredModal(null);
+      alert("Credentials updated!");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      alert(e.response?.data?.detail || "Error changing password");
+      alert(e.response?.data?.detail || "Error updating credentials");
     }
-    setChangingPw(false);
   };
 
   const loadStudentDocs = async (sid: number) => {
@@ -509,7 +510,7 @@ export default function CenterStudents() {
                     </>
                   )}
                   <button onClick={() => { setShowDetail(s); loadStudentDocs(s.id); }} title="View" className="p-1 sm:p-1.5 text-gray-400 hover:text-blue-600"><Eye className="h-4 w-4" /></button>
-                  <button onClick={() => openPasswordChange(s)} title="Change Password" className="p-1 sm:p-1.5 text-gray-400 hover:text-amber-600"><Key className="h-4 w-4" /></button>
+                  <button onClick={() => openCredentials(s)} title="Edit Login" className="p-1 sm:p-1.5 text-gray-400 hover:text-amber-600"><Key className="h-4 w-4" /></button>
                   <button onClick={() => openEdit(s)} title="Edit" className="p-1 sm:p-1.5 text-gray-400 hover:text-indigo-600"><Edit3 className="h-4 w-4" /></button>
                   <button onClick={() => handleDelete(s.id)} title="Delete" className="p-1 sm:p-1.5 text-gray-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                 </td>
@@ -671,26 +672,24 @@ export default function CenterStudents() {
         </div>
       )}
 
-      {/* Password Change Modal */}
-      {showPasswordModal && (
+      {/* Credentials Modal */}
+      {credModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold flex items-center gap-2"><Key className="h-5 w-5 text-amber-500" /> Change Password</h2>
-              <button onClick={() => setShowPasswordModal(null)}><X className="h-5 w-5 text-gray-400" /></button>
+              <h2 className="text-lg font-bold flex items-center gap-2"><Key className="h-5 w-5 text-amber-500" /> Edit Login Credentials</h2>
+              <button onClick={() => setCredModal(null)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
-            <p className="text-sm text-gray-600 mb-3">
-              Student: <strong>{showPasswordModal.name}</strong><br />
-              Login ID: <strong className="text-blue-700">{showPasswordModal.phone}</strong>
-            </p>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password" className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number (Login ID)</label>
+                <input type="text" value={credForm.username} onChange={(e) => setCredForm({ ...credForm, username: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />
               </div>
-              <button onClick={savePassword} disabled={changingPw || !newPassword} className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 text-sm disabled:opacity-50">
-                {changingPw ? "Changing..." : "Update Password"}
-              </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input type="text" value={credForm.password} onChange={(e) => setCredForm({ ...credForm, password: e.target.value })} placeholder="Leave empty to keep current" className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />
+              </div>
+              <button onClick={saveCredentials} className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 text-sm">Update Credentials</button>
             </div>
           </div>
         </div>
