@@ -1110,23 +1110,12 @@ async def approve_center_fee_payment(payment_id: int, user: dict = Depends(get_c
         (int(user["sub"]), payment_id))
     conn.commit()
     
-    # Auto-create commission record if applicable
+    # Auto-create commission ledger entries based on hierarchy
     try:
         student = conn.execute("SELECT * FROM students WHERE id = ?", (payment["student_id"],)).fetchone()
-        if student:
-            slab = conn.execute("""SELECT * FROM commission_slabs 
-                WHERE university_id = ? AND (category_id IS NULL OR category_id = ?)
-                ORDER BY category_id DESC LIMIT 1""",
-                (student["university_id"], student["category_id"])).fetchone()
-            if slab:
-                commission_amount = payment["amount"] * slab["percentage"] / 100
-                if slab["max_amount"] and commission_amount > slab["max_amount"]:
-                    commission_amount = slab["max_amount"]
-                conn.execute("""INSERT INTO center_commissions 
-                    (center_id, student_id, slab_id, amount, status, created_at)
-                    VALUES (?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)""",
-                    (payment["center_id"], payment["student_id"], slab["id"], commission_amount))
-                conn.commit()
+        if student and student["center_id"]:
+            auto_create_commission_ledger(conn, payment["student_id"], student["center_id"], student["university_id"])
+            conn.commit()
     except Exception as e:
         print(f"Auto-commission creation failed: {e}")
     
