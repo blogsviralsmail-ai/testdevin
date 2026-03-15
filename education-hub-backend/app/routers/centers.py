@@ -38,6 +38,7 @@ class CommissionSlabCreate(BaseModel):
     min_admissions: int = 1
     max_admissions: int = 999
     commission_amount: float = 0
+    slab_level: str = "admin_to_center"
 
 class CenterCommissionCreate(BaseModel):
     student_id: int
@@ -66,6 +67,73 @@ def get_center_and_subcenter_ids(conn, center_id: int) -> list:
     for sc in sub_centers:
         ids.extend(get_center_and_subcenter_ids(conn, sc["id"]))
     return ids
+
+
+def auto_create_commission_ledger(conn, student_id: int, center_id: int, university_id: int = None):
+    """Auto-create commission ledger entries based on hierarchy.
+    
+    When a student is admitted:
+    - If by sub-center: Center earns from sub-center + Admin earns from sub-center
+    - If by center: Admin earns from center
+    """
+    center = conn.execute("SELECT * FROM centers WHERE id = ?", (center_id,)).fetchone()
+    if not center:
+        return
+    
+    center_level = center["level"]
+    parent_center_id = center["parent_center_id"]
+    
+    if center_level == "sub_center" and parent_center_id:
+        # Sub-center admitted student
+        # 1. Parent center earns commission from sub-center
+        center_slab = conn.execute(
+            """SELECT commission_amount FROM commission_slabs 
+               WHERE (center_id = ? OR (center_id IS NULL AND slab_level = 'center_to_subcenter'))
+               AND university_id = ? ORDER BY center_id DESC LIMIT 1""",
+            (parent_center_id, university_id)
+        ).fetchone() if university_id else None
+        
+        if center_slab and center_slab["commission_amount"] > 0:
+            conn.execute(
+                """INSERT INTO commission_ledger 
+                   (student_id, from_entity_type, from_entity_id, to_entity_type, to_entity_id, amount, university_id, notes)
+                   VALUES (?, 'sub_center', ?, 'center', ?, ?, ?, 'Auto: Sub-center to Center commission')""",
+                (student_id, center_id, parent_center_id, center_slab["commission_amount"], university_id)
+            )
+        
+        # 2. Admin earns commission from sub-center
+        admin_slab = conn.execute(
+            """SELECT commission_amount FROM commission_slabs 
+               WHERE center_id IS NULL AND slab_level = 'admin_to_subcenter'
+               AND university_id = ? LIMIT 1""",
+            (university_id,)
+        ).fetchone() if university_id else None
+        
+        if admin_slab and admin_slab["commission_amount"] > 0:
+            conn.execute(
+                """INSERT INTO commission_ledger 
+                   (student_id, from_entity_type, from_entity_id, to_entity_type, to_entity_id, amount, university_id, notes)
+                   VALUES (?, 'sub_center', ?, 'admin', NULL, ?, ?, 'Auto: Sub-center to Admin commission')""",
+                (student_id, center_id, admin_slab["commission_amount"], university_id)
+            )
+    
+    elif center_level == "center":
+        # Center admitted student directly
+        # Admin earns commission from center
+        admin_slab = conn.execute(
+            """SELECT commission_amount FROM commission_slabs 
+               WHERE center_id IS NULL AND slab_level = 'admin_to_center'
+               AND university_id = ? LIMIT 1""",
+            (university_id,)
+        ).fetchone() if university_id else None
+        
+        if admin_slab and admin_slab["commission_amount"] > 0:
+            conn.execute(
+                """INSERT INTO commission_ledger 
+                   (student_id, from_entity_type, from_entity_id, to_entity_type, to_entity_id, amount, university_id, notes)
+                   VALUES (?, 'center', ?, 'admin', NULL, ?, ?, 'Auto: Center to Admin commission')""",
+                (student_id, center_id, admin_slab["commission_amount"], university_id)
+            )
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -541,6 +609,10 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
     if data.get("total_fees"):
         conn.execute("UPDATE students SET total_fees = ? WHERE id = ?", (float(data["total_fees"]), sid))
     
+    # Auto-create commission ledger entries based on hierarchy
+    university_id = data.get("university_id")
+    auto_create_commission_ledger(conn, sid, actual_center_id, university_id)
+    
     conn.commit()
     conn.close()
     return {"id": sid, "enrollment_no": enrollment_no, "username": phone, "message": "Student added with login credentials (Phone = Student ID)"}
@@ -638,13 +710,15 @@ async def create_commission_slab(data: CommissionSlabCreate, user: dict = Depend
         raise HTTPException(status_code=403, detail="Not authorized to create commission slabs")
     
     center_id = None
+    slab_level = data.slab_level
     if role == "center":
         center = get_current_center(user)
         center_id = center["id"]  # Center sets slabs for its sub-centers
+        slab_level = "center_to_subcenter"  # Center can only set center→sub-center rates
     
     cursor = conn.execute(
-        "INSERT INTO commission_slabs (university_id, center_id, min_admissions, max_admissions, commission_amount) VALUES (?, ?, ?, ?, ?)",
-        (data.university_id, center_id, data.min_admissions, data.max_admissions, data.commission_amount)
+        "INSERT INTO commission_slabs (university_id, center_id, min_admissions, max_admissions, commission_amount, slab_level) VALUES (?, ?, ?, ?, ?, ?)",
+        (data.university_id, center_id, data.min_admissions, data.max_admissions, data.commission_amount, slab_level)
     )
     conn.commit()
     conn.close()
@@ -652,12 +726,15 @@ async def create_commission_slab(data: CommissionSlabCreate, user: dict = Depend
 
 
 @router.put("/commission/slabs/{slab_id}")
-async def update_commission_slab(slab_id: int, data: dict, user: dict = Depends(require_admin)):
+async def update_commission_slab(slab_id: int, data: dict, user: dict = Depends(get_current_user)):
     """Update a commission slab."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
     update_fields = []
     values = []
-    for field in ["min_admissions", "max_admissions", "commission_amount"]:
+    for field in ["min_admissions", "max_admissions", "commission_amount", "slab_level"]:
         if field in data:
             update_fields.append(f"{field}=?")
             values.append(data[field])
@@ -1418,3 +1495,347 @@ async def student_upload_payment_proof(file: UploadFile = File(...), user: dict 
     
     proof_url = f"/uploads/payment_proofs/{filename}"
     return {"proof_url": proof_url, "message": "Proof uploaded successfully"}
+
+
+# ══════════════════════════════════════════════════════════════════
+#  COMMISSION LEDGER — Hierarchy-aware commission tracking
+# ══════════════════════════════════════════════════════════════════
+
+@router.get("/commission/ledger")
+async def list_commission_ledger(
+    view: Optional[str] = None,
+    status: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """List commission ledger entries.
+    Admin sees all. Center sees entries where it earns or owes.
+    view param: 'earnings' (what I earn), 'payables' (what I owe), or None (all).
+    """
+    conn = get_db()
+    role = user.get("role", "")
+    
+    query = """SELECT cl.*,
+               s.name as student_name, s.enrollment_no, s.phone as student_phone,
+               u.name as university_name,
+               fc.name as from_center_name, fc.level as from_center_level,
+               tc.name as to_center_name
+               FROM commission_ledger cl
+               LEFT JOIN students s ON cl.student_id = s.id
+               LEFT JOIN universities u ON cl.university_id = u.id
+               LEFT JOIN centers fc ON cl.from_entity_id = fc.id
+               LEFT JOIN centers tc ON cl.to_entity_id = tc.id
+               WHERE 1=1"""
+    params = []
+    
+    if role == "center":
+        center = get_current_center(user)
+        cid = center["id"]
+        all_ids = get_center_and_subcenter_ids(conn, cid)
+        
+        if view == "earnings":
+            # What this center earns (from sub-centers)
+            query += " AND cl.to_entity_type = 'center' AND cl.to_entity_id = ?"
+            params.append(cid)
+        elif view == "payables":
+            # What this center/sub-centers owe to admin and parent
+            placeholders = ",".join(["?"] * len(all_ids))
+            query += f" AND cl.from_entity_id IN ({placeholders})"
+            params.extend(all_ids)
+        else:
+            # All related entries
+            placeholders = ",".join(["?"] * len(all_ids))
+            query += f" AND (cl.from_entity_id IN ({placeholders}) OR (cl.to_entity_type = 'center' AND cl.to_entity_id = ?))"
+            params.extend(all_ids)
+            params.append(cid)
+    else:
+        # Admin: optionally filter by view
+        if view == "earnings":
+            query += " AND cl.to_entity_type = 'admin'"
+    
+    if status:
+        query += " AND cl.status = ?"
+        params.append(status)
+    
+    query += " ORDER BY cl.created_at DESC"
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return {"ledger": [dict(r) for r in rows]}
+
+
+@router.get("/commission/ledger/summary")
+async def commission_ledger_summary(user: dict = Depends(get_current_user)):
+    """Get commission hierarchy summary for dashboard.
+    Shows total earnings, payables, paid, pending for the logged-in entity.
+    """
+    conn = get_db()
+    role = user.get("role", "")
+    
+    if role == "center":
+        center = get_current_center(user)
+        cid = center["id"]
+        level = center["level"]
+        parent_id = center["parent_center_id"]
+        
+        # Earnings: what this center earns from sub-centers
+        earnings_total = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'center' AND to_entity_id = ?",
+            (cid,)
+        ).fetchone()[0]
+        earnings_paid = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'center' AND to_entity_id = ? AND status = 'paid'",
+            (cid,)
+        ).fetchone()[0]
+        earnings_pending = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'center' AND to_entity_id = ? AND status = 'pending'",
+            (cid,)
+        ).fetchone()[0]
+        
+        # Payables: what this center owes to admin
+        payable_to_admin = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'admin'",
+            (cid,)
+        ).fetchone()[0]
+        payable_to_admin_paid = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'admin' AND status = 'paid'",
+            (cid,)
+        ).fetchone()[0]
+        payable_to_admin_pending = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'admin' AND status = 'pending'",
+            (cid,)
+        ).fetchone()[0]
+        
+        # Payables to parent center (if sub-center)
+        payable_to_center = 0
+        payable_to_center_paid = 0
+        payable_to_center_pending = 0
+        if level == "sub_center" and parent_id:
+            payable_to_center = conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'center' AND to_entity_id = ?",
+                (cid, parent_id)
+            ).fetchone()[0]
+            payable_to_center_paid = conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'center' AND to_entity_id = ? AND status = 'paid'",
+                (cid, parent_id)
+            ).fetchone()[0]
+            payable_to_center_pending = conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'center' AND to_entity_id = ? AND status = 'pending'",
+                (cid, parent_id)
+            ).fetchone()[0]
+        
+        # Sub-center commissions flowing through (what sub-centers owe admin)
+        all_ids = get_center_and_subcenter_ids(conn, cid)
+        sub_ids = [sid for sid in all_ids if sid != cid]
+        subcenter_to_admin = 0
+        if sub_ids:
+            placeholders = ",".join(["?"] * len(sub_ids))
+            subcenter_to_admin = conn.execute(
+                f"SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id IN ({placeholders}) AND to_entity_type = 'admin'",
+                sub_ids
+            ).fetchone()[0]
+        
+        conn.close()
+        return {
+            "role": "center",
+            "level": level,
+            "center_name": center["name"],
+            "earnings_from_subcenters": {"total": earnings_total, "paid": earnings_paid, "pending": earnings_pending},
+            "payable_to_admin": {"total": payable_to_admin, "paid": payable_to_admin_paid, "pending": payable_to_admin_pending},
+            "payable_to_parent_center": {"total": payable_to_center, "paid": payable_to_center_paid, "pending": payable_to_center_pending},
+            "subcenter_admin_commission": subcenter_to_admin,
+        }
+    else:
+        # Admin summary
+        total_from_centers = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'admin' AND from_entity_type = 'center'"
+        ).fetchone()[0]
+        total_from_subcenters = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'admin' AND from_entity_type = 'sub_center'"
+        ).fetchone()[0]
+        total_paid = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'admin' AND status = 'paid'"
+        ).fetchone()[0]
+        total_pending = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'admin' AND status = 'pending'"
+        ).fetchone()[0]
+        
+        # Center-to-center flows
+        center_to_center = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'center'"
+        ).fetchone()[0]
+        
+        conn.close()
+        return {
+            "role": "admin",
+            "admin_earnings": {
+                "total": total_from_centers + total_from_subcenters,
+                "from_centers": total_from_centers,
+                "from_subcenters": total_from_subcenters,
+                "paid": total_paid,
+                "pending": total_pending,
+            },
+            "center_to_center_commission": center_to_center,
+        }
+
+
+@router.post("/commission/ledger")
+async def add_commission_ledger(data: dict, user: dict = Depends(get_current_user)):
+    """Manually add a commission ledger entry."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    conn = get_db()
+    cursor = conn.execute(
+        """INSERT INTO commission_ledger 
+           (student_id, from_entity_type, from_entity_id, to_entity_type, to_entity_id, amount, university_id, notes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (data.get("student_id"), data.get("from_entity_type", "center"), data.get("from_entity_id"),
+         data.get("to_entity_type", "admin"), data.get("to_entity_id"),
+         data.get("amount", 0), data.get("university_id"), data.get("notes", "Manual entry"))
+    )
+    conn.commit()
+    conn.close()
+    return {"id": cursor.lastrowid, "message": "Commission ledger entry added"}
+
+
+@router.put("/commission/ledger/{entry_id}/pay")
+async def mark_ledger_paid(entry_id: int, user: dict = Depends(get_current_user)):
+    """Mark a commission ledger entry as paid."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    conn = get_db()
+    conn.execute("UPDATE commission_ledger SET status = 'paid', paid_date = ? WHERE id = ?",
+                 (datetime.now().isoformat(), entry_id))
+    conn.commit()
+    conn.close()
+    return {"message": "Commission marked as paid"}
+
+
+@router.delete("/commission/ledger/{entry_id}")
+async def delete_ledger_entry(entry_id: int, user: dict = Depends(require_admin)):
+    """Delete a commission ledger entry (admin only)."""
+    conn = get_db()
+    conn.execute("DELETE FROM commission_ledger WHERE id = ?", (entry_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Commission ledger entry deleted"}
+
+
+@router.get("/commission/hierarchy-report")
+async def commission_hierarchy_report(user: dict = Depends(get_current_user)):
+    """Full hierarchy commission report for admin.
+    Shows each center with its sub-centers and commission flows.
+    """
+    role = user.get("role", "")
+    conn = get_db()
+    
+    if role == "center":
+        center = get_current_center(user)
+        cid = center["id"]
+        
+        # Get sub-centers
+        sub_centers = conn.execute(
+            """SELECT c.id, c.name, c.mobile, c.owner_name, c.level,
+                      (SELECT COUNT(*) FROM students WHERE center_id = c.id) as student_count,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'center' AND to_entity_id = ?) as commission_to_center,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'admin') as commission_to_admin,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'center' AND to_entity_id = ? AND status = 'paid') as paid_to_center,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'admin' AND status = 'paid') as paid_to_admin
+               FROM centers c WHERE c.parent_center_id = ?
+               ORDER BY c.name""",
+            (cid, cid, cid)
+        ).fetchall()
+        
+        # Own stats
+        own_students = conn.execute("SELECT COUNT(*) FROM students WHERE center_id = ?", (cid,)).fetchone()[0]
+        own_to_admin = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'admin'",
+            (cid,)
+        ).fetchone()[0]
+        own_to_admin_paid = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = ? AND to_entity_type = 'admin' AND status = 'paid'",
+            (cid,)
+        ).fetchone()[0]
+        
+        conn.close()
+        return {
+            "center": {"id": cid, "name": center["name"], "student_count": own_students, "commission_to_admin": own_to_admin, "paid_to_admin": own_to_admin_paid},
+            "sub_centers": [dict(r) for r in sub_centers],
+        }
+    else:
+        # Admin: show all centers with their hierarchy
+        centers = conn.execute(
+            """SELECT c.id, c.name, c.mobile, c.owner_name, c.level, c.parent_center_id,
+                      pc.name as parent_center_name,
+                      (SELECT COUNT(*) FROM students WHERE center_id = c.id) as student_count,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'admin') as commission_to_admin,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'admin' AND status = 'paid') as paid_to_admin,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'admin' AND status = 'pending') as pending_to_admin,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE from_entity_id = c.id AND to_entity_type = 'center') as commission_to_center,
+                      (SELECT COALESCE(SUM(amount), 0) FROM commission_ledger WHERE to_entity_type = 'center' AND to_entity_id = c.id) as earned_from_subcenters
+               FROM centers c
+               LEFT JOIN centers pc ON c.parent_center_id = pc.id
+               ORDER BY c.level, c.name"""
+        ).fetchall()
+        
+        conn.close()
+        return {"centers": [dict(r) for r in centers]}
+
+
+@router.post("/commission/ledger/generate")
+async def generate_commission_for_student(data: dict, user: dict = Depends(get_current_user)):
+    """Manually trigger commission generation for a student (admin use)."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    student_id = data.get("student_id")
+    if not student_id:
+        raise HTTPException(status_code=400, detail="student_id is required")
+    
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    center_id = student["center_id"]
+    university_id = student["university_id"]
+    
+    if not center_id:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Student is not assigned to any center")
+    
+    # Check if already has ledger entries
+    existing = conn.execute("SELECT COUNT(*) FROM commission_ledger WHERE student_id = ?", (student_id,)).fetchone()[0]
+    if existing > 0:
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Student already has {existing} commission entries. Delete them first to regenerate.")
+    
+    auto_create_commission_ledger(conn, student_id, center_id, university_id)
+    conn.commit()
+    conn.close()
+    return {"message": "Commission entries generated successfully"}
+
+
+@router.post("/commission/ledger/bulk-pay")
+async def bulk_mark_paid(data: dict, user: dict = Depends(get_current_user)):
+    """Mark multiple commission ledger entries as paid."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    ids = data.get("ids", [])
+    if not ids:
+        raise HTTPException(status_code=400, detail="No IDs provided")
+    
+    conn = get_db()
+    placeholders = ",".join(["?"] * len(ids))
+    conn.execute(
+        f"UPDATE commission_ledger SET status = 'paid', paid_date = ? WHERE id IN ({placeholders})",
+        [datetime.now().isoformat()] + ids
+    )
+    conn.commit()
+    conn.close()
+    return {"message": f"{len(ids)} entries marked as paid"}

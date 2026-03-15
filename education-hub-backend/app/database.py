@@ -761,6 +761,7 @@ def init_db():
         min_admissions INTEGER NOT NULL DEFAULT 1,
         max_admissions INTEGER NOT NULL DEFAULT 999,
         commission_amount REAL NOT NULL DEFAULT 0,
+        slab_level TEXT DEFAULT 'admin_to_center',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (university_id) REFERENCES universities(id),
         FOREIGN KEY (center_id) REFERENCES centers(id)
@@ -780,6 +781,48 @@ def init_db():
         notes TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (center_id) REFERENCES centers(id),
+        FOREIGN KEY (student_id) REFERENCES students(id),
+        FOREIGN KEY (university_id) REFERENCES universities(id)
+    )""")
+
+    # Commission hierarchy columns for center_commissions
+    # earned_by: 'admin' or 'center' - who earns this commission
+    # earned_by_center_id: if earned by a center, which center (NULL for admin)
+    # from_center_id: the center/sub-center that this commission comes from
+    for col_name, col_type in [
+        ("earned_by", "TEXT DEFAULT 'self'"),
+        ("earned_by_center_id", "INTEGER"),
+        ("from_center_id", "INTEGER"),
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE center_commissions ADD COLUMN {col_name} {col_type}")
+        except:
+            pass
+
+    # Add slab_level to commission_slabs for hierarchy tracking
+    # 'admin_to_center' = admin's rate from centers
+    # 'admin_to_subcenter' = admin's rate from sub-centers
+    # 'center_to_subcenter' = center's rate from its sub-centers
+    try:
+        cursor.execute("ALTER TABLE commission_slabs ADD COLUMN slab_level TEXT DEFAULT 'admin_to_center'")
+    except:
+        pass
+
+    # Commission ledger table (tracks all commission flows in hierarchy)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS commission_ledger (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        from_entity_type TEXT NOT NULL,
+        from_entity_id INTEGER NOT NULL,
+        to_entity_type TEXT NOT NULL,
+        to_entity_id INTEGER,
+        amount REAL NOT NULL DEFAULT 0,
+        university_id INTEGER,
+        status TEXT DEFAULT 'pending',
+        paid_date TEXT,
+        notes TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES students(id),
         FOREIGN KEY (university_id) REFERENCES universities(id)
     )""")
