@@ -30,11 +30,16 @@ def decode_token(token: str):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-def get_current_user(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    token = authorization.split(" ")[1]
-    return decode_token(token)
+def get_current_user(authorization: str = Header(None), x_auth_token: str = Header(None)):
+    # Check standard Authorization header first
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        return decode_token(token)
+    # Fallback to X-Auth-Token header (used when tunnel basic auth occupies Authorization)
+    if x_auth_token and x_auth_token.startswith("Bearer "):
+        token = x_auth_token.split(" ")[1]
+        return decode_token(token)
+    raise HTTPException(status_code=401, detail="Not authenticated")
 
 # Allowlist of admin-level roles (used by require_admin)
 ADMIN_ROLES = ("admin", "super_admin", "branch_admin")
