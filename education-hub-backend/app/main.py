@@ -108,3 +108,23 @@ async def get_current_tenant_info():
             "secondary_color": tenant["secondary_color"],
         }
     return {"is_tenant": False}
+
+# Serve frontend static files (SPA) - must be AFTER all API routes
+FRONTEND_DIR = os.environ.get("FRONTEND_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "education-hub-frontend", "dist"))
+if os.path.isdir(FRONTEND_DIR):
+    # Serve static assets (JS, CSS, images)
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="frontend-assets")
+    
+    # Serve other static files from frontend root (logo.png, favicon, etc)
+    @app.get("/{full_path:path}")
+    async def serve_frontend(request: Request, full_path: str):
+        """Serve frontend SPA - fallback to index.html for client-side routing."""
+        # Try to serve the exact file first
+        file_path = os.path.join(FRONTEND_DIR, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Fallback to index.html for SPA routing
+        index_path = os.path.join(FRONTEND_DIR, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path)
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
