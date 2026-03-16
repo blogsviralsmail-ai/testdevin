@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 // Use separate localStorage keys for admin and student so both can be logged in simultaneously
 function getTokenKey(): string {
@@ -32,6 +32,7 @@ api.interceptors.request.use((config) => {
   const isCenterContext = typeof window !== "undefined" && window.location.pathname.startsWith("/center");
   const tokenKey = isStudentContext ? "student_token" : isCenterContext ? "center_token" : "admin_token";
   const token = localStorage.getItem(tokenKey);
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
