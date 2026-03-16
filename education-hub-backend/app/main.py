@@ -120,8 +120,10 @@ if os.path.isdir(FRONTEND_DIR):
     @app.get("/{full_path:path}")
     async def serve_frontend(request: Request, full_path: str):
         """Serve frontend SPA - fallback to index.html for client-side routing."""
-        # Try to serve the exact file first
-        file_path = os.path.join(FRONTEND_DIR, full_path)
+        # Try to serve the exact file first (with path traversal protection)
+        file_path = os.path.realpath(os.path.join(FRONTEND_DIR, full_path))
+        if not file_path.startswith(os.path.realpath(FRONTEND_DIR)):
+            return JSONResponse(status_code=403, content={"detail": "Access denied"})
         if full_path and os.path.isfile(file_path):
             return FileResponse(file_path)
         # Fallback to index.html for SPA routing
