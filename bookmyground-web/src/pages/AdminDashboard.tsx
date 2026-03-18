@@ -283,21 +283,27 @@ export default function AdminDashboard() {
     if (!showApprovalModal) return;
     setApproving(true);
     try {
-      let proofUrl = approvalProofUrl;
-      // Upload proof file first if selected
-      if (approvalProofFile) {
-        const uploadRes = await api.uploadWithdrawalProof(showApprovalModal, approvalProofFile);
-        proofUrl = uploadRes.proof_url || proofUrl;
+      if (approvalMethod === 'razorpay') {
+        // Call actual Razorpay Payout API
+        const result = await api.razorpayPayout(showApprovalModal);
+        alert(`Razorpay Payout ${result.status || 'initiated'}!\nPayout ID: ${result.payout_id || '-'}\nTXN: ${result.transaction_id || '-'}\nAmount: Rs.${result.amount || '-'}\nMode: ${result.mode || '-'}${result.is_test ? ' (TEST MODE)' : ''}`);
+        setShowApprovalModal(null);
+        setApprovalProofFile(null);
+        loadTab();
+      } else {
+        // Manual approval
+        let proofUrl = approvalProofUrl;
+        if (approvalProofFile) {
+          const uploadRes = await api.uploadWithdrawalProof(showApprovalModal, approvalProofFile);
+          proofUrl = uploadRes.proof_url || proofUrl;
+        }
+        const txnId = approvalTxnId;
+        await api.approveWithdrawalWithDetails(showApprovalModal, { transaction_id: txnId, proof_url: proofUrl });
+        alert('Withdrawal approved successfully!');
+        setShowApprovalModal(null);
+        setApprovalProofFile(null);
+        loadTab();
       }
-      let txnId = approvalTxnId;
-      if (approvalMethod === 'razorpay' && !txnId) {
-        txnId = 'RZP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8).toUpperCase();
-      }
-      await api.approveWithdrawalWithDetails(showApprovalModal, { transaction_id: txnId, proof_url: proofUrl });
-      alert('Withdrawal approved successfully!');
-      setShowApprovalModal(null);
-      setApprovalProofFile(null);
-      loadTab();
     } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
     setApproving(false);
   };

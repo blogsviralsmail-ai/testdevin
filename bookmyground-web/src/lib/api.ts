@@ -160,6 +160,7 @@ export const api = {
     if (!res.ok) { const err = await res.json().catch(() => ({ detail: 'Upload failed' })); throw new Error(typeof err.detail === 'string' ? err.detail : 'Upload failed'); }
     return res.json();
   },
+  razorpayPayout: (wid: number) => fetchAPI('/api/admin/withdrawals/' + wid + '/razorpay-payout', { method: 'POST' }),
   // v10 - Transaction history, owner cash verification
   getAdminTransactionHistory: () => fetchAPI('/api/admin/transactions/history'),
   ownerVerifyCash: (id: string) => fetchAPI('/api/owner/bookings/' + id + '/verify-cash', { method: 'POST' }),

@@ -113,20 +113,16 @@ async def active_promos():
         return [dict(r) for r in rows]
 
 
-# Serve KYC uploads
-UPLOADS_DIR = Path(__file__).parent.parent / "uploads"
-if UPLOADS_DIR.exists():
-    app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
-
-# Also serve from /opt/bookaground/uploads if exists (production)
-PROD_UPLOADS = Path("/opt/bookaground/uploads")
-if PROD_UPLOADS.exists():
-    app.mount("/uploads", StaticFiles(directory=str(PROD_UPLOADS)), name="prod-uploads")
-
-# Serve /data/uploads for withdrawal proofs and other uploads (production persistent volume)
+# Serve /data/uploads FIRST for withdrawal proofs and other uploads (production persistent volume)
 DATA_UPLOADS = Path("/data/uploads")
 if DATA_UPLOADS.exists():
     app.mount("/uploads", StaticFiles(directory=str(DATA_UPLOADS)), name="data-uploads")
+# Fallback: Serve KYC uploads from local uploads dir
+elif Path(__file__).parent.parent.joinpath("uploads").exists():
+    app.mount("/uploads", StaticFiles(directory=str(Path(__file__).parent.parent / "uploads")), name="uploads")
+# Fallback: Also serve from /opt/bookaground/uploads if exists (production)
+elif Path("/opt/bookaground/uploads").exists():
+    app.mount("/uploads", StaticFiles(directory="/opt/bookaground/uploads"), name="prod-uploads")
 
 # Serve static frontend assets (JS, CSS, images)
 if STATIC_DIR.exists():

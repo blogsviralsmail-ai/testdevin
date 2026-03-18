@@ -8,6 +8,7 @@ import csv
 import io
 import os
 import uuid
+import requests as http_requests
 from datetime import datetime, timezone, timedelta
 from fastapi.responses import StreamingResponse
 
@@ -964,6 +965,116 @@ async def upload_withdrawal_proof(wid: int, file: UploadFile = File(...), user: 
     with get_db() as db:
         db.execute("UPDATE withdraw_requests SET proof_url=? WHERE id=?", (proof_url, wid))
     return {"proof_url": proof_url, "message": "Proof uploaded"}
+
+
+@router.post("/withdrawals/{wid}/razorpay-payout")
+async def razorpay_payout_withdrawal(wid: int, user: dict = Depends(get_current_user)):
+    """Process withdrawal via RazorpayX Payout API"""
+    require_role(user, ["admin"])
+    with get_db() as db:
+        w = db.execute("SELECT w.*, u.name as user_name, u.phone as user_phone, u.bank_name, u.bank_account, u.bank_ifsc, u.upi_id FROM withdraw_requests w JOIN users u ON w.user_id = u.id WHERE w.id = ?", (wid,)).fetchone()
+        if not w:
+            raise HTTPException(status_code=404, detail="Withdrawal not found")
+        if w["status"] not in ("pending", "pending_topup"):
+            raise HTTPException(status_code=400, detail=f"Withdrawal already {w['status']}")
+
+        # Get Razorpay keys from payment_gateways table
+        gw = db.execute("SELECT * FROM payment_gateways WHERE LOWER(name) = 'razorpay' AND is_active = 1").fetchone()
+        if not gw:
+            raise HTTPException(status_code=400, detail="Razorpay gateway not active. Configure in Admin > Gateways.")
+        api_key = gw["api_key"]
+        secret_key = gw["secret_key"]
+        if not api_key or not secret_key:
+            raise HTTPException(status_code=400, detail="Razorpay API keys not configured.")
+
+        is_test = bool(gw["is_test_mode"])
+        base_url = "https://api.razorpay.com/v1"
+        auth = (api_key, secret_key)
+        net_amount = w["net_amount"]
+        amount_paise = int(float(net_amount) * 100)
+
+        try:
+            # Step 1: Create Contact
+            contact_data = {
+                "name": w["user_name"] or "User",
+                "contact": w["user_phone"] or "",
+                "type": "customer",
+                "reference_id": f"user_{w['user_id']}"
+            }
+            contact_resp = http_requests.post(f"{base_url}/contacts", json=contact_data, auth=auth, timeout=30)
+            if contact_resp.status_code not in (200, 201):
+                err = contact_resp.json() if contact_resp.headers.get("content-type", "").startswith("application/json") else {"error": {"description": contact_resp.text}}
+                raise HTTPException(status_code=400, detail=f"Razorpay Contact creation failed: {err.get('error', {}).get('description', str(err))}")
+            contact_id = contact_resp.json().get("id")
+
+            # Step 2: Create Fund Account (UPI or Bank)
+            fund_data = {"contact_id": contact_id}
+            if w["upi_id"]:
+                fund_data["account_type"] = "vpa"
+                fund_data["vpa"] = {"address": w["upi_id"]}
+            elif w["bank_account"] and w["bank_ifsc"]:
+                fund_data["account_type"] = "bank_account"
+                fund_data["bank_account"] = {
+                    "name": w["user_name"] or "User",
+                    "ifsc": w["bank_ifsc"],
+                    "account_number": w["bank_account"]
+                }
+            else:
+                raise HTTPException(status_code=400, detail="User has no UPI or bank account linked. Cannot process payout.")
+
+            fund_resp = http_requests.post(f"{base_url}/fund_accounts", json=fund_data, auth=auth, timeout=30)
+            if fund_resp.status_code not in (200, 201):
+                err = fund_resp.json() if fund_resp.headers.get("content-type", "").startswith("application/json") else {"error": {"description": fund_resp.text}}
+                raise HTTPException(status_code=400, detail=f"Razorpay Fund Account failed: {err.get('error', {}).get('description', str(err))}")
+            fund_account_id = fund_resp.json().get("id")
+
+            # Step 3: Create Payout
+            payout_data = {
+                "account_number": gw.get("payout_account") or gw.get("api_key", ""),  # RazorpayX account number
+                "fund_account_id": fund_account_id,
+                "amount": amount_paise,
+                "currency": "INR",
+                "mode": "UPI" if w["upi_id"] else "NEFT",
+                "purpose": "payout",
+                "queue_if_low_balance": True,
+                "reference_id": f"WD_{wid}",
+                "narration": f"BookAGround Withdrawal #{wid}"
+            }
+            payout_resp = http_requests.post(f"{base_url}/payouts", json=payout_data, auth=auth, timeout=30)
+            payout_json = payout_resp.json() if payout_resp.headers.get("content-type", "").startswith("application/json") else {}
+
+            if payout_resp.status_code not in (200, 201):
+                err_desc = payout_json.get("error", {}).get("description", payout_resp.text)
+                raise HTTPException(status_code=400, detail=f"Razorpay Payout failed: {err_desc}")
+
+            payout_id = payout_json.get("id", "")
+            payout_status = payout_json.get("status", "processing")
+            utr = payout_json.get("utr", "")
+            transaction_id = utr or payout_id
+
+            # Update withdrawal record
+            if w["status"] == "pending_topup":
+                db.execute("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?", (w["net_amount"], w["user_id"]))
+                db.execute("UPDATE withdraw_requests SET status='topup_completed', processed_by=?, processed_at=CURRENT_TIMESTAMP, transaction_id=?, proof_url=? WHERE id=?",
+                           (user["user_id"], transaction_id, f"Razorpay Payout: {payout_id} | Status: {payout_status}", wid))
+            else:
+                db.execute("UPDATE withdraw_requests SET status='completed', processed_by=?, processed_at=CURRENT_TIMESTAMP, transaction_id=?, proof_url=? WHERE id=?",
+                           (user["user_id"], transaction_id, f"Razorpay Payout: {payout_id} | Status: {payout_status}", wid))
+
+            return {
+                "message": f"Payout {'initiated' if payout_status == 'processing' else payout_status} via Razorpay!",
+                "payout_id": payout_id,
+                "transaction_id": transaction_id,
+                "status": payout_status,
+                "amount": net_amount,
+                "mode": "UPI" if w["upi_id"] else "NEFT",
+                "is_test": is_test
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Razorpay Payout error: {str(e)}")
 
 
 # --- TEAM DATA (for admin promotion) ---
