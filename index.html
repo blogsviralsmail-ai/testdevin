@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookAGround - Book Cricket Grounds Online | Best Ground Booking Platform</title>
+    <meta name="description" content="BookAGround - India's leading cricket ground booking platform. Book box cricket, turf grounds, nets practice sessions online. Easy booking, multiple payment options." />
+    <meta name="keywords" content="cricket ground booking, box cricket, turf booking, cricket nets, ground booking online, BookAGround, sports booking" />
+    <meta name="author" content="BookAGround" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content="BookAGround - Book Cricket Grounds Online" />
+    <meta property="og:description" content="Book cricket grounds, box cricket courts, and turf sessions online. Easy booking with multiple payment options." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://bookaground.com" />
+    <meta property="og:site_name" content="BookAGround" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="BookAGround - Book Cricket Grounds" />
+    <meta name="twitter:description" content="Book cricket grounds online. Easy, fast, and secure." />
+    <link rel="canonical" href="https://bookaground.com" />
+    <!-- Open Graph Image -->
+    <meta property="og:image" content="https://bookaground.com/og-image.png" />
+    <meta name="twitter:image" content="https://bookaground.com/og-image.png" />
+
+    <!-- Additional SEO Meta Tags -->
+    <meta name="geo.region" content="IN-RJ" />
+    <meta name="geo.placename" content="Jaipur, Rajasthan, India" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="rating" content="general" />
+    <meta name="theme-color" content="#16a34a" />
+
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "BookAGround",
+      "url": "https://bookaground.com",
+      "logo": "https://bookaground.com/vite.svg",
+      "description": "India's #1 Sports Ground Booking Platform. Book cricket, football, badminton grounds online.",
+      "telephone": "+91-9782005500",
+      "email": "info@bookaground.com",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Jaipur",
+        "addressRegion": "Rajasthan",
+        "postalCode": "302001",
+        "addressCountry": "IN"
+      },
+      "sameAs": [
+        "https://wa.me/919782005500"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+91-9782005500",
+        "contactType": "customer service",
+        "availableLanguage": ["English", "Hindi"]
+      }
+    }
+    </script>
+
+    <!-- Structured Data: WebSite with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "BookAGround",
+      "url": "https://bookaground.com",
+      "description": "Book sports grounds online - Cricket, Football, Badminton, Tennis and more",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://bookaground.com/?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: LocalBusiness / SportsActivityLocation -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SportsActivityLocation",
+      "name": "BookAGround - Sports Ground Booking",
+      "url": "https://bookaground.com",
+      "telephone": "+91-9782005500",
+      "email": "info@bookaground.com",
+      "description": "Book cricket grounds, box cricket, turf, badminton, football and tennis courts online across India. Easy booking, instant confirmation.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Jaipur",
+        "addressRegion": "Rajasthan",
+        "addressCountry": "IN"
+      },
+      "priceRange": "Rs.300 - Rs.2000 per hour",
+      "openingHours": "Mo-Su 06:00-22:00",
+      "sport": ["Cricket", "Football", "Badminton", "Tennis", "Swimming", "Basketball"],
+      "areaServed": {
+        "@type": "City",
+        "name": "Jaipur"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: BreadcrumbList for key pages -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://bookaground.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Book a Ground",
+          "item": "https://bookaground.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "About Us",
+          "item": "https://bookaground.com/about"
+        }
+      ]
+    }
+    </script>
+
+    <!-- Google Analytics - Replace G-XXXXXXXXXX with your ID from Admin > Settings -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <!-- Google AdSense - Replace ca-pub-XXXXXXX with your Publisher ID from Admin > Settings -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXX" crossorigin="anonymous"></script>
+    <!-- Razorpay Checkout -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

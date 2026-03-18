@@ -1,0 +1,293 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --radius: 0.5rem
+  }
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.green-gradient {
+  background: linear-gradient(135deg, #1a5e1f 0%, #2d8a34 40%, #43a047 70%, #66bb6a 100%);
+}
+
+.page-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.ground-card-img {
+  background: linear-gradient(135deg, #1a5e1f 0%, #2d8a34 40%, #43a047 70%, #66bb6a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== 3D ANIMATION SYSTEM ===== */
+
+/* 3D Button Base */
+.btn-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: perspective(500px) translateZ(0);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 6px 0 -2px rgba(0,0,0,0.05);
+}
+.btn-3d:hover {
+  transform: perspective(500px) translateZ(10px) translateY(-3px);
+  box-shadow: 0 12px 20px -4px rgba(0,0,0,0.2), 0 8px 0 -4px rgba(0,0,0,0.1);
+  background: #15803d !important;
+  color: #fff !important;
+}
+.btn-3d:active {
+  transform: perspective(500px) translateZ(2px) translateY(0px);
+  box-shadow: 0 2px 4px -1px rgba(0,0,0,0.15), 0 2px 0 -1px rgba(0,0,0,0.05);
+}
+
+/* 3D Card */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 10px 15px -3px rgba(0,0,0,0.05);
+}
+.card-3d:hover {
+  transform: perspective(800px) rotateX(-2deg) rotateY(2deg) translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15), 0 0 30px rgba(34,197,94,0.2);
+  border-color: rgba(34,197,94,0.4);
+}
+
+/* 3D Nav Button */
+.nav-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.nav-3d::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.nav-3d:hover {
+  transform: perspective(400px) translateZ(8px) translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(0,0,0,0.15), 0 0 20px rgba(34,197,94,0.08);
+  background: rgba(34,197,94,0.1) !important;
+  color: #15803d !important;
+}
+.nav-3d:hover::after {
+  opacity: 1;
+}
+
+/* 3D Footer Button */
+.footer-btn-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.footer-btn-3d:hover {
+  transform: perspective(400px) translateZ(12px) translateY(-4px);
+  box-shadow: 0 15px 30px -8px rgba(0,0,0,0.4), 0 0 20px rgba(34,197,94,0.3);
+  border-color: rgba(34,197,94,0.6);
+  background: rgba(34,197,94,0.15) !important;
+  color: #4ade80 !important;
+}
+
+/* 3D Social Icon */
+.social-3d {
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.social-3d:hover {
+  transform: perspective(300px) translateZ(15px) rotateY(-10deg) scale(1.15);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+}
+
+/* 3D Section */
+.section-3d {
+  transform-style: preserve-3d;
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.section-3d:hover {
+  transform: perspective(1000px) rotateX(-1deg) translateY(-4px);
+}
+
+/* 3D Icon Container */
+.icon-3d {
+  transform-style: preserve-3d;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.icon-3d:hover {
+  transform: perspective(300px) rotateY(15deg) rotateX(-5deg) scale(1.1);
+  background: #22c55e !important;
+  color: #fff !important;
+}
+
+/* Float Animation */
+@keyframes float3d {
+  0%, 100% { transform: translateY(0) rotateX(0) rotateY(0); }
+  25% { transform: translateY(-8px) rotateX(2deg) rotateY(-2deg); }
+  50% { transform: translateY(-4px) rotateX(-1deg) rotateY(1deg); }
+  75% { transform: translateY(-10px) rotateX(1deg) rotateY(-1deg); }
+}
+.float-3d {
+  animation: float3d 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+/* Glow Pulse */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(34,197,94,0.2), 0 4px 6px rgba(0,0,0,0.1); }
+  50% { box-shadow: 0 0 20px rgba(34,197,94,0.4), 0 8px 15px rgba(0,0,0,0.15); }
+}
+.glow-3d {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Shimmer Effect */
+@keyframes shimmer3d {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-3d {
+  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer3d 3s infinite;
+}
+
+/* 3D Tilt on mouse */
+.tilt-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+/* Entrance animations */
+@keyframes slideUp3d {
+  from { opacity: 0; transform: perspective(800px) translateY(40px) rotateX(5deg); }
+  to { opacity: 1; transform: perspective(800px) translateY(0) rotateX(0); }
+}
+@keyframes slideIn3d {
+  from { opacity: 0; transform: perspective(800px) translateX(-30px) rotateY(5deg); }
+  to { opacity: 1; transform: perspective(800px) translateX(0) rotateY(0); }
+}
+.animate-slideUp3d { animation: slideUp3d 0.6s ease-out forwards; }
+.animate-slideIn3d { animation: slideIn3d 0.6s ease-out forwards; }
+
+/* 3D Gradient border */
+.border-3d {
+  position: relative;
+}
+.border-3d::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #22c55e, #3b82f6, #a855f7, #22c55e);
+  background-size: 300% 300%;
+  animation: gradientBorder 4s ease infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.border-3d:hover::before {
+  opacity: 1;
+}
+@keyframes gradientBorder {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 3D Header */
+.header-3d {
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+}
+
+/* 3D Login Button */
+.login-btn-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 12px rgba(34,197,94,0.3);
+}
+.login-btn-3d:hover {
+  transform: perspective(400px) translateZ(8px) translateY(-2px);
+  box-shadow: 0 12px 24px rgba(34,197,94,0.4);
+  background: #166534 !important;
+  color: #fff !important;
+}
+.login-btn-3d:active {
+  transform: perspective(400px) translateZ(2px) translateY(0);
+}
+
+/* Promo card 3D */
+.promo-3d {
+  transform-style: preserve-3d;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+}
+.promo-3d::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+.promo-3d:hover {
+  transform: perspective(600px) rotateX(-3deg) translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2);
+}
+.promo-3d:hover::after {
+  transform: translateX(100%);
+}
+
+/* Sport Category 3D */
+.sport-cat-3d {
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.sport-cat-3d:hover {
+  transform: perspective(400px) translateZ(15px) translateY(-6px) rotateX(-3deg);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+  color: #fff !important;
+}
+
+/* Stats Card 3D */
+.stat-3d {
+  transform-style: preserve-3d;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  backdrop-filter: blur(10px);
+}
+.stat-3d:hover {
+  transform: perspective(400px) translateZ(10px) translateY(-4px);
+  box-shadow: 0 0 30px rgba(255,255,255,0.1);
+}
+
+/* Search bar 3D */
+.search-3d {
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.search-3d:focus-within {
+  transform: perspective(600px) translateZ(5px) translateY(-2px);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.25), 0 0 30px rgba(34,197,94,0.15);
+}
+
