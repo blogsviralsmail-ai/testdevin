@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const [newPromo, setNewPromo] = useState({ code: '', discount_type: 'percentage', discount_value: 10, min_booking: 500, max_discount: 200, usage_limit: 100, valid_from: '2026-01-01', valid_to: '2026-12-31' });
   const [showAddGround, setShowAddGround] = useState(false);
   const [groundChangeRequests, setGroundChangeRequests] = useState<Array<Record<string, unknown>>>([]);
-  const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking,Washroom,Water', latitude: 26.9124, longitude: 75.7873, owner_id: 2, description: '' });
+  const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking,Washroom,Water', latitude: 26.9124, longitude: 75.7873, owner_id: 2, description: '', token_money_percent: 100 });
   const [reportPeriod] = useState('monthly');
   const [revenueReport, setRevenueReport] = useState<Record<string, unknown> | null>(null);
   const [showAddUser, setShowAddUser] = useState(false);
@@ -654,11 +654,43 @@ export default function AdminDashboard() {
                     <button onClick={() => handleExportPDF('All Grounds', ['Name','City','Type','Owner','Price','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),'Rs.'+String(g.weekday_price),String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><FileText size={14}/> PDF</button>
                   </div>
                 </div>
+                {/* Pending Approval Grounds */}
+                {grounds.filter(g => !g.is_active).length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                      <h4 className="font-bold text-orange-700 text-base">Pending Approval ({grounds.filter(g => !g.is_active).length})</h4>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-orange-100"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Token %</th><th className="p-3">Actions</th></tr></thead>
+                        <tbody>
+                          {grounds.filter(g => !g.is_active).map(g => (
+                            <tr key={g.id as number} className="border-t border-orange-200 hover:bg-orange-100/50">
+                              <td className="p-3"><p className="font-medium">{g.name as string}</p><p className="text-xs text-gray-500">{g.city as string} | {g.ground_type as string}</p></td>
+                              <td className="p-3 text-center text-xs">{g.owner_name as string}</td>
+                              <td className="p-3 text-center">Rs.{g.weekday_price as number}</td>
+                              <td className="p-3 text-center"><span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</span></td>
+                              <td className="p-3 text-center flex gap-1 justify-center">
+                                <button onClick={async () => { try { await api.approveGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-xs px-3 py-1.5 rounded bg-green-500 text-white font-medium hover:bg-green-600 flex items-center gap-1"><CheckCircle size={12}/> Approve</button>
+                                <button onClick={async () => { if(!confirm('Reject this ground?')) return; try { await api.rejectGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-xs px-3 py-1.5 rounded bg-red-500 text-white font-medium hover:bg-red-600 flex items-center gap-1"><XCircle size={12}/> Reject</button>
+                                <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="text-xs px-2 py-1.5 rounded bg-blue-50 text-blue-600">Edit</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                <h4 className="font-bold text-gray-700 text-base mb-3">Active Grounds ({grounds.filter(g => g.is_active).length})</h4>
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Commission</th><th className="p-3">Rating</th><th className="p-3">Approval</th><th className="p-3">Featured</th><th className="p-3">Actions</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Token %</th><th className="p-3">Commission</th><th className="p-3">Rating</th><th className="p-3">Approval</th><th className="p-3">Featured</th><th className="p-3">Actions</th></tr></thead>
                     <tbody>
                       {sortData(grounds.filter(g => {
+                        if (!g.is_active) return false;
                         if (groundsSearch && !String(g.name).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.city).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.owner_name).toLowerCase().includes(groundsSearch.toLowerCase())) return false;
                         if (groundsTypeFilter !== 'all' && String(g.ground_type) !== groundsTypeFilter) return false;
                         if (groundsCityFilter !== 'all' && String(g.city) !== groundsCityFilter) return false;
@@ -668,6 +700,7 @@ export default function AdminDashboard() {
                           <td className="p-3"><p className="font-medium">{g.name as string}</p><p className="text-xs text-gray-500">{g.city as string} | {g.ground_type as string}</p></td>
                           <td className="p-3 text-center text-xs">{g.owner_name as string}</td>
                           <td className="p-3 text-center">Rs.{g.weekday_price as number}</td>
+                          <td className="p-3 text-center"><span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</span></td>
                           <td className="p-3 text-center">
                             <button onClick={() => handleSetCommission(g.id as number)} className="text-blue-600 underline text-xs">
                               {g.commission_rate != null ? `${g.commission_rate}%` : 'Standard'}
@@ -685,7 +718,7 @@ export default function AdminDashboard() {
                             </button>
                           </td>
                           <td className="p-3 text-center flex gap-1 justify-center">
-                            <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||'') }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600">
+                            <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600">
                               Edit
                             </button>
                             <button onClick={() => handleToggleGround(g.id as number)} className={`text-xs px-2 py-1 rounded ${g.is_active ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
@@ -720,6 +753,7 @@ export default function AdminDashboard() {
                         <input type="number" step="0.0001" placeholder="Latitude" className="border rounded-lg px-3 py-2 text-sm" value={newGround.latitude} onChange={e => setNewGround({...newGround, latitude: parseFloat(e.target.value) || 0})} />
                         <input type="number" step="0.0001" placeholder="Longitude" className="border rounded-lg px-3 py-2 text-sm" value={newGround.longitude} onChange={e => setNewGround({...newGround, longitude: parseFloat(e.target.value) || 0})} />
                         <textarea placeholder="Description" className="border rounded-lg px-3 py-2 text-sm col-span-2" rows={2} value={newGround.description} onChange={e => setNewGround({...newGround, description: e.target.value})} />
+                        <div className="col-span-2"><label className="text-sm font-medium text-gray-600">Token Money %</label><select className="w-full border rounded-lg px-3 py-2 text-sm mt-1" value={newGround.token_money_percent} onChange={e => setNewGround({...newGround, token_money_percent: parseInt(e.target.value)})}><option value={30}>30%</option><option value={50}>50%</option><option value={100}>100%</option></select><p className="text-xs text-gray-400 mt-0.5">Agreement ke according token money %</p></div>
                       </div>
                       <div className="flex gap-3 mt-4">
                         <button onClick={() => setShowAddGround(false)} className="flex-1 border-2 py-2.5 rounded-xl font-medium">Cancel</button>
@@ -752,6 +786,7 @@ export default function AdminDashboard() {
                         </div>
                         <div><label className="text-sm font-medium text-gray-600">Description</label><textarea className="w-full border rounded-lg px-3 py-2 mt-1" rows={2} value={String(adminEditGroundData.description || '')} onChange={e => setAdminEditGroundData({...adminEditGroundData, description: e.target.value})} /></div>
                         <div><label className="text-sm font-medium text-gray-600">Amenities (comma separated)</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={String(adminEditGroundData.amenities || '')} onChange={e => setAdminEditGroundData({...adminEditGroundData, amenities: e.target.value})} /></div>
+                        <div><label className="text-sm font-medium text-gray-600">Token Money %</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={Number(adminEditGroundData.token_money_percent || 100)} onChange={e => setAdminEditGroundData({...adminEditGroundData, token_money_percent: parseInt(e.target.value)})}><option value={30}>30%</option><option value={50}>50%</option><option value={100}>100%</option></select></div>
                         {/* Gallery Images with Delete */}
                         {Array.isArray((adminEditGround as Record<string, unknown>).gallery_images) && ((adminEditGround as Record<string, unknown>).gallery_images as Array<Record<string, unknown>>).length > 0 && (
                           <div>
@@ -804,7 +839,7 @@ export default function AdminDashboard() {
                         <button onClick={async () => {
                           try {
                             const changes: Record<string, unknown> = {};
-                            const fields = ['name','address','city','weekday_price','weekend_price','evening_extra','ground_type','opening_time','closing_time','description','amenities'];
+                            const fields = ['name','address','city','weekday_price','weekend_price','evening_extra','ground_type','opening_time','closing_time','description','amenities','token_money_percent'];
                             fields.forEach(f => { if(adminEditGroundData[f] !== undefined) changes[f] = adminEditGroundData[f]; });
                             await api.adminUpdateGround(adminEditGround.id as number, changes);
                             // Upload new photos to gallery

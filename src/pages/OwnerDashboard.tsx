@@ -32,10 +32,15 @@ export default function OwnerDashboard() {
   const [cancelPopup, setCancelPopup] = useState<Record<string, unknown> | null>(null);
   const [rateUserId, setRateUserId] = useState<string | null>(null);
   const [userRating, setUserRating] = useState(0);
-  const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '' });
-  const [groundPhoto, setGroundPhoto] = useState<File | null>(null);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(['Floodlights', 'Parking']);
-  const allAmenities = ['Floodlights', 'Parking', 'Washroom', 'Water', 'Changing Room', 'Canteen', 'WiFi', 'CCTV', 'Coaching', 'First Aid', 'Scoreboard', 'Equipment', 'Nets', 'Multiple Pitches', 'Garden', 'AC', 'Seating', 'Music System'];
+  const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '', token_money_percent: 100 });
+  const [, setGroundPhotos] = useState<File[]>([]);
+  const [groundPhotoPreviews, setGroundPhotoPreviews] = useState<string[]>([]);
+  const [successPopup, setSuccessPopup] = useState<string | null>(null);
+  const [errorPopup, setErrorPopup] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>(['Floodlights', 'Parking']);
+    const [editSelectedAmenities, setEditSelectedAmenities] = useState<string[]>([]);
+    const allAmenities = ['Floodlights', 'Parking', 'Washroom', 'Water', 'Changing Room', 'Canteen', 'WiFi', 'CCTV', 'Coaching', 'First Aid', 'Scoreboard', 'Equipment', 'Nets', 'Multiple Pitches', 'Garden', 'AC', 'Seating', 'Music System'];
   const [ownerListSearch, setOwnerListSearch] = useState('');
   const [, _setWallet] = useState<Record<string, unknown> | null>(null);
   const [withdrawAmt, setWithdrawAmt] = useState('');
@@ -441,7 +446,7 @@ export default function OwnerDashboard() {
                       <p className="text-sm text-gray-500">{g.address as string}</p>
                       {!Number(g.is_active) && (
                         <span className="inline-flex items-center gap-1 mt-1 text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium border border-orange-200">
-                          ⏳ Admin Approval Pending — Your ground will go live once approved
+                          🔴 Inactive — Not visible to customers
                         </span>
                       )}
                       {!!Number(g.is_active) && (
@@ -460,8 +465,12 @@ export default function OwnerDashboard() {
                       className={`text-sm px-4 py-2 rounded-lg ${selectedGround === (g.id as number) ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
                       {selectedGround === (g.id as number) ? 'Viewing Slots' : 'Manage Slots'}
                     </button>
-                    <button onClick={() => { setShowEditGroundModal(g); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '' }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
-                    <button onClick={async () => { if (!confirm('Request to delete this ground? Admin approval needed.')) return; try { await api.requestGroundChange({ ground_id: g.id as number, changes: { delete: true } }); alert('Delete request sent to admin for approval!'); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 flex items-center gap-1"><Trash2 size={14}/> Delete</button>
+                    <button disabled={isSubmitting} onClick={async () => { if (isSubmitting) return; setIsSubmitting(true); try { await api.toggleOwnerGround(g.id as number); loadData(); } catch(e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed to toggle'); } finally { setIsSubmitting(false); } }}
+                      className={`text-sm px-4 py-2 rounded-lg flex items-center gap-1 ${Number(g.is_active) ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}>
+                      {Number(g.is_active) ? '🟢 Active' : '🔴 Inactive'}
+                    </button>
+                    <button onClick={() => { setShowEditGroundModal(g); const amenitiesStr = (g.amenities as string) || ''; setEditSelectedAmenities(amenitiesStr ? amenitiesStr.split(',').map((a: string) => a.trim()).filter(Boolean) : []); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '', token_money_percent: g.token_money_percent || 100 }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
+                    <button disabled={isSubmitting} onClick={async () => { if (!confirm('Are you sure you want to delete this ground? This cannot be undone.')) return; setIsSubmitting(true); try { await api.deleteOwnerGround(g.id as number); setSuccessPopup('Ground deleted successfully!'); loadData(); } catch(e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed'); } finally { setIsSubmitting(false); } }} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 flex items-center gap-1 disabled:opacity-50"><Trash2 size={14}/> Delete</button>
                   </div>
                 </div>
               ))}
@@ -787,37 +796,30 @@ export default function OwnerDashboard() {
 
         {/* ADD GROUND TAB */}
         {tab === 'addground' && (
-          <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><MapPin size={20} className="text-blue-600" /> Add New Ground</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 max-w-lg">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><MapPin size={20} className="text-blue-600" /> Add New Ground</h3>
             <p className="text-sm text-gray-500 mb-4">Submit your ground for listing. Admin will review and approve it.</p>
-            <div className="grid grid-cols-2 gap-3">
-              <input placeholder="Ground Name *" className="border rounded-lg px-3 py-2 text-sm col-span-2" value={newGround.name} onChange={e => setNewGround({...newGround, name: e.target.value})} />
-              <input placeholder="Address *" className="border rounded-lg px-3 py-2 text-sm col-span-2" value={newGround.address} onChange={e => setNewGround({...newGround, address: e.target.value})} />
-              <input placeholder="City" className="border rounded-lg px-3 py-2 text-sm" value={newGround.city} onChange={e => setNewGround({...newGround, city: e.target.value})} />
-              <select className="border rounded-lg px-3 py-2 text-sm" value={newGround.ground_type} onChange={e => setNewGround({...newGround, ground_type: e.target.value})}>
-                <option value="box">Box Cricket</option><option value="open">Open Ground</option><option value="turf">Turf</option>
-              </select>
-              <input type="number" placeholder="Weekday Price" className="border rounded-lg px-3 py-2 text-sm" value={newGround.weekday_price} onChange={e => setNewGround({...newGround, weekday_price: parseInt(e.target.value) || 0})} />
-              <input type="number" placeholder="Weekend Price" className="border rounded-lg px-3 py-2 text-sm" value={newGround.weekend_price} onChange={e => setNewGround({...newGround, weekend_price: parseInt(e.target.value) || 0})} />
-              <input type="time" className="border rounded-lg px-3 py-2 text-sm" value={newGround.opening_time} onChange={e => setNewGround({...newGround, opening_time: e.target.value})} />
-              <input type="time" className="border rounded-lg px-3 py-2 text-sm" value={newGround.closing_time} onChange={e => setNewGround({...newGround, closing_time: e.target.value})} />
-              {/* GPS Location */}
-              <div className="col-span-2 bg-blue-50 rounded-lg p-3">
-                <label className="text-sm font-medium text-blue-700 mb-2 block">GPS Location</label>
-                <div className="flex gap-2">
-                  <input type="text" placeholder="Latitude (e.g. 26.9124)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.latitude} onChange={e => setNewGround({...newGround, latitude: e.target.value})} />
-                  <input type="text" placeholder="Longitude (e.g. 75.7873)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.longitude} onChange={e => setNewGround({...newGround, longitude: e.target.value})} />
-                  <button type="button" onClick={() => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setNewGround(g => ({...g, latitude: String(pos.coords.latitude.toFixed(6)), longitude: String(pos.coords.longitude.toFixed(6))})); alert('Location captured!'); }, () => alert('Location access denied')); } else { alert('Geolocation not supported'); } }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap hover:bg-blue-700">Get GPS</button>
-                </div>
+            <div className="space-y-3">
+              <div><label className="text-sm font-medium text-gray-600">Ground Name</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.name} onChange={e => setNewGround({...newGround, name: e.target.value})} /></div>
+              <div><label className="text-sm font-medium text-gray-600">Address</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.address} onChange={e => setNewGround({...newGround, address: e.target.value})} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-sm font-medium text-gray-600">City</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.city} onChange={e => setNewGround({...newGround, city: e.target.value})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Ground Type</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.ground_type} onChange={e => setNewGround({...newGround, ground_type: e.target.value})}><option value="box">Box Cricket</option><option value="turf">Turf</option><option value="open">Open Ground</option><option value="indoor">Indoor</option></select></div>
               </div>
-              {/* Ground Photo Upload */}
-              <div className="col-span-2 bg-green-50 rounded-lg p-3">
-                <label className="text-sm font-medium text-green-700 mb-2 block">Ground Photo</label>
-                <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 text-sm bg-white" onChange={e => { const f = e.target.files?.[0]; if(f) setGroundPhoto(f); }} />
-                {groundPhoto && <p className="text-xs text-green-600 mt-1">Selected: {groundPhoto.name}</p>}
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-sm font-medium text-gray-600">Weekday Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.weekday_price} onChange={e => setNewGround({...newGround, weekday_price: parseInt(e.target.value) || 0})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Weekend Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.weekend_price} onChange={e => setNewGround({...newGround, weekend_price: parseInt(e.target.value) || 0})} /></div>
               </div>
-              {/* Amenities Checkboxes */}
-              <div className="col-span-2 bg-purple-50 rounded-lg p-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-sm font-medium text-gray-600">Evening Extra</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.evening_extra} onChange={e => setNewGround({...newGround, evening_extra: parseInt(e.target.value) || 0})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Token Money %</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.token_money_percent} onChange={e => setNewGround({...newGround, token_money_percent: parseInt(e.target.value)})}><option value={30}>30%</option><option value={50}>50%</option><option value={100}>100%</option></select><p className="text-xs text-gray-400 mt-0.5">Agreement ke according token money %</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-sm font-medium text-gray-600">Opening Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.opening_time} onChange={e => setNewGround({...newGround, opening_time: e.target.value})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Closing Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.closing_time} onChange={e => setNewGround({...newGround, closing_time: e.target.value})} /></div>
+              </div>
+              <div><label className="text-sm font-medium text-gray-600">Description</label><textarea className="w-full border rounded-lg px-3 py-2 mt-1" rows={2} value={newGround.description} onChange={e => setNewGround({...newGround, description: e.target.value})} /></div>
+              <div className="bg-purple-50 rounded-lg p-3">
                 <label className="text-sm font-medium text-purple-700 mb-2 block">Amenities</label>
                 <div className="flex flex-wrap gap-2">
                   {allAmenities.map(a => (
@@ -828,21 +830,62 @@ export default function OwnerDashboard() {
                   ))}
                 </div>
               </div>
-              <textarea placeholder="Description" className="border rounded-lg px-3 py-2 text-sm col-span-2" rows={2} value={newGround.description} onChange={e => setNewGround({...newGround, description: e.target.value})} />
+              {/* Ground Photo Upload */}
+              <div>
+                <label className="text-sm font-medium text-gray-600">Upload Photos (multiple allowed)</label>
+                <input type="file" accept="image/*" multiple className="w-full border rounded-lg px-3 py-2 mt-1 text-sm" onChange={e => {
+                  const files = Array.from(e.target.files || []);
+                  setGroundPhotos(prev => [...prev, ...files]);
+                  files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = () => setGroundPhotoPreviews(prev => [...prev, reader.result as string]);
+                    reader.readAsDataURL(file);
+                  });
+                }} />
+                {groundPhotoPreviews.length > 0 && (
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {groundPhotoPreviews.map((preview, idx) => (
+                      <div key={idx} className="relative group">
+                        <img src={preview} alt="Preview" className="w-20 h-20 object-cover rounded-lg border-2 border-green-400" />
+                        <button type="button" onClick={() => {
+                          setGroundPhotos(prev => prev.filter((_, i) => i !== idx));
+                          setGroundPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
+                        }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-600">&times;</button>
+                        <span className="absolute bottom-0 left-0 right-0 bg-green-500 text-white text-center text-[10px] rounded-b-lg">New</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* GPS Location */}
+              <div className="bg-blue-50 rounded-lg p-3">
+                <label className="text-sm font-medium text-blue-700 mb-2 block">GPS Location</label>
+                <div className="flex gap-2">
+                  <input type="text" placeholder="Latitude (e.g. 26.9124)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.latitude} onChange={e => setNewGround({...newGround, latitude: e.target.value})} />
+                  <input type="text" placeholder="Longitude (e.g. 75.7873)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.longitude} onChange={e => setNewGround({...newGround, longitude: e.target.value})} />
+                  <button type="button" onClick={() => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setNewGround(g => ({...g, latitude: String(pos.coords.latitude.toFixed(6)), longitude: String(pos.coords.longitude.toFixed(6))})); alert('Location captured!'); }, () => alert('Location access denied')); } else { alert('Geolocation not supported'); } }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap hover:bg-blue-700">Get GPS</button>
+                </div>
+              </div>
             </div>
-            <button onClick={async () => {
-              try {
-                await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0});
-                // Upload photo if selected
-                if (groundPhoto && data?.grounds?.length) {
-                  const lastGround = data.grounds[data.grounds.length - 1];
-                  await api.uploadGalleryImage(lastGround.id as number, groundPhoto, 'Ground Photo');
-                }
-                alert('Ground submitted! Pending admin approval.');
-                setGroundPhoto(null);
-                loadData();
-              } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
-            }} className="mt-4 bg-blue-600 text-white px-8 py-2.5 rounded-xl font-medium hover:bg-blue-700">Submit for Approval</button>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => { setNewGround({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '', token_money_percent: 100 }); setSelectedAmenities(['Floodlights', 'Parking']); setGroundPhotos([]); setGroundPhotoPreviews([]); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+              <button disabled={isSubmitting} onClick={async () => {
+                if (isSubmitting) return; setIsSubmitting(true);
+                try {
+                  const result = await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0}) as Record<string, unknown>;
+                  // Upload photos if selected (use owner gallery endpoint, not admin)
+                  if (groundPhotoPreviews.length > 0 && result?.id) {
+                    for (const preview of groundPhotoPreviews) {
+                      await api.addGalleryImage({ ground_id: result.id as number, image_data: preview, caption: 'Ground Photo' });
+                    }
+                  }
+                  setSuccessPopup('Ground submitted successfully! Pending admin approval.');
+                  setGroundPhotos([]); setGroundPhotoPreviews([]);
+                  setNewGround({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '', token_money_percent: 100 }); setSelectedAmenities(['Floodlights', 'Parking']);
+                  loadData();
+                } catch (e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed'); } finally { setIsSubmitting(false); }
+              }} className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50">{isSubmitting ? 'Submitting...' : 'Submit for Approval'}</button>
+            </div>
           </div>
         )}
 
@@ -1885,17 +1928,30 @@ export default function OwnerDashboard() {
                   <div><label className="text-sm font-medium text-gray-600">City</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.city as string || ''} onChange={e => setEditGroundFormData({...editGroundFormData, city: e.target.value})} /></div>
                   <div><label className="text-sm font-medium text-gray-600">Ground Type</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.ground_type as string || 'box'} onChange={e => setEditGroundFormData({...editGroundFormData, ground_type: e.target.value})}><option value="box">Box Cricket</option><option value="turf">Turf</option><option value="open">Open Ground</option><option value="indoor">Indoor</option></select></div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium text-gray-600">Weekday Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.weekday_price as number || 0} onChange={e => setEditGroundFormData({...editGroundFormData, weekday_price: parseInt(e.target.value)})} /></div>
                   <div><label className="text-sm font-medium text-gray-600">Weekend Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.weekend_price as number || 0} onChange={e => setEditGroundFormData({...editGroundFormData, weekend_price: parseInt(e.target.value)})} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium text-gray-600">Evening Extra</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.evening_extra as number || 0} onChange={e => setEditGroundFormData({...editGroundFormData, evening_extra: parseInt(e.target.value)})} /></div>
+                  <div><label className="text-sm font-medium text-gray-600">Token Money %</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.token_money_percent as number || 100} onChange={e => setEditGroundFormData({...editGroundFormData, token_money_percent: parseInt(e.target.value)})}><option value={30}>30%</option><option value={50}>50%</option><option value={100}>100%</option></select></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium text-gray-600">Opening Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.opening_time as string || '06:00'} onChange={e => setEditGroundFormData({...editGroundFormData, opening_time: e.target.value})} /></div>
                   <div><label className="text-sm font-medium text-gray-600">Closing Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.closing_time as string || '22:00'} onChange={e => setEditGroundFormData({...editGroundFormData, closing_time: e.target.value})} /></div>
                 </div>
                 <div><label className="text-sm font-medium text-gray-600">Description</label><textarea className="w-full border rounded-lg px-3 py-2 mt-1" rows={2} value={editGroundFormData.description as string || ''} onChange={e => setEditGroundFormData({...editGroundFormData, description: e.target.value})} /></div>
-                <div><label className="text-sm font-medium text-gray-600">Amenities (comma separated)</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Floodlights,Parking,Washroom,Water" value={editGroundFormData.amenities as string || ''} onChange={e => setEditGroundFormData({...editGroundFormData, amenities: e.target.value})} /></div>
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <label className="text-sm font-medium text-purple-700 mb-2 block">Amenities</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allAmenities.map(a => (
+                      <label key={a} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer border transition ${editSelectedAmenities.includes(a) ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'}`}>
+                        <input type="checkbox" className="hidden" checked={editSelectedAmenities.includes(a)} onChange={() => { const next = editSelectedAmenities.includes(a) ? editSelectedAmenities.filter(x => x !== a) : [...editSelectedAmenities, a]; setEditSelectedAmenities(next); setEditGroundFormData(prev => ({...prev, amenities: next.join(',')})); }} />
+                        {a}
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 {/* Gallery Images with Delete */}
                 {Array.isArray(showEditGroundModal.gallery_images) && (showEditGroundModal.gallery_images as Array<Record<string, unknown>>).length > 0 && (
                   <div>
@@ -1949,7 +2005,7 @@ export default function OwnerDashboard() {
                 <button onClick={async () => {
                   try {
                     const changes: Record<string, unknown> = {};
-                    const fields = ['name','address','city','weekday_price','weekend_price','evening_extra','ground_type','opening_time','closing_time','description','amenities'];
+                    const fields = ['name','address','city','weekday_price','weekend_price','evening_extra','ground_type','opening_time','closing_time','description','amenities','token_money_percent'];
                     fields.forEach(f => { if(editGroundFormData[f] !== undefined && editGroundFormData[f] !== showEditGroundModal[f]) changes[f] = editGroundFormData[f]; });
                     if(editGroundPhotos.length > 0) changes['photo_updated'] = true;
                     if(Object.keys(changes).length === 0 && editGroundPhotos.length === 0) { alert('No changes made'); return; }
@@ -2074,6 +2130,30 @@ export default function OwnerDashboard() {
               <button onClick={() => { setOfflineDialog(false); setIsSelfBooking(false); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium">Cancel</button>
               <button onClick={handleOfflineBooking} className={`flex-1 text-white py-2.5 rounded-xl font-medium ${isSelfBooking ? 'bg-purple-600 hover:bg-purple-700' : 'bg-orange-500 hover:bg-orange-600'}`}>{isSelfBooking ? 'Record Self Booking' : 'Record Booking'}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup */}
+      {successPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSuccessPopup(null)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3"><CheckCircle size={28} className="text-green-600"/></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Success!</h3>
+            <p className="text-gray-600 text-sm mb-4">{successPopup}</p>
+            <button onClick={() => setSuccessPopup(null)} className="w-full bg-green-600 text-white py-2.5 rounded-xl font-medium hover:bg-green-700">OK</button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Popup */}
+      {errorPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setErrorPopup(null)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3"><XCircle size={28} className="text-red-600"/></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Error</h3>
+            <p className="text-gray-600 text-sm mb-4">{errorPopup}</p>
+            <button onClick={() => setErrorPopup(null)} className="w-full bg-red-600 text-white py-2.5 rounded-xl font-medium hover:bg-red-700">Close</button>
           </div>
         </div>
       )}
