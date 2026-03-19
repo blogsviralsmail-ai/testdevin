@@ -70,7 +70,7 @@ export default function OwnerDashboard() {
   const [dayOffGround, setDayOffGround] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // V13 new state
-  const [ownerAnalytics, setOwnerAnalytics] = useState<Record<string, unknown>>({});
+  // const [ownerAnalytics, setOwnerAnalytics] = useState<Record<string, unknown>>({});  // Analytics removed
   const [ownerCoupons, setOwnerCoupons] = useState<Array<Record<string, unknown>>>([]);
   const [ownerAutoReplies, setOwnerAutoReplies] = useState<Array<Record<string, unknown>>>([]);
   const [ownerCRM, setOwnerCRM] = useState<Array<Record<string, unknown>>>([]);
@@ -121,7 +121,7 @@ export default function OwnerDashboard() {
     { id: 'bulkslots', label: 'Bulk Slots', icon: Copy },
     { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'ledger', label: 'Ledger', icon: FileText },
-    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    // { id: 'analytics', label: 'Analytics', icon: TrendingUp },  // Removed
     { id: 'coupons', label: 'Coupons', icon: Tag },
     { id: 'crm', label: 'CRM', icon: Users },
     { id: 'tournaments', label: 'Tournaments', icon: Calendar },
@@ -157,7 +157,7 @@ export default function OwnerDashboard() {
   };
 
   const loadTab = () => {
-    if (tab === 'analytics') api.getOwnerAnalytics().then(setOwnerAnalytics).catch(() => {});
+    // if (tab === 'analytics') api.getOwnerAnalytics().then(setOwnerAnalytics).catch(() => {});  // Analytics removed
     if (tab === 'coupons') api.getOwnerCoupons().then(setOwnerCoupons).catch(() => {});
     if (tab === 'autoreplies') api.getOwnerAutoReplies().then(setOwnerAutoReplies).catch(() => {});
     if (tab === 'crm') api.getOwnerCRM().then(setOwnerCRM).catch(() => {});
@@ -1338,57 +1338,7 @@ export default function OwnerDashboard() {
           </>
         )}
 
-            {/* ANALYTICS */}
-            {tab === 'analytics' && (
-              <>
-                <h3 className="font-bold text-gray-800 text-xl mb-4">Revenue Analytics</h3>
-                {ownerAnalytics.monthly_revenue ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-5">
-                        <p className="text-sm opacity-80">Today's Revenue</p>
-                        <p className="text-3xl font-bold mt-1">Rs.{(ownerAnalytics.today_revenue as number || 0).toLocaleString()}</p>
-                        <p className="text-xs opacity-70 mt-1">{ownerAnalytics.today_bookings as number} bookings today</p>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                      <h4 className="font-bold text-gray-700 mb-3">Monthly Revenue</h4>
-                      <div className="space-y-2">
-                        {(ownerAnalytics.monthly_revenue as Array<Record<string, unknown>> || []).map((m: Record<string, unknown>, i: number) => (
-                          <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
-                            <span className="text-sm text-gray-600">{m.month as string}</span>
-                            <div className="flex items-center gap-4">
-                              <span className="text-xs text-gray-400">{m.bookings as number} bookings</span>
-                              <span className="font-bold text-green-600">Rs.{(m.revenue as number || 0).toLocaleString()}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-white rounded-xl shadow-sm p-5">
-                        <h4 className="font-bold text-gray-700 mb-3">Ground-wise Revenue</h4>
-                        {(ownerAnalytics.ground_revenue as Array<Record<string, unknown>> || []).map((g: Record<string, unknown>, i: number) => (
-                          <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
-                            <span className="text-sm">{g.name as string}</span>
-                            <span className="font-medium text-green-600">Rs.{(g.revenue as number || 0).toLocaleString()}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="bg-white rounded-xl shadow-sm p-5">
-                        <h4 className="font-bold text-gray-700 mb-3">Peak Hours</h4>
-                        {(ownerAnalytics.peak_hours as Array<Record<string, unknown>> || []).map((p: Record<string, unknown>, i: number) => (
-                          <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
-                            <span className="text-sm">{p.hour as string}</span>
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{p.count as number} bookings</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : <p className="text-gray-400 text-center py-8">Loading analytics...</p>}
-              </>
-            )}
+            {/* Analytics - Removed */}
 
             {/* Dynamic Pricing - Removed */}
 
