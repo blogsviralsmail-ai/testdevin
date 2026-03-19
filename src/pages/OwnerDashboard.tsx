@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { TrendingUp, Calendar, Star, IndianRupee, AlertTriangle, Plus, Wallet, Send, MapPin, CheckCircle, XCircle, CalendarOff, Menu, ChevronLeft, LogOut, BarChart3, FileText, Lock, Unlock, Edit, Trash2, MessageSquare, Tag, Users, Image, Copy, User, Download, Search, Navigation } from 'lucide-react';
+import { TrendingUp, Calendar, Star, IndianRupee, AlertTriangle, Plus, Wallet, MapPin, CheckCircle, XCircle, CalendarOff, Menu, ChevronLeft, LogOut, BarChart3, FileText, Lock, Unlock, Edit, Trash2, MessageSquare, Tag, Users, Copy, User, Download, Search, Navigation, Shield, Upload, RefreshCw, Info, X, TrendingDown } from 'lucide-react';
 
 interface DashboardData {
   grounds: Array<Record<string, unknown>>;
@@ -15,7 +15,7 @@ export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const validTabs = ['dashboard','grounds','bookings','settlement','payout','ledger','tickets','addground','analytics','dynamicpricing','staff','coupons','expenses','maintenance','autoreplies','crm','gallery','bulkslots','profile','tournaments','equipment','chat'] as const;
+  const validTabs = ['dashboard','grounds','bookings','wallet','settlement','payout','ledger','tickets','addground','analytics','coupons','autoreplies','crm','bulkslots','profile','tournaments','equipment','chat'] as const;
   type TabType = typeof validTabs[number];
   const getInitialTab = (): TabType => {
     const hash = window.location.hash.replace('#','') as TabType;
@@ -48,30 +48,32 @@ export default function OwnerDashboard() {
   const [accountNo, setAccountNo] = useState('');
   const [ifsc, setIfsc] = useState('');
   const [kycDoc, setKycDoc] = useState('');
-  const [kycFileName, setKycFileName] = useState('');
-  const [kycUploadProgress, setKycUploadProgress] = useState(0);
+  const [, _setKycFileName] = useState('');
+  const [, _setKycUploadProgress] = useState(0);
+  void _setKycFileName; void _setKycUploadProgress;
   const [upiId, setUpiId] = useState('');
   const [ownerKycStatus, setOwnerKycStatus] = useState('none');
   const [ownerProfile, setOwnerProfile] = useState<Record<string, unknown> | null>(null);
   const [changingAccount, setChangingAccount] = useState(false);
+  const [walletSection, setWalletSection] = useState<'overview' | 'kyc'>('overview');
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [kycFiles, setKycFiles] = useState<File[]>([]);
+  const [submittingKyc, setSubmittingKyc] = useState(false);
+  const [ownerToast, setOwnerToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; show: boolean }>({ message: '', type: 'info', show: false });
+  const showOwnerToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setOwnerToast({ message, type, show: true });
+    setTimeout(() => setOwnerToast(prev => ({ ...prev, show: false })), 4500);
+  };
   const [dayOffDate, setDayOffDate] = useState('');
   const [dayOffReason, setDayOffReason] = useState('');
   const [dayOffGround, setDayOffGround] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // V13 new state
   const [ownerAnalytics, setOwnerAnalytics] = useState<Record<string, unknown>>({});
-  const [dynamicPricing, setDynamicPricing] = useState<Array<Record<string, unknown>>>([]);
-  const [ownerStaff, setOwnerStaff] = useState<Array<Record<string, unknown>>>([]);
   const [ownerCoupons, setOwnerCoupons] = useState<Array<Record<string, unknown>>>([]);
-  const [ownerExpenses, setOwnerExpenses] = useState<Array<Record<string, unknown>>>([]);
-  const [ownerMaintenance, setOwnerMaintenance] = useState<Array<Record<string, unknown>>>([]);
   const [ownerAutoReplies, setOwnerAutoReplies] = useState<Array<Record<string, unknown>>>([]);
   const [ownerCRM, setOwnerCRM] = useState<Array<Record<string, unknown>>>([]);
-  const [galleryImages, setGalleryImages] = useState<Array<Record<string, unknown>>>([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [newImageCaption, setNewImageCaption] = useState('');
-  const [galleryFile, setGalleryFile] = useState<File | null>(null);
-  const [galleryGroundId, setGalleryGroundId] = useState<number>(0);
   const [bulkSlotDate, setBulkSlotDate] = useState(new Date().toISOString().split('T')[0]);
   const [bulkSlotEndDate, setBulkSlotEndDate] = useState('');
   const [bulkSlotStart, setBulkSlotStart] = useState('06:00');
@@ -117,17 +119,11 @@ export default function OwnerDashboard() {
     { id: 'grounds', label: 'My Grounds', icon: MapPin },
     { id: 'addground', label: 'Add Ground', icon: Plus },
     { id: 'bulkslots', label: 'Bulk Slots', icon: Copy },
-    { id: 'settlement', label: 'Settlement', icon: FileText },
-    { id: 'payout', label: 'Payout Wallet', icon: Wallet },
+    { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'ledger', label: 'Ledger', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-    { id: 'dynamicpricing', label: 'Pricing', icon: IndianRupee },
     { id: 'coupons', label: 'Coupons', icon: Tag },
-    { id: 'expenses', label: 'Expenses', icon: IndianRupee },
     { id: 'crm', label: 'CRM', icon: Users },
-    { id: 'staff', label: 'Staff', icon: Users },
-    { id: 'gallery', label: 'Gallery', icon: Image },
-    { id: 'maintenance', label: 'Maintenance', icon: Calendar },
     { id: 'tournaments', label: 'Tournaments', icon: Calendar },
     { id: 'equipment', label: 'Equipment', icon: Tag },
     { id: 'autoreplies', label: 'Auto Reply', icon: MessageSquare },
@@ -162,14 +158,9 @@ export default function OwnerDashboard() {
 
   const loadTab = () => {
     if (tab === 'analytics') api.getOwnerAnalytics().then(setOwnerAnalytics).catch(() => {});
-    if (tab === 'dynamicpricing') api.getDynamicPricing().then(setDynamicPricing).catch(() => {});
-    if (tab === 'staff') api.getOwnerStaff().then(setOwnerStaff).catch(() => {});
     if (tab === 'coupons') api.getOwnerCoupons().then(setOwnerCoupons).catch(() => {});
-    if (tab === 'expenses') api.getOwnerExpenses().then(setOwnerExpenses).catch(() => {});
-    if (tab === 'maintenance') api.getOwnerMaintenance().then(setOwnerMaintenance).catch(() => {});
     if (tab === 'autoreplies') api.getOwnerAutoReplies().then(setOwnerAutoReplies).catch(() => {});
     if (tab === 'crm') api.getOwnerCRM().then(setOwnerCRM).catch(() => {});
-    if (tab === 'gallery' && galleryGroundId) api.getOwnerGallery(galleryGroundId).then(setGalleryImages).catch(() => {});
     if (tab === 'tournaments') api.getOwnerTournaments().then(setOwnerTournaments).catch(() => {});
     if (tab === 'grounds') api.getOwnerChangeRequests().then(() => {}).catch(() => {});
     if (tab === 'equipment' && grounds.length > 0) api.getGroundEquipment(grounds[0]?.id as number || 0).then(setOwnerEquipmentList).catch(() => {});
@@ -198,22 +189,29 @@ export default function OwnerDashboard() {
 
   const handleWithdraw = async () => {
     const amt = parseInt(withdrawAmt);
-    if (!amt || amt < 100) { alert('Minimum Rs.100'); return; }
+    if (!amt || amt < 100) { showOwnerToast('Minimum Rs.100 withdraw kar sakte ho', 'warning'); return; }
     const balance = data?.cash_tracking?.net_payable ?? data?.wallet_balance ?? 0;
-    if (balance <= 0) { alert('Insufficient balance! Aapka balance Rs.' + balance + ' hai. Withdraw nahi ho sakta.'); return; }
-    if (amt > balance) { alert('Amount balance se zyada hai! Available: Rs.' + balance); return; }
-    try { await api.ownerPayout(amt); const charge = Math.round(amt * 0.03); alert(`Withdrawal request of Rs.${amt - charge} submitted (3% charge: Rs.${charge}). Admin will process it.`); setWithdrawAmt(''); loadData(); }
-    catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
+    if (balance <= 0) { showOwnerToast('Insufficient balance! Aapka balance Rs.' + balance + ' hai.', 'warning'); return; }
+    if (amt > balance) { showOwnerToast('Amount balance se zyada hai! Available: Rs.' + balance, 'warning'); return; }
+    setWithdrawing(true);
+    try { await api.ownerPayout(amt); const charge = Math.round(amt * 0.03); showOwnerToast(`Withdrawal request of Rs.${amt - charge} submitted (3% charge: Rs.${charge}). Admin will process it.`, 'success'); setWithdrawAmt(''); setShowWithdrawModal(false); loadData(); }
+    catch (e: unknown) { showOwnerToast(e instanceof Error ? e.message : 'Withdrawal failed', 'error'); }
+    setWithdrawing(false);
   };
 
   const handleKYC = async () => {
-    if (!bankName || !accountNo || !ifsc || !kycDoc) { alert('Fill all KYC details'); return; }
+    if (!bankName || !accountNo || !ifsc || !kycDoc) { showOwnerToast('Sab KYC fields fill karo', 'warning'); return; }
+    if (kycFiles.length === 0) {
+      // Check old file input as fallback
+      const fileInput = document.getElementById('owner-kyc-file') as HTMLInputElement;
+      if (!fileInput?.files?.[0]) { showOwnerToast('KYC document upload karo', 'warning'); return; }
+    }
+    setSubmittingKyc(true);
     try {
       const kycData: Record<string, unknown> = { bank_name: bankName, account_number: accountNo, ifsc_code: ifsc, document_type: kycDoc, upi_id: upiId || undefined };
-      // Read file as base64 if selected
-      const fileInput = document.getElementById('owner-kyc-file') as HTMLInputElement;
-      if (fileInput?.files?.[0]) {
-        const file = fileInput.files[0];
+      // Read files as base64
+      if (kycFiles.length > 0) {
+        const file = kycFiles[0];
         const reader = new FileReader();
         const base64 = await new Promise<string>((resolve) => {
           reader.onload = () => { const result = reader.result as string; resolve(result.split(',')[1]); };
@@ -221,12 +219,27 @@ export default function OwnerDashboard() {
         });
         kycData.kyc_doc_data = base64;
         kycData.kyc_doc_filename = file.name;
+      } else {
+        const fileInput = document.getElementById('owner-kyc-file') as HTMLInputElement;
+        if (fileInput?.files?.[0]) {
+          const file = fileInput.files[0];
+          const reader = new FileReader();
+          const base64 = await new Promise<string>((resolve) => {
+            reader.onload = () => { const result = reader.result as string; resolve(result.split(',')[1]); };
+            reader.readAsDataURL(file);
+          });
+          kycData.kyc_doc_data = base64;
+          kycData.kyc_doc_filename = file.name;
+        }
       }
       await api.ownerKYC(kycData);
-      alert('KYC submitted! Admin will verify shortly.');
+      setOwnerKycStatus('pending');
+      showOwnerToast('KYC submitted successfully! Admin will verify shortly.', 'success');
+      setKycFiles([]);
       loadData();
     }
-    catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
+    catch (e: unknown) { showOwnerToast(e instanceof Error ? e.message : 'KYC submission failed', 'error'); }
+    setSubmittingKyc(false);
   };
 
   const handleBlockSlot = async (slotId: number) => {
@@ -654,143 +667,444 @@ export default function OwnerDashboard() {
           </>
         )}
 
-        {/* PAYOUT WALLET TAB */}
-        {tab === 'payout' && (
+        {/* Global Styled Toast - visible on all tabs */}
+        {ownerToast.show && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-md animate-[slideDown_0.3s_ease-out]">
+            <div className={`rounded-2xl shadow-2xl border px-4 py-3.5 flex items-start gap-3 backdrop-blur-sm ${
+              ownerToast.type === 'success' ? 'bg-green-50/95 border-green-200 text-green-800' :
+              ownerToast.type === 'error' ? 'bg-red-50/95 border-red-200 text-red-800' :
+              ownerToast.type === 'warning' ? 'bg-amber-50/95 border-amber-200 text-amber-800' :
+              'bg-blue-50/95 border-blue-200 text-blue-800'
+            }`}>
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${
+                ownerToast.type === 'success' ? 'bg-green-500' :
+                ownerToast.type === 'error' ? 'bg-red-500' :
+                ownerToast.type === 'warning' ? 'bg-amber-500' :
+                'bg-blue-500'
+              }`}>
+                {ownerToast.type === 'success' && <CheckCircle size={16} className="text-white" />}
+                {ownerToast.type === 'error' && <XCircle size={16} className="text-white" />}
+                {ownerToast.type === 'warning' && <AlertTriangle size={14} className="text-white" />}
+                {ownerToast.type === 'info' && <Info size={16} className="text-white" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide opacity-70 mb-0.5">
+                  {ownerToast.type === 'success' ? 'Success' : ownerToast.type === 'error' ? 'Error' : ownerToast.type === 'warning' ? 'Warning' : 'Info'}
+                </p>
+                <p className="text-sm font-medium leading-snug">{ownerToast.message}</p>
+              </div>
+              <button onClick={() => setOwnerToast(prev => ({ ...prev, show: false }))} className="flex-shrink-0 opacity-50 hover:opacity-100 transition mt-1">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+        <style>{`@keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }`}</style>
+
+        {/* COMBINED WALLET TAB (Settlement + Payout + KYC) */}
+        {(tab === 'wallet' || tab === 'payout' || tab === 'settlement') && (
           <>
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white mb-6">
-              <div className="flex items-center gap-2 mb-2"><Wallet size={24} /> <h3 className="text-xl font-bold">Payout Wallet</h3></div>
-              <p className="text-3xl font-bold mt-2">Rs.{(data.cash_tracking?.net_payable ?? data.wallet_balance ?? 0).toLocaleString()}</p>
-              <p className="text-sm opacity-80 mt-1">Available for withdrawal</p>
+
+            {/* Wallet Card - Customer Style Gradient */}
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-6 text-white mb-4 shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Wallet size={20} />
+                <span className="text-green-100 text-sm font-medium">Owner Wallet</span>
+              </div>
+              <p className="text-4xl font-bold mb-1">Rs.{(data.cash_tracking?.net_payable ?? data.wallet_balance ?? 0).toLocaleString()}</p>
+              <p className="text-green-200 text-xs">Available for withdrawal</p>
               {ownerKycStatus === 'verified' && <span className="mt-2 inline-block text-xs bg-green-400/30 text-green-100 px-3 py-1 rounded-full">KYC Verified</span>}
-              {ownerKycStatus === 'rejected' && <span className="mt-2 inline-block text-xs bg-red-400/30 text-red-100 px-3 py-1 rounded-full">KYC Rejected - Please re-submit</span>}
-              {ownerKycStatus === 'pending' && <span className="mt-2 inline-block text-xs bg-yellow-400/30 text-yellow-100 px-3 py-1 rounded-full">KYC Pending Verification</span>}
+              {ownerKycStatus === 'rejected' && <span className="mt-2 inline-block text-xs bg-red-400/30 text-red-100 px-3 py-1 rounded-full">KYC Rejected</span>}
+              {ownerKycStatus === 'pending' && <span className="mt-2 inline-block text-xs bg-yellow-400/30 text-yellow-100 px-3 py-1 rounded-full">KYC Pending</span>}
+
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => {
+                  if (ownerKycStatus !== 'verified') { setWalletSection('kyc'); return; }
+                  const balance = data?.cash_tracking?.net_payable ?? data?.wallet_balance ?? 0;
+                  if (balance < 100) { showOwnerToast('Minimum Rs.100 balance chahiye withdraw ke liye.', 'warning'); return; }
+                  setShowWithdrawModal(true);
+                }} className="flex-1 bg-white text-green-700 font-semibold py-2 rounded-xl text-sm flex items-center justify-center gap-1 hover:bg-green-50 transition">
+                  <TrendingDown size={16} /> Withdraw
+                </button>
+                <button onClick={loadData} className="bg-green-500 text-white p-2 rounded-xl hover:bg-green-400 transition">
+                  <RefreshCw size={16} />
+                </button>
+              </div>
             </div>
 
-            {/* KYC Rejected Alert */}
-            {ownerKycStatus === 'rejected' && (
-              <div className="bg-red-50 border border-red-300 rounded-xl p-4 mb-6">
-                <div className="flex items-center gap-2 mb-1"><XCircle size={18} className="text-red-600" /><p className="font-bold text-red-800">KYC Rejected</p></div>
-                <p className="text-sm text-red-700">Your KYC verification was rejected. Please re-submit your documents with correct details below. Check your email for more details.</p>
-              </div>
-            )}
+            {/* Section Tabs - Overview / KYC */}
+            <div className="flex gap-2 mb-4">
+              <button onClick={() => setWalletSection('overview')}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-1 ${walletSection === 'overview' ? 'bg-green-600 text-white shadow' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
+                <Wallet size={14} /> Overview
+              </button>
+              <button onClick={() => setWalletSection('kyc')}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-1 ${walletSection === 'kyc' ? 'bg-orange-600 text-white shadow' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
+                <Shield size={14} /> KYC & Bank
+                {ownerKycStatus === 'verified' && <span className="w-2 h-2 bg-green-400 rounded-full"></span>}
+                {ownerKycStatus === 'pending' && <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>}
+                {ownerKycStatus === 'rejected' && <span className="w-2 h-2 bg-red-400 rounded-full"></span>}
+              </button>
+            </div>
 
-            {/* Show verified account details */}
-            {ownerKycStatus === 'verified' && !changingAccount && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-5 mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-green-800 flex items-center gap-2"><CheckCircle size={16} /> Verified Account Details</h4>
-                  <button onClick={() => setChangingAccount(true)} className="text-sm bg-orange-50 text-orange-600 px-3 py-1.5 rounded-lg hover:bg-orange-100 flex items-center gap-1"><Edit size={12}/> Change Account</button>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-gray-500">Bank Name</p><p className="font-medium text-gray-800">{String(ownerProfile?.bank_name || '-')}</p></div>
-                  <div><p className="text-gray-500">Account Number</p><p className="font-medium text-gray-800">{String(ownerProfile?.bank_account || '-')}</p></div>
-                  <div><p className="text-gray-500">IFSC Code</p><p className="font-medium text-gray-800">{String(ownerProfile?.bank_ifsc || '-')}</p></div>
-                  <div><p className="text-gray-500">KYC Document</p><p className="font-medium text-gray-800">{String(ownerProfile?.kyc_doc_type || '-')}</p></div>
-                  {ownerProfile?.upi_id ? <div><p className="text-gray-500">UPI ID</p><p className="font-medium text-gray-800">{String(ownerProfile.upi_id)}</p></div> : null}
-                </div>
-                <p className="text-xs text-green-600 mt-3">To change account details, click "Change Account". You will need to re-verify KYC.</p>
-              </div>
-            )}
-
-            {/* Pay Commission Notice */}
-            {(data.cash_tracking.cash_commission ?? 0) > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-red-800 font-medium">Commission Owed on Cash Bookings: Rs.{(data.cash_tracking.cash_commission ?? 0).toLocaleString()}</p>
-                    <p className="text-xs text-red-600 mt-1">Cash bookings par platform commission lagta hai. Ye amount pay karein.</p>
+            {/* Withdraw Modal */}
+            {showWithdrawModal && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+                <div className="bg-white rounded-t-2xl p-6 w-full max-w-2xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold">Withdraw from Wallet</h3>
+                    <button onClick={() => { setShowWithdrawModal(false); setWithdrawAmt(''); }} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
                   </div>
-                  <button onClick={async () => {
-                    const amt = data.cash_tracking.cash_commission ?? 0;
-                    if(!confirm(`Pay Rs.${amt} commission via payment gateway?`)) return;
-                    const BASE = String((import.meta as unknown as Record<string,Record<string,string>>).env?.VITE_API_URL || '');
-                    const token = localStorage.getItem('token');
-                    try {
-                      // Step 1: Create Razorpay order
-                      const orderRes = await fetch(BASE + '/api/owner/pay-commission/create-order', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({ amount: amt, payment_mode: 'online' })
-                      });
-                      const orderData = await orderRes.json();
-                      if (!orderRes.ok) { alert(orderData.detail || 'Gateway not configured. Ask admin to add Razorpay keys.'); return; }
-                      // Step 2: Load Razorpay script if not loaded
-                      if (!(window as unknown as Record<string, unknown>).Razorpay) {
-                        await new Promise<void>((resolve, reject) => {
-                          const s = document.createElement('script'); s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                          s.onload = () => resolve(); s.onerror = () => reject(new Error('Failed to load Razorpay'));
-                          document.head.appendChild(s);
-                        });
-                      }
-                      // Step 3: Open Razorpay checkout
-                      const RazorpayConstructor = (window as unknown as Record<string, unknown>).Razorpay as new (opts: Record<string, unknown>) => { open: () => void };
-                      const rzp = new RazorpayConstructor({
-                        key: orderData.key_id,
-                        amount: Math.round(amt * 100),
-                        currency: 'INR',
-                        name: 'BookAGround',
-                        description: 'Commission Payment',
-                        order_id: orderData.order_id,
-                        handler: async function(response: Record<string, string>) {
-                          // Step 4: Confirm payment on backend
-                          try {
-                            const confirmRes = await fetch(BASE + '/api/owner/pay-commission', {
-                              method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                              body: JSON.stringify({ amount: amt, payment_mode: 'online', razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id })
-                            });
-                            const confirmData = await confirmRes.json();
-                            if (confirmRes.ok) { alert('Commission paid successfully! Transaction ID: ' + response.razorpay_payment_id); loadData(); }
-                            else alert(confirmData.detail || 'Payment recorded but confirmation failed');
-                          } catch { alert('Payment done but confirmation failed. Contact admin.'); }
-                        },
-                        prefill: { name: String(ownerProfile?.name || ''), contact: String(ownerProfile?.phone || '') },
-                        theme: { color: '#dc2626' }
-                      });
-                      rzp.open();
-                    } catch (e) { alert(e instanceof Error ? e.message : 'Failed to initiate payment'); }
-                  }} className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 whitespace-nowrap ml-3">Pay Commission</button>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4 text-xs text-orange-700">
+                    <p className="font-semibold mb-1">Withdrawal Info:</p>
+                    <p>- Minimum withdrawal: Rs.100</p>
+                    <p>- 3% processing charge applicable</p>
+                    <p>- Admin approval ke baad bank account mein transfer hoga</p>
+                    <p>- Processing time: 1-3 business days</p>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-2">Available Balance: <span className="font-bold text-green-600">Rs.{(data?.cash_tracking?.net_payable ?? data?.wallet_balance ?? 0).toLocaleString()}</span></p>
+                  <div className="flex gap-2 mb-3">
+                    {[100, 200, 500].filter(a => a <= (data?.cash_tracking?.net_payable ?? data?.wallet_balance ?? 0)).map(a => (
+                      <button key={a} onClick={() => setWithdrawAmt(String(a))}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium border transition ${withdrawAmt === String(a) ? 'bg-orange-600 text-white border-orange-600' : 'border-gray-200 text-gray-700 hover:border-orange-400'}`}>
+                        Rs.{a}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="number" placeholder="Enter amount (min Rs.100)" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                  {withdrawAmt && parseFloat(withdrawAmt) >= 100 && (
+                    <div className="bg-gray-50 rounded-lg p-3 mb-3 text-xs space-y-1">
+                      <div className="flex justify-between"><span className="text-gray-500">Amount:</span><span className="font-medium">Rs.{parseFloat(withdrawAmt).toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Charge (3%):</span><span className="text-red-500">-Rs.{(parseFloat(withdrawAmt) * 0.03).toFixed(2)}</span></div>
+                      <div className="border-t pt-1 flex justify-between"><span className="text-gray-700 font-semibold">You will receive:</span><span className="font-bold text-green-600">Rs.{(parseFloat(withdrawAmt) * 0.97).toFixed(2)}</span></div>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={() => { setShowWithdrawModal(false); setWithdrawAmt(''); }}
+                      className="flex-1 py-2 rounded-xl border text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button onClick={handleWithdraw} disabled={withdrawing}
+                      className="flex-1 py-2 rounded-xl bg-orange-600 text-white text-sm font-semibold hover:bg-orange-700 disabled:opacity-50">
+                      {withdrawing ? 'Processing...' : `Withdraw Rs.${withdrawAmt || '0'}`}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-sm p-5">
-                <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Send size={16} className="text-purple-600" /> Withdraw to Bank</h4>
-                <p className="text-xs text-gray-500 mb-3">3% withdrawal charge applies. KYC required.</p>
-                <input type="number" placeholder="Amount (min Rs.100)" className="w-full border rounded-lg px-3 py-2 mb-3 text-sm" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} />
-                <button onClick={handleWithdraw} className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700">Withdraw</button>
-              </div>
-              {(ownerKycStatus !== 'verified' || changingAccount) && (
-              <div className="bg-white rounded-xl shadow-sm p-5">
-                <h4 className="font-bold text-gray-800 mb-3">{changingAccount ? 'Change Account Details (Re-KYC Required)' : 'KYC Details (Required for withdrawal)'}</h4>
-                <input type="text" placeholder="Bank Name" className="w-full border rounded-lg px-3 py-2 mb-2 text-sm" value={bankName} onChange={e => setBankName(e.target.value)} />
-                <input type="text" placeholder="Account Number" className="w-full border rounded-lg px-3 py-2 mb-2 text-sm" value={accountNo} onChange={e => setAccountNo(e.target.value)} />
-                <input type="text" placeholder="IFSC Code" className="w-full border rounded-lg px-3 py-2 mb-2 text-sm" value={ifsc} onChange={e => setIfsc(e.target.value)} />
-                <input type="text" placeholder="UPI ID (e.g. name@upi)" className="w-full border rounded-lg px-3 py-2 mb-2 text-sm" value={upiId} onChange={e => setUpiId(e.target.value)} />
-                <select className="w-full border rounded-lg px-3 py-2 mb-3 text-sm" value={kycDoc} onChange={e => setKycDoc(e.target.value)}>
-                  <option value="">Select KYC Document</option><option value="aadhaar">Aadhaar Card</option><option value="pan">PAN Card</option><option value="passport">Passport</option>
-                </select>
-                {/* KYC Document Upload */}
-                <div className="border-2 border-dashed border-blue-200 rounded-xl p-4 mb-3 text-center bg-blue-50/50 hover:bg-blue-50 transition cursor-pointer" onClick={() => document.getElementById('owner-kyc-file')?.click()}>
-                  <input id="owner-kyc-file" type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setKycFileName(file.name);
-                      setKycUploadProgress(0);
-                      let progress = 0;
-                      const interval = setInterval(() => { progress += Math.random() * 30 + 10; if (progress >= 100) { progress = 100; clearInterval(interval); } setKycUploadProgress(Math.min(Math.round(progress), 100)); }, 200);
-                    }
-                  }} />
-                  <Send size={20} className="text-blue-400 mx-auto mb-1" />
-                  <p className="text-sm text-blue-600 font-medium">{kycFileName || 'Upload KYC Document'}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Aadhaar, PAN, or Passport (Image/PDF)</p>
-                  {kycUploadProgress > 0 && kycUploadProgress < 100 && <div className="mt-2"><div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-blue-600 h-2 rounded-full transition-all" style={{width: `${kycUploadProgress}%`}}></div></div><p className="text-xs text-blue-600 mt-1">{kycUploadProgress}% uploaded</p></div>}
-                  {kycUploadProgress >= 100 && <p className="text-xs text-green-600 mt-2 font-medium">File ready for upload</p>}
+            {/* OVERVIEW SECTION */}
+            {walletSection === 'overview' && (
+              <>
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-xs text-gray-500 mb-1">Online Collected</p>
+                    <p className="text-xl font-bold text-green-600">Rs.{data.cash_tracking.online_collected.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-xs text-gray-500 mb-1">Cash Collected</p>
+                    <p className="text-xl font-bold text-blue-600">Rs.{data.cash_tracking.cash_collected.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-xs text-gray-500 mb-1">Total Commission</p>
+                    <p className="text-xl font-bold text-red-500">Rs.{data.cash_tracking.commission_due.toLocaleString()}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Online: Rs.{(data.cash_tracking.online_commission ?? 0).toLocaleString()} | Cash: Rs.{(data.cash_tracking.cash_commission ?? 0).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-xs text-gray-500 mb-1">{(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 ? 'Commission Owed' : 'Net Payable'}</p>
+                    <p className={`text-xl font-bold ${(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 ? 'text-red-600' : 'text-purple-600'}`}>{(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 ? '-' : ''}Rs.{Math.abs(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable).toLocaleString()}</p>
+                    {(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 && <p className="text-[10px] text-red-500 mt-0.5">You owe this to platform</p>}
+                  </div>
                 </div>
-                <button onClick={handleKYC} className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium text-sm hover:bg-blue-700">Submit KYC</button>
-                {changingAccount && <button onClick={() => setChangingAccount(false)} className="w-full mt-2 border text-gray-600 py-2 rounded-lg font-medium text-sm hover:bg-gray-50">Cancel</button>}
+
+                {/* Pay Commission Notice */}
+                {(data.cash_tracking.cash_commission ?? 0) > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-red-800 font-medium">Commission Owed: Rs.{(data.cash_tracking.cash_commission ?? 0).toLocaleString()}</p>
+                        <p className="text-xs text-red-600 mt-1">Cash bookings par platform commission lagta hai.</p>
+                      </div>
+                      <button onClick={async () => {
+                        const amt = data.cash_tracking.cash_commission ?? 0;
+                        if(!confirm(`Pay Rs.${amt} commission via payment gateway?`)) return;
+                        const BASE = String((import.meta as unknown as Record<string,Record<string,string>>).env?.VITE_API_URL || '');
+                        const token = localStorage.getItem('token');
+                        try {
+                          const orderRes = await fetch(BASE + '/api/owner/pay-commission/create-order', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ amount: amt, payment_mode: 'online' })
+                          });
+                          const orderData = await orderRes.json();
+                          if (!orderRes.ok) { showOwnerToast(orderData.detail || 'Gateway not configured.', 'error'); return; }
+                          if (!(window as unknown as Record<string, unknown>).Razorpay) {
+                            await new Promise<void>((resolve, reject) => {
+                              const s = document.createElement('script'); s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                              s.onload = () => resolve(); s.onerror = () => reject(new Error('Failed to load Razorpay'));
+                              document.head.appendChild(s);
+                            });
+                          }
+                          const RazorpayConstructor = (window as unknown as Record<string, unknown>).Razorpay as new (opts: Record<string, unknown>) => { open: () => void };
+                          const rzp = new RazorpayConstructor({
+                            key: orderData.key_id, amount: Math.round(amt * 100), currency: 'INR', name: 'BookAGround',
+                            description: 'Commission Payment', order_id: orderData.order_id,
+                            handler: async function(response: Record<string, string>) {
+                              try {
+                                const confirmRes = await fetch(BASE + '/api/owner/pay-commission', {
+                                  method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                  body: JSON.stringify({ amount: amt, payment_mode: 'online', razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id })
+                                });
+                                const confirmData = await confirmRes.json();
+                                if (confirmRes.ok) { showOwnerToast('Commission paid! TXN: ' + response.razorpay_payment_id, 'success'); loadData(); }
+                                else showOwnerToast(confirmData.detail || 'Payment confirmation failed', 'error');
+                              } catch { showOwnerToast('Payment done but confirmation failed. Contact admin.', 'warning'); }
+                            },
+                            prefill: { name: String(ownerProfile?.name || ''), contact: String(ownerProfile?.phone || '') },
+                            theme: { color: '#dc2626' }
+                          });
+                          rzp.open();
+                        } catch (e) { showOwnerToast(e instanceof Error ? e.message : 'Failed to initiate payment', 'error'); }
+                      }} className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 whitespace-nowrap ml-3">Pay Commission</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Settlement Note */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+                  <p className="text-xs text-yellow-800"><strong>Note:</strong> Settlements are processed weekly. Commission applies on all bookings (online + cash) except Self Bookings (0% commission).</p>
+                </div>
+
+                {/* Transaction Ledger */}
+                <div className="bg-white rounded-2xl shadow-sm border">
+                  <div className="p-4 border-b">
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="font-bold text-gray-800">Transaction Ledger</h2>
+                      <div className="flex gap-2">
+                        <button onClick={() => ownerExportCSV('settlement.csv', ['User','Phone','Ground','Date','Time','Total','Online','Cash','Commission'], data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => [String(b.user_name),String(b.user_phone),String(b.ground_name),String(b.booking_date),String(b.start_time)+'-'+String(b.end_time),'Rs.'+String(b.total_amount),String(b.payment_mode)!=='cash'?'Rs.'+String(b.token_amount):'-',String(b.payment_mode)==='cash'?'Rs.'+String(b.total_amount):'-','Rs.'+String(Math.round(Number(b.total_amount)*10/100))]))} className="text-xs text-green-600 flex items-center gap-1 bg-green-50 px-2 py-1 rounded-lg hover:bg-green-100">
+                          <Download size={12} /> CSV
+                        </button>
+                        <button onClick={() => ownerExportPDF('Settlement Ledger', ['User','Phone','Ground','Date','Total','Commission'], data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => [String(b.user_name),String(b.user_phone),String(b.ground_name),String(b.booking_date),'Rs.'+String(b.total_amount),String(b.booking_type)==='owner_self'?'N/A':'Rs.'+String(Math.round(Number(b.total_amount)*10/100))]))} className="text-xs text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100">
+                          <Download size={12} /> PDF
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50"><tr><th className="p-3 text-left">User</th><th className="p-3">Phone</th><th className="p-3">Ground</th><th className="p-3">Date</th><th className="p-3">Time</th><th className="p-3">Status</th><th className="p-3">Total</th><th className="p-3">Online</th><th className="p-3">Cash</th><th className="p-3">Commission</th></tr></thead>
+                      <tbody>
+                        {data.recent_bookings.filter((b: Record<string, unknown>) => b.status !== 'cancelled').map((b: Record<string, unknown>) => (
+                          <tr key={b.id as number} className={`border-t hover:bg-gray-50 ${String(b.status) === 'no_show' ? 'bg-red-50' : ''}`}>
+                            <td className="p-3 font-medium">{b.user_name as string}</td>
+                            <td className="p-3 text-xs text-blue-600">{String(b.user_phone || '-')}</td>
+                            <td className="p-3 text-xs text-gray-500">{b.ground_name as string}</td>
+                            <td className="p-3 text-center text-xs">{b.booking_date as string}</td>
+                            <td className="p-3 text-center text-xs">{String(b.start_time || '')}-{String(b.end_time || '')}</td>
+                            <td className="p-3 text-center">{String(b.status) === 'no_show' ? <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">Not Attended</span> : <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">{String(b.status)}</span>}</td>
+                            <td className="p-3 text-center font-bold text-green-600">Rs.{b.total_amount as number}</td>
+                            <td className="p-3 text-center text-blue-600">{String(b.payment_mode) !== 'cash' ? `Rs.${b.token_amount as number}` : '-'}</td>
+                            <td className="p-3 text-center text-orange-500">{String(b.status) === 'no_show' ? <span className="text-gray-400">Rs.0</span> : String(b.payment_mode) === 'cash' ? `Rs.${b.total_amount as number}` : (b.remaining_amount as number) > 0 ? `Rs.${b.remaining_amount}` : '-'}</td>
+                            <td className="p-3 text-center text-red-500 font-medium">{String(b.booking_type) === 'owner_self' ? <span className="text-gray-400">N/A</span> : String(b.status) === 'no_show' ? `Rs.${Math.round((b.token_amount as number) * 10 / 100)}` : `Rs.${Math.round((b.total_amount as number) * 10 / 100)}`}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* KYC SECTION */}
+            {walletSection === 'kyc' && (
+              <div className="space-y-4">
+                {/* KYC Status Card */}
+                <div className={`rounded-2xl p-5 shadow-sm border ${
+                  ownerKycStatus === 'verified' ? 'bg-green-50 border-green-200' :
+                  ownerKycStatus === 'pending' ? 'bg-yellow-50 border-yellow-200' :
+                  ownerKycStatus === 'rejected' ? 'bg-red-50 border-red-200' :
+                  'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      ownerKycStatus === 'verified' ? 'bg-green-500' :
+                      ownerKycStatus === 'pending' ? 'bg-yellow-500' :
+                      ownerKycStatus === 'rejected' ? 'bg-red-500' :
+                      'bg-gray-400'
+                    }`}>
+                      <Shield size={20} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-800">KYC Status</p>
+                      <p className={`text-sm font-semibold ${
+                        ownerKycStatus === 'verified' ? 'text-green-700' :
+                        ownerKycStatus === 'pending' ? 'text-yellow-700' :
+                        ownerKycStatus === 'rejected' ? 'text-red-700' :
+                        'text-gray-500'
+                      }`}>
+                        {ownerKycStatus === 'verified' ? 'Verified - Withdrawals Enabled' :
+                         ownerKycStatus === 'pending' ? 'Pending Verification - Admin will verify soon' :
+                         ownerKycStatus === 'rejected' ? 'Rejected - Please reupload documents' :
+                         'Not Submitted - Complete KYC to withdraw'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Verified - Show bank details */}
+                {ownerKycStatus === 'verified' && !changingAccount && (
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border">
+                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><CheckCircle size={16} className="text-green-600" /> Verified Bank Details</h3>
+                    <div className="space-y-2 text-sm">
+                      {ownerProfile?.bank_name ? <div className="flex justify-between"><span className="text-gray-500">Bank</span><span className="font-medium">{String(ownerProfile.bank_name)}</span></div> : null}
+                      {ownerProfile?.bank_account ? <div className="flex justify-between"><span className="text-gray-500">Account</span><span className="font-medium">****{String(ownerProfile.bank_account).slice(-4)}</span></div> : null}
+                      {ownerProfile?.bank_ifsc ? <div className="flex justify-between"><span className="text-gray-500">IFSC</span><span className="font-medium">{String(ownerProfile.bank_ifsc)}</span></div> : null}
+                      {ownerProfile?.upi_id ? <div className="flex justify-between"><span className="text-gray-500">UPI</span><span className="font-medium">{String(ownerProfile.upi_id)}</span></div> : null}
+                      {ownerProfile?.kyc_doc_type ? <div className="flex justify-between"><span className="text-gray-500">Document</span><span className="font-medium capitalize">{String(ownerProfile.kyc_doc_type)}</span></div> : null}
+                    </div>
+                    <button onClick={() => {
+                      const balance = data?.cash_tracking?.net_payable ?? data?.wallet_balance ?? 0;
+                      if (balance < 100) { showOwnerToast('Minimum Rs.100 balance chahiye', 'warning'); return; }
+                      setShowWithdrawModal(true);
+                    }} className="w-full mt-4 bg-orange-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-orange-700 transition flex items-center justify-center gap-2">
+                      <TrendingDown size={16} /> Withdraw Money (Balance: Rs.{(data?.cash_tracking?.net_payable ?? data?.wallet_balance ?? 0).toLocaleString()})
+                    </button>
+                    <button onClick={() => { setChangingAccount(true); setBankName(''); setAccountNo(''); setIfsc(''); setUpiId(''); setKycDoc(''); setKycFiles([]); }}
+                      className="w-full mt-2 bg-white text-orange-600 border border-orange-300 py-2.5 rounded-xl font-semibold text-sm hover:bg-orange-50 transition flex items-center justify-center gap-2">
+                      <RefreshCw size={14} /> Change Bank Details (Re-KYC)
+                    </button>
+                  </div>
+                )}
+
+                {/* Pending - Show submitted info */}
+                {ownerKycStatus === 'pending' && (
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border">
+                    <h3 className="font-bold text-yellow-700 mb-2 flex items-center gap-2"><Shield size={16} /> KYC Under Review</h3>
+                    <p className="text-xs text-gray-500 mb-3">Your KYC documents are under review. Admin will verify shortly. You will be able to withdraw once verified.</p>
+                    <div className="bg-yellow-50 rounded-lg p-3 space-y-1.5 text-sm">
+                      {ownerProfile?.bank_name ? <div className="flex justify-between"><span className="text-gray-500">Bank</span><span className="font-medium">{String(ownerProfile.bank_name)}</span></div> : null}
+                      {ownerProfile?.bank_account ? <div className="flex justify-between"><span className="text-gray-500">Account</span><span className="font-medium">{String(ownerProfile.bank_account)}</span></div> : null}
+                      {ownerProfile?.bank_ifsc ? <div className="flex justify-between"><span className="text-gray-500">IFSC</span><span className="font-medium">{String(ownerProfile.bank_ifsc)}</span></div> : null}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rejected - Show rejection message */}
+                {ownerKycStatus === 'rejected' && (
+                  <div className="bg-red-50 rounded-2xl p-5 shadow-sm border border-red-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <X size={18} className="text-red-600" />
+                      <h3 className="font-bold text-red-700">KYC Rejected</h3>
+                    </div>
+                    <p className="text-sm text-red-600 mb-3">Aapki KYC documents reject ho gayi hain. Sahi documents dobara upload karein.</p>
+                    <div className="bg-white rounded-lg p-3 mb-3 border border-red-100">
+                      <p className="text-xs font-semibold text-gray-700 mb-2">Common reasons:</p>
+                      <ul className="text-xs text-gray-500 space-y-1 list-disc list-inside">
+                        <li>Document photo blurry ya unclear hai</li>
+                        <li>Document expired hai</li>
+                        <li>Name mismatch hai bank details se</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* KYC Form - show when not verified and not pending (or changing account) */}
+                {(ownerKycStatus !== 'verified' && ownerKycStatus !== 'pending') || changingAccount ? (
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border">
+                    <h3 className="font-bold text-gray-800 mb-1">{changingAccount ? 'Change Bank Details (Re-KYC)' : ownerKycStatus === 'rejected' ? 'Resubmit KYC Documents' : 'Complete KYC'}</h3>
+                    <p className="text-xs text-gray-500 mb-4">{changingAccount ? 'Naye bank details enter karein. Admin verify karega.' : 'Fill bank details and upload document to enable withdrawals'}</p>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">Bank Name *</label>
+                        <input type="text" placeholder="e.g. State Bank of India" value={bankName} onChange={e => setBankName(e.target.value)}
+                          className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">Account Number *</label>
+                        <input type="text" placeholder="Enter account number" value={accountNo} onChange={e => setAccountNo(e.target.value)}
+                          className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">IFSC Code *</label>
+                        <input type="text" placeholder="e.g. SBIN0001234" value={ifsc} onChange={e => setIfsc(e.target.value.toUpperCase())}
+                          className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">UPI ID (Optional)</label>
+                        <input type="text" placeholder="e.g. name@upi" value={upiId} onChange={e => setUpiId(e.target.value)}
+                          className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">KYC Document Type *</label>
+                        <select value={kycDoc} onChange={e => setKycDoc(e.target.value)}
+                          className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                          <option value="">Select Document</option>
+                          <option value="aadhaar">Aadhaar Card</option>
+                          <option value="pan">PAN Card</option>
+                          <option value="passport">Passport</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">Upload Documents * <span className="text-gray-400 font-normal">(Front & Back - max 5 files)</span></label>
+                        <div className="border-2 border-dashed border-orange-200 rounded-xl p-4 text-center bg-orange-50/50 hover:bg-orange-50 transition cursor-pointer"
+                          onClick={() => document.getElementById('owner-kyc-file-new')?.click()}>
+                          <input id="owner-kyc-file-new" type="file" accept="image/*,.pdf" multiple className="hidden" onChange={e => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length > 0) setKycFiles(prev => [...prev, ...files].slice(0, 5));
+                            e.target.value = '';
+                          }} />
+                          {kycFiles.length > 0 ? (
+                            <div className="space-y-2">
+                              {kycFiles.map((f, i) => (
+                                <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {f.type.startsWith('image/') ? (
+                                      <img src={URL.createObjectURL(f)} alt="" className="w-10 h-10 rounded object-cover border" />
+                                    ) : (
+                                      <FileText size={20} className="text-orange-600 flex-shrink-0" />
+                                    )}
+                                    <span className="text-xs text-gray-700 truncate">{f.name}</span>
+                                    <span className="text-[10px] text-gray-400">({(f.size / 1024).toFixed(0)} KB)</span>
+                                  </div>
+                                  <button onClick={(ev) => { ev.stopPropagation(); setKycFiles(prev => prev.filter((_, idx) => idx !== i)); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-2"><X size={14}/></button>
+                                </div>
+                              ))}
+                              {kycFiles.length < 5 && (
+                                <p className="text-xs text-orange-500 mt-1">+ Tap to add more ({5 - kycFiles.length} remaining)</p>
+                              )}
+                            </div>
+                          ) : (
+                            <div>
+                              <Upload size={24} className="mx-auto text-orange-400 mb-1" />
+                              <p className="text-sm text-orange-600 font-medium">Tap to upload Aadhaar/PAN/Passport</p>
+                              <p className="text-xs text-gray-400">Front + Back photos (JPG, PNG, PDF)</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <button onClick={handleKYC} disabled={submittingKyc}
+                        className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-orange-700 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                        {submittingKyc ? 'Submitting...' : <><Shield size={16} /> Submit KYC for Verification</>}
+                      </button>
+                      {changingAccount && <button onClick={() => setChangingAccount(false)} className="w-full border text-gray-600 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-50">Cancel</button>}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Info Card */}
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 mb-1">How Withdrawal Works:</p>
+                  <ol className="text-xs text-blue-600 space-y-1 list-decimal list-inside">
+                    <li>Complete KYC with bank details & document</li>
+                    <li>Admin verifies your KYC (usually within 24 hours)</li>
+                    <li>Once verified, click Withdraw and enter amount</li>
+                    <li>3% processing charge will be deducted</li>
+                    <li>Amount transferred to your bank in 1-3 business days</li>
+                  </ol>
+                </div>
               </div>
-              )}
-            </div>
+            )}
           </>
         )}
 
@@ -906,56 +1220,7 @@ export default function OwnerDashboard() {
           </div>
         )}
 
-        {/* SETTLEMENT TAB */}
-        {tab === 'settlement' && (
-          <>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-xl shadow-sm p-5"><p className="text-sm text-gray-500 mb-1">Online Collected</p><p className="text-2xl font-bold text-green-600">Rs.{data.cash_tracking.online_collected.toLocaleString()}</p></div>
-              <div className="bg-white rounded-xl shadow-sm p-5"><p className="text-sm text-gray-500 mb-1">Cash Collected</p><p className="text-2xl font-bold text-blue-600">Rs.{data.cash_tracking.cash_collected.toLocaleString()}</p></div>
-              <div className="bg-white rounded-xl shadow-sm p-5"><p className="text-sm text-gray-500 mb-1">Total Commission</p><p className="text-2xl font-bold text-red-600">Rs.{data.cash_tracking.commission_due.toLocaleString()}</p><p className="text-xs text-gray-400 mt-1">Online: Rs.{(data.cash_tracking.online_commission ?? 0).toLocaleString()} | Cash: Rs.{(data.cash_tracking.cash_commission ?? 0).toLocaleString()}</p></div>
-              <div className="bg-white rounded-xl shadow-sm p-5"><p className="text-sm text-gray-500 mb-1">{(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 ? 'Commission Owed' : 'Net Payable'}</p><p className={`text-2xl font-bold ${(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 ? 'text-red-600' : 'text-purple-600'}`}>{(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 ? '-' : ''}Rs.{Math.abs(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable).toLocaleString()}</p>{(data.cash_tracking.settlement_balance ?? data.cash_tracking.net_payable) < 0 && <p className="text-xs text-red-500 mt-1">You owe this to platform</p>}</div>
-            </div>
-            {(data.cash_tracking.cash_commission ?? 0) > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-                <div>
-                  <p className="text-sm text-red-800 font-medium">Commission on Cash Bookings: Rs.{(data.cash_tracking.cash_commission ?? 0).toLocaleString()}</p>
-                  <p className="text-xs text-red-600 mt-1">Cash bookings mein bhi platform commission lagta hai. Ye amount aapko Payout Wallet se pay karna hoga.</p>
-                </div>
-              </div>
-            )}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-              <p className="text-sm text-yellow-800"><strong>Note:</strong> Settlements are processed weekly. Commission applies on all bookings (online + cash) except Self Bookings (0% commission). If all bookings are COD, the commission amount will show as owed by you.</p>
-            </div>
-            <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-              <h3 className="font-bold text-gray-800 text-lg">Transaction Ledger</h3>
-              <div className="flex gap-2">
-                <button onClick={() => ownerExportCSV('settlement.csv', ['User','Phone','Ground','Date','Time','Total','Online','Cash','Commission'], data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => [String(b.user_name),String(b.user_phone),String(b.ground_name),String(b.booking_date),String(b.start_time)+'-'+String(b.end_time),'Rs.'+String(b.total_amount),String(b.payment_mode)!=='cash'?'Rs.'+String(b.token_amount):'-',String(b.payment_mode)==='cash'?'Rs.'+String(b.total_amount):'-','Rs.'+String(Math.round(Number(b.total_amount)*10/100))]))} className="bg-green-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><Download size={12}/> CSV</button>
-                <button onClick={() => ownerExportPDF('Settlement Ledger', ['User','Phone','Ground','Date','Total','Commission'], data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => [String(b.user_name),String(b.user_phone),String(b.ground_name),String(b.booking_date),'Rs.'+String(b.total_amount),String(b.booking_type)==='owner_self'?'N/A':'Rs.'+String(Math.round(Number(b.total_amount)*10/100))]))} className="bg-red-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><FileText size={12}/> PDF</button>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50"><tr><th className="p-3 text-left">User</th><th className="p-3">Phone</th><th className="p-3">Ground</th><th className="p-3">Date</th><th className="p-3">Time</th><th className="p-3">Status</th><th className="p-3">Total</th><th className="p-3">Online</th><th className="p-3">Cash</th><th className="p-3">Commission</th></tr></thead>
-                <tbody>
-                  {data.recent_bookings.filter((b: Record<string, unknown>) => b.status !== 'cancelled').map((b: Record<string, unknown>) => (
-                    <tr key={b.id as number} className={`border-t hover:bg-gray-50 ${String(b.status) === 'no_show' ? 'bg-red-50' : ''}`}>
-                      <td className="p-3 font-medium">{b.user_name as string}</td>
-                      <td className="p-3 text-xs text-blue-600">{String(b.user_phone || '-')}</td>
-                      <td className="p-3 text-xs text-gray-500">{b.ground_name as string}</td>
-                      <td className="p-3 text-center text-xs">{b.booking_date as string}</td>
-                      <td className="p-3 text-center text-xs">{String(b.start_time || '')}-{String(b.end_time || '')}</td>
-                      <td className="p-3 text-center">{String(b.status) === 'no_show' ? <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">Not Attended</span> : <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">{String(b.status)}</span>}</td>
-                      <td className="p-3 text-center font-bold text-green-600">Rs.{b.total_amount as number}</td>
-                      <td className="p-3 text-center text-blue-600">{String(b.payment_mode) !== 'cash' ? `Rs.${b.token_amount as number}` : '-'}</td>
-                      <td className="p-3 text-center text-orange-500">{String(b.status) === 'no_show' ? <span className="text-gray-400">Rs.0</span> : String(b.payment_mode) === 'cash' ? `Rs.${b.total_amount as number}` : (b.remaining_amount as number) > 0 ? `Rs.${b.remaining_amount}` : '-'}</td>
-                      <td className="p-3 text-center text-red-500 font-medium">{String(b.booking_type) === 'owner_self' ? <span className="text-gray-400">N/A</span> : String(b.status) === 'no_show' ? `Rs.${Math.round((b.token_amount as number) * 10 / 100)}` : `Rs.${Math.round((b.total_amount as number) * 10 / 100)}`}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+        {/* Settlement tab now redirects to wallet */}
 
         {/* TICKETS TAB */}
         {tab === 'tickets' && (
@@ -1111,70 +1376,9 @@ export default function OwnerDashboard() {
               </>
             )}
 
-            {/* DYNAMIC PRICING */}
-            {tab === 'dynamicpricing' && (
-              <>
-                <h3 className="font-bold text-gray-800 text-xl mb-4">Dynamic Pricing Rules</h3>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Add Price Rule</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="dp-ground">
-                      <option value="">Select Ground</option>
-                      {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
-                    </select>
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="dp-daytype">
-                      <option value="weekday">Weekday</option><option value="weekend">Weekend</option><option value="holiday">Holiday</option><option value="special">Special Event</option>
-                    </select>
-                    <input type="text" placeholder="Time Slot (e.g. 18:00-20:00)" className="border rounded-lg px-3 py-2 text-sm" id="dp-slot" />
-                    <input type="number" step="0.1" placeholder="Price Multiplier (e.g. 1.5)" defaultValue="1.0" className="border rounded-lg px-3 py-2 text-sm" id="dp-mult" />
-                  </div>
-                  <button onClick={async () => { const gid = (document.getElementById('dp-ground') as HTMLSelectElement)?.value; const dt = (document.getElementById('dp-daytype') as HTMLSelectElement)?.value; const slot = (document.getElementById('dp-slot') as HTMLInputElement)?.value; const mult = (document.getElementById('dp-mult') as HTMLInputElement)?.value; if (!gid) { alert('Select ground'); return; } try { await api.addDynamicPricing({ ground_id: parseInt(gid), day_type: dt, time_slot: slot, price_multiplier: parseFloat(mult || '1') }); alert('Pricing rule added!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Add Rule</button>
-                </div>
-                <div className="space-y-3">
-                  {dynamicPricing.map((dp: Record<string, unknown>) => (
-                    <div key={dp.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">{dp.ground_name as string}</p>
-                        <p className="text-xs text-gray-500">{dp.day_type as string} | {dp.time_slot as string || 'All times'} | Multiplier: {dp.price_multiplier as number}x</p>
-                      </div>
-                      <button onClick={async () => { try { await api.deleteDynamicPricing(dp.id as number); loadTab(); } catch { /* */ } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {dynamicPricing.length === 0 && <p className="text-gray-400 text-center py-8">No pricing rules. Default pricing applies.</p>}
-                </div>
-              </>
-            )}
+            {/* Dynamic Pricing - Removed */}
 
-            {/* STAFF MANAGEMENT */}
-            {tab === 'staff' && (
-              <>
-                <h3 className="font-bold text-gray-800 text-xl mb-4">Staff Management</h3>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Add Staff Member</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input type="text" placeholder="Staff Name" className="border rounded-lg px-3 py-2 text-sm" id="staff-name" />
-                    <input type="text" placeholder="Phone Number" className="border rounded-lg px-3 py-2 text-sm" id="staff-phone" />
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="staff-role">
-                      <option value="ground_keeper">Ground Keeper</option><option value="manager">Manager</option><option value="cashier">Cashier</option><option value="security">Security</option><option value="cleaner">Cleaner</option>
-                    </select>
-                  </div>
-                  <button onClick={async () => { const name = (document.getElementById('staff-name') as HTMLInputElement)?.value; const phone = (document.getElementById('staff-phone') as HTMLInputElement)?.value; const role = (document.getElementById('staff-role') as HTMLSelectElement)?.value; if (!name) { alert('Enter name'); return; } try { await api.addOwnerStaff({ name, phone, role }); alert('Staff added!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Add Staff</button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {ownerStaff.map((s: Record<string, unknown>) => (
-                    <div key={s.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">{s.name as string}</p>
-                        <p className="text-xs text-gray-500">{s.phone as string} | Role: {(s.role as string || '').replace('_', ' ')}</p>
-                        {s.ground_name ? <p className="text-xs text-purple-600">{String(s.ground_name)}</p> : null}
-                      </div>
-                      <button onClick={async () => { if (confirm('Remove staff?')) { try { await api.deleteOwnerStaff(s.id as number); loadTab(); } catch { /* */ } } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {ownerStaff.length === 0 && <p className="text-gray-400 text-center py-8 col-span-2">No staff members added yet.</p>}
-                </div>
-              </>
-            )}
+            {/* Staff - Removed */}
 
             {/* DISCOUNT COUPONS */}
             {tab === 'coupons' && (
@@ -1183,23 +1387,33 @@ export default function OwnerDashboard() {
                 <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
                   <h4 className="font-bold text-gray-700 mb-3">Create Coupon</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select className="border rounded-lg px-3 py-2 text-sm" id="coupon-ground">
+                      <option value="">Select Ground</option>
+                      {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
+                    </select>
                     <input type="text" placeholder="Coupon Code (e.g. FLAT20)" className="border rounded-lg px-3 py-2 text-sm uppercase" id="coupon-code" />
                     <select className="border rounded-lg px-3 py-2 text-sm" id="coupon-type">
                       <option value="percentage">Percentage Off</option><option value="flat">Flat Discount</option>
                     </select>
                     <input type="number" placeholder="Discount Value" defaultValue="10" className="border rounded-lg px-3 py-2 text-sm" id="coupon-value" />
                     <input type="number" placeholder="Max Uses" defaultValue="100" className="border rounded-lg px-3 py-2 text-sm" id="coupon-max" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="coupon-from" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="coupon-to" />
+                    <input type="date" placeholder="Valid From" className="border rounded-lg px-3 py-2 text-sm" id="coupon-from" />
+                    <input type="date" placeholder="Valid To" className="border rounded-lg px-3 py-2 text-sm" id="coupon-to" />
                   </div>
-                  <button onClick={async () => { const code = (document.getElementById('coupon-code') as HTMLInputElement)?.value; const dtype = (document.getElementById('coupon-type') as HTMLSelectElement)?.value; const val = (document.getElementById('coupon-value') as HTMLInputElement)?.value; const max = (document.getElementById('coupon-max') as HTMLInputElement)?.value; const from = (document.getElementById('coupon-from') as HTMLInputElement)?.value; const to = (document.getElementById('coupon-to') as HTMLInputElement)?.value; if (!code) { alert('Enter code'); return; } try { await api.addOwnerCoupon({ code, discount_type: dtype, discount_value: parseFloat(val || '10'), max_uses: parseInt(max || '100'), valid_from: from, valid_to: to }); alert('Coupon created!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Create Coupon</button>
+                  <button onClick={async () => { const gid = (document.getElementById('coupon-ground') as HTMLSelectElement)?.value; const code = (document.getElementById('coupon-code') as HTMLInputElement)?.value; const dtype = (document.getElementById('coupon-type') as HTMLSelectElement)?.value; const val = (document.getElementById('coupon-value') as HTMLInputElement)?.value; const max = (document.getElementById('coupon-max') as HTMLInputElement)?.value; const from = (document.getElementById('coupon-from') as HTMLInputElement)?.value; const to = (document.getElementById('coupon-to') as HTMLInputElement)?.value; if (!gid) { showOwnerToast('Ground select karo', 'warning'); return; } if (!code) { showOwnerToast('Coupon code enter karo', 'warning'); return; } try { await api.addOwnerCoupon({ ground_id: parseInt(gid), code, discount_type: dtype, discount_value: parseFloat(val || '10'), max_uses: parseInt(max || '100'), valid_from: from, valid_to: to }); showOwnerToast('Coupon created!', 'success'); loadTab(); } catch(e: unknown) { showOwnerToast(e instanceof Error ? e.message : 'Failed', 'error'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Create Coupon</button>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
+                  <p className="text-xs text-blue-700"><strong>Note:</strong> Coupons sirf usi ground pe kaam karenge jis ground ke liye banaye hain. Har coupon ek specific ground se linked hai.</p>
                 </div>
                 <div className="space-y-3">
                   {ownerCoupons.map((c: Record<string, unknown>) => (
                     <div key={c.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
                       <div>
-                        <code className="bg-purple-100 text-purple-700 px-3 py-1 rounded font-bold text-sm">{c.code as string}</code>
-                        <p className="text-xs text-gray-500 mt-2">{c.discount_type as string === 'percentage' ? `${c.discount_value}% off` : `Rs.${c.discount_value} off`} | Used: {c.used_count as number}/{c.max_uses as number}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <code className="bg-purple-100 text-purple-700 px-3 py-1 rounded font-bold text-sm">{c.code as string}</code>
+                          {c.ground_name ? <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{String(c.ground_name)}</span> : null}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">{c.discount_type as string === 'percentage' ? `${c.discount_value}% off` : `Rs.${c.discount_value} off`} | Used: {c.used_count as number}/{c.max_uses as number}</p>
                         {c.valid_from ? <p className="text-xs text-gray-400">Valid: {String(c.valid_from)} to {String(c.valid_to)}</p> : null}
                       </div>
                       <button onClick={async () => { if (confirm('Delete coupon?')) { try { await api.deleteOwnerCoupon(c.id as number); loadTab(); } catch { /* */ } } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
@@ -1210,90 +1424,8 @@ export default function OwnerDashboard() {
               </>
             )}
 
-            {/* EXPENSE TRACKER */}
-            {tab === 'expenses' && (
-              <>
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                  <h3 className="font-bold text-gray-800 text-xl">Expense Tracker</h3>
-                  <div className="flex gap-2">
-                    {ownerExpenses.length > 0 && <>
-                      <button onClick={() => ownerExportCSV('expenses.csv', ['Category','Amount','Description','Date'], ownerExpenses.map(e => [String(e.category),'Rs.'+String(e.amount||0),String(e.description||''),String(e.expense_date||'')]))} className="bg-green-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><Download size={12}/> CSV</button>
-                      <button onClick={() => ownerExportPDF('Expense Report', ['Category','Amount','Description','Date'], ownerExpenses.map(e => [String(e.category),'Rs.'+String(e.amount||0),String(e.description||''),String(e.expense_date||'')]))} className="bg-red-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><FileText size={12}/> PDF</button>
-                    </>}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Add Expense</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="exp-cat">
-                      <option value="maintenance">Maintenance</option><option value="salary">Salary</option><option value="electricity">Electricity</option><option value="water">Water</option><option value="equipment">Equipment</option><option value="rent">Rent</option><option value="marketing">Marketing</option><option value="other">Other</option>
-                    </select>
-                    <input type="number" placeholder="Amount (Rs.)" className="border rounded-lg px-3 py-2 text-sm" id="exp-amount" />
-                    <input type="text" placeholder="Description" className="border rounded-lg px-3 py-2 text-sm" id="exp-desc" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="exp-date" />
-                  </div>
-                  <button onClick={async () => { const cat = (document.getElementById('exp-cat') as HTMLSelectElement)?.value; const amt = (document.getElementById('exp-amount') as HTMLInputElement)?.value; const desc = (document.getElementById('exp-desc') as HTMLInputElement)?.value; const date = (document.getElementById('exp-date') as HTMLInputElement)?.value; if (!amt || parseFloat(amt) <= 0) { alert('Enter valid amount'); return; } try { await api.addOwnerExpense({ category: cat, amount: parseFloat(amt), description: desc, expense_date: date }); alert('Expense added!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Add Expense</button>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
-                  <p className="text-sm text-gray-600">Total Expenses: <span className="font-bold text-red-600">Rs.{ownerExpenses.reduce((s: number, e: Record<string, unknown>) => s + (e.amount as number || 0), 0).toLocaleString()}</span></p>
-                </div>
-                <div className="space-y-3">
-                  {ownerExpenses.map((e: Record<string, unknown>) => (
-                    <div key={e.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">Rs.{(e.amount as number || 0).toLocaleString()} - {(e.category as string || '').replace('_', ' ')}</p>
-                        <p className="text-xs text-gray-500">{e.description as string} | {e.expense_date as string}</p>
-                        {e.ground_name ? <p className="text-xs text-purple-600">{String(e.ground_name)}</p> : null}
-                      </div>
-                      <button onClick={async () => { try { await api.deleteOwnerExpense(e.id as number); loadTab(); } catch { /* */ } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {ownerExpenses.length === 0 && <p className="text-gray-400 text-center py-8">No expenses recorded yet.</p>}
-                </div>
-              </>
-            )}
-
-            {/* MAINTENANCE SCHEDULE */}
-            {tab === 'maintenance' && (
-              <>
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                  <h3 className="font-bold text-gray-800 text-xl">Maintenance Schedule</h3>
-                  <div className="flex gap-2">
-                    {ownerMaintenance.length > 0 && <>
-                      <button onClick={() => ownerExportCSV('maintenance.csv', ['Ground','Title','Start','End','Status'], ownerMaintenance.map(m => [String(m.ground_name||''),String(m.title||''),String(m.start_date||''),String(m.end_date||''),String(m.status||'')]))} className="bg-green-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><Download size={12}/> CSV</button>
-                      <button onClick={() => ownerExportPDF('Maintenance Report', ['Ground','Title','Start','End','Status'], ownerMaintenance.map(m => [String(m.ground_name||''),String(m.title||''),String(m.start_date||''),String(m.end_date||''),String(m.status||'')]))} className="bg-red-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><FileText size={12}/> PDF</button>
-                    </>}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Schedule Maintenance</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="maint-ground">
-                      <option value="">Select Ground</option>
-                      {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
-                    </select>
-                    <input type="text" placeholder="Maintenance Title" className="border rounded-lg px-3 py-2 text-sm" id="maint-title" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="maint-start" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="maint-end" />
-                  </div>
-                  <textarea placeholder="Description (optional)" className="w-full border rounded-lg px-3 py-2 text-sm mt-3 h-16" id="maint-desc" />
-                  <button onClick={async () => { const gid = (document.getElementById('maint-ground') as HTMLSelectElement)?.value; const title = (document.getElementById('maint-title') as HTMLInputElement)?.value; const start = (document.getElementById('maint-start') as HTMLInputElement)?.value; const end = (document.getElementById('maint-end') as HTMLInputElement)?.value; const desc = (document.getElementById('maint-desc') as HTMLTextAreaElement)?.value; if (!gid || !title || !start) { alert('Fill required fields'); return; } try { await api.addOwnerMaintenance({ ground_id: parseInt(gid), title, description: desc, start_date: start, end_date: end }); alert('Maintenance scheduled!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Schedule</button>
-                </div>
-                <div className="space-y-3">
-                  {ownerMaintenance.map((m: Record<string, unknown>) => (
-                    <div key={m.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">{m.title as string}</p>
-                        <p className="text-xs text-gray-500">{m.ground_name as string} | {m.start_date as string} to {m.end_date as string || 'TBD'}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{m.status as string}</span>
-                      </div>
-                      <button onClick={async () => { try { await api.deleteOwnerMaintenance(m.id as number); loadTab(); } catch { /* */ } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {ownerMaintenance.length === 0 && <p className="text-gray-400 text-center py-8">No maintenance scheduled.</p>}
-                </div>
-              </>
-            )}
+            {/* Expenses - Removed */}
+            {/* Maintenance - Removed */}
 
             {/* AUTO REPLIES */}
             {tab === 'autoreplies' && (
@@ -1324,69 +1456,7 @@ export default function OwnerDashboard() {
               </>
             )}
 
-            {/* Gallery */}
-            {tab === 'gallery' && (
-              <>
-                <h3 className="font-bold text-gray-800 text-xl mb-4">Ground Gallery</h3>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
-                  <label className="text-sm font-medium text-gray-600">Select Ground</label>
-                  <select className="w-full border rounded-lg px-4 py-2 mt-1" value={galleryGroundId} onChange={e => { setGalleryGroundId(parseInt(e.target.value)); if(parseInt(e.target.value)) api.getOwnerGallery(parseInt(e.target.value)).then(setGalleryImages).catch(() => setGalleryImages([])); }}>
-                    <option value={0}>Choose Ground</option>
-                    {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
-                  </select>
-                </div>
-                {galleryGroundId > 0 && (
-                  <>
-                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
-                      <h4 className="font-medium text-gray-700 mb-3">Add Image</h4>
-                      <div className="space-y-3">
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="block text-sm text-gray-600 mb-1">Upload Photo</label>
-                            <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 text-sm" onChange={e => { const f = e.target.files?.[0]; if(f) setGalleryFile(f); }} />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-sm text-gray-600 mb-1">Or Image URL</label>
-                            <input type="text" placeholder="https://..." className="w-full border rounded-lg px-3 py-2 text-sm" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <input type="text" placeholder="Caption (optional)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newImageCaption} onChange={e => setNewImageCaption(e.target.value)} />
-                          <button onClick={async () => {
-                            if(!galleryFile && !newImageUrl) { alert('Select an image file or enter URL'); return; }
-                            try {
-                              if(galleryFile) {
-                                await api.uploadGalleryImage(galleryGroundId, galleryFile, newImageCaption);
-                              } else {
-                                await api.addGalleryImage({ ground_id: galleryGroundId, image_url: newImageUrl, caption: newImageCaption });
-                              }
-                              setNewImageUrl(''); setNewImageCaption(''); setGalleryFile(null);
-                              const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement;
-                              if(fileInput) fileInput.value = '';
-                              api.getOwnerGallery(galleryGroundId).then(setGalleryImages);
-                            } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
-                          }} className="bg-green-600 text-white px-6 rounded-lg hover:bg-green-700 flex items-center gap-1"><Plus size={16} /> Add</button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {galleryImages.map((img: Record<string, unknown>) => (
-                        <div key={img.id as number} className="bg-white rounded-xl shadow-sm overflow-hidden group relative">
-                          <div className="h-40 bg-gray-100 flex items-center justify-center">
-                            <img src={img.image_url as string} alt={img.caption as string || 'Ground'} className="w-full h-full object-cover" onError={e => (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%22100%22/><text fill=%22%239ca3af%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22>No Image</text></svg>'} />
-                          </div>
-                          <div className="p-3 flex items-center justify-between">
-                            <p className="text-sm text-gray-600 truncate">{(img.caption as string) || 'No caption'}</p>
-                            <button onClick={async () => { try { await api.deleteGalleryImage(img.id as number); api.getOwnerGallery(galleryGroundId).then(setGalleryImages); } catch {} }} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
-                          </div>
-                        </div>
-                      ))}
-                      {galleryImages.length === 0 && <p className="text-gray-400 text-center py-8 col-span-4">No images. Add gallery images above.</p>}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
+            {/* Gallery - Removed */}
 
             {/* Bulk Slot Management */}
             {tab === 'bulkslots' && (
