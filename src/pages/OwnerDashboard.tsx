@@ -1406,10 +1406,10 @@ export default function OwnerDashboard() {
                       {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
                     </select>
                     <input type="text" placeholder="Coupon Code (e.g. FLAT20)" className="border rounded-lg px-3 py-2 text-sm uppercase" id="coupon-code" />
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="coupon-type">
+                    <select className="border rounded-lg px-3 py-2 text-sm" id="coupon-type" onChange={(e) => { const valInput = document.getElementById('coupon-value') as HTMLInputElement; if (valInput) { valInput.placeholder = e.target.value === 'percentage' ? 'Discount (%)' : 'Discount (Rs.)'; valInput.value = ''; } }}>
                       <option value="percentage">Percentage Off</option><option value="flat">Flat Discount</option>
                     </select>
-                    <input type="number" placeholder="Discount Value" defaultValue="10" className="border rounded-lg px-3 py-2 text-sm" id="coupon-value" />
+                    <input type="number" placeholder="Discount (%)" defaultValue="" className="border rounded-lg px-3 py-2 text-sm" id="coupon-value" />
                     <input type="number" placeholder="Max Uses" defaultValue="100" className="border rounded-lg px-3 py-2 text-sm" id="coupon-max" />
                     <input type="date" placeholder="Valid From" className="border rounded-lg px-3 py-2 text-sm" id="coupon-from" />
                     <input type="date" placeholder="Valid To" className="border rounded-lg px-3 py-2 text-sm" id="coupon-to" />
