@@ -185,10 +185,12 @@ export default function AdminDashboard() {
 
   // handleToggleGateway removed - now only in Gateways tab inline
 
-  const handleSetCommission = async (id: number) => {
-    const rate = prompt('Enter commission rate (%)');
-    if (rate === null) return;
-    try { await api.setGroundCommission(id, parseFloat(rate)); loadTab(); } catch { /* ignore */ }
+  const handleSetCommission = async (id: number, rate: number) => {
+    try { await api.setGroundCommission(id, rate); loadTab(); } catch { /* ignore */ }
+  };
+
+  const handleSetTokenPercent = async (id: number, percent: number) => {
+    try { await api.adminUpdateGround(id, { token_money_percent: percent }); loadTab(); } catch { /* ignore */ }
   };
 
   const handleToggleGround = async (id: number) => {
@@ -403,6 +405,12 @@ export default function AdminDashboard() {
   const [adminEditGroundData, setAdminEditGroundData] = useState<Record<string, unknown>>({});
   const [, setAdminEditPhotos] = useState<File[]>([]);
   const [adminEditPhotoPreviews, setAdminEditPhotoPreviews] = useState<string[]>([]);
+
+  // Inline editing for Token % and Commission
+  const [editingTokenId, setEditingTokenId] = useState<number | null>(null);
+  const [editTokenValue, setEditTokenValue] = useState<number>(100);
+  const [editingCommissionId, setEditingCommissionId] = useState<number | null>(null);
+  const [editCommissionValue, setEditCommissionValue] = useState<string>('');
 
   // V16 - Reusable filter/export toolbar
   const [groundsSearch, setGroundsSearch] = useState('');
@@ -642,53 +650,101 @@ export default function AdminDashboard() {
             {/* GROUNDS */}
             {tab === 'grounds' && (
               <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-800 text-lg">All Grounds ({grounds.length})</h3>
-                  <div className="flex gap-2 flex-wrap">
-                    <div className="relative"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search grounds..." className="pl-9 pr-3 py-2 border rounded-lg text-sm w-48" value={groundsSearch} onChange={e => setGroundsSearch(e.target.value)} /></div>
-                    <select className="border rounded-lg px-3 py-2 text-sm" value={groundsTypeFilter} onChange={e => setGroundsTypeFilter(e.target.value)}><option value="all">All Types</option><option value="box">Box Cricket</option><option value="open">Open Ground</option><option value="turf">Turf</option></select>
-                    <select className="border rounded-lg px-3 py-2 text-sm" value={groundsCityFilter} onChange={e => setGroundsCityFilter(e.target.value)}><option value="all">All Cities</option>{[...new Set(grounds.map(g => String(g.city)))].filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}</select>
-                    <select className="border rounded-lg px-3 py-2 text-sm" value={groundsSortBy + '_' + groundsSortOrder} onChange={e => { const [f,o] = e.target.value.split('_'); setGroundsSortBy(f); setGroundsSortOrder(o as 'asc'|'desc'); }}><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option><option value="weekday_price_asc">Price Low-High</option><option value="weekday_price_desc">Price High-Low</option><option value="rating_desc">Rating High-Low</option></select>
-                    <button onClick={() => setShowAddGround(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><Plus size={14}/> Add Ground</button>
-                    <button onClick={() => exportTableCSV('grounds', ['Name','City','Type','Owner','Price','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),String(g.weekday_price),String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><Download size={14}/> CSV</button>
-                    <button onClick={() => handleExportPDF('All Grounds', ['Name','City','Type','Owner','Price','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),'Rs.'+String(g.weekday_price),String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><FileText size={14}/> PDF</button>
+                {/* Header with Stats Cards */}
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-purple-200 text-xs font-medium uppercase tracking-wide">Total Grounds</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.length}</p>
+                    <p className="text-purple-200 text-xs mt-1">{grounds.filter(g => g.is_active).length} Active</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-green-200 text-xs font-medium uppercase tracking-wide">Active</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.filter(g => g.is_active).length}</p>
+                    <p className="text-green-200 text-xs mt-1">Live on platform</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-orange-200 text-xs font-medium uppercase tracking-wide">Pending</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.filter(g => !g.is_active).length}</p>
+                    <p className="text-orange-200 text-xs mt-1">Awaiting approval</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-blue-200 text-xs font-medium uppercase tracking-wide">Avg Token %</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.length > 0 ? Math.round(grounds.reduce((sum, g) => sum + Number(g.token_money_percent || 100), 0) / grounds.length) : 0}%</p>
+                    <p className="text-blue-200 text-xs mt-1">Across all grounds</p>
                   </div>
                 </div>
+
+                {/* Search & Filters Bar */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search by name, city, owner..." className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" value={groundsSearch} onChange={e => setGroundsSearch(e.target.value)} /></div>
+                    <select className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:border-purple-400" value={groundsTypeFilter} onChange={e => setGroundsTypeFilter(e.target.value)}><option value="all">All Types</option><option value="box">Box Cricket</option><option value="open">Open Ground</option><option value="turf">Turf</option><option value="indoor">Indoor</option></select>
+                    <select className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:border-purple-400" value={groundsCityFilter} onChange={e => setGroundsCityFilter(e.target.value)}><option value="all">All Cities</option>{[...new Set(grounds.map(g => String(g.city)))].filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}</select>
+                    <select className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:border-purple-400" value={groundsSortBy + '_' + groundsSortOrder} onChange={e => { const [f,o] = e.target.value.split('_'); setGroundsSortBy(f); setGroundsSortOrder(o as 'asc'|'desc'); }}><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option><option value="weekday_price_asc">Price Low-High</option><option value="weekday_price_desc">Price High-Low</option><option value="rating_desc">Rating High-Low</option></select>
+                    <div className="flex gap-2 ml-auto">
+                      <button onClick={() => setShowAddGround(true)} className="bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-1.5 hover:bg-purple-700 shadow-sm transition-all"><Plus size={14}/> Add Ground</button>
+                      <button onClick={() => exportTableCSV('grounds', ['Name','City','Type','Owner','Price','Token%','Commission','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),String(g.weekday_price),String(g.token_money_percent||100)+'%',g.commission_rate!=null?String(g.commission_rate)+'%':'Standard',String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-1.5 hover:bg-emerald-700 shadow-sm transition-all"><Download size={14}/> CSV</button>
+                      <button onClick={() => handleExportPDF('All Grounds', ['Name','City','Type','Owner','Price','Token%','Commission','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),'Rs.'+String(g.weekday_price),String(g.token_money_percent||100)+'%',g.commission_rate!=null?String(g.commission_rate)+'%':'Standard',String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-1.5 hover:bg-blue-700 shadow-sm transition-all"><FileText size={14}/> PDF</button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Pending Approval Grounds */}
                 {grounds.filter(g => !g.is_active).length > 0 && (
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                      <h4 className="font-bold text-orange-700 text-base">Pending Approval ({grounds.filter(g => !g.is_active).length})</h4>
+                      <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></div>
+                      <h4 className="font-bold text-orange-700 text-lg">Pending Approval ({grounds.filter(g => !g.is_active).length})</h4>
                     </div>
-                    <div className="bg-orange-50 border border-orange-200 rounded-xl overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead className="bg-orange-100"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Token %</th><th className="p-3">Actions</th></tr></thead>
-                        <tbody>
-                          {grounds.filter(g => !g.is_active).map(g => (
-                            <tr key={g.id as number} className="border-t border-orange-200 hover:bg-orange-100/50">
-                              <td className="p-3"><p className="font-medium">{g.name as string}</p><p className="text-xs text-gray-500">{g.city as string} | {g.ground_type as string}</p></td>
-                              <td className="p-3 text-center text-xs">{g.owner_name as string}</td>
-                              <td className="p-3 text-center">Rs.{g.weekday_price as number}</td>
-                              <td className="p-3 text-center"><span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</span></td>
-                              <td className="p-3 text-center flex gap-1 justify-center">
-                                <button onClick={async () => { try { await api.approveGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-xs px-3 py-1.5 rounded bg-green-500 text-white font-medium hover:bg-green-600 flex items-center gap-1"><CheckCircle size={12}/> Approve</button>
-                                <button onClick={async () => { if(!confirm('Reject this ground?')) return; try { await api.rejectGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-xs px-3 py-1.5 rounded bg-red-500 text-white font-medium hover:bg-red-600 flex items-center gap-1"><XCircle size={12}/> Reject</button>
-                                <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="text-xs px-2 py-1.5 rounded bg-blue-50 text-blue-600">Edit</button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="grid gap-3">
+                      {grounds.filter(g => !g.is_active).map(g => (
+                        <div key={g.id as number} className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center"><MapPin size={20} className="text-orange-600" /></div>
+                              <div>
+                                <h5 className="font-bold text-gray-800">{g.name as string}</h5>
+                                <p className="text-sm text-gray-500">{g.city as string} | <span className="capitalize">{g.ground_type as string}</span></p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <div className="text-center"><p className="text-xs text-gray-400 uppercase">Owner</p><p className="text-sm font-medium">{g.owner_name as string}</p></div>
+                              <div className="text-center"><p className="text-xs text-gray-400 uppercase">Price</p><p className="text-sm font-bold text-gray-700">Rs.{g.weekday_price as number}</p></div>
+                              <div className="text-center"><p className="text-xs text-gray-400 uppercase">Token</p><p className="text-sm font-bold text-indigo-600">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</p></div>
+                              <div className="flex gap-2">
+                                <button onClick={async () => { try { await api.approveGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-medium hover:bg-green-600 flex items-center gap-1.5 shadow-sm transition-all"><CheckCircle size={14}/> Approve</button>
+                                <button onClick={async () => { if(!confirm('Reject this ground?')) return; try { await api.rejectGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 flex items-center gap-1.5 shadow-sm transition-all"><XCircle size={14}/> Reject</button>
+                                <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="px-3 py-2 rounded-xl bg-white border border-gray-200 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-all"><Edit size={14}/></button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                <h4 className="font-bold text-gray-700 text-base mb-3">Active Grounds ({grounds.filter(g => g.is_active).length})</h4>
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                {/* Active Grounds Table */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                  <h4 className="font-bold text-gray-700 text-lg">Active Grounds ({grounds.filter(g => g.is_active).length})</h4>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Token %</th><th className="p-3">Commission</th><th className="p-3">Rating</th><th className="p-3">Approval</th><th className="p-3">Featured</th><th className="p-3">Actions</th></tr></thead>
-                    <tbody>
+                    <thead>
+                      <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                        <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ground</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Token %</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Commission</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Rating</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Approval</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Featured</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
                       {sortData(grounds.filter(g => {
                         if (!g.is_active) return false;
                         if (groundsSearch && !String(g.name).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.city).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.owner_name).toLowerCase().includes(groundsSearch.toLowerCase())) return false;
@@ -696,39 +752,82 @@ export default function AdminDashboard() {
                         if (groundsCityFilter !== 'all' && String(g.city) !== groundsCityFilter) return false;
                         return true;
                       }), groundsSortBy, groundsSortOrder).map(g => (
-                        <tr key={g.id as number} className="border-t hover:bg-gray-50">
-                          <td className="p-3"><p className="font-medium">{g.name as string}</p><p className="text-xs text-gray-500">{g.city as string} | {g.ground_type as string}</p></td>
-                          <td className="p-3 text-center text-xs">{g.owner_name as string}</td>
-                          <td className="p-3 text-center">Rs.{g.weekday_price as number}</td>
-                          <td className="p-3 text-center"><span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</span></td>
-                          <td className="p-3 text-center">
-                            <button onClick={() => handleSetCommission(g.id as number)} className="text-blue-600 underline text-xs">
-                              {g.commission_rate != null ? `${g.commission_rate}%` : 'Standard'}
-                            </button>
+                        <tr key={g.id as number} className="hover:bg-purple-50/30 transition-colors">
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0"><MapPin size={16} className="text-purple-600" /></div>
+                              <div>
+                                <p className="font-semibold text-gray-800">{g.name as string}</p>
+                                <p className="text-xs text-gray-400">{g.city as string} | <span className="capitalize">{g.ground_type as string}</span></p>
+                              </div>
+                            </div>
                           </td>
-                          <td className="p-3 text-center"><span className="flex items-center justify-center gap-0.5"><Star size={12} className="text-yellow-500"/> {g.rating as number}</span></td>
-                          <td className="p-3 text-center">
-                            <button onClick={() => handleToggleApproval(g.id as number)} className={`text-xs px-2 py-1 rounded ${g.approval_required ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <td className="p-4 text-center">
+                            <div><p className="text-sm font-medium text-gray-700">{g.owner_name as string}</p><p className="text-xs text-gray-400">{g.owner_phone as string}</p></div>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="text-sm font-bold text-gray-800">Rs.{g.weekday_price as number}</span>
+                          </td>
+                          {/* Token % - Inline Editable */}
+                          <td className="p-4 text-center">
+                            {editingTokenId === (g.id as number) ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <select className="border border-purple-300 rounded-lg px-2 py-1 text-sm bg-purple-50 focus:ring-2 focus:ring-purple-200" value={editTokenValue} onChange={e => setEditTokenValue(parseInt(e.target.value))} autoFocus>
+                                  <option value={10}>10%</option><option value={20}>20%</option><option value={30}>30%</option><option value={40}>40%</option><option value={50}>50%</option><option value={60}>60%</option><option value={70}>70%</option><option value={80}>80%</option><option value={90}>90%</option><option value={100}>100%</option>
+                                </select>
+                                <button onClick={async () => { await handleSetTokenPercent(g.id as number, editTokenValue); setEditingTokenId(null); }} className="w-7 h-7 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors"><CheckCircle size={13}/></button>
+                                <button onClick={() => setEditingTokenId(null)} className="w-7 h-7 rounded-lg bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-300 transition-colors"><X size={13}/></button>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setEditingTokenId(g.id as number); setEditTokenValue(Number(g.token_money_percent || 100)); }} className="group relative inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-indigo-100 hover:shadow-sm transition-all cursor-pointer border border-transparent hover:border-indigo-200">
+                                {g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}
+                                <Edit size={11} className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </button>
+                            )}
+                          </td>
+                          {/* Commission - Inline Editable */}
+                          <td className="p-4 text-center">
+                            {editingCommissionId === (g.id as number) ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <input type="number" step="0.5" min="0" max="100" className="border border-blue-300 rounded-lg px-2 py-1 text-sm w-20 bg-blue-50 focus:ring-2 focus:ring-blue-200 text-center" value={editCommissionValue} onChange={e => setEditCommissionValue(e.target.value)} autoFocus placeholder="%" />
+                                <button onClick={async () => { await handleSetCommission(g.id as number, parseFloat(editCommissionValue) || 0); setEditingCommissionId(null); }} className="w-7 h-7 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors"><CheckCircle size={13}/></button>
+                                <button onClick={() => setEditingCommissionId(null)} className="w-7 h-7 rounded-lg bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-300 transition-colors"><X size={13}/></button>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setEditingCommissionId(g.id as number); setEditCommissionValue(g.commission_rate != null ? String(g.commission_rate) : ''); }} className="group relative inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-100 hover:shadow-sm transition-all cursor-pointer border border-transparent hover:border-blue-200">
+                                {g.commission_rate != null ? `${g.commission_rate}%` : 'Standard'}
+                                <Edit size={11} className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </button>
+                            )}
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2.5 py-1 rounded-lg text-sm font-medium"><Star size={13} className="text-yellow-500 fill-yellow-400"/> {g.rating as number}</span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <button onClick={() => handleToggleApproval(g.id as number)} className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${g.approval_required ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                               {g.approval_required ? 'Required' : 'Auto'}
                             </button>
                           </td>
-                          <td className="p-3 text-center">
-                            <button onClick={() => handleFeatureGround(g.id as number)} className={`text-xs px-2 py-1 rounded ${g.is_featured ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <td className="p-4 text-center">
+                            <button onClick={() => handleFeatureGround(g.id as number)} className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${g.is_featured ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                               {g.is_featured ? 'Featured' : 'Feature'}
                             </button>
                           </td>
-                          <td className="p-3 text-center flex gap-1 justify-center">
-                            <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600">
-                              Edit
-                            </button>
-                            <button onClick={() => handleToggleGround(g.id as number)} className={`text-xs px-2 py-1 rounded ${g.is_active ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                              {g.is_active ? 'Disable' : 'Enable'}
-                            </button>
+                          <td className="p-4 text-center">
+                            <div className="flex gap-1.5 justify-center">
+                              <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-1">
+                                <Edit size={12}/> Edit
+                              </button>
+                              <button onClick={() => handleToggleGround(g.id as number)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${g.is_active ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'}`}>
+                                {g.is_active ? 'Disable' : 'Enable'}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  {grounds.filter(g => g.is_active).length === 0 && <div className="p-8 text-center text-gray-400"><MapPin size={32} className="mx-auto mb-2 opacity-50"/><p>No active grounds found</p></div>}
                 </div>
 
                 {/* Add Ground Form */}
