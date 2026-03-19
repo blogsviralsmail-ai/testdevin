@@ -72,6 +72,9 @@ class StudentCreate(BaseModel):
     achievements: Optional[str] = None
     status: str = "active"
     form_data: Optional[str] = None
+    center_id: Optional[int] = None
+    total_fees: Optional[float] = None
+    admission_source: Optional[str] = None
 
 ALL_FIELDS = [
     "university_id", "category_id", "branch_id", "session_name", "admission_type",
@@ -87,6 +90,7 @@ ALL_FIELDS = [
     "blood_group", "disability", "disability_type",
     "hostel_required", "transport_required", "pickup_location",
     "extra_curricular", "achievements", "status", "form_data",
+    "center_id", "total_fees", "admission_source",
 ]
 
 @router.get("/me")
