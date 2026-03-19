@@ -203,6 +203,19 @@ async def add_ground(req: AddGroundRequest, user: dict = Depends(get_current_use
         return {"message": f"Ground '{req.name}' submitted for approval. Admin will review and activate it."}
 
 
+@router.put("/grounds/{ground_id}/toggle")
+async def toggle_owner_ground(ground_id: int, user: dict = Depends(get_current_user)):
+    """Owner can activate/deactivate their own ground"""
+    require_role(user, ["owner", "admin"])
+    with get_db() as db:
+        ground = db.execute("SELECT is_active FROM grounds WHERE id = ? AND owner_id = ?", (ground_id, user["user_id"])).fetchone()
+        if not ground:
+            raise HTTPException(status_code=404, detail="Ground not found or not owned by you")
+        new_status = 0 if ground["is_active"] else 1
+        db.execute("UPDATE grounds SET is_active = ? WHERE id = ?", (new_status, ground_id))
+        return {"message": f"Ground {'activated' if new_status else 'deactivated'}", "is_active": new_status}
+
+
 @router.put("/grounds/{ground_id}")
 async def update_ground(ground_id: int, req: UpdateGroundRequest, user: dict = Depends(get_current_user)):
     require_role(user, ["owner", "admin"])
