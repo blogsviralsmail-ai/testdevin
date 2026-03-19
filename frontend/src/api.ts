@@ -8,11 +8,68 @@ function getBaseUrl(): string {
   return "";
 }
 
+// Map API endpoints to static JSON files for static deployment
+const STATIC_MAP: Record<string, string> = {
+  "/api/categories": "/data/categories.json",
+  "/api/gold-rate": "/data/gold-rate.json",
+  "/api/gold-rate/history?days=30": "/data/gold-rate-history.json",
+  "/api/designs/featured": "/data/designs-featured.json",
+  "/api/designs/popular": "/data/designs-featured.json",
+  "/api/blogs/recent": "/data/blogs-recent.json",
+  "/api/admin/settings/public": "/data/settings.json",
+};
+
+function getStaticPath(endpoint: string): string | null {
+  if (STATIC_MAP[endpoint]) return STATIC_MAP[endpoint];
+  // Match /api/categories/{slug}
+  const catMatch = endpoint.match(/^\/api\/categories\/([a-z-]+)$/);
+  if (catMatch) return `/data/category-${catMatch[1]}.json`;
+  // Match /api/designs/{slug}
+  const desMatch = endpoint.match(/^\/api\/designs\/([a-z0-9-]+)$/);
+  if (desMatch) return `/data/design-${desMatch[1]}.json`;
+  // Match /api/blogs/{slug}
+  const blogMatch = endpoint.match(/^\/api\/blogs\/([a-z0-9-]+)$/);
+  if (blogMatch) return `/data/blog-${blogMatch[1]}.json`;
+  // Match /api/designs?page=...
+  if (endpoint.startsWith("/api/designs?")) return "/data/designs-all.json";
+  // Match /api/blogs?page=...
+  if (endpoint.startsWith("/api/blogs?")) return "/data/blogs-all.json";
+  return null;
+}
+
+async function fetchFromStatic(endpoint: string) {
+  const staticPath = getStaticPath(endpoint);
+  if (staticPath) {
+    const res = await fetch(staticPath);
+    if (res.ok) {
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("json")) return res.json();
+    }
+  }
+  return null;
+}
+
 async function fetchAPI(endpoint: string, options?: RequestInit) {
   const base = getBaseUrl();
-  const res = await fetch(`${base}${endpoint}`, options);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  // For write operations (POST/PUT/DELETE), always call the API directly
+  const method = options?.method?.toUpperCase() || "GET";
+  if (method !== "GET") {
+    const res = await fetch(`${base}${endpoint}`, options);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  }
+  // For GET requests: try API first, then fall back to static JSON
+  try {
+    const res = await fetch(`${base}${endpoint}`, options);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("json")) throw new Error("Not JSON response");
+    return res.json();
+  } catch {
+    const staticData = await fetchFromStatic(endpoint);
+    if (staticData !== null) return staticData;
+    throw new Error(`API unavailable for: ${endpoint}`);
+  }
 }
 
 function authHeaders(token: string): HeadersInit {
