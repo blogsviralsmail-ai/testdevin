@@ -546,6 +546,7 @@ export default function AdminStudents() {
                 <tr>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student (Mobile = ID)</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Center</th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Sub Center</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">University</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden lg:table-cell">Course</th>
                   <th className="text-right px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">Fees</th>
@@ -570,10 +571,10 @@ export default function AdminStudents() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-4 py-3">
-                      <div>
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{s.center_name || "—"}</span>
-                        {s.parent_center_name && <p className="text-xs text-gray-400 mt-0.5">Sub of: {s.parent_center_name}</p>}
-                      </div>
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{s.parent_center_name || s.center_name || "—"}</span>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{s.parent_center_name ? (s.center_name || "—") : (s.center_name || "—")}</span>
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{s.university_name || "—"}</td>
                     <td className="px-3 sm:px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{s.category_name || "—"}</td>
