@@ -49,6 +49,7 @@ export default function WalletPage() {
   const [submittingRekyc, setSubmittingRekyc] = useState(false);
   const [rekycFiles, setRekycFiles] = useState<File[]>([]);
   const [rekycOldDetails, setRekycOldDetails] = useState<Record<string, unknown> | null>(null);
+  const [isRekyc, setIsRekyc] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; show: boolean }>({ message: '', type: 'info', show: false });
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
@@ -71,6 +72,7 @@ export default function WalletPage() {
       ]);
       setBalance(walletData.balance ?? walletData.wallet_balance ?? 0);
       setKycStatus(walletData.kyc_status || 'none');
+      if (walletData.is_rekyc) setIsRekyc(true); else setIsRekyc(false);
       if (walletData.kyc_reject_reason) setKycRejectReason(String(walletData.kyc_reject_reason));
       setTransactions(txns || []);
       if (Array.isArray(gw)) setGateways(gw.filter((g: Record<string, unknown>) => g.enabled));
@@ -361,7 +363,7 @@ export default function WalletPage() {
             </button>
             <button
               onClick={() => {
-                if (kycStatus !== 'verified' && kycStatus !== 'approved') {
+                if (kycStatus !== 'verified' && kycStatus !== 'approved' && !isRekyc) {
                   setWalletSection('kyc');
                   return;
                 }
