@@ -792,37 +792,27 @@ export default function OwnerDashboard() {
 
         {/* ADD GROUND TAB */}
         {tab === 'addground' && (
-          <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><MapPin size={20} className="text-blue-600" /> Add New Ground</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 max-w-lg">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><MapPin size={20} className="text-blue-600" /> Add New Ground</h3>
             <p className="text-sm text-gray-500 mb-4">Submit your ground for listing. Admin will review and approve it.</p>
-            <div className="grid grid-cols-2 gap-3">
-              <input placeholder="Ground Name *" className="border rounded-lg px-3 py-2 text-sm col-span-2" value={newGround.name} onChange={e => setNewGround({...newGround, name: e.target.value})} />
-              <input placeholder="Address *" className="border rounded-lg px-3 py-2 text-sm col-span-2" value={newGround.address} onChange={e => setNewGround({...newGround, address: e.target.value})} />
-              <input placeholder="City" className="border rounded-lg px-3 py-2 text-sm" value={newGround.city} onChange={e => setNewGround({...newGround, city: e.target.value})} />
-              <select className="border rounded-lg px-3 py-2 text-sm" value={newGround.ground_type} onChange={e => setNewGround({...newGround, ground_type: e.target.value})}>
-                <option value="box">Box Cricket</option><option value="open">Open Ground</option><option value="turf">Turf</option>
-              </select>
-              <input type="number" placeholder="Weekday Price" className="border rounded-lg px-3 py-2 text-sm" value={newGround.weekday_price} onChange={e => setNewGround({...newGround, weekday_price: parseInt(e.target.value) || 0})} />
-              <input type="number" placeholder="Weekend Price" className="border rounded-lg px-3 py-2 text-sm" value={newGround.weekend_price} onChange={e => setNewGround({...newGround, weekend_price: parseInt(e.target.value) || 0})} />
-              <input type="time" className="border rounded-lg px-3 py-2 text-sm" value={newGround.opening_time} onChange={e => setNewGround({...newGround, opening_time: e.target.value})} />
-              <input type="time" className="border rounded-lg px-3 py-2 text-sm" value={newGround.closing_time} onChange={e => setNewGround({...newGround, closing_time: e.target.value})} />
-              {/* GPS Location */}
-              <div className="col-span-2 bg-blue-50 rounded-lg p-3">
-                <label className="text-sm font-medium text-blue-700 mb-2 block">GPS Location</label>
-                <div className="flex gap-2">
-                  <input type="text" placeholder="Latitude (e.g. 26.9124)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.latitude} onChange={e => setNewGround({...newGround, latitude: e.target.value})} />
-                  <input type="text" placeholder="Longitude (e.g. 75.7873)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.longitude} onChange={e => setNewGround({...newGround, longitude: e.target.value})} />
-                  <button type="button" onClick={() => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setNewGround(g => ({...g, latitude: String(pos.coords.latitude.toFixed(6)), longitude: String(pos.coords.longitude.toFixed(6))})); alert('Location captured!'); }, () => alert('Location access denied')); } else { alert('Geolocation not supported'); } }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap hover:bg-blue-700">Get GPS</button>
-                </div>
+            <div className="space-y-3">
+              <div><label className="text-sm font-medium text-gray-600">Ground Name</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.name} onChange={e => setNewGround({...newGround, name: e.target.value})} /></div>
+              <div><label className="text-sm font-medium text-gray-600">Address</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.address} onChange={e => setNewGround({...newGround, address: e.target.value})} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-sm font-medium text-gray-600">City</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.city} onChange={e => setNewGround({...newGround, city: e.target.value})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Ground Type</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.ground_type} onChange={e => setNewGround({...newGround, ground_type: e.target.value})}><option value="box">Box Cricket</option><option value="turf">Turf</option><option value="open">Open Ground</option><option value="indoor">Indoor</option></select></div>
               </div>
-              {/* Ground Photo Upload */}
-              <div className="col-span-2 bg-green-50 rounded-lg p-3">
-                <label className="text-sm font-medium text-green-700 mb-2 block">Ground Photo</label>
-                <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 text-sm bg-white" onChange={e => { const f = e.target.files?.[0]; if(f) setGroundPhoto(f); }} />
-                {groundPhoto && <p className="text-xs text-green-600 mt-1">Selected: {groundPhoto.name}</p>}
+              <div className="grid grid-cols-3 gap-3">
+                <div><label className="text-sm font-medium text-gray-600">Weekday Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.weekday_price} onChange={e => setNewGround({...newGround, weekday_price: parseInt(e.target.value) || 0})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Weekend Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.weekend_price} onChange={e => setNewGround({...newGround, weekend_price: parseInt(e.target.value) || 0})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Evening Extra</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.evening_extra} onChange={e => setNewGround({...newGround, evening_extra: parseInt(e.target.value) || 0})} /></div>
               </div>
-              {/* Amenities Checkboxes */}
-              <div className="col-span-2 bg-purple-50 rounded-lg p-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-sm font-medium text-gray-600">Opening Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.opening_time} onChange={e => setNewGround({...newGround, opening_time: e.target.value})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Closing Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.closing_time} onChange={e => setNewGround({...newGround, closing_time: e.target.value})} /></div>
+              </div>
+              <div><label className="text-sm font-medium text-gray-600">Description</label><textarea className="w-full border rounded-lg px-3 py-2 mt-1" rows={2} value={newGround.description} onChange={e => setNewGround({...newGround, description: e.target.value})} /></div>
+              <div className="bg-purple-50 rounded-lg p-3">
                 <label className="text-sm font-medium text-purple-700 mb-2 block">Amenities</label>
                 <div className="flex flex-wrap gap-2">
                   {allAmenities.map(a => (
@@ -833,21 +823,38 @@ export default function OwnerDashboard() {
                   ))}
                 </div>
               </div>
-              <textarea placeholder="Description" className="border rounded-lg px-3 py-2 text-sm col-span-2" rows={2} value={newGround.description} onChange={e => setNewGround({...newGround, description: e.target.value})} />
+              {/* Ground Photo Upload */}
+              <div>
+                <label className="text-sm font-medium text-gray-600">Upload Photos (multiple allowed)</label>
+                <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 mt-1 text-sm" onChange={e => { const f = e.target.files?.[0]; if(f) setGroundPhoto(f); }} />
+                {groundPhoto && <p className="text-xs text-green-600 mt-1">Selected: {groundPhoto.name}</p>}
+              </div>
+              {/* GPS Location */}
+              <div className="bg-blue-50 rounded-lg p-3">
+                <label className="text-sm font-medium text-blue-700 mb-2 block">GPS Location</label>
+                <div className="flex gap-2">
+                  <input type="text" placeholder="Latitude (e.g. 26.9124)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.latitude} onChange={e => setNewGround({...newGround, latitude: e.target.value})} />
+                  <input type="text" placeholder="Longitude (e.g. 75.7873)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newGround.longitude} onChange={e => setNewGround({...newGround, longitude: e.target.value})} />
+                  <button type="button" onClick={() => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setNewGround(g => ({...g, latitude: String(pos.coords.latitude.toFixed(6)), longitude: String(pos.coords.longitude.toFixed(6))})); alert('Location captured!'); }, () => alert('Location access denied')); } else { alert('Geolocation not supported'); } }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap hover:bg-blue-700">Get GPS</button>
+                </div>
+              </div>
             </div>
-            <button onClick={async () => {
-              try {
-                await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0});
-                // Upload photo if selected
-                if (groundPhoto && data?.grounds?.length) {
-                  const lastGround = data.grounds[data.grounds.length - 1];
-                  await api.uploadGalleryImage(lastGround.id as number, groundPhoto, 'Ground Photo');
-                }
-                alert('Ground submitted! Pending admin approval.');
-                setGroundPhoto(null);
-                loadData();
-              } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
-            }} className="mt-4 bg-blue-600 text-white px-8 py-2.5 rounded-xl font-medium hover:bg-blue-700">Submit for Approval</button>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => { setNewGround({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '' }); setSelectedAmenities(['Floodlights', 'Parking']); setGroundPhoto(null); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+              <button onClick={async () => {
+                try {
+                  await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0});
+                  // Upload photo if selected
+                  if (groundPhoto && data?.grounds?.length) {
+                    const lastGround = data.grounds[data.grounds.length - 1];
+                    await api.uploadGalleryImage(lastGround.id as number, groundPhoto, 'Ground Photo');
+                  }
+                  alert('Ground submitted! Pending admin approval.');
+                  setGroundPhoto(null);
+                  loadData();
+                } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
+              }} className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700">Submit for Approval</button>
+            </div>
           </div>
         )}
 
