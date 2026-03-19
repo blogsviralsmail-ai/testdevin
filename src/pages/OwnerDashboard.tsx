@@ -667,42 +667,43 @@ export default function OwnerDashboard() {
           </>
         )}
 
+        {/* Global Styled Toast - visible on all tabs */}
+        {ownerToast.show && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-md animate-[slideDown_0.3s_ease-out]">
+            <div className={`rounded-2xl shadow-2xl border px-4 py-3.5 flex items-start gap-3 backdrop-blur-sm ${
+              ownerToast.type === 'success' ? 'bg-green-50/95 border-green-200 text-green-800' :
+              ownerToast.type === 'error' ? 'bg-red-50/95 border-red-200 text-red-800' :
+              ownerToast.type === 'warning' ? 'bg-amber-50/95 border-amber-200 text-amber-800' :
+              'bg-blue-50/95 border-blue-200 text-blue-800'
+            }`}>
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${
+                ownerToast.type === 'success' ? 'bg-green-500' :
+                ownerToast.type === 'error' ? 'bg-red-500' :
+                ownerToast.type === 'warning' ? 'bg-amber-500' :
+                'bg-blue-500'
+              }`}>
+                {ownerToast.type === 'success' && <CheckCircle size={16} className="text-white" />}
+                {ownerToast.type === 'error' && <XCircle size={16} className="text-white" />}
+                {ownerToast.type === 'warning' && <AlertTriangle size={14} className="text-white" />}
+                {ownerToast.type === 'info' && <Info size={16} className="text-white" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide opacity-70 mb-0.5">
+                  {ownerToast.type === 'success' ? 'Success' : ownerToast.type === 'error' ? 'Error' : ownerToast.type === 'warning' ? 'Warning' : 'Info'}
+                </p>
+                <p className="text-sm font-medium leading-snug">{ownerToast.message}</p>
+              </div>
+              <button onClick={() => setOwnerToast(prev => ({ ...prev, show: false }))} className="flex-shrink-0 opacity-50 hover:opacity-100 transition mt-1">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+        <style>{`@keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }`}</style>
+
         {/* COMBINED WALLET TAB (Settlement + Payout + KYC) */}
         {(tab === 'wallet' || tab === 'payout' || tab === 'settlement') && (
           <>
-            {/* Styled Toast */}
-            {ownerToast.show && (
-              <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-md animate-[slideDown_0.3s_ease-out]">
-                <div className={`rounded-2xl shadow-2xl border px-4 py-3.5 flex items-start gap-3 backdrop-blur-sm ${
-                  ownerToast.type === 'success' ? 'bg-green-50/95 border-green-200 text-green-800' :
-                  ownerToast.type === 'error' ? 'bg-red-50/95 border-red-200 text-red-800' :
-                  ownerToast.type === 'warning' ? 'bg-amber-50/95 border-amber-200 text-amber-800' :
-                  'bg-blue-50/95 border-blue-200 text-blue-800'
-                }`}>
-                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${
-                    ownerToast.type === 'success' ? 'bg-green-500' :
-                    ownerToast.type === 'error' ? 'bg-red-500' :
-                    ownerToast.type === 'warning' ? 'bg-amber-500' :
-                    'bg-blue-500'
-                  }`}>
-                    {ownerToast.type === 'success' && <CheckCircle size={16} className="text-white" />}
-                    {ownerToast.type === 'error' && <XCircle size={16} className="text-white" />}
-                    {ownerToast.type === 'warning' && <AlertTriangle size={14} className="text-white" />}
-                    {ownerToast.type === 'info' && <Info size={16} className="text-white" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wide opacity-70 mb-0.5">
-                      {ownerToast.type === 'success' ? 'Success' : ownerToast.type === 'error' ? 'Error' : ownerToast.type === 'warning' ? 'Warning' : 'Info'}
-                    </p>
-                    <p className="text-sm font-medium leading-snug">{ownerToast.message}</p>
-                  </div>
-                  <button onClick={() => setOwnerToast(prev => ({ ...prev, show: false }))} className="flex-shrink-0 opacity-50 hover:opacity-100 transition mt-1">
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-            <style>{`@keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }`}</style>
 
             {/* Wallet Card - Customer Style Gradient */}
             <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-6 text-white mb-4 shadow-lg">
