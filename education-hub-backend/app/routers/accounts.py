@@ -82,7 +82,7 @@ def _get_fee_summary(conn, student_id: int) -> dict:
     # Include center_fee_payments (payments submitted via center portal)
     cfp = 0
     try:
-        cfp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM center_fee_payments WHERE student_id=? AND status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL)", (student_id,)).fetchone()[0]
+        cfp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM center_fee_payments WHERE student_id=? AND status='approved'", (student_id,)).fetchone()[0]
     except Exception:
         pass
     total_paid = fp + txn + cfp
@@ -453,7 +453,7 @@ async def get_my_fees(user: dict = Depends(get_current_user)):
     # Include center_fee_payments (payments submitted via center portal)
     center_paid = 0
     try:
-        center_paid = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM center_fee_payments WHERE student_id = ? AND status = 'approved' AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)", (sid,)).fetchone()[0]
+        center_paid = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM center_fee_payments WHERE student_id = ? AND status = 'approved'", (sid,)).fetchone()[0]
     except Exception:
         pass
     total_paid = paid + admin_paid + center_paid
