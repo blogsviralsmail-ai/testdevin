@@ -1337,7 +1337,7 @@ export default function AdminDashboard() {
                           <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded-full ${k.kyc_status === 'verified' ? 'bg-green-100 text-green-700' : k.kyc_status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>{k.kyc_status as string}</span></td>
                           <td className="p-3 text-xs">{(k.kyc_doc_type as string) || '-'}</td>
                           <td className="p-3">{k.kyc_doc_url ? <button onClick={() => setKycDocModal(k.kyc_doc_url as string)} className="text-xs text-blue-600 underline flex items-center gap-1 hover:text-blue-800"><Eye size={12}/>View Doc</button> : <span className="text-xs text-gray-400">No doc</span>}</td>
-                          <td className="p-3 text-xs">{k.bank_name ? <div><p className="font-medium">{k.bank_name as string}</p><p className="text-gray-500">A/C: {k.bank_account as string}</p><p className="text-gray-500">IFSC: {k.bank_ifsc as string}</p></div> : <span className="text-gray-400">Not provided</span>}</td>
+                          <td className="p-3 text-xs">{k.bank_name ? <div><p className="font-medium">{k.bank_name as string}</p><p className="text-gray-500">A/C: {k.bank_account as string}</p><p className="text-gray-500">IFSC: {k.bank_ifsc as string}</p>{k.is_rekyc && k.old_bank_account ? <div className="mt-1 pt-1 border-t border-orange-200"><p className="text-[10px] text-orange-600 font-semibold">Re-KYC (Old Details):</p><p className="text-gray-400">Bank: {k.old_bank_name as string}</p><p className="text-gray-400">A/C: {k.old_bank_account as string}</p><p className="text-gray-400">IFSC: {k.old_bank_ifsc as string}</p></div> : null}</div> : <span className="text-gray-400">Not provided</span>}</td>
                           <td className="p-3 text-xs">{k.upi_id ? <span className="font-medium text-purple-700">{k.upi_id as string}</span> : <span className="text-gray-400">-</span>}</td>
                           <td className="p-3">
                             {k.kyc_status === 'pending' && <div className="flex gap-1">
@@ -1356,9 +1356,13 @@ export default function AdminDashboard() {
                 {/* KYC Document Modal - supports multiple comma-separated URLs */}
                 {kycDocModal && (() => {
                   const BASE = ((import.meta as unknown as Record<string,Record<string,string>>).env?.VITE_API_URL || '');
-                  const docUrls = kycDocModal.split(',').map((u: string) => u.trim()).filter(Boolean).map((u: string) =>
-                    u.startsWith('http') || u.startsWith('data:') ? u : BASE + u
-                  );
+                  const cacheBust = `_cb=${Date.now()}`;
+                  const docUrls = kycDocModal.split(',').map((u: string) => u.trim()).filter(Boolean).map((u: string) => {
+                    const url = u.startsWith('http') || u.startsWith('data:') ? u : BASE + u;
+                    // Add cache-busting param to avoid Cloudflare serving cached 404s
+                    if (url.startsWith('data:')) return url;
+                    return url + (url.includes('?') ? '&' : '?') + cacheBust;
+                  });
                   return (
                   <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setKycDocModal(null)}>
                     <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-auto p-6" onClick={e => e.stopPropagation()}>
@@ -1374,8 +1378,9 @@ export default function AdminDashboard() {
                       ) : (
                         <div className="space-y-4">
                           {docUrls.map((docUrl: string, idx: number) => {
-                            const isPdf = docUrl.match(/\.pdf$/i);
-                            const isImage = docUrl.startsWith('data:image') || docUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+                            const urlPath = docUrl.split('?')[0];
+                            const isPdf = urlPath.match(/\.pdf$/i);
+                            const isImage = docUrl.startsWith('data:image') || urlPath.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
                             return (
                               <div key={idx} className="border rounded-xl overflow-hidden">
                                 <div className="bg-gray-50 px-4 py-2 flex items-center justify-between border-b">
