@@ -709,6 +709,9 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
     if stored_student_id is not None and stored_student_id != sid:
         conn.close()
         raise HTTPException(status_code=403, detail="This payment order does not belong to you")
+    if stored_student_id is None:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Order data corrupted - cannot verify ownership. Please contact admin.")
     
     # Insert fee payment as approved (Razorpay verified)
     conn.execute(
