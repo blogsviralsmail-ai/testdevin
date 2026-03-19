@@ -250,20 +250,22 @@ async def platform_dashboard(authorization: str = Header(None)):
             total_leads += stats.get("leads", 0)
 
     # Remote installations stats
+    conn2 = None
     try:
-        remote_total = conn2 = None
         conn2 = get_master_db()
         remote_installations = conn2.execute("SELECT * FROM remote_installations WHERE status = 'active'").fetchall()
         remote_count = len(remote_installations)
         remote_students = sum(r["total_students"] for r in remote_installations)
         remote_enquiries = sum(r["total_enquiries"] for r in remote_installations)
         remote_leads = sum(r["total_leads"] for r in remote_installations)
-        conn2.close()
     except Exception:
         remote_count = 0
         remote_students = 0
         remote_enquiries = 0
         remote_leads = 0
+    finally:
+        if conn2:
+            conn2.close()
 
     return {
         "total_tenants": total_tenants,
