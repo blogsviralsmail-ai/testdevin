@@ -102,6 +102,8 @@ export default function AdminDashboard() {
 
   const changeAdminTab = (t: AdminTabType) => {
     setTab(t);
+    setSelectedBulkIds(new Set());
+    setBulkSelectAll(false);
     navigate('/admin/' + t, { replace: true });
   };
 
@@ -185,10 +187,12 @@ export default function AdminDashboard() {
 
   // handleToggleGateway removed - now only in Gateways tab inline
 
-  const handleSetCommission = async (id: number) => {
-    const rate = prompt('Enter commission rate (%)');
-    if (rate === null) return;
-    try { await api.setGroundCommission(id, parseFloat(rate)); loadTab(); } catch { /* ignore */ }
+  const handleSetCommission = async (id: number, rate: number) => {
+    try { await api.setGroundCommission(id, rate); loadTab(); } catch { /* ignore */ }
+  };
+
+  const handleSetTokenPercent = async (id: number, percent: number) => {
+    try { await api.adminUpdateGround(id, { token_money_percent: percent }); loadTab(); } catch { /* ignore */ }
   };
 
   const handleToggleGround = async (id: number) => {
@@ -403,6 +407,12 @@ export default function AdminDashboard() {
   const [adminEditGroundData, setAdminEditGroundData] = useState<Record<string, unknown>>({});
   const [, setAdminEditPhotos] = useState<File[]>([]);
   const [adminEditPhotoPreviews, setAdminEditPhotoPreviews] = useState<string[]>([]);
+
+  // Inline editing for Token % and Commission
+  const [editingTokenId, setEditingTokenId] = useState<number | null>(null);
+  const [editTokenValue, setEditTokenValue] = useState<number>(100);
+  const [editingCommissionId, setEditingCommissionId] = useState<number | null>(null);
+  const [editCommissionValue, setEditCommissionValue] = useState<string>('');
 
   // V16 - Reusable filter/export toolbar
   const [groundsSearch, setGroundsSearch] = useState('');
@@ -642,53 +652,115 @@ export default function AdminDashboard() {
             {/* GROUNDS */}
             {tab === 'grounds' && (
               <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-800 text-lg">All Grounds ({grounds.length})</h3>
-                  <div className="flex gap-2 flex-wrap">
-                    <div className="relative"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search grounds..." className="pl-9 pr-3 py-2 border rounded-lg text-sm w-48" value={groundsSearch} onChange={e => setGroundsSearch(e.target.value)} /></div>
-                    <select className="border rounded-lg px-3 py-2 text-sm" value={groundsTypeFilter} onChange={e => setGroundsTypeFilter(e.target.value)}><option value="all">All Types</option><option value="box">Box Cricket</option><option value="open">Open Ground</option><option value="turf">Turf</option></select>
-                    <select className="border rounded-lg px-3 py-2 text-sm" value={groundsCityFilter} onChange={e => setGroundsCityFilter(e.target.value)}><option value="all">All Cities</option>{[...new Set(grounds.map(g => String(g.city)))].filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}</select>
-                    <select className="border rounded-lg px-3 py-2 text-sm" value={groundsSortBy + '_' + groundsSortOrder} onChange={e => { const [f,o] = e.target.value.split('_'); setGroundsSortBy(f); setGroundsSortOrder(o as 'asc'|'desc'); }}><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option><option value="weekday_price_asc">Price Low-High</option><option value="weekday_price_desc">Price High-Low</option><option value="rating_desc">Rating High-Low</option></select>
-                    <button onClick={() => setShowAddGround(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><Plus size={14}/> Add Ground</button>
-                    <button onClick={() => exportTableCSV('grounds', ['Name','City','Type','Owner','Price','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),String(g.weekday_price),String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><Download size={14}/> CSV</button>
-                    <button onClick={() => handleExportPDF('All Grounds', ['Name','City','Type','Owner','Price','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),'Rs.'+String(g.weekday_price),String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><FileText size={14}/> PDF</button>
+                {/* Header with Stats Cards */}
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-purple-200 text-xs font-medium uppercase tracking-wide">Total Grounds</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.length}</p>
+                    <p className="text-purple-200 text-xs mt-1">{grounds.filter(g => g.is_active).length} Active</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-green-200 text-xs font-medium uppercase tracking-wide">Active</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.filter(g => g.is_active).length}</p>
+                    <p className="text-green-200 text-xs mt-1">Live on platform</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-orange-200 text-xs font-medium uppercase tracking-wide">Pending</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.filter(g => !g.is_active).length}</p>
+                    <p className="text-orange-200 text-xs mt-1">Awaiting approval</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-4 text-white shadow-lg">
+                    <p className="text-blue-200 text-xs font-medium uppercase tracking-wide">Avg Token %</p>
+                    <p className="text-3xl font-bold mt-1">{grounds.length > 0 ? Math.round(grounds.reduce((sum, g) => sum + Number(g.token_money_percent || 100), 0) / grounds.length) : 0}%</p>
+                    <p className="text-blue-200 text-xs mt-1">Across all grounds</p>
                   </div>
                 </div>
+
+                {/* Search & Filters Bar */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search by name, city, owner..." className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all" value={groundsSearch} onChange={e => setGroundsSearch(e.target.value)} /></div>
+                    <select className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:border-purple-400" value={groundsTypeFilter} onChange={e => setGroundsTypeFilter(e.target.value)}><option value="all">All Types</option><option value="box">Box Cricket</option><option value="open">Open Ground</option><option value="turf">Turf</option><option value="indoor">Indoor</option></select>
+                    <select className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:border-purple-400" value={groundsCityFilter} onChange={e => setGroundsCityFilter(e.target.value)}><option value="all">All Cities</option>{[...new Set(grounds.map(g => String(g.city)))].filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}</select>
+                    <select className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:border-purple-400" value={groundsSortBy + '_' + groundsSortOrder} onChange={e => { const parts = e.target.value.split('_'); const o = parts.pop()!; const f = parts.join('_'); setGroundsSortBy(f); setGroundsSortOrder(o as 'asc'|'desc'); }}><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option><option value="weekday_price_asc">Price Low-High</option><option value="weekday_price_desc">Price High-Low</option><option value="rating_desc">Rating High-Low</option></select>
+                    <div className="flex gap-2 ml-auto">
+                      <button onClick={() => setShowAddGround(true)} className="bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-1.5 hover:bg-purple-700 shadow-sm transition-all"><Plus size={14}/> Add Ground</button>
+                      <button onClick={() => exportTableCSV('grounds', ['Name','City','Type','Owner','Price','Token%','Commission','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),String(g.weekday_price),String(g.token_money_percent||100)+'%',g.commission_rate!=null?String(g.commission_rate)+'%':'Standard',String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-1.5 hover:bg-emerald-700 shadow-sm transition-all"><Download size={14}/> CSV</button>
+                      <button onClick={() => handleExportPDF('All Grounds', ['Name','City','Type','Owner','Price','Token%','Commission','Rating','Status'], grounds.map(g => [String(g.name),String(g.city),String(g.ground_type),String(g.owner_name),'Rs.'+String(g.weekday_price),String(g.token_money_percent||100)+'%',g.commission_rate!=null?String(g.commission_rate)+'%':'Standard',String(g.rating),g.is_active ? 'Active' : 'Inactive']))} className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-1.5 hover:bg-blue-700 shadow-sm transition-all"><FileText size={14}/> PDF</button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Pending Approval Grounds */}
                 {grounds.filter(g => !g.is_active).length > 0 && (
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                      <h4 className="font-bold text-orange-700 text-base">Pending Approval ({grounds.filter(g => !g.is_active).length})</h4>
+                      <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse"></div>
+                      <h4 className="font-bold text-orange-700 text-lg">Pending Approval ({grounds.filter(g => !g.is_active).length})</h4>
                     </div>
-                    <div className="bg-orange-50 border border-orange-200 rounded-xl overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead className="bg-orange-100"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Token %</th><th className="p-3">Actions</th></tr></thead>
-                        <tbody>
-                          {grounds.filter(g => !g.is_active).map(g => (
-                            <tr key={g.id as number} className="border-t border-orange-200 hover:bg-orange-100/50">
-                              <td className="p-3"><p className="font-medium">{g.name as string}</p><p className="text-xs text-gray-500">{g.city as string} | {g.ground_type as string}</p></td>
-                              <td className="p-3 text-center text-xs">{g.owner_name as string}</td>
-                              <td className="p-3 text-center">Rs.{g.weekday_price as number}</td>
-                              <td className="p-3 text-center"><span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</span></td>
-                              <td className="p-3 text-center flex gap-1 justify-center">
-                                <button onClick={async () => { try { await api.approveGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-xs px-3 py-1.5 rounded bg-green-500 text-white font-medium hover:bg-green-600 flex items-center gap-1"><CheckCircle size={12}/> Approve</button>
-                                <button onClick={async () => { if(!confirm('Reject this ground?')) return; try { await api.rejectGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-xs px-3 py-1.5 rounded bg-red-500 text-white font-medium hover:bg-red-600 flex items-center gap-1"><XCircle size={12}/> Reject</button>
-                                <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="text-xs px-2 py-1.5 rounded bg-blue-50 text-blue-600">Edit</button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="grid gap-3">
+                      {grounds.filter(g => !g.is_active).map(g => (
+                        <div key={g.id as number} className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center"><MapPin size={20} className="text-orange-600" /></div>
+                              <div>
+                                <h5 className="font-bold text-gray-800">{g.name as string}</h5>
+                                <p className="text-sm text-gray-500">{g.city as string} | <span className="capitalize">{g.ground_type as string}</span></p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <div className="text-center"><p className="text-xs text-gray-400 uppercase">Owner</p><p className="text-sm font-medium">{g.owner_name as string}</p></div>
+                              <div className="text-center"><p className="text-xs text-gray-400 uppercase">Price</p><p className="text-sm font-bold text-gray-700">Rs.{g.weekday_price as number}</p></div>
+                              <div className="text-center"><p className="text-xs text-gray-400 uppercase">Token</p><p className="text-sm font-bold text-indigo-600">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</p></div>
+                              <div className="flex gap-2">
+                                <button onClick={async () => { try { await api.approveGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-medium hover:bg-green-600 flex items-center gap-1.5 shadow-sm transition-all"><CheckCircle size={14}/> Approve</button>
+                                <button onClick={async () => { if(!confirm('Reject this ground?')) return; try { await api.rejectGround(g.id as number); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 flex items-center gap-1.5 shadow-sm transition-all"><XCircle size={14}/> Reject</button>
+                                <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="px-3 py-2 rounded-xl bg-white border border-gray-200 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-all"><Edit size={14}/></button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                <h4 className="font-bold text-gray-700 text-base mb-3">Active Grounds ({grounds.filter(g => g.is_active).length})</h4>
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                {/* Active Grounds Table */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                  <h4 className="font-bold text-gray-700 text-lg">Active Grounds ({grounds.filter(g => g.is_active).length})</h4>
+                </div>
+                {/* Bulk Action Bar - Grounds */}
+                {selectedBulkIds.size > 0 && (
+                  <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl p-3 mb-3 flex items-center justify-between animate-in">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-red-300 text-red-600" />
+                      <span className="text-sm font-semibold text-red-700">{selectedBulkIds.size} ground(s) selected</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => { if (!confirm(`Delete ${selectedBulkIds.size} ground(s)? This cannot be undone!`)) return; try { await api.bulkDeleteGrounds(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm transition-all"><Trash2 size={14}/> Delete Selected</button>
+                      <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50 transition-all">Cancel</button>
+                    </div>
+                  </div>
+                )}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Token %</th><th className="p-3">Commission</th><th className="p-3">Rating</th><th className="p-3">Approval</th><th className="p-3">Featured</th><th className="p-3">Actions</th></tr></thead>
-                    <tbody>
+                    <thead>
+                      <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                        <th className="p-4 text-center w-10"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const activeIds = grounds.filter(g => g.is_active).map(g => g.id as number); setSelectedBulkIds(new Set(activeIds)); } else { setSelectedBulkIds(new Set()); } }} /></th>
+                        <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ground</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Token %</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Commission</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Rating</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Approval</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Featured</th>
+                        <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
                       {sortData(grounds.filter(g => {
                         if (!g.is_active) return false;
                         if (groundsSearch && !String(g.name).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.city).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.owner_name).toLowerCase().includes(groundsSearch.toLowerCase())) return false;
@@ -696,39 +768,83 @@ export default function AdminDashboard() {
                         if (groundsCityFilter !== 'all' && String(g.city) !== groundsCityFilter) return false;
                         return true;
                       }), groundsSortBy, groundsSortOrder).map(g => (
-                        <tr key={g.id as number} className="border-t hover:bg-gray-50">
-                          <td className="p-3"><p className="font-medium">{g.name as string}</p><p className="text-xs text-gray-500">{g.city as string} | {g.ground_type as string}</p></td>
-                          <td className="p-3 text-center text-xs">{g.owner_name as string}</td>
-                          <td className="p-3 text-center">Rs.{g.weekday_price as number}</td>
-                          <td className="p-3 text-center"><span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">{g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}</span></td>
-                          <td className="p-3 text-center">
-                            <button onClick={() => handleSetCommission(g.id as number)} className="text-blue-600 underline text-xs">
-                              {g.commission_rate != null ? `${g.commission_rate}%` : 'Standard'}
-                            </button>
+                        <tr key={g.id as number} className={`hover:bg-purple-50/30 transition-colors ${selectedBulkIds.has(g.id as number) ? 'bg-purple-50/50' : ''}`}>
+                          <td className="p-4 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={selectedBulkIds.has(g.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(g.id as number); else next.delete(g.id as number); setSelectedBulkIds(next); setBulkSelectAll(next.size === grounds.filter(gg => gg.is_active).length); }} /></td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0"><MapPin size={16} className="text-purple-600" /></div>
+                              <div>
+                                <p className="font-semibold text-gray-800">{g.name as string}</p>
+                                <p className="text-xs text-gray-400">{g.city as string} | <span className="capitalize">{g.ground_type as string}</span></p>
+                              </div>
+                            </div>
                           </td>
-                          <td className="p-3 text-center"><span className="flex items-center justify-center gap-0.5"><Star size={12} className="text-yellow-500"/> {g.rating as number}</span></td>
-                          <td className="p-3 text-center">
-                            <button onClick={() => handleToggleApproval(g.id as number)} className={`text-xs px-2 py-1 rounded ${g.approval_required ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <td className="p-4 text-center">
+                            <div><p className="text-sm font-medium text-gray-700">{g.owner_name as string}</p><p className="text-xs text-gray-400">{g.owner_phone as string}</p></div>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="text-sm font-bold text-gray-800">Rs.{g.weekday_price as number}</span>
+                          </td>
+                          {/* Token % - Inline Editable */}
+                          <td className="p-4 text-center">
+                            {editingTokenId === (g.id as number) ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <select className="border border-purple-300 rounded-lg px-2 py-1 text-sm bg-purple-50 focus:ring-2 focus:ring-purple-200" value={editTokenValue} onChange={e => setEditTokenValue(parseInt(e.target.value))} autoFocus>
+                                  <option value={10}>10%</option><option value={20}>20%</option><option value={30}>30%</option><option value={40}>40%</option><option value={50}>50%</option><option value={60}>60%</option><option value={70}>70%</option><option value={80}>80%</option><option value={90}>90%</option><option value={100}>100%</option>
+                                </select>
+                                <button onClick={async () => { await handleSetTokenPercent(g.id as number, editTokenValue); setEditingTokenId(null); }} className="w-7 h-7 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors"><CheckCircle size={13}/></button>
+                                <button onClick={() => setEditingTokenId(null)} className="w-7 h-7 rounded-lg bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-300 transition-colors"><X size={13}/></button>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setEditingTokenId(g.id as number); setEditTokenValue(Number(g.token_money_percent || 100)); }} className="group relative inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-indigo-100 hover:shadow-sm transition-all cursor-pointer border border-transparent hover:border-indigo-200">
+                                {g.token_money_percent != null ? `${g.token_money_percent}%` : '100%'}
+                                <Edit size={11} className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </button>
+                            )}
+                          </td>
+                          {/* Commission - Inline Editable */}
+                          <td className="p-4 text-center">
+                            {editingCommissionId === (g.id as number) ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <input type="number" step="0.5" min="0" max="100" className="border border-blue-300 rounded-lg px-2 py-1 text-sm w-20 bg-blue-50 focus:ring-2 focus:ring-blue-200 text-center" value={editCommissionValue} onChange={e => setEditCommissionValue(e.target.value)} autoFocus placeholder="%" />
+                                <button onClick={async () => { if (!editCommissionValue.trim()) { setEditingCommissionId(null); return; } await handleSetCommission(g.id as number, parseFloat(editCommissionValue)); setEditingCommissionId(null); }} className="w-7 h-7 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors"><CheckCircle size={13}/></button>
+                                <button onClick={() => setEditingCommissionId(null)} className="w-7 h-7 rounded-lg bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-300 transition-colors"><X size={13}/></button>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setEditingCommissionId(g.id as number); setEditCommissionValue(g.commission_rate != null ? String(g.commission_rate) : ''); }} className="group relative inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-100 hover:shadow-sm transition-all cursor-pointer border border-transparent hover:border-blue-200">
+                                {g.commission_rate != null ? `${g.commission_rate}%` : 'Standard'}
+                                <Edit size={11} className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </button>
+                            )}
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2.5 py-1 rounded-lg text-sm font-medium"><Star size={13} className="text-yellow-500 fill-yellow-400"/> {g.rating as number}</span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <button onClick={() => handleToggleApproval(g.id as number)} className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${g.approval_required ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                               {g.approval_required ? 'Required' : 'Auto'}
                             </button>
                           </td>
-                          <td className="p-3 text-center">
-                            <button onClick={() => handleFeatureGround(g.id as number)} className={`text-xs px-2 py-1 rounded ${g.is_featured ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <td className="p-4 text-center">
+                            <button onClick={() => handleFeatureGround(g.id as number)} className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${g.is_featured ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                               {g.is_featured ? 'Featured' : 'Feature'}
                             </button>
                           </td>
-                          <td className="p-3 text-center flex gap-1 justify-center">
-                            <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600">
-                              Edit
-                            </button>
-                            <button onClick={() => handleToggleGround(g.id as number)} className={`text-xs px-2 py-1 rounded ${g.is_active ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                              {g.is_active ? 'Disable' : 'Enable'}
-                            </button>
+                          <td className="p-4 text-center">
+                            <div className="flex gap-1.5 justify-center">
+                              <button onClick={() => { setAdminEditGround(g); setAdminEditGroundData({ name: String(g.name||''), address: String(g.address||''), city: String(g.city||''), ground_type: String(g.ground_type||'box'), weekday_price: Number(g.weekday_price||0), weekend_price: Number(g.weekend_price||0), evening_extra: Number(g.evening_extra||0), opening_time: String(g.opening_time||'06:00'), closing_time: String(g.closing_time||'22:00'), description: String(g.description||''), amenities: String(g.amenities||''), token_money_percent: Number(g.token_money_percent || 100) }); setAdminEditPhotos([]); setAdminEditPhotoPreviews([]); }} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-1">
+                                <Edit size={12}/> Edit
+                              </button>
+                              <button onClick={() => handleToggleGround(g.id as number)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${g.is_active ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'}`}>
+                                {g.is_active ? 'Disable' : 'Enable'}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  {grounds.filter(g => g.is_active).length === 0 && <div className="p-8 text-center text-gray-400"><MapPin size={32} className="mx-auto mb-2 opacity-50"/><p>No active grounds found</p></div>}
                 </div>
 
                 {/* Add Ground Form */}
@@ -1001,19 +1117,33 @@ export default function AdminDashboard() {
               </div>
               <div className="flex gap-2 mb-4">
                 {['all','admin','owner','user'].map(r => (
-                  <button key={r} onClick={async () => { setUserRoleFilter(r); try { setUsers(await api.getAdminUsers(r !== 'all' ? r : undefined)); } catch { /* */ } }} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${userRoleFilter === r ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border hover:border-purple-300'}`}>{r === 'all' ? 'All Users' : r === 'user' ? 'Customers' : r + 's'}</button>
+                  <button key={r} onClick={async () => { setUserRoleFilter(r); setSelectedBulkIds(new Set()); setBulkSelectAll(false); try { setUsers(await api.getAdminUsers(r !== 'all' ? r : undefined)); } catch { /* */ } }} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${userRoleFilter === r ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border hover:border-purple-300'}`}>{r === 'all' ? 'All Users' : r === 'user' ? 'Customers' : r + 's'}</button>
                 ))}
               </div>
+              {/* Bulk Action Bar - Users */}
+              {selectedBulkIds.size > 0 && (
+                <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-red-300 text-red-600" />
+                    <span className="text-sm font-semibold text-red-700">{selectedBulkIds.size} user(s) selected</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={async () => { if (!confirm(`Delete ${selectedBulkIds.size} user(s)? This cannot be undone!`)) return; try { await api.bulkDeleteUsers(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm"><Trash2 size={14}/> Delete Selected</button>
+                    <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50">Cancel</button>
+                  </div>
+                </div>
+              )}
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50"><tr><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">KYC</th><th className="p-3">Wallet</th><th className="p-3">Bookings</th><th className="p-3">Actions</th></tr></thead>
+                  <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = users.filter(u => { if (usersSearch && !String(u.name).toLowerCase().includes(usersSearch.toLowerCase()) && !String(u.phone).includes(usersSearch)) return false; if (usersKycFilter !== 'all' && String(u.kyc_status || 'none') !== usersKycFilter) return false; return true; }).map(u => u.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">KYC</th><th className="p-3">Wallet</th><th className="p-3">Bookings</th><th className="p-3">Actions</th></tr></thead>
                   <tbody>
                     {sortData(users.filter(u => {
                         if (usersSearch && !String(u.name).toLowerCase().includes(usersSearch.toLowerCase()) && !String(u.phone).includes(usersSearch) && !String(u.email).toLowerCase().includes(usersSearch.toLowerCase())) return false;
                         if (usersKycFilter !== 'all' && String(u.kyc_status || 'none') !== usersKycFilter) return false;
                         return true;
                       }), usersSortBy, usersSortOrder).map(u => (
-                      <tr key={u.id as number} className="border-t hover:bg-gray-50">
+                      <tr key={u.id as number} className={`border-t hover:bg-gray-50 ${selectedBulkIds.has(u.id as number) ? 'bg-purple-50/50' : ''}`}>
+                        <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={selectedBulkIds.has(u.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(u.id as number); else next.delete(u.id as number); setSelectedBulkIds(next); }} /></td>
                         <td className="p-3"><button onClick={() => changeAdminTab('withdrawals')} className="text-blue-600 hover:underline font-medium">{u.name as string}</button> <span className="text-xs bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full">Rs.{u.wallet_balance as number}</span></td>
                         <td className="p-3 text-gray-500 text-xs">{u.phone as string}</td>
                         <td className="p-3 text-gray-500 text-xs">{(u.email as string) || '-'}</td>
@@ -1185,23 +1315,38 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex gap-2 mb-4">
                   {(['all', 'pending', 'completed', 'rejected'] as const).map(f => (
-                    <button key={f} onClick={() => setWithdrawalFilter(f)} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${withdrawalFilter === f ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>{f === 'all' ? 'All' : f === 'completed' ? 'Approved' : f}</button>
+                    <button key={f} onClick={() => { setWithdrawalFilter(f); setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${withdrawalFilter === f ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>{f === 'all' ? 'All' : f === 'completed' ? 'Approved' : f}</button>
                   ))}
                 </div>
+                {/* Bulk Action Bar - Withdrawals */}
+                {selectedBulkIds.size > 0 && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-blue-300 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-700">{selectedBulkIds.size} withdrawal(s) selected</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => { if (!confirm(`Approve ${selectedBulkIds.size} withdrawal(s)?`)) return; try { await api.bulkApproveWithdrawals(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 flex items-center gap-1.5 shadow-sm"><CheckCircle size={14}/> Approve All</button>
+                      <button onClick={async () => { if (!confirm(`Reject ${selectedBulkIds.size} withdrawal(s)? Amount will be returned to wallets.`)) return; try { await api.bulkRejectWithdrawals(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm"><XCircle size={14}/> Reject All</button>
+                      <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50">Cancel</button>
+                    </div>
+                  </div>
+                )}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = withdrawals.filter(w => { if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false; if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false; return true; }).map(w => w.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
                     <tbody>
                       {sortData(withdrawals.filter(w => {
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
                         return true;
-                      }), withdrawalsSortBy, withdrawalsSortOrder).length === 0 ? <tr><td colSpan={10} className="p-4 text-center text-gray-400">No withdrawal requests</td></tr> : sortData(withdrawals.filter(w => {
+                      }), withdrawalsSortBy, withdrawalsSortOrder).length === 0 ? <tr><td colSpan={11} className="p-4 text-center text-gray-400">No withdrawal requests</td></tr> : sortData(withdrawals.filter(w => {
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
                         return true;
                       }), withdrawalsSortBy, withdrawalsSortOrder).map(w => (
-                        <tr key={w.id as number} className="border-t hover:bg-gray-50">
+                        <tr key={w.id as number} className={`border-t hover:bg-gray-50 ${selectedBulkIds.has(w.id as number) ? 'bg-blue-50/50' : ''}`}>
+                          <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={selectedBulkIds.has(w.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(w.id as number); else next.delete(w.id as number); setSelectedBulkIds(next); }} /></td>
                           <td className="p-3"><p className="font-medium">{w.user_name as string || `User #${w.user_id}`}</p><p className="text-xs text-gray-400">{w.user_phone as string}</p></td>
                           <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${(w.user_role as string) === 'owner' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{w.user_role as string}</span></td>
                           <td className="p-3 text-center">Rs.{(w.amount as number)?.toLocaleString()}</td>
@@ -1347,25 +1492,40 @@ export default function AdminDashboard() {
                 {/* KYC Filter Tabs */}
                 <div className="flex gap-2 mb-4">
                   {(['all', 'pending', 'verified', 'rejected'] as const).map(f => (
-                    <button key={f} onClick={() => setKycFilter(f)} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${kycFilter === f ? (f === 'pending' ? 'bg-orange-600 text-white' : f === 'verified' ? 'bg-green-600 text-white' : f === 'rejected' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white') : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
+                    <button key={f} onClick={() => { setKycFilter(f); setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${kycFilter === f ? (f === 'pending' ? 'bg-orange-600 text-white' : f === 'verified' ? 'bg-green-600 text-white' : f === 'rejected' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white') : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
                       {f.charAt(0).toUpperCase() + f.slice(1)} ({kycList.filter(k => f === 'all' || k.kyc_status === f).length})
                     </button>
                   ))}
                 </div>
+                {/* Bulk Action Bar - KYC */}
+                {selectedBulkIds.size > 0 && (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-green-300 text-green-600" />
+                      <span className="text-sm font-semibold text-green-700">{selectedBulkIds.size} KYC(s) selected</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => { if (!confirm(`Verify ${selectedBulkIds.size} KYC(s)?`)) return; try { await api.bulkVerifyKYC(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 flex items-center gap-1.5 shadow-sm"><CheckCircle size={14}/> Verify All</button>
+                      <button onClick={async () => { if (!confirm(`Reject ${selectedBulkIds.size} KYC(s)?`)) return; try { await api.bulkRejectKYC(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm"><XCircle size={14}/> Reject All</button>
+                      <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50">Cancel</button>
+                    </div>
+                  </div>
+                )}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Role</th><th className="p-3">KYC Status</th><th className="p-3">Doc Type</th><th className="p-3">Document</th><th className="p-3">Bank Details</th><th className="p-3">UPI ID</th><th className="p-3">Actions</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = kycList.filter(k => { if (kycFilter !== 'all' && k.kyc_status !== kycFilter) return false; if (kycSearch && !String(k.name).toLowerCase().includes(kycSearch.toLowerCase()) && !String(k.phone).includes(kycSearch)) return false; return true; }).map(k => k.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Role</th><th className="p-3">KYC Status</th><th className="p-3">Doc Type</th><th className="p-3">Document</th><th className="p-3">Bank Details</th><th className="p-3">UPI ID</th><th className="p-3">Actions</th></tr></thead>
                     <tbody>
                       {sortData(kycList.filter(k => {
                         if (kycFilter !== 'all' && k.kyc_status !== kycFilter) return false;
                         if (kycSearch && !String(k.name).toLowerCase().includes(kycSearch.toLowerCase()) && !String(k.phone).includes(kycSearch)) return false;
                         return true;
-                      }), kycSortBy, kycSortOrder).length === 0 ? <tr><td colSpan={9} className="p-4 text-center text-gray-400">No KYC submissions in this category</td></tr> : sortData(kycList.filter(k => {
+                      }), kycSortBy, kycSortOrder).length === 0 ? <tr><td colSpan={10} className="p-4 text-center text-gray-400">No KYC submissions in this category</td></tr> : sortData(kycList.filter(k => {
                         if (kycFilter !== 'all' && k.kyc_status !== kycFilter) return false;
                         if (kycSearch && !String(k.name).toLowerCase().includes(kycSearch.toLowerCase()) && !String(k.phone).includes(kycSearch)) return false;
                         return true;
                       }), kycSortBy, kycSortOrder).map(k => (
-                        <tr key={k.id as number} className="border-t hover:bg-gray-50">
+                        <tr key={k.id as number} className={`border-t hover:bg-gray-50 ${selectedBulkIds.has(k.id as number) ? 'bg-green-50/50' : ''}`}>
+                          <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-green-600" checked={selectedBulkIds.has(k.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(k.id as number); else next.delete(k.id as number); setSelectedBulkIds(next); }} /></td>
                           <td className="p-3 font-medium">{k.name as string}</td>
                           <td className="p-3 text-xs">{k.phone as string}</td>
                           <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded-full ${k.role === 'owner' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{k.role as string}</span></td>
