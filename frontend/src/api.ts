@@ -1,7 +1,16 @@
 const API_URL = import.meta.env.VITE_API_URL || "";
 
+function getBaseUrl(): string {
+  if (API_URL) return API_URL;
+  if (typeof window !== "undefined") {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  return "";
+}
+
 async function fetchAPI(endpoint: string, options?: RequestInit) {
-  const res = await fetch(`${API_URL}${endpoint}`, options);
+  const base = getBaseUrl();
+  const res = await fetch(`${base}${endpoint}`, options);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
