@@ -403,6 +403,14 @@ async def delete_student(sid: int, user: dict = Depends(require_admin)):
         conn.execute("DELETE FROM commission_ledger WHERE student_id = ?", (sid,))
     except Exception:
         pass
+    try:
+        conn.execute("DELETE FROM student_deals WHERE student_id = ?", (sid,))
+    except Exception:
+        pass
+    try:
+        conn.execute("DELETE FROM deal_payments WHERE student_id = ?", (sid,))
+    except Exception:
+        pass
     # Delete user-related records (conversations, chat_messages, notifications, password_reset_tokens)
     if student and student["user_id"]:
         uid = student["user_id"]
@@ -412,6 +420,10 @@ async def delete_student(sid: int, user: dict = Depends(require_admin)):
         conn.execute("DELETE FROM conversations WHERE student_user_id = ?", (uid,))
         conn.execute("DELETE FROM notifications WHERE user_id = ?", (uid,))
         conn.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (uid,))
+        try:
+            conn.execute("DELETE FROM popup_dismissals WHERE user_id = ?", (uid,))
+        except Exception:
+            pass
     conn.execute("DELETE FROM students WHERE id = ?", (sid,))
     # Also delete the user account if exists
     if student and student["user_id"]:
@@ -618,6 +630,14 @@ async def bulk_delete_students(data: dict, user: dict = Depends(require_admin)):
         pass
     try:
         conn.execute(f"DELETE FROM commission_ledger WHERE student_id IN ({placeholders})", ids)
+    except Exception:
+        pass
+    try:
+        conn.execute(f"DELETE FROM student_deals WHERE student_id IN ({placeholders})", ids)
+    except Exception:
+        pass
+    try:
+        conn.execute(f"DELETE FROM deal_payments WHERE student_id IN ({placeholders})", ids)
     except Exception:
         pass
     # Get user_ids before deleting students (to clean up user accounts)
