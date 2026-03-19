@@ -237,21 +237,6 @@ async def center_stats(user: dict = Depends(get_current_user)):
         }
 
 
-@router.get("/{center_id}")
-async def get_center(center_id: int, user: dict = Depends(get_current_user)):
-    """Get single center details."""
-    conn = get_db()
-    row = conn.execute("""SELECT c.*, pc.name as parent_center_name,
-                          (SELECT COUNT(*) FROM students WHERE center_id = c.id) as student_count,
-                          (SELECT COUNT(*) FROM centers WHERE parent_center_id = c.id) as sub_center_count
-                          FROM centers c
-                          LEFT JOIN centers pc ON c.parent_center_id = pc.id
-                          WHERE c.id = ?""", (center_id,)).fetchone()
-    conn.close()
-    if not row:
-        raise HTTPException(status_code=404, detail="Center not found")
-    return dict(row)
-
 
 @router.post("")
 async def create_center(data: CenterCreate, user: dict = Depends(get_current_user)):
@@ -2298,3 +2283,23 @@ async def delete_deal_payment(payment_id: int, user: dict = Depends(require_admi
     conn.commit()
     conn.close()
     return {"message": "Payment deleted"}
+
+
+# ══════════════════════════════════════════════════════════════════
+#  CATCH-ALL: /{center_id} must be LAST to avoid shadowing /deals etc.
+# ══════════════════════════════════════════════════════════════════
+
+@router.get("/{center_id}")
+async def get_center(center_id: int, user: dict = Depends(get_current_user)):
+    """Get single center details."""
+    conn = get_db()
+    row = conn.execute("""SELECT c.*, pc.name as parent_center_name,
+                          (SELECT COUNT(*) FROM students WHERE center_id = c.id) as student_count,
+                          (SELECT COUNT(*) FROM centers WHERE parent_center_id = c.id) as sub_center_count
+                          FROM centers c
+                          LEFT JOIN centers pc ON c.parent_center_id = pc.id
+                          WHERE c.id = ?""", (center_id,)).fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Center not found")
+    return dict(row)
