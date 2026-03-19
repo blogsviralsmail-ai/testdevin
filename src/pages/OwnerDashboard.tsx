@@ -381,7 +381,7 @@ export default function OwnerDashboard() {
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
         <header className="bg-white shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-30">
           <div>
-            <h2 className="text-xl font-bold text-gray-800 capitalize">{ownerTabs.find(t => t.id === tab)?.label || tab}</h2>
+            <h2 className="text-xl font-bold text-gray-800 capitalize">{ownerTabs.find(t => t.id === tab)?.label || (tab === 'manageslots' ? 'Manage Slots' : tab === 'editground' ? 'Edit Ground' : tab)}</h2>
             <p className="text-sm text-gray-500">BookAGround Owner Panel</p>
           </div>
           <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">O</div>
@@ -493,6 +493,12 @@ export default function OwnerDashboard() {
         )}
 
         {/* MANAGE SLOTS TAB - opens as separate tab */}
+        {tab === 'manageslots' && !selectedGround && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-3">No ground selected. Please go to My Grounds and click "Manage Slots".</p>
+            <button onClick={() => changeTab('grounds')} className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 mx-auto"><ChevronLeft size={16}/> Go to My Grounds</button>
+          </div>
+        )}
         {tab === 'manageslots' && selectedGround && (
           <div className="space-y-4">
             <button onClick={() => changeTab('grounds')} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-2"><ChevronLeft size={16}/> Back to My Grounds</button>
@@ -1995,6 +2001,12 @@ export default function OwnerDashboard() {
         )}
 
         {/* EDIT GROUND TAB - opens as separate tab */}
+        {tab === 'editground' && !showEditGroundModal && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-3">No ground selected. Please go to My Grounds and click "Edit".</p>
+            <button onClick={() => changeTab('grounds')} className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 mx-auto"><ChevronLeft size={16}/> Go to My Grounds</button>
+          </div>
+        )}
         {tab === 'editground' && showEditGroundModal && (
           <div className="space-y-4">
             <button onClick={() => { setShowEditGroundModal(null); changeTab('grounds'); }} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-2"><ChevronLeft size={16}/> Back to My Grounds</button>
