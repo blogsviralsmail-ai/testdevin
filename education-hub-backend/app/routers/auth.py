@@ -140,7 +140,7 @@ async def forgot_password(req: ForgotPasswordRequest):
         return {"message": "If an account exists with this email, a password reset code has been sent."}
     
     # Generate secure hex token (32 chars) to resist brute-force
-    reset_token = uuid.uuid4().hex[:16]
+    reset_token = uuid.uuid4().hex
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
     
     conn.execute("UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?", (user["id"],))
