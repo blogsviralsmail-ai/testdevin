@@ -615,6 +615,16 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
     university_id = data.get("university_id")
     auto_create_commission_ledger(conn, sid, actual_center_id, university_id)
     
+    # Auto-create student deal record (fees default to 0; center/admin fill later)
+    total_fees = float(data.get("total_fees", 0) or 0)
+    try:
+        conn.execute(
+            "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, 0, 0, ?)",
+            (sid, total_fees, f"Auto-created on admission by center")
+        )
+    except Exception:
+        pass  # deal may already exist or table not ready
+    
     conn.commit()
     conn.close()
     return {"id": sid, "enrollment_no": enrollment_no, "username": phone, "message": "Student added with login credentials (Phone = Student ID)"}
@@ -2002,6 +2012,48 @@ async def delete_student_deal(deal_id: int, user: dict = Depends(require_admin))
     conn.commit()
     conn.close()
     return {"message": "Deal deleted"}
+
+
+@router.put("/deals/{deal_id}/center-update")
+async def center_update_deal(deal_id: int, data: dict, user: dict = Depends(get_current_user)):
+    """Center updates their own deal fields (sub_center_fee, center_deal). Cannot set admin_deal."""
+    role = user.get("role", "")
+    if role != "center":
+        raise HTTPException(status_code=403, detail="Only centers can use this endpoint")
+    center = get_current_center(user)
+    cid = center["id"]
+    conn = get_db()
+    # Verify deal belongs to this center's students
+    deal = conn.execute("""
+        SELECT sd.*, s.center_id FROM student_deals sd
+        JOIN students s ON sd.student_id = s.id
+        WHERE sd.id = ?
+    """, (deal_id,)).fetchone()
+    if not deal:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Deal not found")
+    all_ids = get_center_and_subcenter_ids(conn, cid)
+    if deal["center_id"] not in all_ids:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not your student's deal")
+    updates = []
+    params: list = []
+    if "sub_center_fee" in data:
+        updates.append("sub_center_fee = ?")
+        params.append(float(data["sub_center_fee"]))
+    if "center_deal" in data:
+        updates.append("center_deal = ?")
+        params.append(float(data["center_deal"]))
+    if "notes" in data:
+        updates.append("notes = ?")
+        params.append(data["notes"])
+    if updates:
+        updates.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(deal_id)
+        conn.execute(f"UPDATE student_deals SET {', '.join(updates)} WHERE id = ?", params)
+        conn.commit()
+    conn.close()
+    return {"message": "Deal updated"}
 
 
 @router.get("/deals/summary")

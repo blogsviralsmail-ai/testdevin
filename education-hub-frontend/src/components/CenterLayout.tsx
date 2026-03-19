@@ -46,6 +46,7 @@ const menuGroups: MenuGroup[] = [
   {
     title: "Commission",
     items: [
+      { path: "/center/deal-fees", label: "Deal Fees", icon: Wallet },
       { path: "/center/commission", label: "Commission Report", icon: BarChart3 },
     ],
   },

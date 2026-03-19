@@ -79,6 +79,7 @@ import CenterSupport from "./pages/center/Support";
 import CenterAnnouncements from "./pages/center/Announcements";
 import CenterExamTimetable from "./pages/center/ExamTimetable";
 import CenterSettings from "./pages/center/Settings";
+import CenterDealFees from "./pages/center/DealFees";
 import AdminCenters from "./pages/admin/Centers";
 import AdminCommissionSlabs from "./pages/admin/CommissionSlabs";
 import AdminPopups from "./pages/admin/Popups";
@@ -157,6 +158,7 @@ function App() {
           <Route path="announcements" element={<CenterAnnouncements />} />
           <Route path="exam-timetable" element={<CenterExamTimetable />} />
           <Route path="settings" element={<CenterSettings />} />
+          <Route path="deal-fees" element={<CenterDealFees />} />
         </Route>
         
         <Route path="/student" element={<ProtectedRoute role="student"><StudentLayout /></ProtectedRoute>}>

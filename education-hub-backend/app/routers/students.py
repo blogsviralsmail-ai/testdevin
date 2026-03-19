@@ -565,6 +565,20 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
         conn.rollback()
         conn.close()
         raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
+    
+    # Auto-create student deal record if student has a center
+    center_id = data.get("center_id")
+    if center_id:
+        total_fees = float(data.get("total_fees", 0) or 0)
+        try:
+            conn.execute(
+                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, 0, 0, ?)",
+                (sid, total_fees, "Auto-created on admission by admin")
+            )
+            conn.commit()
+        except Exception:
+            pass  # deal may already exist
+    
     conn.close()
     return {"id": sid, "enrollment_no": enrollment_no, "username": username, "message": "Student created with login credentials"}
 
