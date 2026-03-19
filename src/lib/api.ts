@@ -127,6 +127,7 @@ export const api = {
   getNotificationConfig: () => fetchAPI('/api/admin/notifications/config'),
   updateNotificationConfig: (data: Record<string, unknown>) => fetchAPI('/api/admin/notifications/config', { method: 'PUT', body: JSON.stringify(data) }),
   ownerApproveBooking: (id: string) => fetchAPI('/api/owner/bookings/' + id + '/approve', { method: 'POST' }),
+  toggleOwnerGround: (groundId: number) => fetchAPI('/api/owner/grounds/' + groundId + '/toggle', { method: 'PUT' }),
   getOwnerWallet: () => fetchAPI('/api/owner/wallet'),
   addOwnerSlot: (data: Record<string, unknown>) => fetchAPI('/api/owner/slots/add', { method: 'POST', body: JSON.stringify(data) }),
   updateOwnerSlot: (slotId: number, data: Record<string, unknown>) => fetchAPI('/api/owner/slots/' + slotId, { method: 'PUT', body: JSON.stringify(data) }),

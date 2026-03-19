@@ -34,8 +34,9 @@ export default function OwnerDashboard() {
   const [userRating, setUserRating] = useState(0);
   const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '' });
   const [groundPhoto, setGroundPhoto] = useState<File | null>(null);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(['Floodlights', 'Parking']);
-  const allAmenities = ['Floodlights', 'Parking', 'Washroom', 'Water', 'Changing Room', 'Canteen', 'WiFi', 'CCTV', 'Coaching', 'First Aid', 'Scoreboard', 'Equipment', 'Nets', 'Multiple Pitches', 'Garden', 'AC', 'Seating', 'Music System'];
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>(['Floodlights', 'Parking']);
+    const [editSelectedAmenities, setEditSelectedAmenities] = useState<string[]>([]);
+    const allAmenities = ['Floodlights', 'Parking', 'Washroom', 'Water', 'Changing Room', 'Canteen', 'WiFi', 'CCTV', 'Coaching', 'First Aid', 'Scoreboard', 'Equipment', 'Nets', 'Multiple Pitches', 'Garden', 'AC', 'Seating', 'Music System'];
   const [ownerListSearch, setOwnerListSearch] = useState('');
   const [, _setWallet] = useState<Record<string, unknown> | null>(null);
   const [withdrawAmt, setWithdrawAmt] = useState('');
@@ -460,7 +461,11 @@ export default function OwnerDashboard() {
                       className={`text-sm px-4 py-2 rounded-lg ${selectedGround === (g.id as number) ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
                       {selectedGround === (g.id as number) ? 'Viewing Slots' : 'Manage Slots'}
                     </button>
-                    <button onClick={() => { setShowEditGroundModal(g); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '' }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
+                    <button onClick={async () => { try { await api.toggleOwnerGround(g.id as number); loadData(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed to toggle'); } }}
+                      className={`text-sm px-4 py-2 rounded-lg flex items-center gap-1 ${Number(g.is_active) ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}>
+                      {Number(g.is_active) ? '🟢 Active' : '🔴 Inactive'}
+                    </button>
+                    <button onClick={() => { setShowEditGroundModal(g); const amenitiesStr = (g.amenities as string) || ''; setEditSelectedAmenities(amenitiesStr ? amenitiesStr.split(',').map((a: string) => a.trim()).filter(Boolean) : []); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '' }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
                     <button onClick={async () => { if (!confirm('Request to delete this ground? Admin approval needed.')) return; try { await api.requestGroundChange({ ground_id: g.id as number, changes: { delete: true } }); alert('Delete request sent to admin for approval!'); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 flex items-center gap-1"><Trash2 size={14}/> Delete</button>
                   </div>
                 </div>
@@ -1895,7 +1900,17 @@ export default function OwnerDashboard() {
                   <div><label className="text-sm font-medium text-gray-600">Closing Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.closing_time as string || '22:00'} onChange={e => setEditGroundFormData({...editGroundFormData, closing_time: e.target.value})} /></div>
                 </div>
                 <div><label className="text-sm font-medium text-gray-600">Description</label><textarea className="w-full border rounded-lg px-3 py-2 mt-1" rows={2} value={editGroundFormData.description as string || ''} onChange={e => setEditGroundFormData({...editGroundFormData, description: e.target.value})} /></div>
-                <div><label className="text-sm font-medium text-gray-600">Amenities (comma separated)</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Floodlights,Parking,Washroom,Water" value={editGroundFormData.amenities as string || ''} onChange={e => setEditGroundFormData({...editGroundFormData, amenities: e.target.value})} /></div>
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <label className="text-sm font-medium text-purple-700 mb-2 block">Amenities</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allAmenities.map(a => (
+                      <label key={a} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs cursor-pointer border transition ${editSelectedAmenities.includes(a) ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'}`}>
+                        <input type="checkbox" className="hidden" checked={editSelectedAmenities.includes(a)} onChange={() => { const next = editSelectedAmenities.includes(a) ? editSelectedAmenities.filter(x => x !== a) : [...editSelectedAmenities, a]; setEditSelectedAmenities(next); setEditGroundFormData(prev => ({...prev, amenities: next.join(',')})); }} />
+                        {a}
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 {/* Gallery Images with Delete */}
                 {Array.isArray(showEditGroundModal.gallery_images) && (showEditGroundModal.gallery_images as Array<Record<string, unknown>>).length > 0 && (
                   <div>
