@@ -107,7 +107,7 @@ async def change_password(req: ChangePasswordRequest, user: dict = Depends(get_c
 @router.get("/me/wallet")
 async def get_wallet(user: dict = Depends(get_current_user)):
     with get_db() as db:
-        u = db.execute("SELECT wallet_balance, kyc_status, kyc_reject_reason FROM users WHERE id = ?", (user["user_id"],)).fetchone()
+        u = db.execute("SELECT wallet_balance, kyc_status, kyc_reject_reason, old_bank_account FROM users WHERE id = ?", (user["user_id"],)).fetchone()
         cashbacks = db.execute(
             "SELECT booking_id, cashback_amount, created_at FROM bookings WHERE user_id = ? AND cashback_amount > 0 ORDER BY created_at DESC",
             (user["user_id"],),
@@ -124,6 +124,7 @@ async def get_wallet(user: dict = Depends(get_current_user)):
             "balance": u["wallet_balance"],
             "kyc_status": u["kyc_status"] if "kyc_status" in u.keys() else "pending",
             "kyc_reject_reason": u["kyc_reject_reason"] if "kyc_reject_reason" in u.keys() else None,
+            "is_rekyc": bool(u["old_bank_account"]) if "old_bank_account" in u.keys() else False,
             "cashbacks": [dict(c) for c in cashbacks],
             "refunds": [dict(r) for r in refunds],
             "withdrawals": [dict(w) for w in withdrawals],
@@ -221,11 +222,13 @@ async def withdraw_money(req: WithdrawRequest, user: dict = Depends(get_current_
     if req.amount < 100:
         raise HTTPException(status_code=400, detail="Minimum withdrawal is Rs.100")
     with get_db() as db:
-        u = db.execute("SELECT wallet_balance, kyc_status, kyc_reject_reason FROM users WHERE id = ?", (user["user_id"],)).fetchone()
+        u = db.execute("SELECT wallet_balance, kyc_status, kyc_reject_reason, old_bank_account FROM users WHERE id = ?", (user["user_id"],)).fetchone()
         if u["wallet_balance"] < req.amount:
             raise HTTPException(status_code=400, detail="Insufficient balance")
         kyc = u["kyc_status"] if "kyc_status" in u.keys() else "pending"
-        if kyc not in ("verified", "approved"):
+        is_rekyc = bool(u["old_bank_account"]) if "old_bank_account" in u.keys() else False
+        # Allow withdrawals if KYC is verified/approved, OR if this is a Re-KYC (old bank details exist)
+        if kyc not in ("verified", "approved") and not is_rekyc:
             raise HTTPException(status_code=400, detail="KYC verification required for withdrawals. Please complete KYC first.")
         charge = round(req.amount * 0.03, 2)
         net = req.amount - charge
