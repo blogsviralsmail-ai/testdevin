@@ -316,7 +316,11 @@ async def get_kyc_details(user: dict = Depends(get_current_user)):
 
 
 # BUG-009 FIX: KYC document file upload endpoint
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "kyc")
+# Use /data/uploads/kyc if /data exists (production VPS with nginx alias), else fallback to local uploads/kyc
+if os.path.exists("/data/uploads"):
+    UPLOAD_DIR = "/data/uploads/kyc"
+else:
+    UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "kyc")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
