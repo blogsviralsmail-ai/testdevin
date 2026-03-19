@@ -395,6 +395,10 @@ async def delete_student(sid: int, user: dict = Depends(require_admin)):
     # Delete center-related records
     conn.execute("DELETE FROM center_commissions WHERE student_id = ?", (sid,))
     conn.execute("DELETE FROM center_fee_payments WHERE student_id = ?", (sid,))
+    try:
+        conn.execute("DELETE FROM commission_ledger WHERE student_id = ?", (sid,))
+    except Exception:
+        pass
     # Delete user-related records (conversations, chat_messages, notifications, password_reset_tokens)
     if student and student["user_id"]:
         uid = student["user_id"]
@@ -606,6 +610,10 @@ async def bulk_delete_students(data: dict, user: dict = Depends(require_admin)):
         pass
     try:
         conn.execute(f"DELETE FROM center_fee_payments WHERE student_id IN ({placeholders})", ids)
+    except Exception:
+        pass
+    try:
+        conn.execute(f"DELETE FROM commission_ledger WHERE student_id IN ({placeholders})", ids)
     except Exception:
         pass
     # Get user_ids before deleting students (to clean up user accounts)
