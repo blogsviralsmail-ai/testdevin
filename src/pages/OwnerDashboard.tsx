@@ -43,6 +43,7 @@ export default function OwnerDashboard() {
     const allAmenities = ['Floodlights', 'Parking', 'Washroom', 'Water', 'Changing Room', 'Canteen', 'WiFi', 'CCTV', 'Coaching', 'First Aid', 'Scoreboard', 'Equipment', 'Nets', 'Multiple Pitches', 'Garden', 'AC', 'Seating', 'Music System'];
   const [ownerListSearch, setOwnerListSearch] = useState('');
   const [, _setWallet] = useState<Record<string, unknown> | null>(null);
+  const [ownerWithdrawals, setOwnerWithdrawals] = useState<Record<string, unknown>[]>([]);
   const [withdrawAmt, setWithdrawAmt] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNo, setAccountNo] = useState('');
@@ -153,6 +154,7 @@ export default function OwnerDashboard() {
   const loadData = () => {
     api.getOwnerDashboard().then(setData).catch(() => navigate('/login')).finally(() => setLoading(false));
     api.getWallet().then(_setWallet).catch(() => {});
+    api.getOwnerWallet().then((w: Record<string, unknown>) => { if (w && Array.isArray(w.withdrawals)) setOwnerWithdrawals(w.withdrawals as Record<string, unknown>[]); }).catch(() => {});
     api.getProfile().then(p => { setOwnerProfile(p); setOwnerKycStatus(String(p.kyc_status || 'none')); if(p.bank_name && !bankName) setBankName(String(p.bank_name)); if(p.bank_account && !accountNo) setAccountNo(String(p.bank_account)); if(p.bank_ifsc && !ifsc) setIfsc(String(p.bank_ifsc)); if(p.upi_id && !upiId) setUpiId(String(p.upi_id)); if(p.kyc_doc_type && !kycDoc) setKycDoc(String(p.kyc_doc_type)); }).catch(() => {});
   };
 
@@ -888,16 +890,24 @@ export default function OwnerDashboard() {
                   <p className="text-xs text-yellow-800"><strong>Note:</strong> Settlements are processed weekly. Commission applies on all bookings (online + cash) except Self Bookings (0% commission).</p>
                 </div>
 
-                {/* Transaction Ledger */}
+                {/* Transaction Ledger - Combined Bookings + Withdrawals */}
                 <div className="bg-white rounded-2xl shadow-sm border">
                   <div className="p-4 border-b">
                     <div className="flex items-center justify-between mb-2">
                       <h2 className="font-bold text-gray-800">Transaction Ledger</h2>
                       <div className="flex gap-2">
-                        <button onClick={() => ownerExportCSV('settlement.csv', ['User','Phone','Ground','Date','Time','Total','Online','Cash','Commission'], data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => [String(b.user_name),String(b.user_phone),String(b.ground_name),String(b.booking_date),String(b.start_time)+'-'+String(b.end_time),'Rs.'+String(b.total_amount),String(b.payment_mode)!=='cash'?'Rs.'+String(b.token_amount):'-',String(b.payment_mode)==='cash'?'Rs.'+String(b.total_amount):'-','Rs.'+String(Math.round(Number(b.total_amount)*10/100))]))} className="text-xs text-green-600 flex items-center gap-1 bg-green-50 px-2 py-1 rounded-lg hover:bg-green-100">
+                        <button onClick={() => {
+                          const bookingRows = data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => ['Booking',String(b.user_name),String(b.user_phone),String(b.ground_name),String(b.booking_date),String(b.start_time)+'-'+String(b.end_time),String(b.status),'Rs.'+String(b.total_amount),String(b.payment_mode)!=='cash'?'Rs.'+String(b.token_amount):'-',String(b.payment_mode)==='cash'?'Rs.'+String(b.total_amount):'-','Rs.'+String(Math.round(Number(b.total_amount)*10/100))]);
+                          const withdrawalRows = ownerWithdrawals.map(w => ['Withdrawal','-','-','-',String(w.created_at || '').split('T')[0],'-',String(w.status),'Rs.'+String(w.amount),'Rs.'+String(w.charge || 0),'Rs.'+String(w.net_amount),'-']);
+                          ownerExportCSV('transaction_ledger.csv', ['Type','User','Phone','Ground','Date','Time','Status','Amount','Online/Charge','Cash/Net','Commission'], [...bookingRows, ...withdrawalRows]);
+                        }} className="text-xs text-green-600 flex items-center gap-1 bg-green-50 px-2 py-1 rounded-lg hover:bg-green-100">
                           <Download size={12} /> CSV
                         </button>
-                        <button onClick={() => ownerExportPDF('Settlement Ledger', ['User','Phone','Ground','Date','Total','Commission'], data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => [String(b.user_name),String(b.user_phone),String(b.ground_name),String(b.booking_date),'Rs.'+String(b.total_amount),String(b.booking_type)==='owner_self'?'N/A':'Rs.'+String(Math.round(Number(b.total_amount)*10/100))]))} className="text-xs text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100">
+                        <button onClick={() => {
+                          const bookingRows = data!.recent_bookings.filter(b => b.status !== 'cancelled').map(b => ['Booking',String(b.user_name),String(b.booking_date),String(b.status),'Rs.'+String(b.total_amount),String(b.booking_type)==='owner_self'?'N/A':'Rs.'+String(Math.round(Number(b.total_amount)*10/100))]);
+                          const withdrawalRows = ownerWithdrawals.map(w => ['Withdrawal','-',String(w.created_at || '').split('T')[0],String(w.status),'Rs.'+String(w.amount),'-']);
+                          ownerExportPDF('Transaction Ledger', ['Type','User','Date','Status','Amount','Commission'], [...bookingRows, ...withdrawalRows]);
+                        }} className="text-xs text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100">
                           <Download size={12} /> PDF
                         </button>
                       </div>
@@ -905,22 +915,50 @@ export default function OwnerDashboard() {
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-50"><tr><th className="p-3 text-left">User</th><th className="p-3">Phone</th><th className="p-3">Ground</th><th className="p-3">Date</th><th className="p-3">Time</th><th className="p-3">Status</th><th className="p-3">Total</th><th className="p-3">Online</th><th className="p-3">Cash</th><th className="p-3">Commission</th></tr></thead>
+                      <thead className="bg-gray-50"><tr><th className="p-3 text-left">Type</th><th className="p-3">User</th><th className="p-3">Ground</th><th className="p-3">Date</th><th className="p-3">Time</th><th className="p-3">Status</th><th className="p-3">Amount</th><th className="p-3">Online/Charge</th><th className="p-3">Cash/Net</th><th className="p-3">Commission</th></tr></thead>
                       <tbody>
-                        {data.recent_bookings.filter((b: Record<string, unknown>) => b.status !== 'cancelled').map((b: Record<string, unknown>) => (
-                          <tr key={b.id as number} className={`border-t hover:bg-gray-50 ${String(b.status) === 'no_show' ? 'bg-red-50' : ''}`}>
-                            <td className="p-3 font-medium">{b.user_name as string}</td>
-                            <td className="p-3 text-xs text-blue-600">{String(b.user_phone || '-')}</td>
-                            <td className="p-3 text-xs text-gray-500">{b.ground_name as string}</td>
-                            <td className="p-3 text-center text-xs">{b.booking_date as string}</td>
-                            <td className="p-3 text-center text-xs">{String(b.start_time || '')}-{String(b.end_time || '')}</td>
-                            <td className="p-3 text-center">{String(b.status) === 'no_show' ? <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">Not Attended</span> : <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">{String(b.status)}</span>}</td>
-                            <td className="p-3 text-center font-bold text-green-600">Rs.{b.total_amount as number}</td>
-                            <td className="p-3 text-center text-blue-600">{String(b.payment_mode) !== 'cash' ? `Rs.${b.token_amount as number}` : '-'}</td>
-                            <td className="p-3 text-center text-orange-500">{String(b.status) === 'no_show' ? <span className="text-gray-400">Rs.0</span> : String(b.payment_mode) === 'cash' ? `Rs.${b.total_amount as number}` : (b.remaining_amount as number) > 0 ? `Rs.${b.remaining_amount}` : '-'}</td>
-                            <td className="p-3 text-center text-red-500 font-medium">{String(b.booking_type) === 'owner_self' ? <span className="text-gray-400">N/A</span> : String(b.status) === 'no_show' ? `Rs.${Math.round((b.token_amount as number) * 10 / 100)}` : `Rs.${Math.round((b.total_amount as number) * 10 / 100)}`}</td>
-                          </tr>
-                        ))}
+                        {/* Combined & sorted by date */}
+                        {(() => {
+                          const bookingItems = data.recent_bookings.filter((b: Record<string, unknown>) => b.status !== 'cancelled').map((b: Record<string, unknown>) => ({ type: 'booking' as const, date: String(b.booking_date || ''), data: b }));
+                          const withdrawalItems = ownerWithdrawals.map((w: Record<string, unknown>) => ({ type: 'withdrawal' as const, date: String(w.created_at || '').split('T')[0], data: w }));
+                          const allItems = [...bookingItems, ...withdrawalItems].sort((a, b) => b.date.localeCompare(a.date));
+                          if (allItems.length === 0) return <tr><td colSpan={10} className="p-4 text-center text-gray-400">No transactions yet</td></tr>;
+                          return allItems.map((item, idx) => {
+                            if (item.type === 'booking') {
+                              const b = item.data;
+                              return (
+                                <tr key={`b-${b.id}`} className={`border-t hover:bg-gray-50 ${String(b.status) === 'no_show' ? 'bg-red-50' : ''}`}>
+                                  <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Booking</span></td>
+                                  <td className="p-3 font-medium">{b.user_name as string}<br/><span className="text-[10px] text-gray-400">{String(b.user_phone || '')}</span></td>
+                                  <td className="p-3 text-xs text-gray-500">{b.ground_name as string}</td>
+                                  <td className="p-3 text-center text-xs">{b.booking_date as string}</td>
+                                  <td className="p-3 text-center text-xs">{String(b.start_time || '')}-{String(b.end_time || '')}</td>
+                                  <td className="p-3 text-center">{String(b.status) === 'no_show' ? <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">Not Attended</span> : <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">{String(b.status)}</span>}</td>
+                                  <td className="p-3 text-center font-bold text-green-600">Rs.{b.total_amount as number}</td>
+                                  <td className="p-3 text-center text-blue-600">{String(b.payment_mode) !== 'cash' ? `Rs.${b.token_amount as number}` : '-'}</td>
+                                  <td className="p-3 text-center text-orange-500">{String(b.status) === 'no_show' ? <span className="text-gray-400">Rs.0</span> : String(b.payment_mode) === 'cash' ? `Rs.${b.total_amount as number}` : (b.remaining_amount as number) > 0 ? `Rs.${b.remaining_amount}` : '-'}</td>
+                                  <td className="p-3 text-center text-red-500 font-medium">{String(b.booking_type) === 'owner_self' ? <span className="text-gray-400">N/A</span> : String(b.status) === 'no_show' ? `Rs.${Math.round((b.token_amount as number) * 10 / 100)}` : `Rs.${Math.round((b.total_amount as number) * 10 / 100)}`}</td>
+                                </tr>
+                              );
+                            } else {
+                              const w = item.data;
+                              return (
+                                <tr key={`w-${w.id || idx}`} className="border-t hover:bg-orange-50/50">
+                                  <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Withdrawal</span></td>
+                                  <td className="p-3 text-gray-400 text-xs" colSpan={1}>-</td>
+                                  <td className="p-3 text-gray-400 text-xs">-</td>
+                                  <td className="p-3 text-center text-xs">{String(w.created_at || '').split('T')[0]}</td>
+                                  <td className="p-3 text-center text-xs">-</td>
+                                  <td className="p-3 text-center"><span className={`text-xs px-2 py-1 rounded-full font-medium ${w.status === 'completed' ? 'bg-green-100 text-green-700' : w.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{String(w.status)}</span></td>
+                                  <td className="p-3 text-center font-bold text-orange-600">-Rs.{Number(w.amount).toLocaleString()}</td>
+                                  <td className="p-3 text-center text-red-500">Rs.{Number(w.charge || 0).toFixed(2)}</td>
+                                  <td className="p-3 text-center text-green-600 font-medium">Rs.{Number(w.net_amount || 0).toFixed(2)}</td>
+                                  <td className="p-3 text-center text-gray-400">-</td>
+                                </tr>
+                              );
+                            }
+                          });
+                        })()}
                       </tbody>
                     </table>
                   </div>

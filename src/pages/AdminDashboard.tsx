@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   const [testEmailAddr, setTestEmailAddr] = useState('');
   const [customizeSettings, setCustomizeSettings] = useState<Record<string, string>>({});
   const [withdrawalFilter, setWithdrawalFilter] = useState<'all' | 'pending' | 'completed' | 'rejected'>('all');
+  const [withdrawalRoleFilter, setWithdrawalRoleFilter] = useState<'all' | 'owner' | 'user'>('all');
   const [editingGateway, setEditingGateway] = useState<number | null>(null);
   // V13 new state
   const [blogPosts, setBlogPosts] = useState<Array<Record<string, unknown>>>([]);
@@ -1313,6 +1314,15 @@ export default function AdminDashboard() {
                     <div><p className="text-sm text-gray-500">Total Amount</p><p className="text-2xl font-bold text-purple-600">Rs.{withdrawals.reduce((s, w) => s + (w.amount as number || 0), 0).toLocaleString()}</p></div>
                   </div>
                 </div>
+                {/* Role Tabs - Owner / Customer */}
+                <div className="flex gap-2 mb-3">
+                  {(['all', 'owner', 'user'] as const).map(r => (
+                    <button key={r} onClick={() => { setWithdrawalRoleFilter(r); setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${withdrawalRoleFilter === r ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
+                      {r === 'all' ? `All (${withdrawals.length})` : r === 'owner' ? `Owner (${withdrawals.filter(w => w.user_role === 'owner').length})` : `Customer (${withdrawals.filter(w => w.user_role !== 'owner').length})`}
+                    </button>
+                  ))}
+                </div>
+                {/* Status Tabs */}
                 <div className="flex gap-2 mb-4">
                   {(['all', 'pending', 'completed', 'rejected'] as const).map(f => (
                     <button key={f} onClick={() => { setWithdrawalFilter(f); setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${withdrawalFilter === f ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>{f === 'all' ? 'All' : f === 'completed' ? 'Approved' : f}</button>
@@ -1334,13 +1344,15 @@ export default function AdminDashboard() {
                 )}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = withdrawals.filter(w => { if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false; if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false; return true; }).map(w => w.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = withdrawals.filter(w => { if (withdrawalRoleFilter !== 'all' && ((withdrawalRoleFilter === 'owner' && w.user_role !== 'owner') || (withdrawalRoleFilter === 'user' && w.user_role === 'owner'))) return false; if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false; if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false; return true; }).map(w => w.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
                     <tbody>
                       {sortData(withdrawals.filter(w => {
+                        if (withdrawalRoleFilter !== 'all' && ((withdrawalRoleFilter === 'owner' && w.user_role !== 'owner') || (withdrawalRoleFilter === 'user' && w.user_role === 'owner'))) return false;
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
                         return true;
                       }), withdrawalsSortBy, withdrawalsSortOrder).length === 0 ? <tr><td colSpan={11} className="p-4 text-center text-gray-400">No withdrawal requests</td></tr> : sortData(withdrawals.filter(w => {
+                        if (withdrawalRoleFilter !== 'all' && ((withdrawalRoleFilter === 'owner' && w.user_role !== 'owner') || (withdrawalRoleFilter === 'user' && w.user_role === 'owner'))) return false;
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
                         return true;
