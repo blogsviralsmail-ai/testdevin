@@ -102,6 +102,8 @@ export default function AdminDashboard() {
 
   const changeAdminTab = (t: AdminTabType) => {
     setTab(t);
+    setSelectedBulkIds(new Set());
+    setBulkSelectAll(false);
     navigate('/admin/' + t, { replace: true });
   };
 
@@ -729,10 +731,24 @@ export default function AdminDashboard() {
                   <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
                   <h4 className="font-bold text-gray-700 text-lg">Active Grounds ({grounds.filter(g => g.is_active).length})</h4>
                 </div>
+                {/* Bulk Action Bar - Grounds */}
+                {selectedBulkIds.size > 0 && (
+                  <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl p-3 mb-3 flex items-center justify-between animate-in">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-red-300 text-red-600" />
+                      <span className="text-sm font-semibold text-red-700">{selectedBulkIds.size} ground(s) selected</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => { if (!confirm(`Delete ${selectedBulkIds.size} ground(s)? This cannot be undone!`)) return; try { await api.bulkDeleteGrounds(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm transition-all"><Trash2 size={14}/> Delete Selected</button>
+                      <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50 transition-all">Cancel</button>
+                    </div>
+                  </div>
+                )}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                        <th className="p-4 text-center w-10"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const activeIds = grounds.filter(g => g.is_active).map(g => g.id as number); setSelectedBulkIds(new Set(activeIds)); } else { setSelectedBulkIds(new Set()); } }} /></th>
                         <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ground</th>
                         <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
                         <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
@@ -752,7 +768,8 @@ export default function AdminDashboard() {
                         if (groundsCityFilter !== 'all' && String(g.city) !== groundsCityFilter) return false;
                         return true;
                       }), groundsSortBy, groundsSortOrder).map(g => (
-                        <tr key={g.id as number} className="hover:bg-purple-50/30 transition-colors">
+                        <tr key={g.id as number} className={`hover:bg-purple-50/30 transition-colors ${selectedBulkIds.has(g.id as number) ? 'bg-purple-50/50' : ''}`}>
+                          <td className="p-4 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={selectedBulkIds.has(g.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(g.id as number); else next.delete(g.id as number); setSelectedBulkIds(next); setBulkSelectAll(next.size === grounds.filter(gg => gg.is_active).length); }} /></td>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0"><MapPin size={16} className="text-purple-600" /></div>
@@ -1100,19 +1117,33 @@ export default function AdminDashboard() {
               </div>
               <div className="flex gap-2 mb-4">
                 {['all','admin','owner','user'].map(r => (
-                  <button key={r} onClick={async () => { setUserRoleFilter(r); try { setUsers(await api.getAdminUsers(r !== 'all' ? r : undefined)); } catch { /* */ } }} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${userRoleFilter === r ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border hover:border-purple-300'}`}>{r === 'all' ? 'All Users' : r === 'user' ? 'Customers' : r + 's'}</button>
+                  <button key={r} onClick={async () => { setUserRoleFilter(r); setSelectedBulkIds(new Set()); setBulkSelectAll(false); try { setUsers(await api.getAdminUsers(r !== 'all' ? r : undefined)); } catch { /* */ } }} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${userRoleFilter === r ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border hover:border-purple-300'}`}>{r === 'all' ? 'All Users' : r === 'user' ? 'Customers' : r + 's'}</button>
                 ))}
               </div>
+              {/* Bulk Action Bar - Users */}
+              {selectedBulkIds.size > 0 && (
+                <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-red-300 text-red-600" />
+                    <span className="text-sm font-semibold text-red-700">{selectedBulkIds.size} user(s) selected</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={async () => { if (!confirm(`Delete ${selectedBulkIds.size} user(s)? This cannot be undone!`)) return; try { await api.bulkDeleteUsers(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm"><Trash2 size={14}/> Delete Selected</button>
+                    <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50">Cancel</button>
+                  </div>
+                </div>
+              )}
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50"><tr><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">KYC</th><th className="p-3">Wallet</th><th className="p-3">Bookings</th><th className="p-3">Actions</th></tr></thead>
+                  <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = users.filter(u => { if (usersSearch && !String(u.name).toLowerCase().includes(usersSearch.toLowerCase()) && !String(u.phone).includes(usersSearch)) return false; if (usersKycFilter !== 'all' && String(u.kyc_status || 'none') !== usersKycFilter) return false; return true; }).map(u => u.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">KYC</th><th className="p-3">Wallet</th><th className="p-3">Bookings</th><th className="p-3">Actions</th></tr></thead>
                   <tbody>
                     {sortData(users.filter(u => {
                         if (usersSearch && !String(u.name).toLowerCase().includes(usersSearch.toLowerCase()) && !String(u.phone).includes(usersSearch) && !String(u.email).toLowerCase().includes(usersSearch.toLowerCase())) return false;
                         if (usersKycFilter !== 'all' && String(u.kyc_status || 'none') !== usersKycFilter) return false;
                         return true;
                       }), usersSortBy, usersSortOrder).map(u => (
-                      <tr key={u.id as number} className="border-t hover:bg-gray-50">
+                      <tr key={u.id as number} className={`border-t hover:bg-gray-50 ${selectedBulkIds.has(u.id as number) ? 'bg-purple-50/50' : ''}`}>
+                        <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={selectedBulkIds.has(u.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(u.id as number); else next.delete(u.id as number); setSelectedBulkIds(next); }} /></td>
                         <td className="p-3"><button onClick={() => changeAdminTab('withdrawals')} className="text-blue-600 hover:underline font-medium">{u.name as string}</button> <span className="text-xs bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full">Rs.{u.wallet_balance as number}</span></td>
                         <td className="p-3 text-gray-500 text-xs">{u.phone as string}</td>
                         <td className="p-3 text-gray-500 text-xs">{(u.email as string) || '-'}</td>
@@ -1284,23 +1315,38 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex gap-2 mb-4">
                   {(['all', 'pending', 'completed', 'rejected'] as const).map(f => (
-                    <button key={f} onClick={() => setWithdrawalFilter(f)} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${withdrawalFilter === f ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>{f === 'all' ? 'All' : f === 'completed' ? 'Approved' : f}</button>
+                    <button key={f} onClick={() => { setWithdrawalFilter(f); setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${withdrawalFilter === f ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>{f === 'all' ? 'All' : f === 'completed' ? 'Approved' : f}</button>
                   ))}
                 </div>
+                {/* Bulk Action Bar - Withdrawals */}
+                {selectedBulkIds.size > 0 && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-blue-300 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-700">{selectedBulkIds.size} withdrawal(s) selected</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => { if (!confirm(`Approve ${selectedBulkIds.size} withdrawal(s)?`)) return; try { await api.bulkApproveWithdrawals(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 flex items-center gap-1.5 shadow-sm"><CheckCircle size={14}/> Approve All</button>
+                      <button onClick={async () => { if (!confirm(`Reject ${selectedBulkIds.size} withdrawal(s)? Amount will be returned to wallets.`)) return; try { await api.bulkRejectWithdrawals(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm"><XCircle size={14}/> Reject All</button>
+                      <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50">Cancel</button>
+                    </div>
+                  </div>
+                )}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = withdrawals.filter(w => { if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false; if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false; return true; }).map(w => w.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
                     <tbody>
                       {sortData(withdrawals.filter(w => {
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
                         return true;
-                      }), withdrawalsSortBy, withdrawalsSortOrder).length === 0 ? <tr><td colSpan={10} className="p-4 text-center text-gray-400">No withdrawal requests</td></tr> : sortData(withdrawals.filter(w => {
+                      }), withdrawalsSortBy, withdrawalsSortOrder).length === 0 ? <tr><td colSpan={11} className="p-4 text-center text-gray-400">No withdrawal requests</td></tr> : sortData(withdrawals.filter(w => {
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
                         return true;
                       }), withdrawalsSortBy, withdrawalsSortOrder).map(w => (
-                        <tr key={w.id as number} className="border-t hover:bg-gray-50">
+                        <tr key={w.id as number} className={`border-t hover:bg-gray-50 ${selectedBulkIds.has(w.id as number) ? 'bg-blue-50/50' : ''}`}>
+                          <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={selectedBulkIds.has(w.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(w.id as number); else next.delete(w.id as number); setSelectedBulkIds(next); }} /></td>
                           <td className="p-3"><p className="font-medium">{w.user_name as string || `User #${w.user_id}`}</p><p className="text-xs text-gray-400">{w.user_phone as string}</p></td>
                           <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${(w.user_role as string) === 'owner' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{w.user_role as string}</span></td>
                           <td className="p-3 text-center">Rs.{(w.amount as number)?.toLocaleString()}</td>
@@ -1446,25 +1492,40 @@ export default function AdminDashboard() {
                 {/* KYC Filter Tabs */}
                 <div className="flex gap-2 mb-4">
                   {(['all', 'pending', 'verified', 'rejected'] as const).map(f => (
-                    <button key={f} onClick={() => setKycFilter(f)} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${kycFilter === f ? (f === 'pending' ? 'bg-orange-600 text-white' : f === 'verified' ? 'bg-green-600 text-white' : f === 'rejected' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white') : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
+                    <button key={f} onClick={() => { setKycFilter(f); setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${kycFilter === f ? (f === 'pending' ? 'bg-orange-600 text-white' : f === 'verified' ? 'bg-green-600 text-white' : f === 'rejected' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white') : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
                       {f.charAt(0).toUpperCase() + f.slice(1)} ({kycList.filter(k => f === 'all' || k.kyc_status === f).length})
                     </button>
                   ))}
                 </div>
+                {/* Bulk Action Bar - KYC */}
+                {selectedBulkIds.size > 0 && (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={true} readOnly className="w-4 h-4 rounded border-green-300 text-green-600" />
+                      <span className="text-sm font-semibold text-green-700">{selectedBulkIds.size} KYC(s) selected</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => { if (!confirm(`Verify ${selectedBulkIds.size} KYC(s)?`)) return; try { await api.bulkVerifyKYC(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 flex items-center gap-1.5 shadow-sm"><CheckCircle size={14}/> Verify All</button>
+                      <button onClick={async () => { if (!confirm(`Reject ${selectedBulkIds.size} KYC(s)?`)) return; try { await api.bulkRejectKYC(Array.from(selectedBulkIds) as number[]); setSelectedBulkIds(new Set()); setBulkSelectAll(false); loadTab(); } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 flex items-center gap-1.5 shadow-sm"><XCircle size={14}/> Reject All</button>
+                      <button onClick={() => { setSelectedBulkIds(new Set()); setBulkSelectAll(false); }} className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium border hover:bg-gray-50">Cancel</button>
+                    </div>
+                  </div>
+                )}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Role</th><th className="p-3">KYC Status</th><th className="p-3">Doc Type</th><th className="p-3">Document</th><th className="p-3">Bank Details</th><th className="p-3">UPI ID</th><th className="p-3">Actions</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = kycList.filter(k => { if (kycFilter !== 'all' && k.kyc_status !== kycFilter) return false; if (kycSearch && !String(k.name).toLowerCase().includes(kycSearch.toLowerCase()) && !String(k.phone).includes(kycSearch)) return false; return true; }).map(k => k.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">Name</th><th className="p-3">Phone</th><th className="p-3">Role</th><th className="p-3">KYC Status</th><th className="p-3">Doc Type</th><th className="p-3">Document</th><th className="p-3">Bank Details</th><th className="p-3">UPI ID</th><th className="p-3">Actions</th></tr></thead>
                     <tbody>
                       {sortData(kycList.filter(k => {
                         if (kycFilter !== 'all' && k.kyc_status !== kycFilter) return false;
                         if (kycSearch && !String(k.name).toLowerCase().includes(kycSearch.toLowerCase()) && !String(k.phone).includes(kycSearch)) return false;
                         return true;
-                      }), kycSortBy, kycSortOrder).length === 0 ? <tr><td colSpan={9} className="p-4 text-center text-gray-400">No KYC submissions in this category</td></tr> : sortData(kycList.filter(k => {
+                      }), kycSortBy, kycSortOrder).length === 0 ? <tr><td colSpan={10} className="p-4 text-center text-gray-400">No KYC submissions in this category</td></tr> : sortData(kycList.filter(k => {
                         if (kycFilter !== 'all' && k.kyc_status !== kycFilter) return false;
                         if (kycSearch && !String(k.name).toLowerCase().includes(kycSearch.toLowerCase()) && !String(k.phone).includes(kycSearch)) return false;
                         return true;
                       }), kycSortBy, kycSortOrder).map(k => (
-                        <tr key={k.id as number} className="border-t hover:bg-gray-50">
+                        <tr key={k.id as number} className={`border-t hover:bg-gray-50 ${selectedBulkIds.has(k.id as number) ? 'bg-green-50/50' : ''}`}>
+                          <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-green-600" checked={selectedBulkIds.has(k.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(k.id as number); else next.delete(k.id as number); setSelectedBulkIds(next); }} /></td>
                           <td className="p-3 font-medium">{k.name as string}</td>
                           <td className="p-3 text-xs">{k.phone as string}</td>
                           <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded-full ${k.role === 'owner' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{k.role as string}</span></td>

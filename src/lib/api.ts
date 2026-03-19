@@ -378,6 +378,13 @@ export const api = {
   getMySplitPayments: () => fetchAPI('/api/split-payments'),
   markSplitMemberPaid: (splitId: number, memberId: number) => fetchAPI(`/api/split-payments/${splitId}/member/${memberId}/paid`, { method: 'PUT' }),
   adminGetSplitPayments: () => fetchAPI('/api/admin/split-payments'),
+  // Bulk Operations
+  bulkDeleteGrounds: (ids: number[]) => fetchAPI('/api/admin/grounds/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
+  bulkDeleteUsers: (ids: number[]) => fetchAPI('/api/admin/users/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
+  bulkVerifyKYC: (ids: number[]) => fetchAPI('/api/admin/kyc/bulk-verify', { method: 'POST', body: JSON.stringify({ ids }) }),
+  bulkRejectKYC: (ids: number[]) => fetchAPI('/api/admin/kyc/bulk-reject', { method: 'POST', body: JSON.stringify({ ids }) }),
+  bulkApproveWithdrawals: (ids: number[]) => fetchAPI('/api/admin/withdrawals/bulk-approve', { method: 'POST', body: JSON.stringify({ ids }) }),
+  bulkRejectWithdrawals: (ids: number[]) => fetchAPI('/api/admin/withdrawals/bulk-reject', { method: 'POST', body: JSON.stringify({ ids }) }),
   // Re-KYC: Change bank details (user-initiated)
   submitReKYC: (data: Record<string, unknown>) => fetchAPI('/api/users/me/rekyc', { method: 'POST', body: JSON.stringify(data) }),
   getMyKycDetails: () => fetchAPI('/api/users/me/kyc-details'),
