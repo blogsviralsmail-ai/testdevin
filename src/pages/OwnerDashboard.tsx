@@ -32,8 +32,12 @@ export default function OwnerDashboard() {
   const [cancelPopup, setCancelPopup] = useState<Record<string, unknown> | null>(null);
   const [rateUserId, setRateUserId] = useState<string | null>(null);
   const [userRating, setUserRating] = useState(0);
-  const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '' });
-  const [groundPhoto, setGroundPhoto] = useState<File | null>(null);
+  const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '', token_money_percent: 100 });
+  const [groundPhotos, setGroundPhotos] = useState<File[]>([]);
+  const [groundPhotoPreviews, setGroundPhotoPreviews] = useState<string[]>([]);
+  const [successPopup, setSuccessPopup] = useState<string | null>(null);
+  const [errorPopup, setErrorPopup] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedAmenities, setSelectedAmenities] = useState<string[]>(['Floodlights', 'Parking']);
     const [editSelectedAmenities, setEditSelectedAmenities] = useState<string[]>([]);
     const allAmenities = ['Floodlights', 'Parking', 'Washroom', 'Water', 'Changing Room', 'Canteen', 'WiFi', 'CCTV', 'Coaching', 'First Aid', 'Scoreboard', 'Equipment', 'Nets', 'Multiple Pitches', 'Garden', 'AC', 'Seating', 'Music System'];
@@ -461,12 +465,12 @@ export default function OwnerDashboard() {
                       className={`text-sm px-4 py-2 rounded-lg ${selectedGround === (g.id as number) ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
                       {selectedGround === (g.id as number) ? 'Viewing Slots' : 'Manage Slots'}
                     </button>
-                    <button onClick={async () => { try { await api.toggleOwnerGround(g.id as number); loadData(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed to toggle'); } }}
+                    <button disabled={isSubmitting} onClick={async () => { if (isSubmitting) return; setIsSubmitting(true); try { await api.toggleOwnerGround(g.id as number); loadData(); } catch(e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed to toggle'); } finally { setIsSubmitting(false); } }}
                       className={`text-sm px-4 py-2 rounded-lg flex items-center gap-1 ${Number(g.is_active) ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}>
                       {Number(g.is_active) ? '🟢 Active' : '🔴 Inactive'}
                     </button>
-                    <button onClick={() => { setShowEditGroundModal(g); const amenitiesStr = (g.amenities as string) || ''; setEditSelectedAmenities(amenitiesStr ? amenitiesStr.split(',').map((a: string) => a.trim()).filter(Boolean) : []); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '' }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
-                    <button onClick={async () => { if (!confirm('Request to delete this ground? Admin approval needed.')) return; try { await api.requestGroundChange({ ground_id: g.id as number, changes: { delete: true } }); alert('Delete request sent to admin for approval!'); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 flex items-center gap-1"><Trash2 size={14}/> Delete</button>
+                    <button onClick={() => { setShowEditGroundModal(g); const amenitiesStr = (g.amenities as string) || ''; setEditSelectedAmenities(amenitiesStr ? amenitiesStr.split(',').map((a: string) => a.trim()).filter(Boolean) : []); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '', token_money_percent: g.token_money_percent || 100 }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
+                    <button disabled={isSubmitting} onClick={async () => { if (!confirm('Are you sure you want to delete this ground? This cannot be undone.')) return; setIsSubmitting(true); try { await api.deleteOwnerGround(g.id as number); setSuccessPopup('Ground deleted successfully!'); loadData(); } catch(e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed'); } finally { setIsSubmitting(false); } }} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 flex items-center gap-1 disabled:opacity-50"><Trash2 size={14}/> Delete</button>
                   </div>
                 </div>
               ))}
@@ -802,10 +806,13 @@ export default function OwnerDashboard() {
                 <div><label className="text-sm font-medium text-gray-600">City</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.city} onChange={e => setNewGround({...newGround, city: e.target.value})} /></div>
                 <div><label className="text-sm font-medium text-gray-600">Ground Type</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.ground_type} onChange={e => setNewGround({...newGround, ground_type: e.target.value})}><option value="box">Box Cricket</option><option value="turf">Turf</option><option value="open">Open Ground</option><option value="indoor">Indoor</option></select></div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-sm font-medium text-gray-600">Weekday Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.weekday_price} onChange={e => setNewGround({...newGround, weekday_price: parseInt(e.target.value) || 0})} /></div>
                 <div><label className="text-sm font-medium text-gray-600">Weekend Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.weekend_price} onChange={e => setNewGround({...newGround, weekend_price: parseInt(e.target.value) || 0})} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-sm font-medium text-gray-600">Evening Extra</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.evening_extra} onChange={e => setNewGround({...newGround, evening_extra: parseInt(e.target.value) || 0})} /></div>
+                <div><label className="text-sm font-medium text-gray-600">Token Money %</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.token_money_percent} onChange={e => setNewGround({...newGround, token_money_percent: parseInt(e.target.value)})}><option value={30}>30%</option><option value={50}>50%</option><option value={100}>100%</option></select><p className="text-xs text-gray-400 mt-0.5">Agreement ke according token money %</p></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-sm font-medium text-gray-600">Opening Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newGround.opening_time} onChange={e => setNewGround({...newGround, opening_time: e.target.value})} /></div>
@@ -826,8 +833,29 @@ export default function OwnerDashboard() {
               {/* Ground Photo Upload */}
               <div>
                 <label className="text-sm font-medium text-gray-600">Upload Photos (multiple allowed)</label>
-                <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 mt-1 text-sm" onChange={e => { const f = e.target.files?.[0]; if(f) setGroundPhoto(f); }} />
-                {groundPhoto && <p className="text-xs text-green-600 mt-1">Selected: {groundPhoto.name}</p>}
+                <input type="file" accept="image/*" multiple className="w-full border rounded-lg px-3 py-2 mt-1 text-sm" onChange={e => {
+                  const files = Array.from(e.target.files || []);
+                  setGroundPhotos(prev => [...prev, ...files]);
+                  files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = () => setGroundPhotoPreviews(prev => [...prev, reader.result as string]);
+                    reader.readAsDataURL(file);
+                  });
+                }} />
+                {groundPhotoPreviews.length > 0 && (
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {groundPhotoPreviews.map((preview, idx) => (
+                      <div key={idx} className="relative group">
+                        <img src={preview} alt="Preview" className="w-20 h-20 object-cover rounded-lg border-2 border-green-400" />
+                        <button type="button" onClick={() => {
+                          setGroundPhotos(prev => prev.filter((_, i) => i !== idx));
+                          setGroundPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
+                        }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-600">&times;</button>
+                        <span className="absolute bottom-0 left-0 right-0 bg-green-500 text-white text-center text-[10px] rounded-b-lg">New</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {/* GPS Location */}
               <div className="bg-blue-50 rounded-lg p-3">
@@ -840,19 +868,23 @@ export default function OwnerDashboard() {
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => { setNewGround({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '' }); setSelectedAmenities(['Floodlights', 'Parking']); setGroundPhoto(null); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
-              <button onClick={async () => {
+              <button onClick={() => { setNewGround({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '', token_money_percent: 100 }); setSelectedAmenities(['Floodlights', 'Parking']); setGroundPhotos([]); setGroundPhotoPreviews([]); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+              <button disabled={isSubmitting} onClick={async () => {
+                if (isSubmitting) return; setIsSubmitting(true);
                 try {
                   const result = await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0}) as Record<string, unknown>;
-                  // Upload photo if selected
-                  if (groundPhoto && result?.id) {
-                    await api.uploadGalleryImage(result.id as number, groundPhoto, 'Ground Photo');
+                  // Upload photos if selected
+                  if (groundPhotos.length > 0 && result?.id) {
+                    for (const photo of groundPhotos) {
+                      await api.uploadGalleryImage(result.id as number, photo, 'Ground Photo');
+                    }
                   }
-                  alert('Ground submitted! Pending admin approval.');
-                  setGroundPhoto(null);
+                  setSuccessPopup('Ground submitted successfully! Pending admin approval.');
+                  setGroundPhotos([]); setGroundPhotoPreviews([]);
+                  setNewGround({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '', token_money_percent: 100 }); setSelectedAmenities(['Floodlights', 'Parking']);
                   loadData();
-                } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
-              }} className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700">Submit for Approval</button>
+                } catch (e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed'); } finally { setIsSubmitting(false); }
+              }} className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50">{isSubmitting ? 'Submitting...' : 'Submit for Approval'}</button>
             </div>
           </div>
         )}
@@ -1896,10 +1928,13 @@ export default function OwnerDashboard() {
                   <div><label className="text-sm font-medium text-gray-600">City</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.city as string || ''} onChange={e => setEditGroundFormData({...editGroundFormData, city: e.target.value})} /></div>
                   <div><label className="text-sm font-medium text-gray-600">Ground Type</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.ground_type as string || 'box'} onChange={e => setEditGroundFormData({...editGroundFormData, ground_type: e.target.value})}><option value="box">Box Cricket</option><option value="turf">Turf</option><option value="open">Open Ground</option><option value="indoor">Indoor</option></select></div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium text-gray-600">Weekday Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.weekday_price as number || 0} onChange={e => setEditGroundFormData({...editGroundFormData, weekday_price: parseInt(e.target.value)})} /></div>
                   <div><label className="text-sm font-medium text-gray-600">Weekend Price</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.weekend_price as number || 0} onChange={e => setEditGroundFormData({...editGroundFormData, weekend_price: parseInt(e.target.value)})} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium text-gray-600">Evening Extra</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.evening_extra as number || 0} onChange={e => setEditGroundFormData({...editGroundFormData, evening_extra: parseInt(e.target.value)})} /></div>
+                  <div><label className="text-sm font-medium text-gray-600">Token Money %</label><select className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.token_money_percent as number || 100} onChange={e => setEditGroundFormData({...editGroundFormData, token_money_percent: parseInt(e.target.value)})}><option value={30}>30%</option><option value={50}>50%</option><option value={100}>100%</option></select></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium text-gray-600">Opening Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.opening_time as string || '06:00'} onChange={e => setEditGroundFormData({...editGroundFormData, opening_time: e.target.value})} /></div>
@@ -1970,7 +2005,7 @@ export default function OwnerDashboard() {
                 <button onClick={async () => {
                   try {
                     const changes: Record<string, unknown> = {};
-                    const fields = ['name','address','city','weekday_price','weekend_price','evening_extra','ground_type','opening_time','closing_time','description','amenities'];
+                    const fields = ['name','address','city','weekday_price','weekend_price','evening_extra','ground_type','opening_time','closing_time','description','amenities','token_money_percent'];
                     fields.forEach(f => { if(editGroundFormData[f] !== undefined && editGroundFormData[f] !== showEditGroundModal[f]) changes[f] = editGroundFormData[f]; });
                     if(editGroundPhotos.length > 0) changes['photo_updated'] = true;
                     if(Object.keys(changes).length === 0 && editGroundPhotos.length === 0) { alert('No changes made'); return; }
