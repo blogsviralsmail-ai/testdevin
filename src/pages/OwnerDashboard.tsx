@@ -33,7 +33,7 @@ export default function OwnerDashboard() {
   const [rateUserId, setRateUserId] = useState<string | null>(null);
   const [userRating, setUserRating] = useState(0);
   const [newGround, setNewGround] = useState({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '', token_money_percent: 100 });
-  const [groundPhotos, setGroundPhotos] = useState<File[]>([]);
+  const [, setGroundPhotos] = useState<File[]>([]);
   const [groundPhotoPreviews, setGroundPhotoPreviews] = useState<string[]>([]);
   const [successPopup, setSuccessPopup] = useState<string | null>(null);
   const [errorPopup, setErrorPopup] = useState<string | null>(null);
@@ -873,10 +873,10 @@ export default function OwnerDashboard() {
                 if (isSubmitting) return; setIsSubmitting(true);
                 try {
                   const result = await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0}) as Record<string, unknown>;
-                  // Upload photos if selected
-                  if (groundPhotos.length > 0 && result?.id) {
-                    for (const photo of groundPhotos) {
-                      await api.uploadGalleryImage(result.id as number, photo, 'Ground Photo');
+                  // Upload photos if selected (use owner gallery endpoint, not admin)
+                  if (groundPhotoPreviews.length > 0 && result?.id) {
+                    for (const preview of groundPhotoPreviews) {
+                      await api.addGalleryImage({ ground_id: result.id as number, image_data: preview, caption: 'Ground Photo' });
                     }
                   }
                   setSuccessPopup('Ground submitted successfully! Pending admin approval.');
