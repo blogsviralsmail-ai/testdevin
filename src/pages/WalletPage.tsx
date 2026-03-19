@@ -40,6 +40,14 @@ export default function WalletPage() {
   const [submittingKyc, setSubmittingKyc] = useState(false);
   const [kycRejectReason, setKycRejectReason] = useState('');
   const [profileData, setProfileData] = useState<Record<string, unknown>>({});
+  const [showReKyc, setShowReKyc] = useState(false);
+  const [rekycBankName, setRekycBankName] = useState('');
+  const [rekycAccountNo, setRekycAccountNo] = useState('');
+  const [rekycIfsc, setRekycIfsc] = useState('');
+  const [rekycUpiId, setRekycUpiId] = useState('');
+  const [rekycDocType, setRekycDocType] = useState('');
+  const [submittingRekyc, setSubmittingRekyc] = useState(false);
+  const [rekycOldDetails, setRekycOldDetails] = useState<Record<string, unknown> | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; show: boolean }>({ message: '', type: 'info', show: false });
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
@@ -71,6 +79,15 @@ export default function WalletPage() {
         setProfileData(prof);
         if (prof.kyc_status) setKycStatus(String(prof.kyc_status));
         if (prof.kyc_reject_reason) setKycRejectReason(String(prof.kyc_reject_reason));
+      } catch { /* ignore */ }
+      // Load Re-KYC details (old bank details if pending)
+      try {
+        const kycDetails = await api.getMyKycDetails();
+        if (kycDetails.is_rekyc && kycDetails.old_bank_account) {
+          setRekycOldDetails({ bank_name: kycDetails.old_bank_name, bank_account: kycDetails.old_bank_account, bank_ifsc: kycDetails.old_bank_ifsc, upi_id: kycDetails.old_upi_id });
+        } else {
+          setRekycOldDetails(null);
+        }
       } catch { /* ignore */ }
     } catch (e) {
       console.error(e);
@@ -725,19 +742,111 @@ export default function WalletPage() {
                 }} className="w-full mt-4 bg-orange-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-orange-700 transition flex items-center justify-center gap-2">
                   <TrendingDown size={16} /> Withdraw Money (Balance: Rs.{balance.toLocaleString()})
                 </button>
+                <button onClick={() => { setRekycBankName(''); setRekycAccountNo(''); setRekycIfsc(''); setRekycUpiId(''); setRekycDocType(''); setShowReKyc(true); }}
+                  className="w-full mt-2 bg-white text-orange-600 border border-orange-300 py-2.5 rounded-xl font-semibold text-sm hover:bg-orange-50 transition flex items-center justify-center gap-2">
+                  <RefreshCw size={14} /> Change Bank Details (Re-KYC)
+                </button>
+              </div>
+            )}
+
+            {/* Re-KYC Modal */}
+            {showReKyc && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReKyc(false)}>
+                <div className="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2"><RefreshCw size={16} className="text-orange-600" /> Change Bank Details</h3>
+                    <button onClick={() => setShowReKyc(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-4">Naye bank details enter karein. Admin verify karega, tab tak purane details active rahenge.</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">New Bank Name *</label>
+                      <input type="text" placeholder="e.g. State Bank of India" value={rekycBankName} onChange={e => setRekycBankName(e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">New Account Number *</label>
+                      <input type="text" placeholder="Enter new account number" value={rekycAccountNo} onChange={e => setRekycAccountNo(e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">New IFSC Code *</label>
+                      <input type="text" placeholder="e.g. SBIN0001234" value={rekycIfsc} onChange={e => setRekycIfsc(e.target.value.toUpperCase())}
+                        className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">New UPI ID (Optional)</label>
+                      <input type="text" placeholder="e.g. name@upi" value={rekycUpiId} onChange={e => setRekycUpiId(e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">KYC Document Type *</label>
+                      <select value={rekycDocType} onChange={e => setRekycDocType(e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                        <option value="">Select Document</option>
+                        <option value="aadhaar">Aadhaar Card</option>
+                        <option value="pan">PAN Card</option>
+                        <option value="passport">Passport</option>
+                      </select>
+                    </div>
+                    <button onClick={async () => {
+                      if (!rekycBankName || !rekycAccountNo || !rekycIfsc || !rekycDocType) { showToast('Sab required fields fill karo', 'warning'); return; }
+                      setSubmittingRekyc(true);
+                      try {
+                        await api.submitReKYC({ bank_name: rekycBankName, account_number: rekycAccountNo, ifsc_code: rekycIfsc, upi_id: rekycUpiId, document_type: rekycDocType });
+                        showToast('Re-KYC request submitted! Admin will verify new bank details.', 'success');
+                        setShowReKyc(false);
+                        setKycStatus('pending');
+                        loadData();
+                      } catch (e: unknown) {
+                        showToast(e instanceof Error ? e.message : 'Re-KYC submission failed', 'error');
+                      }
+                      setSubmittingRekyc(false);
+                    }} disabled={submittingRekyc}
+                      className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-orange-700 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                      {submittingRekyc ? 'Submitting...' : <><Shield size={16} /> Submit Re-KYC Request</>}
+                    </button>
+                  </div>
+                  <div className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-100">
+                    <p className="text-xs text-blue-600"><Info size={12} className="inline mr-1" />Purane bank details admin approval tak active rahenge. Reject hone par purane details wapas aa jayenge.</p>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Pending - Show submitted info */}
             {kycStatus === 'pending' && (
               <div className="bg-white rounded-2xl p-5 shadow-sm border">
-                <h3 className="font-bold text-yellow-700 mb-2 flex items-center gap-2"><Shield size={16} /> KYC Under Review</h3>
-                <p className="text-xs text-gray-500 mb-3">Your KYC documents are under review. Admin will verify shortly. You will be able to withdraw once verified.</p>
-                <div className="bg-yellow-50 rounded-lg p-3 space-y-1.5 text-sm">
-                  {profileData.bank_name ? <div className="flex justify-between"><span className="text-gray-500">Bank</span><span className="font-medium">{String(profileData.bank_name)}</span></div> : null}
-                  {profileData.account_number ? <div className="flex justify-between"><span className="text-gray-500">Account</span><span className="font-medium">{String(profileData.account_number)}</span></div> : null}
-                  {profileData.ifsc_code ? <div className="flex justify-between"><span className="text-gray-500">IFSC</span><span className="font-medium">{String(profileData.ifsc_code)}</span></div> : null}
-                </div>
+                <h3 className="font-bold text-yellow-700 mb-2 flex items-center gap-2"><Shield size={16} /> {rekycOldDetails ? 'Re-KYC Under Review' : 'KYC Under Review'}</h3>
+                <p className="text-xs text-gray-500 mb-3">{rekycOldDetails ? 'Aapke naye bank details admin verify kar rahe hain. Approve hone tak purane details active hain.' : 'Your KYC documents are under review. Admin will verify shortly. You will be able to withdraw once verified.'}</p>
+                {rekycOldDetails ? (
+                  <div className="space-y-3">
+                    <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+                      <p className="text-xs font-semibold text-red-600 mb-2">Old Bank Details (Currently Active)</p>
+                      <div className="space-y-1.5 text-sm">
+                        {rekycOldDetails.bank_name ? <div className="flex justify-between"><span className="text-gray-500">Bank</span><span className="font-medium">{String(rekycOldDetails.bank_name)}</span></div> : null}
+                        {rekycOldDetails.bank_account ? <div className="flex justify-between"><span className="text-gray-500">Account</span><span className="font-medium">****{String(rekycOldDetails.bank_account).slice(-4)}</span></div> : null}
+                        {rekycOldDetails.bank_ifsc ? <div className="flex justify-between"><span className="text-gray-500">IFSC</span><span className="font-medium">{String(rekycOldDetails.bank_ifsc)}</span></div> : null}
+                        {rekycOldDetails.upi_id ? <div className="flex justify-between"><span className="text-gray-500">UPI</span><span className="font-medium">{String(rekycOldDetails.upi_id)}</span></div> : null}
+                      </div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                      <p className="text-xs font-semibold text-green-600 mb-2">New Bank Details (Pending Approval)</p>
+                      <div className="space-y-1.5 text-sm">
+                        {profileData.bank_name ? <div className="flex justify-between"><span className="text-gray-500">Bank</span><span className="font-medium">{String(profileData.bank_name)}</span></div> : null}
+                        {profileData.account_number ? <div className="flex justify-between"><span className="text-gray-500">Account</span><span className="font-medium">{String(profileData.account_number)}</span></div> : null}
+                        {profileData.ifsc_code ? <div className="flex justify-between"><span className="text-gray-500">IFSC</span><span className="font-medium">{String(profileData.ifsc_code)}</span></div> : null}
+                        {profileData.upi_id ? <div className="flex justify-between"><span className="text-gray-500">UPI</span><span className="font-medium">{String(profileData.upi_id)}</span></div> : null}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 rounded-lg p-3 space-y-1.5 text-sm">
+                    {profileData.bank_name ? <div className="flex justify-between"><span className="text-gray-500">Bank</span><span className="font-medium">{String(profileData.bank_name)}</span></div> : null}
+                    {profileData.account_number ? <div className="flex justify-between"><span className="text-gray-500">Account</span><span className="font-medium">{String(profileData.account_number)}</span></div> : null}
+                    {profileData.ifsc_code ? <div className="flex justify-between"><span className="text-gray-500">IFSC</span><span className="font-medium">{String(profileData.ifsc_code)}</span></div> : null}
+                  </div>
+                )}
               </div>
             )}
 

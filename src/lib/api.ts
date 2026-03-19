@@ -375,6 +375,9 @@ export const api = {
   getMySplitPayments: () => fetchAPI('/api/split-payments'),
   markSplitMemberPaid: (splitId: number, memberId: number) => fetchAPI(`/api/split-payments/${splitId}/member/${memberId}/paid`, { method: 'PUT' }),
   adminGetSplitPayments: () => fetchAPI('/api/admin/split-payments'),
+  // Re-KYC: Change bank details (user-initiated)
+  submitReKYC: (data: Record<string, unknown>) => fetchAPI('/api/users/me/rekyc', { method: 'POST', body: JSON.stringify(data) }),
+  getMyKycDetails: () => fetchAPI('/api/users/me/kyc-details'),
   uploadKYCDocument: async (file: File) => {
     const token = localStorage.getItem('token');
     const formData = new FormData();
