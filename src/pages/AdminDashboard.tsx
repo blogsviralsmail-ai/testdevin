@@ -1144,7 +1144,7 @@ export default function AdminDashboard() {
                       }), usersSortBy, usersSortOrder).map(u => (
                       <tr key={u.id as number} className={`border-t hover:bg-gray-50 ${selectedBulkIds.has(u.id as number) ? 'bg-purple-50/50' : ''}`}>
                         <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-purple-600" checked={selectedBulkIds.has(u.id as number)} onChange={e => { const next = new Set(selectedBulkIds); if (e.target.checked) next.add(u.id as number); else next.delete(u.id as number); setSelectedBulkIds(next); }} /></td>
-                        <td className="p-3"><button onClick={() => changeAdminTab('withdrawals')} className="text-blue-600 hover:underline font-medium">{u.name as string}</button> <span className="text-xs bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full">Rs.{u.wallet_balance as number}</span></td>
+                        <td className="p-3"><button onClick={() => changeAdminTab('withdrawals')} className="text-blue-600 hover:underline font-medium">{u.name as string}</button></td>
                         <td className="p-3 text-gray-500 text-xs">{u.phone as string}</td>
                         <td className="p-3 text-gray-500 text-xs">{(u.email as string) || '-'}</td>
                         <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : u.role === 'owner' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{u.role as string}</span></td>
