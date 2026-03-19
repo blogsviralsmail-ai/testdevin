@@ -342,6 +342,19 @@ async def create_student(data: StudentCreate, user: dict = Depends(get_current_u
         conn.execute("UPDATE students SET user_id = ? WHERE id = ?", (int(user["sub"]), sid))
         conn.commit()
     
+    # Auto-create student deal record if student has a center
+    if data.center_id:
+        total_fees = float(data.total_fees or 0) if data.total_fees else 0.0
+        try:
+            conn.execute(
+                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, 0, 0, ?)",
+                (sid, total_fees, "Auto-created on admission")
+            )
+            conn.commit()
+            print(f"[Deal] Auto-created deal for student {sid}, sub_center_fee={total_fees}")
+        except Exception as e:
+            print(f"[Deal] Failed to auto-create deal for student {sid}: {e}")
+
     # Send notification
     try:
         from app.utils.notifications import send_notification
@@ -576,8 +589,12 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
                 (sid, total_fees, "Auto-created on admission by admin")
             )
             conn.commit()
-        except Exception:
+            print(f"[Deal] Auto-created deal for student {sid}, sub_center_fee={total_fees}")
+        except Exception as e:
+            print(f"[Deal] Failed to auto-create deal for student {sid}: {e}")
             pass  # deal may already exist
+    else:
+        print(f"[Deal] No center_id in data, skipping deal creation for student {sid}")
     
     conn.close()
     return {"id": sid, "enrollment_no": enrollment_no, "username": username, "message": "Student created with login credentials"}
