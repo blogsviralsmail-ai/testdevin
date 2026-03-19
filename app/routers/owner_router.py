@@ -16,6 +16,7 @@ class UpdateGroundRequest(BaseModel):
     amenities: str | None = None
     opening_time: str | None = None
     closing_time: str | None = None
+    token_money_percent: float | None = None
 
 
 class OfflineBookingRequest(BaseModel):
@@ -41,6 +42,7 @@ class AddGroundRequest(BaseModel):
     description: str = ""
     latitude: float | None = None
     longitude: float | None = None
+    token_money_percent: float = 100
 
 
 class RateUserRequest(BaseModel):
@@ -192,15 +194,16 @@ async def owner_grounds(user: dict = Depends(get_current_user)):
 async def add_ground(req: AddGroundRequest, user: dict = Depends(get_current_user)):
     require_role(user, ["owner", "admin"])
     with get_db() as db:
-        db.execute(
+        cursor = db.execute(
             """INSERT INTO grounds (owner_id, name, address, city, ground_type, weekday_price, weekend_price,
-            evening_extra, opening_time, closing_time, amenities, description, latitude, longitude, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)""",
+            evening_extra, opening_time, closing_time, amenities, description, latitude, longitude, token_money_percent, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)""",
             (user["user_id"], req.name, req.address, req.city, req.ground_type, req.weekday_price,
              req.weekend_price, req.evening_extra, req.opening_time, req.closing_time,
-             req.amenities, req.description, req.latitude, req.longitude),
+             req.amenities, req.description, req.latitude, req.longitude, req.token_money_percent),
         )
-        return {"message": f"Ground '{req.name}' submitted for approval. Admin will review and activate it."}
+        new_id = cursor.lastrowid
+        return {"message": f"Ground '{req.name}' submitted for approval. Admin will review and activate it.", "id": new_id}
 
 
 @router.put("/grounds/{ground_id}/toggle")
@@ -214,6 +217,19 @@ async def toggle_owner_ground(ground_id: int, user: dict = Depends(get_current_u
         new_status = 0 if ground["is_active"] else 1
         db.execute("UPDATE grounds SET is_active = ? WHERE id = ?", (new_status, ground_id))
         return {"message": f"Ground {'activated' if new_status else 'deactivated'}", "is_active": new_status}
+
+
+@router.delete("/grounds/{ground_id}")
+async def delete_ground(ground_id: int, user: dict = Depends(get_current_user)):
+    """Owner can delete their own ground"""
+    require_role(user, ["owner", "admin"])
+    with get_db() as db:
+        ground = db.execute("SELECT id FROM grounds WHERE id = ? AND owner_id = ?", (ground_id, user["user_id"])).fetchone()
+        if not ground:
+            raise HTTPException(status_code=404, detail="Ground not found or not owned by you")
+        db.execute("DELETE FROM slots WHERE ground_id = ?", (ground_id,))
+        db.execute("DELETE FROM grounds WHERE id = ?", (ground_id,))
+        return {"message": "Ground deleted successfully"}
 
 
 @router.put("/grounds/{ground_id}")

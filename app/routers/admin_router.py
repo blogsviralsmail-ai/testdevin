@@ -238,6 +238,7 @@ class AddGroundRequest(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     commission_rate: float | None = None
+    token_money_percent: float = 100
 
 
 @router.post("/grounds")
@@ -246,11 +247,11 @@ async def add_ground(req: AddGroundRequest, user: dict = Depends(get_current_use
     with get_db() as db:
         db.execute(
             """INSERT INTO grounds (owner_id, name, address, city, ground_type, weekday_price, weekend_price,
-            evening_extra, opening_time, closing_time, amenities, description, latitude, longitude, commission_rate, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)""",
+            evening_extra, opening_time, closing_time, amenities, description, latitude, longitude, commission_rate, token_money_percent, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)""",
             (req.owner_id, req.name, req.address, req.city, req.ground_type, req.weekday_price,
              req.weekend_price, req.evening_extra, req.opening_time, req.closing_time,
-             req.amenities, req.description, req.latitude, req.longitude, req.commission_rate),
+             req.amenities, req.description, req.latitude, req.longitude, req.commission_rate, req.token_money_percent),
         )
         return {"message": f"Ground '{req.name}' added and activated"}
 
@@ -263,7 +264,7 @@ async def update_ground(ground_id: int, req: dict, user: dict = Depends(get_curr
         params: list = []
         allowed = ["name", "address", "city", "ground_type", "weekday_price", "weekend_price",
                     "evening_extra", "opening_time", "closing_time", "amenities", "description",
-                    "latitude", "longitude", "commission_rate"]
+                    "latitude", "longitude", "commission_rate", "token_money_percent"]
         for field in allowed:
             if field in req:
                 updates.append(f"{field} = ?")

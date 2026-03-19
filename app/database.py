@@ -509,6 +509,8 @@ def add_missing_columns():
         ("users", "old_kyc_doc_type", "TEXT"),
         ("users", "old_kyc_doc_url", "TEXT"),
         ("users", "kyc_reject_reason", "TEXT"),
+        # Token money percentage per ground (30%, 50%, 100%)
+        ("grounds", "token_money_percent", "REAL DEFAULT 100"),
     
     ]
     for table, column, col_type in columns_to_add:
