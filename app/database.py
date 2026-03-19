@@ -501,6 +501,14 @@ def add_missing_columns():
         ("bookings", "razorpay_payment_id", "TEXT"),
         ("bookings", "user_latitude", "REAL"),
         ("bookings", "user_longitude", "REAL"),
+        # Re-KYC: Store old bank details while new ones are pending verification
+        ("users", "old_bank_name", "TEXT"),
+        ("users", "old_bank_account", "TEXT"),
+        ("users", "old_bank_ifsc", "TEXT"),
+        ("users", "old_upi_id", "TEXT"),
+        ("users", "old_kyc_doc_type", "TEXT"),
+        ("users", "old_kyc_doc_url", "TEXT"),
+        ("users", "kyc_reject_reason", "TEXT"),
     
     ]
     for table, column, col_type in columns_to_add:

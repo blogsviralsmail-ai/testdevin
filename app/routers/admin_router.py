@@ -199,7 +199,15 @@ async def suspend_user(user_id: int, user: dict = Depends(get_current_user)):
 async def verify_kyc(user_id: int, user: dict = Depends(get_current_user)):
     require_role(user, ["admin"])
     with get_db() as db:
-        db.execute("UPDATE users SET kyc_status = 'verified' WHERE id = ?", (user_id,))
+        # On verify: clear old bank details backup (Re-KYC approved, new details are now official)
+        db.execute(
+            """UPDATE users SET kyc_status = 'verified',
+               kyc_reject_reason = NULL,
+               old_bank_name = NULL, old_bank_account = NULL, old_bank_ifsc = NULL,
+               old_upi_id = NULL, old_kyc_doc_type = NULL, old_kyc_doc_url = NULL
+            WHERE id = ?""",
+            (user_id,)
+        )
         return {"message": "KYC verified"}
 
 
@@ -1031,13 +1039,41 @@ async def reject_kyc(user_id: int, request: Request, user: dict = Depends(get_cu
         pass
     reason = body.get("reason", "Your KYC documents could not be verified. Please re-submit with valid documents.")
     with get_db() as db:
-        owner = db.execute("SELECT name, email, phone FROM users WHERE id = ?", (user_id,)).fetchone()
-        db.execute("UPDATE users SET kyc_status = 'rejected', kyc_reject_reason = ? WHERE id = ?", (reason, user_id,))
+        owner = db.execute(
+            "SELECT name, email, phone, old_bank_name, old_bank_account, old_bank_ifsc, old_upi_id, old_kyc_doc_type, old_kyc_doc_url FROM users WHERE id = ?",
+            (user_id,)
+        ).fetchone()
+        # Check if this is a Re-KYC rejection (old bank details exist)
+        has_old_details = owner and owner["old_bank_account"]
+        if has_old_details:
+            # Restore old bank details and set back to verified
+            db.execute(
+                """UPDATE users SET
+                    kyc_status = 'verified',
+                    kyc_reject_reason = ?,
+                    bank_name = old_bank_name,
+                    bank_account = old_bank_account,
+                    bank_ifsc = old_bank_ifsc,
+                    upi_id = old_upi_id,
+                    kyc_doc_type = old_kyc_doc_type,
+                    kyc_doc_url = old_kyc_doc_url,
+                    old_bank_name = NULL, old_bank_account = NULL, old_bank_ifsc = NULL,
+                    old_upi_id = NULL, old_kyc_doc_type = NULL, old_kyc_doc_url = NULL
+                WHERE id = ?""",
+                (reason, user_id,)
+            )
+        else:
+            # Normal KYC rejection
+            db.execute("UPDATE users SET kyc_status = 'rejected', kyc_reject_reason = ? WHERE id = ?", (reason, user_id,))
         # Send rejection email to owner
         if owner and owner["email"]:
-            from app.services.email_service import send_kyc_rejection_email
-            send_kyc_rejection_email(owner["email"], owner["name"] or "Owner", reason)
-        return {"message": "KYC rejected and owner notified via email"}
+            try:
+                from app.services.email_service import send_kyc_rejection_email
+                send_kyc_rejection_email(owner["email"], owner["name"] or "Owner", reason)
+            except Exception:
+                pass
+        msg = "Re-KYC rejected. Old bank details restored." if has_old_details else "KYC rejected and owner notified via email"
+        return {"message": msg}
 
 
 # --- KYC DOCS VIEWING ---
@@ -1046,9 +1082,14 @@ async def all_kyc(user: dict = Depends(get_current_user)):
     require_role(user, ["admin"])
     with get_db() as db:
         rows = db.execute(
-            "SELECT id, name, phone, email, role, kyc_status, kyc_reject_reason, bank_name, bank_account, bank_ifsc, upi_id, kyc_doc_type, kyc_doc_url FROM users WHERE kyc_status IS NOT NULL AND kyc_status != 'not_submitted' AND kyc_status != 'none' ORDER BY CASE kyc_status WHEN 'pending' THEN 0 WHEN 'verified' THEN 1 WHEN 'rejected' THEN 2 END"
+            "SELECT id, name, phone, email, role, kyc_status, kyc_reject_reason, bank_name, bank_account, bank_ifsc, upi_id, kyc_doc_type, kyc_doc_url, old_bank_name, old_bank_account, old_bank_ifsc, old_upi_id FROM users WHERE kyc_status IS NOT NULL AND kyc_status != 'not_submitted' AND kyc_status != 'none' ORDER BY CASE kyc_status WHEN 'pending' THEN 0 WHEN 'verified' THEN 1 WHEN 'rejected' THEN 2 END"
         ).fetchall()
-        return [dict(r) for r in rows]
+        result = []
+        for r in rows:
+            d = dict(r)
+            d["is_rekyc"] = bool(d.get("old_bank_account"))
+            result.append(d)
+        return result
 
 
 @router.get("/kyc/{user_id}")

@@ -248,6 +248,73 @@ async def submit_kyc(req: KYCRequest, user: dict = Depends(get_current_user)):
         return {"message": "KYC submitted for verification. Admin will review shortly.", "status": "pending"}
 
 
+class ReKYCRequest(BaseModel):
+    bank_name: str
+    account_number: str
+    ifsc_code: str
+    document_type: str
+    document_url: str | None = None
+    upi_id: str | None = None
+
+
+@router.post("/me/rekyc")
+async def submit_rekyc(req: ReKYCRequest, user: dict = Depends(get_current_user)):
+    """User-initiated Re-KYC: Change bank details (requires admin verification)"""
+    with get_db() as db:
+        u = db.execute(
+            "SELECT kyc_status, bank_name, bank_account, bank_ifsc, upi_id, kyc_doc_type, kyc_doc_url FROM users WHERE id = ?",
+            (user["user_id"],)
+        ).fetchone()
+        if not u:
+            raise HTTPException(status_code=404, detail="User not found")
+        current_status = u["kyc_status"] if "kyc_status" in u.keys() else "none"
+        if current_status not in ("verified", "rekyc_required"):
+            raise HTTPException(status_code=400, detail="Re-KYC is only available for verified users or users with Re-KYC required status.")
+        # Save current (old) bank details as backup before overwriting
+        db.execute(
+            """UPDATE users SET
+                old_bank_name = bank_name,
+                old_bank_account = bank_account,
+                old_bank_ifsc = bank_ifsc,
+                old_upi_id = upi_id,
+                old_kyc_doc_type = kyc_doc_type,
+                old_kyc_doc_url = kyc_doc_url,
+                bank_name = ?,
+                bank_account = ?,
+                bank_ifsc = ?,
+                upi_id = ?,
+                kyc_doc_type = ?,
+                kyc_doc_url = NULL,
+                kyc_status = 'pending',
+                kyc_reject_reason = NULL
+            WHERE id = ?""",
+            (req.bank_name, req.account_number, req.ifsc_code, req.upi_id or '', req.document_type, user["user_id"]),
+        )
+        return {
+            "message": "Re-KYC request submitted. New bank details will be verified by admin. Old details are saved until approval.",
+            "status": "pending"
+        }
+
+
+@router.get("/me/kyc-details")
+async def get_kyc_details(user: dict = Depends(get_current_user)):
+    """Get current KYC details including old bank details if Re-KYC is pending"""
+    with get_db() as db:
+        u = db.execute(
+            """SELECT kyc_status, kyc_reject_reason, bank_name, bank_account, bank_ifsc, upi_id,
+                      kyc_doc_type, kyc_doc_url, old_bank_name, old_bank_account, old_bank_ifsc,
+                      old_upi_id, old_kyc_doc_type, old_kyc_doc_url
+               FROM users WHERE id = ?""",
+            (user["user_id"],)
+        ).fetchone()
+        if not u:
+            raise HTTPException(status_code=404, detail="User not found")
+        result = dict(u)
+        # Check if this is a Re-KYC (old details exist)
+        result["is_rekyc"] = bool(result.get("old_bank_account"))
+        return result
+
+
 # BUG-009 FIX: KYC document file upload endpoint
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "kyc")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
