@@ -1378,8 +1378,9 @@ export default function AdminDashboard() {
                       ) : (
                         <div className="space-y-4">
                           {docUrls.map((docUrl: string, idx: number) => {
-                            const isPdf = docUrl.match(/\.pdf$/i);
-                            const isImage = docUrl.startsWith('data:image') || docUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+                            const urlPath = docUrl.split('?')[0];
+                            const isPdf = urlPath.match(/\.pdf$/i);
+                            const isImage = docUrl.startsWith('data:image') || urlPath.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
                             return (
                               <div key={idx} className="border rounded-xl overflow-hidden">
                                 <div className="bg-gray-50 px-4 py-2 flex items-center justify-between border-b">
