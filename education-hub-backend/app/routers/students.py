@@ -385,10 +385,13 @@ async def update_student(sid: int, data: dict, user: dict = Depends(require_admi
                 val = None
             update_fields.append(f"{f}=?")
             values.append(val)
-    # Handle total_fees separately (not in ALL_FIELDS)
+    # Ensure total_fees is stored as float (it's in ALL_FIELDS but needs type conversion)
+    # The loop above already added it; override the value with proper float conversion
     if "total_fees" in data and data["total_fees"] is not None:
-        update_fields.append("total_fees=?")
-        values.append(float(data["total_fees"]) if data["total_fees"] else 0)
+        for i, f in enumerate(update_fields):
+            if f == "total_fees=?":
+                values[i] = float(data["total_fees"]) if data["total_fees"] else 0
+                break
     if update_fields:
         values.append(sid)
         set_clause = ", ".join(update_fields)
@@ -558,9 +561,9 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
             student_fields[f] = data[f]
     student_fields["status"] = "active"  # Admin-added students are auto-approved
     
-    # Handle total_fees
-    if "total_fees" in data and data["total_fees"]:
-        student_fields["total_fees"] = float(data["total_fees"])
+    # Ensure total_fees is stored as float (already picked up from ALL_FIELDS loop above)
+    if "total_fees" in student_fields and student_fields["total_fees"]:
+        student_fields["total_fees"] = float(student_fields["total_fees"])
     
     for _attempt in range(5):
         max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
