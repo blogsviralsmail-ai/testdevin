@@ -442,7 +442,7 @@ export default function OwnerDashboard() {
                       <p className="text-sm text-gray-500">{g.address as string}</p>
                       {!Number(g.is_active) && (
                         <span className="inline-flex items-center gap-1 mt-1 text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium border border-orange-200">
-                          ⏳ Admin Approval Pending — Your ground will go live once approved
+                          🔴 Inactive — Not visible to customers
                         </span>
                       )}
                       {!!Number(g.is_active) && (
