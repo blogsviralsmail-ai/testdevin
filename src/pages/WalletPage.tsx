@@ -47,6 +47,7 @@ export default function WalletPage() {
   const [rekycUpiId, setRekycUpiId] = useState('');
   const [rekycDocType, setRekycDocType] = useState('');
   const [submittingRekyc, setSubmittingRekyc] = useState(false);
+  const [rekycFiles, setRekycFiles] = useState<File[]>([]);
   const [rekycOldDetails, setRekycOldDetails] = useState<Record<string, unknown> | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; show: boolean }>({ message: '', type: 'info', show: false });
 
@@ -742,7 +743,7 @@ export default function WalletPage() {
                 }} className="w-full mt-4 bg-orange-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-orange-700 transition flex items-center justify-center gap-2">
                   <TrendingDown size={16} /> Withdraw Money (Balance: Rs.{balance.toLocaleString()})
                 </button>
-                <button onClick={() => { setRekycBankName(''); setRekycAccountNo(''); setRekycIfsc(''); setRekycUpiId(''); setRekycDocType(''); setShowReKyc(true); }}
+                <button onClick={() => { setRekycBankName(''); setRekycAccountNo(''); setRekycIfsc(''); setRekycUpiId(''); setRekycDocType(''); setRekycFiles([]); setShowReKyc(true); }}
                   className="w-full mt-2 bg-white text-orange-600 border border-orange-300 py-2.5 rounded-xl font-semibold text-sm hover:bg-orange-50 transition flex items-center justify-center gap-2">
                   <RefreshCw size={14} /> Change Bank Details (Re-KYC)
                 </button>
@@ -789,14 +790,64 @@ export default function WalletPage() {
                         <option value="passport">Passport</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Upload Documents * <span className="text-gray-400 font-normal">(Front & Back - max 5 files)</span></label>
+                      <div className="border-2 border-dashed border-orange-200 rounded-xl p-4 text-center bg-orange-50/50 hover:bg-orange-50 transition cursor-pointer"
+                        onClick={() => document.getElementById('rekyc-file-upload')?.click()}>
+                        <input id="rekyc-file-upload" type="file" accept="image/*,.pdf" multiple className="hidden" onChange={e => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length > 0) setRekycFiles(prev => [...prev, ...files].slice(0, 5));
+                          e.target.value = '';
+                        }} />
+                        {rekycFiles.length > 0 ? (
+                          <div className="space-y-2">
+                            {rekycFiles.map((f, i) => (
+                              <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {f.type.startsWith('image/') ? (
+                                    <img src={URL.createObjectURL(f)} alt="" className="w-10 h-10 rounded object-cover border" />
+                                  ) : (
+                                    <FileText size={20} className="text-orange-600 flex-shrink-0" />
+                                  )}
+                                  <span className="text-xs text-gray-700 truncate">{f.name}</span>
+                                  <span className="text-[10px] text-gray-400">({(f.size / 1024).toFixed(0)} KB)</span>
+                                </div>
+                                <button onClick={(ev) => { ev.stopPropagation(); setRekycFiles(prev => prev.filter((_, idx) => idx !== i)); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-2"><X size={14}/></button>
+                              </div>
+                            ))}
+                            {rekycFiles.length < 5 && (
+                              <p className="text-xs text-orange-500 mt-1">+ Tap to add more photos ({5 - rekycFiles.length} remaining)</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            <Upload size={24} className="mx-auto text-orange-400 mb-1" />
+                            <p className="text-sm text-orange-600 font-medium">Tap to upload documents</p>
+                            <p className="text-xs text-gray-400">Aadhaar/PAN/Passport front + back (JPG, PNG, PDF)</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <button onClick={async () => {
                       if (!rekycBankName || !rekycAccountNo || !rekycIfsc || !rekycDocType) { showToast('Sab required fields fill karo', 'warning'); return; }
+                      if (rekycFiles.length === 0) { showToast('KYC document upload karo (front & back)', 'warning'); return; }
                       setSubmittingRekyc(true);
                       try {
                         await api.submitReKYC({ bank_name: rekycBankName, account_number: rekycAccountNo, ifsc_code: rekycIfsc, upi_id: rekycUpiId, document_type: rekycDocType });
-                        showToast('Re-KYC request submitted! Admin will verify new bank details.', 'success');
+                        let uploadedCount = 0;
+                        let uploadErrors = 0;
+                        for (const file of rekycFiles) {
+                          try { await api.uploadKYCDocument(file); uploadedCount++; } catch { uploadErrors++; }
+                        }
                         setShowReKyc(false);
                         setKycStatus('pending');
+                        if (uploadErrors > 0 && uploadedCount === 0) {
+                          showToast('Re-KYC details saved but documents upload failed!', 'warning');
+                        } else if (uploadErrors > 0) {
+                          showToast(`Re-KYC submitted! ${uploadedCount}/${rekycFiles.length} docs uploaded. Admin will verify.`, 'warning');
+                        } else {
+                          showToast('Re-KYC request submitted! ' + uploadedCount + ' documents uploaded. Admin will verify.', 'success');
+                        }
                         loadData();
                       } catch (e: unknown) {
                         showToast(e instanceof Error ? e.message : 'Re-KYC submission failed', 'error');
