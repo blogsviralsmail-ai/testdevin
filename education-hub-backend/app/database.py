@@ -1095,6 +1095,13 @@ def init_db():
     except Exception:
         pass  # Column already exists or table doesn't exist yet
 
+    # Add admission_date column if missing
+    try:
+        cursor.execute("ALTER TABLE student_deals ADD COLUMN admission_date TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS student_deals (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1103,11 +1110,52 @@ def init_db():
         center_deal REAL DEFAULT 0,
         admin_deal REAL DEFAULT 0,
         university_deal REAL DEFAULT 0,
+        admission_date TEXT,
         notes TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES students(id)
     )""")
+
+    # Counselor calling data table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS counselor_leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        father_name TEXT,
+        mobile TEXT NOT NULL,
+        email TEXT,
+        counselor_name TEXT,
+        counselor_user_id INTEGER,
+        current_status TEXT DEFAULT 'new',
+        followup_date TEXT,
+        remarks TEXT,
+        enquiry_datetime TEXT DEFAULT CURRENT_TIMESTAMP,
+        center_id INTEGER,
+        source TEXT DEFAULT 'manual',
+        university_interest TEXT,
+        course_interest TEXT,
+        converted_to_student_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (center_id) REFERENCES centers(id),
+        FOREIGN KEY (counselor_user_id) REFERENCES users(id),
+        FOREIGN KEY (converted_to_student_id) REFERENCES students(id)
+    )""")
+
+    # Add counselor_name to students table if missing
+    try:
+        cursor.execute("ALTER TABLE students ADD COLUMN counselor_name TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
+    # Add counselor_name to student_deals table if missing
+    try:
+        cursor.execute("ALTER TABLE student_deals ADD COLUMN counselor_name TEXT")
+        conn.commit()
+    except Exception:
+        pass
 
     # Deal payments table (tracks payments between entities)
     cursor.execute("""

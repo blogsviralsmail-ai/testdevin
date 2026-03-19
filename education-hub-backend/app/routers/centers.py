@@ -1837,6 +1837,7 @@ class StudentDealCreate(BaseModel):
     center_deal: float = 0
     admin_deal: float = 0
     university_deal: float = 0
+    admission_date: Optional[str] = None
     notes: Optional[str] = None
 
 class StudentDealUpdate(BaseModel):
@@ -1844,7 +1845,35 @@ class StudentDealUpdate(BaseModel):
     center_deal: Optional[float] = None
     admin_deal: Optional[float] = None
     university_deal: Optional[float] = None
+    admission_date: Optional[str] = None
     notes: Optional[str] = None
+
+# ── Counselor Lead Models ─────────────────────────────────────
+class CounselorLeadCreate(BaseModel):
+    name: str
+    father_name: Optional[str] = None
+    mobile: str
+    email: Optional[str] = None
+    counselor_name: Optional[str] = None
+    current_status: str = "new"
+    followup_date: Optional[str] = None
+    remarks: Optional[str] = None
+    source: str = "manual"
+    university_interest: Optional[str] = None
+    course_interest: Optional[str] = None
+
+class CounselorLeadUpdate(BaseModel):
+    name: Optional[str] = None
+    father_name: Optional[str] = None
+    mobile: Optional[str] = None
+    email: Optional[str] = None
+    counselor_name: Optional[str] = None
+    current_status: Optional[str] = None
+    followup_date: Optional[str] = None
+    remarks: Optional[str] = None
+    source: Optional[str] = None
+    university_interest: Optional[str] = None
+    course_interest: Optional[str] = None
 
 class DealPaymentCreate(BaseModel):
     student_id: int
@@ -1863,6 +1892,9 @@ async def list_student_deals(
     user: dict = Depends(get_current_user),
     search: str = "",
     center_id: Optional[int] = None,
+    sort_by: str = "updated_at",
+    sort_order: str = "desc",
+    filter_updated: str = "",
 ):
     """List all student deals. Admin sees all, center sees their own students."""
     role = user.get("role", "")
@@ -1871,7 +1903,7 @@ async def list_student_deals(
     if role in ("admin", "super_admin", "branch_admin"):
         query = """
             SELECT sd.*, s.name as student_name, s.phone as student_phone,
-                   s.enrollment_no, s.center_id,
+                   s.enrollment_no, s.center_id, s.counselor_name as student_counselor,
                    c.name as center_name, c.level as center_level,
                    pc.name as parent_center_name, c.parent_center_id,
                    u.name as university_name, cat.name as course_name
@@ -1888,12 +1920,19 @@ async def list_student_deals(
             query += " AND (s.name LIKE ? OR s.phone LIKE ? OR s.enrollment_no LIKE ?)"
             params += [f"%{search}%", f"%{search}%", f"%{search}%"]
         if center_id:
-            # Get this center + its sub-centers
             all_ids = get_center_and_subcenter_ids(conn, center_id)
             placeholders = ",".join(["?"] * len(all_ids))
             query += f" AND s.center_id IN ({placeholders})"
             params += all_ids
-        query += " ORDER BY sd.updated_at DESC"
+        if filter_updated == "not_updated":
+            query += " AND (sd.admin_deal = 0 OR sd.admin_deal IS NULL) AND (sd.university_deal = 0 OR sd.university_deal IS NULL)"
+        elif filter_updated == "updated":
+            query += " AND (sd.admin_deal > 0 OR sd.university_deal > 0)"
+        # Sorting
+        allowed_sorts = {"updated_at": "sd.updated_at", "admission_date": "sd.admission_date", "student_name": "s.name", "sub_center_fee": "sd.sub_center_fee", "center_deal": "sd.center_deal", "admin_deal": "sd.admin_deal", "university_deal": "sd.university_deal"}
+        sort_col = allowed_sorts.get(sort_by, "sd.updated_at")
+        sort_dir = "ASC" if sort_order.lower() == "asc" else "DESC"
+        query += f" ORDER BY {sort_col} {sort_dir}"
         deals = [dict(r) for r in conn.execute(query, params).fetchall()]
     elif role == "center":
         center = get_current_center(user)
@@ -1946,14 +1985,14 @@ async def create_student_deal(data: StudentDealCreate, user: dict = Depends(requ
     existing = conn.execute("SELECT id FROM student_deals WHERE student_id = ?", (data.student_id,)).fetchone()
     if existing:
         conn.execute(
-            """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, university_deal = ?, notes = ?,
+            """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, university_deal = ?, admission_date = ?, notes = ?,
                updated_at = CURRENT_TIMESTAMP WHERE student_id = ?""",
-            (data.sub_center_fee, data.center_deal, data.admin_deal, data.university_deal, data.notes, data.student_id)
+            (data.sub_center_fee, data.center_deal, data.admin_deal, data.university_deal, data.admission_date, data.notes, data.student_id)
         )
     else:
         conn.execute(
-            "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, university_deal, notes) VALUES (?, ?, ?, ?, ?, ?)",
-            (data.student_id, data.sub_center_fee, data.center_deal, data.admin_deal, data.university_deal, data.notes)
+            "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, university_deal, admission_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (data.student_id, data.sub_center_fee, data.center_deal, data.admin_deal, data.university_deal, data.admission_date, data.notes)
         )
     conn.commit()
     conn.close()
@@ -1983,6 +2022,9 @@ async def update_student_deal(deal_id: int, data: StudentDealUpdate, user: dict 
     if data.university_deal is not None:
         updates.append("university_deal = ?")
         params.append(data.university_deal)
+    if data.admission_date is not None:
+        updates.append("admission_date = ?")
+        params.append(data.admission_date)
     if data.notes is not None:
         updates.append("notes = ?")
         params.append(data.notes)
@@ -2039,6 +2081,12 @@ async def center_update_deal(deal_id: int, data: dict, user: dict = Depends(get_
     if "notes" in data:
         updates.append("notes = ?")
         params.append(data["notes"])
+    if "admission_date" in data:
+        updates.append("admission_date = ?")
+        params.append(data["admission_date"])
+    if "counselor_name" in data:
+        updates.append("counselor_name = ?")
+        params.append(data["counselor_name"])
     if updates:
         updates.append("updated_at = CURRENT_TIMESTAMP")
         params.append(deal_id)
@@ -2296,6 +2344,208 @@ async def delete_deal_payment(payment_id: int, user: dict = Depends(require_admi
     conn.commit()
     conn.close()
     return {"message": "Payment deleted"}
+
+
+# ══════════════════════════════════════════════════════════════════
+#  COUNSELOR LEADS / CRM MODULE
+# ══════════════════════════════════════════════════════════════════
+
+@router.get("/counselor-leads")
+async def list_counselor_leads(
+    user: dict = Depends(get_current_user),
+    search: str = "",
+    status_filter: str = "",
+    followup_filter: str = "",
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+):
+    """List counselor leads. Admin sees all, center sees their own."""
+    role = user.get("role", "")
+    conn = get_db()
+
+    query = """
+        SELECT cl.*, u.name as university_name, cat.name as course_name
+        FROM counselor_leads cl
+        LEFT JOIN universities u ON cl.university_interest = CAST(u.id AS TEXT)
+        LEFT JOIN categories cat ON cl.course_interest = CAST(cat.id AS TEXT)
+        WHERE 1=1
+    """
+    params: list = []
+
+    # Scope by center
+    if role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user["id"],)).fetchone()
+        if center:
+            all_ids = get_center_and_subcenter_ids(conn, center["id"])
+            placeholders = ",".join(["?"] * len(all_ids))
+            query += f" AND cl.center_id IN ({placeholders})"
+            params += all_ids
+        else:
+            conn.close()
+            return []
+
+    if search:
+        query += " AND (cl.name LIKE ? OR cl.mobile LIKE ? OR cl.email LIKE ? OR cl.counselor_name LIKE ?)"
+        params += [f"%{search}%"] * 4
+    if status_filter:
+        query += " AND cl.current_status = ?"
+        params.append(status_filter)
+    if followup_filter == "today":
+        query += " AND cl.followup_date = date('now')"
+    elif followup_filter == "overdue":
+        query += " AND cl.followup_date < date('now') AND cl.followup_date IS NOT NULL AND cl.followup_date != ''"
+    elif followup_filter == "upcoming":
+        query += " AND cl.followup_date > date('now')"
+    elif followup_filter == "no_followup":
+        query += " AND (cl.followup_date IS NULL OR cl.followup_date = '')"
+
+    allowed_sorts = {
+        "created_at": "cl.created_at", "name": "cl.name", "mobile": "cl.mobile",
+        "followup_date": "cl.followup_date", "current_status": "cl.current_status",
+        "counselor_name": "cl.counselor_name", "enquiry_datetime": "cl.enquiry_datetime"
+    }
+    sort_col = allowed_sorts.get(sort_by, "cl.created_at")
+    sort_dir = "ASC" if sort_order.lower() == "asc" else "DESC"
+    query += f" ORDER BY {sort_col} {sort_dir}"
+
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@router.post("/counselor-leads")
+async def create_counselor_lead(data: CounselorLeadCreate, user: dict = Depends(get_current_user)):
+    """Create a new counselor lead. Auto-fills counselor_name if user is a counselor."""
+    role = user.get("role", "")
+    conn = get_db()
+
+    center_id = None
+    counselor_name = data.counselor_name
+
+    # Auto-fill counselor name from logged-in user if not provided
+    if not counselor_name and role not in ("admin", "super_admin", "branch_admin"):
+        counselor_name = user.get("name", user.get("username", ""))
+
+    # Get center_id
+    if role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user["id"],)).fetchone()
+        if center:
+            center_id = center["id"]
+    elif role in ("admin", "super_admin", "branch_admin"):
+        center_id = None  # Admin leads are global
+
+    conn.execute("""
+        INSERT INTO counselor_leads (name, father_name, mobile, email, counselor_name, counselor_user_id,
+            current_status, followup_date, remarks, source, university_interest, course_interest, center_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (data.name, data.father_name, data.mobile, data.email, counselor_name, user["id"],
+          data.current_status, data.followup_date, data.remarks, data.source,
+          data.university_interest, data.course_interest, center_id))
+    conn.commit()
+    lead_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.close()
+
+    # Send notification
+    try:
+        from app.utils.notifications import send_notification
+        send_notification("lead", f"New counselor lead: {data.name} ({data.mobile})", f"/admin/counselor-leads")
+    except Exception:
+        pass
+
+    return {"message": "Lead created successfully", "id": lead_id}
+
+
+@router.put("/counselor-leads/{lead_id}")
+async def update_counselor_lead(lead_id: int, data: CounselorLeadUpdate, user: dict = Depends(get_current_user)):
+    """Update a counselor lead."""
+    conn = get_db()
+    lead = conn.execute("SELECT * FROM counselor_leads WHERE id = ?", (lead_id,)).fetchone()
+    if not lead:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    updates = []
+    params: list = []
+    for field in ["name", "father_name", "mobile", "email", "counselor_name", "current_status",
+                  "followup_date", "remarks", "source", "university_interest", "course_interest"]:
+        val = getattr(data, field, None)
+        if val is not None:
+            updates.append(f"{field} = ?")
+            params.append(val)
+
+    if updates:
+        updates.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(lead_id)
+        conn.execute(f"UPDATE counselor_leads SET {', '.join(updates)} WHERE id = ?", params)
+        conn.commit()
+    conn.close()
+    return {"message": "Lead updated successfully"}
+
+
+@router.delete("/counselor-leads/{lead_id}")
+async def delete_counselor_lead(lead_id: int, user: dict = Depends(get_current_user)):
+    """Delete a counselor lead."""
+    conn = get_db()
+    conn.execute("DELETE FROM counselor_leads WHERE id = ?", (lead_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Lead deleted"}
+
+
+@router.post("/counselor-leads/{lead_id}/convert")
+async def convert_lead_to_admission(lead_id: int, user: dict = Depends(get_current_user)):
+    """Convert a counselor lead to a student admission. Returns lead data for pre-filling the admission form."""
+    conn = get_db()
+    lead = conn.execute("SELECT * FROM counselor_leads WHERE id = ?", (lead_id,)).fetchone()
+    if not lead:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    lead_data = dict(lead)
+
+    # Mark lead as converted (but don't create student yet - frontend will do that via student add form)
+    conn.execute("UPDATE counselor_leads SET current_status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (lead_id,))
+    conn.commit()
+    conn.close()
+
+    return {
+        "message": "Lead marked for conversion. Use the returned data to create student admission.",
+        "lead_data": lead_data
+    }
+
+
+@router.get("/counselor-leads/stats")
+async def counselor_lead_stats(user: dict = Depends(get_current_user)):
+    """Get counselor lead statistics."""
+    role = user.get("role", "")
+    conn = get_db()
+
+    where = "WHERE 1=1"
+    params: list = []
+    if role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user["id"],)).fetchone()
+        if center:
+            all_ids = get_center_and_subcenter_ids(conn, center["id"])
+            placeholders = ",".join(["?"] * len(all_ids))
+            where += f" AND center_id IN ({placeholders})"
+            params += all_ids
+
+    total = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where}", params).fetchone()[0]
+    statuses = {}
+    for status in ["new", "followup", "callback", "not_picked", "interested", "not_interested", "converted", "closed"]:
+        count = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where} AND current_status = ?", params + [status]).fetchone()[0]
+        statuses[status] = count
+
+    today_followups = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where} AND followup_date = date('now')", params).fetchone()[0]
+    overdue_followups = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where} AND followup_date < date('now') AND followup_date IS NOT NULL AND followup_date != ''", params).fetchone()[0]
+
+    conn.close()
+    return {
+        "total": total,
+        "statuses": statuses,
+        "today_followups": today_followups,
+        "overdue_followups": overdue_followups,
+    }
 
 
 # ══════════════════════════════════════════════════════════════════

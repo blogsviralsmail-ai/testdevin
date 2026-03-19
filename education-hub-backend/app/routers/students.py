@@ -75,6 +75,7 @@ class StudentCreate(BaseModel):
     center_id: Optional[int] = None
     total_fees: Optional[float] = None
     admission_source: Optional[str] = None
+    counselor_name: Optional[str] = None
 
 ALL_FIELDS = [
     "university_id", "category_id", "branch_id", "session_name", "admission_type",
@@ -90,7 +91,7 @@ ALL_FIELDS = [
     "blood_group", "disability", "disability_type",
     "hostel_required", "transport_required", "pickup_location",
     "extra_curricular", "achievements", "status", "form_data",
-    "center_id", "total_fees", "admission_source",
+    "center_id", "total_fees", "admission_source", "counselor_name",
 ]
 
 @router.get("/me")
@@ -349,13 +350,14 @@ async def create_student(data: StudentCreate, user: dict = Depends(get_current_u
     # Auto-create student deal record if student has a center
     if data.center_id:
         total_fees = float(data.total_fees or 0) if data.total_fees else 0.0
+        counselor = data.counselor_name or ""
         try:
             conn.execute(
-                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, 0, 0, ?)",
-                (sid, total_fees, "Auto-created on admission")
+                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, counselor_name, notes) VALUES (?, ?, 0, 0, ?, ?)",
+                (sid, total_fees, counselor, "Auto-created on admission")
             )
             conn.commit()
-            print(f"[Deal] Auto-created deal for student {sid}, sub_center_fee={total_fees}")
+            print(f"[Deal] Auto-created deal for student {sid}, sub_center_fee={total_fees}, counselor={counselor}")
         except Exception as e:
             print(f"[Deal] Failed to auto-create deal for student {sid}: {e}")
 
@@ -590,13 +592,14 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
     center_id = data.get("center_id")
     if center_id:
         total_fees = float(data.get("total_fees", 0) or 0)
+        counselor = data.get("counselor_name", "")
         try:
             conn.execute(
-                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, 0, 0, ?)",
-                (sid, total_fees, "Auto-created on admission by admin")
+                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, counselor_name, notes) VALUES (?, ?, 0, 0, ?, ?)",
+                (sid, total_fees, counselor, "Auto-created on admission by admin")
             )
             conn.commit()
-            print(f"[Deal] Auto-created deal for student {sid}, sub_center_fee={total_fees}")
+            print(f"[Deal] Auto-created deal for student {sid}, sub_center_fee={total_fees}, counselor={counselor}")
         except Exception as e:
             print(f"[Deal] Failed to auto-create deal for student {sid}: {e}")
             pass  # deal may already exist

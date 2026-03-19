@@ -8,7 +8,7 @@ import {
   LayoutDashboard, GraduationCap, Building2, FolderOpen, Users,
   ClipboardList, Wallet, LifeBuoy, FileText, GitBranch,
   Settings, MessageSquare, Menu, X, LogOut, ChevronDown, UsersRound, Star, Shield,
-  Upload, Tag, Search,
+  Upload, Tag, Search, PhoneCall,
   FileText as BlogIcon, Image, Briefcase, Target, BarChart3, Megaphone, Bell, ChevronRight
 } from "lucide-react";
 
@@ -33,6 +33,7 @@ const pathToPermission: Record<string, string> = {
   "/admin/students": "students",
   "/admin/student-status": "students",
   "/admin/leads": "enquiries",
+  "/admin/counselor-leads": "enquiries",
   "/admin/enquiries": "enquiries",
   "/admin/bulk-upload": "students",
   "/admin/accounts": "accounts",
@@ -76,6 +77,7 @@ const menuGroups: MenuGroup[] = [
       { path: "/admin/students", label: "Students", icon: Users },
       { path: "/admin/student-status", label: "Student Status", icon: Tag },
       { path: "/admin/leads", label: "Leads / CRM", icon: Target },
+      { path: "/admin/counselor-leads", label: "Counselor Leads", icon: PhoneCall },
       { path: "/admin/enquiries", label: "Enquiries", icon: MessageSquare },
       { path: "/admin/bulk-upload", label: "Bulk Upload", icon: Upload },
     ],

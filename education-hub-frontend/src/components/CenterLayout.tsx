@@ -7,7 +7,7 @@ import axios from "axios";
 const API = import.meta.env.VITE_API_URL || "";
 import {
   LayoutDashboard, Users, FileText, Wallet, Building2,
-  Menu, X, LogOut, ChevronDown, GraduationCap, BarChart3, ChevronRight, Search, CreditCard, MessageSquare, Bell, Calendar, Settings
+  Menu, X, LogOut, ChevronDown, GraduationCap, BarChart3, ChevronRight, Search, CreditCard, MessageSquare, Bell, Calendar, Settings, PhoneCall
 } from "lucide-react";
 
 interface MenuItem {
@@ -32,6 +32,7 @@ const menuGroups: MenuGroup[] = [
     title: "Student Management",
     items: [
       { path: "/center/students", label: "Students", icon: Users },
+      { path: "/center/counselor-leads", label: "Counselor Leads", icon: PhoneCall },
       { path: "/center/documents", label: "Documents", icon: FileText },
       { path: "/center/fees", label: "Fees", icon: Wallet },
       { path: "/center/payment-settings", label: "Payment Settings", icon: CreditCard },

@@ -83,6 +83,8 @@ import CenterDealFees from "./pages/center/DealFees";
 import AdminCenters from "./pages/admin/Centers";
 import AdminCommissionSlabs from "./pages/admin/CommissionSlabs";
 import AdminPopups from "./pages/admin/Popups";
+import AdminCounselorLeads from "./pages/admin/CounselorLeads";
+import CenterCounselorLeads from "./pages/center/CounselorLeads";
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role: string }) {
   const user = getUser();
@@ -144,6 +146,7 @@ function App() {
           <Route path="placements" element={<AdminPlacements />} />
           <Route path="centers" element={<AdminCenters />} />
           <Route path="commission-slabs" element={<AdminCommissionSlabs />} />
+          <Route path="counselor-leads" element={<AdminCounselorLeads />} />
         </Route>
         
         <Route path="/center" element={<ProtectedRoute role="center"><CenterLayout /></ProtectedRoute>}>
@@ -159,6 +162,7 @@ function App() {
           <Route path="exam-timetable" element={<CenterExamTimetable />} />
           <Route path="settings" element={<CenterSettings />} />
           <Route path="deal-fees" element={<CenterDealFees />} />
+          <Route path="counselor-leads" element={<CenterCounselorLeads />} />
         </Route>
         
         <Route path="/student" element={<ProtectedRoute role="student"><StudentLayout /></ProtectedRoute>}>

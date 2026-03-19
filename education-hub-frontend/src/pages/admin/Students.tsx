@@ -37,7 +37,7 @@ const emptyForm = {
   twelfth_board: "", twelfth_year: "", twelfth_percentage: "", twelfth_school: "",
   graduation_degree: "", graduation_university: "", graduation_year: "", graduation_percentage: "",
   disability: "No", hostel_required: "No", transport_required: "No",
-  total_fees: "",
+  total_fees: "", counselor_name: "",
 };
 
 export default function AdminStudents() {
@@ -190,6 +190,7 @@ export default function AdminStudents() {
       graduation_year: s.graduation_year || "", graduation_percentage: s.graduation_percentage || "",
       disability: s.disability || "No", hostel_required: s.hostel_required || "No", transport_required: s.transport_required || "No",
       total_fees: (s as any).total_fees ? String((s as any).total_fees) : "",
+      counselor_name: (s as any).counselor_name || "",
     });
     setEditStudent(s); setFormStep(1);
   };
@@ -273,6 +274,11 @@ export default function AdminStudents() {
             <label className="block text-xs font-medium text-green-800 mb-1 flex items-center gap-1"><IndianRupee className="h-3 w-3" /> Total Fees (₹)</label>
             <input type="number" value={(form as Record<string, string>).total_fees || ""} onChange={(e) => set("total_fees", e.target.value)}
               placeholder="Enter total fees amount" className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm bg-white" />
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mt-2">
+            <label className="block text-xs font-medium text-purple-800 mb-1 flex items-center gap-1"><User className="h-3 w-3" /> Counselor Name</label>
+            <input type="text" value={(form as Record<string, string>).counselor_name || ""} onChange={(e) => set("counselor_name", e.target.value)}
+              placeholder="Name of counselor who handled admission" className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white" />
           </div>
         </>
       )}

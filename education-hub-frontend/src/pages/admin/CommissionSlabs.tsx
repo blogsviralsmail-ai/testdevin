@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../../lib/api";
-import { Plus, Edit2, Trash2, X, TrendingUp, Wallet, Search, Users, IndianRupee, CheckCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, X, TrendingUp, Wallet, Search, Users, IndianRupee, CheckCircle, AlertTriangle, ArrowUpDown } from "lucide-react";
 
 export default function AdminCommissionSlabs() {
   const [deals, setDeals] = useState<any[]>([]);
@@ -9,10 +9,13 @@ export default function AdminCommissionSlabs() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCenter, setFilterCenter] = useState("");
+  const [filterUpdated, setFilterUpdated] = useState("");
+  const [sortBy, setSortBy] = useState("updated_at");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [tab, setTab] = useState<"deals" | "summary" | "payments">("deals");
   const [showAdd, setShowAdd] = useState(false);
   const [editDeal, setEditDeal] = useState<any>(null);
-  const [form, setForm] = useState({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", notes: "" });
+  const [form, setForm] = useState({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", admission_date: "", notes: "" });
   const [saving, setSaving] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [availableStudents, setAvailableStudents] = useState<any[]>([]);
@@ -31,11 +34,14 @@ export default function AdminCommissionSlabs() {
     const params: Record<string, string> = {};
     if (search) params.search = search;
     if (filterCenter) params.center_id = filterCenter;
+    if (filterUpdated) params.filter_updated = filterUpdated;
+    if (sortBy) params.sort_by = sortBy;
+    if (sortOrder) params.sort_order = sortOrder;
     api.get("/api/centers/deals", { params })
       .then(r => setDeals(r.data.deals || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [search, filterCenter]);
+  }, [search, filterCenter, filterUpdated, sortBy, sortOrder]);
 
   const fetchSummary = useCallback(() => {
     api.get("/api/centers/deals/summary").then(r => setSummary(r.data)).catch(() => {});
@@ -80,14 +86,14 @@ export default function AdminCommissionSlabs() {
 
   const openAdd = () => {
     setEditDeal(null); setSelectedStudent(null); setStudentSearch("");
-    setForm({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", notes: "" });
+    setForm({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", admission_date: "", notes: "" });
     setShowAdd(true);
   };
 
   const openEdit = (deal: any) => {
     setEditDeal(deal);
     setSelectedStudent({ id: deal.student_id, name: deal.student_name, enrollment_no: deal.enrollment_no });
-    setForm({ student_id: deal.student_id, sub_center_fee: String(deal.sub_center_fee || 0), center_deal: String(deal.center_deal || 0), admin_deal: String(deal.admin_deal || 0), university_deal: String(deal.university_deal || 0), notes: deal.notes || "" });
+    setForm({ student_id: deal.student_id, sub_center_fee: String(deal.sub_center_fee || 0), center_deal: String(deal.center_deal || 0), admin_deal: String(deal.admin_deal || 0), university_deal: String(deal.university_deal || 0), admission_date: deal.admission_date || "", notes: deal.notes || "" });
     setShowAdd(true);
   };
 
@@ -96,7 +102,7 @@ export default function AdminCommissionSlabs() {
     if (!studentId) { alert("Please select a student"); return; }
     setSaving(true);
     try {
-      const payload = { sub_center_fee: parseFloat(form.sub_center_fee) || 0, center_deal: parseFloat(form.center_deal) || 0, admin_deal: parseFloat(form.admin_deal) || 0, university_deal: parseFloat(form.university_deal) || 0, notes: form.notes };
+      const payload = { sub_center_fee: parseFloat(form.sub_center_fee) || 0, center_deal: parseFloat(form.center_deal) || 0, admin_deal: parseFloat(form.admin_deal) || 0, university_deal: parseFloat(form.university_deal) || 0, admission_date: form.admission_date || null, notes: form.notes };
       if (editDeal) { await api.put(`/api/centers/deals/${editDeal.id}`, payload); }
       else { await api.post("/api/centers/deals", { student_id: studentId, ...payload }); }
       setShowAdd(false); fetchDeals(); fetchSummary();
@@ -184,6 +190,11 @@ export default function AdminCommissionSlabs() {
                 <option value="">All Centers</option>
                 {centers.map((c: any) => <option key={c.id} value={c.id}>{c.name} {c.level === "sub_center" ? "(Sub)" : ""}</option>)}
               </select>
+              <select value={filterUpdated} onChange={e => setFilterUpdated(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="">All Deals</option>
+                <option value="not_updated">Not Updated by Admin</option>
+                <option value="updated">Updated by Admin</option>
+              </select>
             </div>
             <div className="flex gap-2">
               <button onClick={() => { fetchBulkStudents(); setShowBulk(true); setBulkForm({ sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", notes: "" }); setBulkSelected([]); }} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 text-sm font-medium">
@@ -200,15 +211,17 @@ export default function AdminCommissionSlabs() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Student</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-blue-600" onClick={() => { setSortBy("student_name"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Student {sortBy === "student_name" && <ArrowUpDown className="inline h-3 w-3" />}</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Mobile</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Center</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Sub Center</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Counselor</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-blue-600" onClick={() => { setSortBy("admission_date"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Adm. Date {sortBy === "admission_date" && <ArrowUpDown className="inline h-3 w-3" />}</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">University / Course</th>
-                <th className="text-right px-4 py-3 font-semibold text-gray-600">Sub-center Fee</th>
-                <th className="text-right px-4 py-3 font-semibold text-gray-600">Center Deal</th>
-                <th className="text-right px-4 py-3 font-semibold text-gray-600">Admin Deal</th>
-                <th className="text-right px-4 py-3 font-semibold text-gray-600">Univ Deal</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-blue-600" onClick={() => { setSortBy("sub_center_fee"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>SC Fee {sortBy === "sub_center_fee" && <ArrowUpDown className="inline h-3 w-3" />}</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-blue-600" onClick={() => { setSortBy("center_deal"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Center Deal {sortBy === "center_deal" && <ArrowUpDown className="inline h-3 w-3" />}</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-blue-600" onClick={() => { setSortBy("admin_deal"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Admin Deal {sortBy === "admin_deal" && <ArrowUpDown className="inline h-3 w-3" />}</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-blue-600" onClick={() => { setSortBy("university_deal"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Univ Deal {sortBy === "university_deal" && <ArrowUpDown className="inline h-3 w-3" />}</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">SC Profit</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Center Profit</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Admin Profit</th>
@@ -217,25 +230,36 @@ export default function AdminCommissionSlabs() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={13} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={15} className="text-center py-8 text-gray-400">Loading...</td></tr>
               ) : deals.length === 0 ? (
-                <tr><td colSpan={13} className="text-center py-8 text-gray-400">No deals configured yet. Click "Add Deal" to start.</td></tr>
+                <tr><td colSpan={15} className="text-center py-8 text-gray-400">No deals configured yet. Click "Add Deal" to start.</td></tr>
               ) : deals.map(d => {
                 const scP = (d.sub_center_fee || 0) - (d.center_deal || 0);
                 const cP = (d.center_deal || 0) - (d.admin_deal || 0);
                 const aP = (d.admin_deal || 0) - (d.university_deal || 0);
+                const isNotUpdated = (!d.admin_deal || d.admin_deal === 0) && (!d.university_deal || d.university_deal === 0);
+                const admissionDateLabel = d.admission_date
+                  ? new Date(d.admission_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                  : "—";
                 return (
-                  <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <tr key={d.id} className={`border-b border-gray-50 hover:bg-gray-50 ${isNotUpdated ? "bg-amber-50 border-l-4 border-l-amber-400" : ""}`}>
                     <td className="px-4 py-3">
                       <div className="font-medium">{d.student_name}</div>
+                      {isNotUpdated && (
+                        <span className="inline-flex items-center gap-1 mt-1 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+                          <AlertTriangle className="h-3 w-3" /> Not Updated
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{d.student_phone || d.enrollment_no || "—"}</td>
+                    <td className="px-4 py-3 text-gray-600">{d.student_phone || "—"}</td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">{d.parent_center_name || d.center_name || "Direct"}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">{d.center_name || "Direct"}</span>
                     </td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{d.student_counselor || "—"}</td>
+                    <td className="px-4 py-3 text-xs text-gray-600">{admissionDateLabel}</td>
                     <td className="px-4 py-3 text-xs text-gray-600">{d.university_name || "-"}<br />{d.course_name || ""}</td>
                     <td className="px-4 py-3 text-right font-medium text-emerald-600">{fmt(d.sub_center_fee)}</td>
                     <td className="px-4 py-3 text-right font-medium text-blue-600">{fmt(d.center_deal)}</td>
