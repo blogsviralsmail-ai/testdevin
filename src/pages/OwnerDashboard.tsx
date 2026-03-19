@@ -15,7 +15,7 @@ export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const validTabs = ['dashboard','grounds','bookings','wallet','settlement','payout','ledger','tickets','addground','analytics','coupons','autoreplies','crm','bulkslots','profile','tournaments','equipment','chat','manageslots','editground'] as const;
+  const validTabs = ['dashboard','grounds','bookings','wallet','settlement','payout','ledger','tickets','addground','coupons','autoreplies','crm','bulkslots','profile','tournaments','equipment','chat','manageslots','editground'] as const;
   type TabType = typeof validTabs[number];
   const getInitialTab = (): TabType => {
     const hash = window.location.hash.replace('#','') as TabType;
