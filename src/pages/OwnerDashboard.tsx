@@ -843,11 +843,10 @@ export default function OwnerDashboard() {
               <button onClick={() => { setNewGround({ name: '', address: '', city: 'Jaipur', ground_type: 'box', weekday_price: 800, weekend_price: 1000, evening_extra: 200, opening_time: '06:00', closing_time: '22:00', amenities: 'Floodlights,Parking', description: '', latitude: '', longitude: '' }); setSelectedAmenities(['Floodlights', 'Parking']); setGroundPhoto(null); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
               <button onClick={async () => {
                 try {
-                  await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0});
+                  const result = await api.addOwnerGround({...newGround, latitude: parseFloat(newGround.latitude) || 0, longitude: parseFloat(newGround.longitude) || 0}) as Record<string, unknown>;
                   // Upload photo if selected
-                  if (groundPhoto && data?.grounds?.length) {
-                    const lastGround = data.grounds[data.grounds.length - 1];
-                    await api.uploadGalleryImage(lastGround.id as number, groundPhoto, 'Ground Photo');
+                  if (groundPhoto && result?.id) {
+                    await api.uploadGalleryImage(result.id as number, groundPhoto, 'Ground Photo');
                   }
                   alert('Ground submitted! Pending admin approval.');
                   setGroundPhoto(null);
