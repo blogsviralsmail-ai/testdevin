@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { TrendingUp, Calendar, Star, IndianRupee, AlertTriangle, Plus, Wallet, MapPin, CheckCircle, XCircle, CalendarOff, Menu, ChevronLeft, LogOut, BarChart3, FileText, Lock, Unlock, Edit, Trash2, MessageSquare, Tag, Users, Image, Copy, User, Download, Search, Navigation, Shield, Upload, RefreshCw, Info, X, TrendingDown } from 'lucide-react';
+import { TrendingUp, Calendar, Star, IndianRupee, AlertTriangle, Plus, Wallet, MapPin, CheckCircle, XCircle, CalendarOff, Menu, ChevronLeft, LogOut, BarChart3, FileText, Lock, Unlock, Edit, Trash2, MessageSquare, Tag, Users, Copy, User, Download, Search, Navigation, Shield, Upload, RefreshCw, Info, X, TrendingDown } from 'lucide-react';
 
 interface DashboardData {
   grounds: Array<Record<string, unknown>>;
@@ -15,7 +15,7 @@ export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const validTabs = ['dashboard','grounds','bookings','wallet','settlement','payout','ledger','tickets','addground','analytics','dynamicpricing','staff','coupons','expenses','maintenance','autoreplies','crm','gallery','bulkslots','profile','tournaments','equipment','chat'] as const;
+  const validTabs = ['dashboard','grounds','bookings','wallet','settlement','payout','ledger','tickets','addground','analytics','coupons','autoreplies','crm','bulkslots','profile','tournaments','equipment','chat'] as const;
   type TabType = typeof validTabs[number];
   const getInitialTab = (): TabType => {
     const hash = window.location.hash.replace('#','') as TabType;
@@ -71,18 +71,9 @@ export default function OwnerDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // V13 new state
   const [ownerAnalytics, setOwnerAnalytics] = useState<Record<string, unknown>>({});
-  const [dynamicPricing, setDynamicPricing] = useState<Array<Record<string, unknown>>>([]);
-  const [ownerStaff, setOwnerStaff] = useState<Array<Record<string, unknown>>>([]);
   const [ownerCoupons, setOwnerCoupons] = useState<Array<Record<string, unknown>>>([]);
-  const [ownerExpenses, setOwnerExpenses] = useState<Array<Record<string, unknown>>>([]);
-  const [ownerMaintenance, setOwnerMaintenance] = useState<Array<Record<string, unknown>>>([]);
   const [ownerAutoReplies, setOwnerAutoReplies] = useState<Array<Record<string, unknown>>>([]);
   const [ownerCRM, setOwnerCRM] = useState<Array<Record<string, unknown>>>([]);
-  const [galleryImages, setGalleryImages] = useState<Array<Record<string, unknown>>>([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [newImageCaption, setNewImageCaption] = useState('');
-  const [galleryFile, setGalleryFile] = useState<File | null>(null);
-  const [galleryGroundId, setGalleryGroundId] = useState<number>(0);
   const [bulkSlotDate, setBulkSlotDate] = useState(new Date().toISOString().split('T')[0]);
   const [bulkSlotEndDate, setBulkSlotEndDate] = useState('');
   const [bulkSlotStart, setBulkSlotStart] = useState('06:00');
@@ -131,13 +122,8 @@ export default function OwnerDashboard() {
     { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'ledger', label: 'Ledger', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-    { id: 'dynamicpricing', label: 'Pricing', icon: IndianRupee },
     { id: 'coupons', label: 'Coupons', icon: Tag },
-    { id: 'expenses', label: 'Expenses', icon: IndianRupee },
     { id: 'crm', label: 'CRM', icon: Users },
-    { id: 'staff', label: 'Staff', icon: Users },
-    { id: 'gallery', label: 'Gallery', icon: Image },
-    { id: 'maintenance', label: 'Maintenance', icon: Calendar },
     { id: 'tournaments', label: 'Tournaments', icon: Calendar },
     { id: 'equipment', label: 'Equipment', icon: Tag },
     { id: 'autoreplies', label: 'Auto Reply', icon: MessageSquare },
@@ -172,14 +158,9 @@ export default function OwnerDashboard() {
 
   const loadTab = () => {
     if (tab === 'analytics') api.getOwnerAnalytics().then(setOwnerAnalytics).catch(() => {});
-    if (tab === 'dynamicpricing') api.getDynamicPricing().then(setDynamicPricing).catch(() => {});
-    if (tab === 'staff') api.getOwnerStaff().then(setOwnerStaff).catch(() => {});
     if (tab === 'coupons') api.getOwnerCoupons().then(setOwnerCoupons).catch(() => {});
-    if (tab === 'expenses') api.getOwnerExpenses().then(setOwnerExpenses).catch(() => {});
-    if (tab === 'maintenance') api.getOwnerMaintenance().then(setOwnerMaintenance).catch(() => {});
     if (tab === 'autoreplies') api.getOwnerAutoReplies().then(setOwnerAutoReplies).catch(() => {});
     if (tab === 'crm') api.getOwnerCRM().then(setOwnerCRM).catch(() => {});
-    if (tab === 'gallery' && galleryGroundId) api.getOwnerGallery(galleryGroundId).then(setGalleryImages).catch(() => {});
     if (tab === 'tournaments') api.getOwnerTournaments().then(setOwnerTournaments).catch(() => {});
     if (tab === 'grounds') api.getOwnerChangeRequests().then(() => {}).catch(() => {});
     if (tab === 'equipment' && grounds.length > 0) api.getGroundEquipment(grounds[0]?.id as number || 0).then(setOwnerEquipmentList).catch(() => {});
@@ -1394,70 +1375,9 @@ export default function OwnerDashboard() {
               </>
             )}
 
-            {/* DYNAMIC PRICING */}
-            {tab === 'dynamicpricing' && (
-              <>
-                <h3 className="font-bold text-gray-800 text-xl mb-4">Dynamic Pricing Rules</h3>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Add Price Rule</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="dp-ground">
-                      <option value="">Select Ground</option>
-                      {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
-                    </select>
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="dp-daytype">
-                      <option value="weekday">Weekday</option><option value="weekend">Weekend</option><option value="holiday">Holiday</option><option value="special">Special Event</option>
-                    </select>
-                    <input type="text" placeholder="Time Slot (e.g. 18:00-20:00)" className="border rounded-lg px-3 py-2 text-sm" id="dp-slot" />
-                    <input type="number" step="0.1" placeholder="Price Multiplier (e.g. 1.5)" defaultValue="1.0" className="border rounded-lg px-3 py-2 text-sm" id="dp-mult" />
-                  </div>
-                  <button onClick={async () => { const gid = (document.getElementById('dp-ground') as HTMLSelectElement)?.value; const dt = (document.getElementById('dp-daytype') as HTMLSelectElement)?.value; const slot = (document.getElementById('dp-slot') as HTMLInputElement)?.value; const mult = (document.getElementById('dp-mult') as HTMLInputElement)?.value; if (!gid) { alert('Select ground'); return; } try { await api.addDynamicPricing({ ground_id: parseInt(gid), day_type: dt, time_slot: slot, price_multiplier: parseFloat(mult || '1') }); alert('Pricing rule added!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Add Rule</button>
-                </div>
-                <div className="space-y-3">
-                  {dynamicPricing.map((dp: Record<string, unknown>) => (
-                    <div key={dp.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">{dp.ground_name as string}</p>
-                        <p className="text-xs text-gray-500">{dp.day_type as string} | {dp.time_slot as string || 'All times'} | Multiplier: {dp.price_multiplier as number}x</p>
-                      </div>
-                      <button onClick={async () => { try { await api.deleteDynamicPricing(dp.id as number); loadTab(); } catch { /* */ } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {dynamicPricing.length === 0 && <p className="text-gray-400 text-center py-8">No pricing rules. Default pricing applies.</p>}
-                </div>
-              </>
-            )}
+            {/* Dynamic Pricing - Removed */}
 
-            {/* STAFF MANAGEMENT */}
-            {tab === 'staff' && (
-              <>
-                <h3 className="font-bold text-gray-800 text-xl mb-4">Staff Management</h3>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Add Staff Member</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input type="text" placeholder="Staff Name" className="border rounded-lg px-3 py-2 text-sm" id="staff-name" />
-                    <input type="text" placeholder="Phone Number" className="border rounded-lg px-3 py-2 text-sm" id="staff-phone" />
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="staff-role">
-                      <option value="ground_keeper">Ground Keeper</option><option value="manager">Manager</option><option value="cashier">Cashier</option><option value="security">Security</option><option value="cleaner">Cleaner</option>
-                    </select>
-                  </div>
-                  <button onClick={async () => { const name = (document.getElementById('staff-name') as HTMLInputElement)?.value; const phone = (document.getElementById('staff-phone') as HTMLInputElement)?.value; const role = (document.getElementById('staff-role') as HTMLSelectElement)?.value; if (!name) { alert('Enter name'); return; } try { await api.addOwnerStaff({ name, phone, role }); alert('Staff added!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Add Staff</button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {ownerStaff.map((s: Record<string, unknown>) => (
-                    <div key={s.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">{s.name as string}</p>
-                        <p className="text-xs text-gray-500">{s.phone as string} | Role: {(s.role as string || '').replace('_', ' ')}</p>
-                        {s.ground_name ? <p className="text-xs text-purple-600">{String(s.ground_name)}</p> : null}
-                      </div>
-                      <button onClick={async () => { if (confirm('Remove staff?')) { try { await api.deleteOwnerStaff(s.id as number); loadTab(); } catch { /* */ } } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {ownerStaff.length === 0 && <p className="text-gray-400 text-center py-8 col-span-2">No staff members added yet.</p>}
-                </div>
-              </>
-            )}
+            {/* Staff - Removed */}
 
             {/* DISCOUNT COUPONS */}
             {tab === 'coupons' && (
@@ -1466,23 +1386,33 @@ export default function OwnerDashboard() {
                 <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
                   <h4 className="font-bold text-gray-700 mb-3">Create Coupon</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select className="border rounded-lg px-3 py-2 text-sm" id="coupon-ground">
+                      <option value="">Select Ground</option>
+                      {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
+                    </select>
                     <input type="text" placeholder="Coupon Code (e.g. FLAT20)" className="border rounded-lg px-3 py-2 text-sm uppercase" id="coupon-code" />
                     <select className="border rounded-lg px-3 py-2 text-sm" id="coupon-type">
                       <option value="percentage">Percentage Off</option><option value="flat">Flat Discount</option>
                     </select>
                     <input type="number" placeholder="Discount Value" defaultValue="10" className="border rounded-lg px-3 py-2 text-sm" id="coupon-value" />
                     <input type="number" placeholder="Max Uses" defaultValue="100" className="border rounded-lg px-3 py-2 text-sm" id="coupon-max" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="coupon-from" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="coupon-to" />
+                    <input type="date" placeholder="Valid From" className="border rounded-lg px-3 py-2 text-sm" id="coupon-from" />
+                    <input type="date" placeholder="Valid To" className="border rounded-lg px-3 py-2 text-sm" id="coupon-to" />
                   </div>
-                  <button onClick={async () => { const code = (document.getElementById('coupon-code') as HTMLInputElement)?.value; const dtype = (document.getElementById('coupon-type') as HTMLSelectElement)?.value; const val = (document.getElementById('coupon-value') as HTMLInputElement)?.value; const max = (document.getElementById('coupon-max') as HTMLInputElement)?.value; const from = (document.getElementById('coupon-from') as HTMLInputElement)?.value; const to = (document.getElementById('coupon-to') as HTMLInputElement)?.value; if (!code) { alert('Enter code'); return; } try { await api.addOwnerCoupon({ code, discount_type: dtype, discount_value: parseFloat(val || '10'), max_uses: parseInt(max || '100'), valid_from: from, valid_to: to }); alert('Coupon created!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Create Coupon</button>
+                  <button onClick={async () => { const gid = (document.getElementById('coupon-ground') as HTMLSelectElement)?.value; const code = (document.getElementById('coupon-code') as HTMLInputElement)?.value; const dtype = (document.getElementById('coupon-type') as HTMLSelectElement)?.value; const val = (document.getElementById('coupon-value') as HTMLInputElement)?.value; const max = (document.getElementById('coupon-max') as HTMLInputElement)?.value; const from = (document.getElementById('coupon-from') as HTMLInputElement)?.value; const to = (document.getElementById('coupon-to') as HTMLInputElement)?.value; if (!gid) { showOwnerToast('Ground select karo', 'warning'); return; } if (!code) { showOwnerToast('Coupon code enter karo', 'warning'); return; } try { await api.addOwnerCoupon({ ground_id: parseInt(gid), code, discount_type: dtype, discount_value: parseFloat(val || '10'), max_uses: parseInt(max || '100'), valid_from: from, valid_to: to }); showOwnerToast('Coupon created!', 'success'); loadTab(); } catch(e: unknown) { showOwnerToast(e instanceof Error ? e.message : 'Failed', 'error'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Create Coupon</button>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
+                  <p className="text-xs text-blue-700"><strong>Note:</strong> Coupons sirf usi ground pe kaam karenge jis ground ke liye banaye hain. Har coupon ek specific ground se linked hai.</p>
                 </div>
                 <div className="space-y-3">
                   {ownerCoupons.map((c: Record<string, unknown>) => (
                     <div key={c.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
                       <div>
-                        <code className="bg-purple-100 text-purple-700 px-3 py-1 rounded font-bold text-sm">{c.code as string}</code>
-                        <p className="text-xs text-gray-500 mt-2">{c.discount_type as string === 'percentage' ? `${c.discount_value}% off` : `Rs.${c.discount_value} off`} | Used: {c.used_count as number}/{c.max_uses as number}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <code className="bg-purple-100 text-purple-700 px-3 py-1 rounded font-bold text-sm">{c.code as string}</code>
+                          {c.ground_name ? <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{String(c.ground_name)}</span> : null}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">{c.discount_type as string === 'percentage' ? `${c.discount_value}% off` : `Rs.${c.discount_value} off`} | Used: {c.used_count as number}/{c.max_uses as number}</p>
                         {c.valid_from ? <p className="text-xs text-gray-400">Valid: {String(c.valid_from)} to {String(c.valid_to)}</p> : null}
                       </div>
                       <button onClick={async () => { if (confirm('Delete coupon?')) { try { await api.deleteOwnerCoupon(c.id as number); loadTab(); } catch { /* */ } } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
@@ -1493,90 +1423,8 @@ export default function OwnerDashboard() {
               </>
             )}
 
-            {/* EXPENSE TRACKER */}
-            {tab === 'expenses' && (
-              <>
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                  <h3 className="font-bold text-gray-800 text-xl">Expense Tracker</h3>
-                  <div className="flex gap-2">
-                    {ownerExpenses.length > 0 && <>
-                      <button onClick={() => ownerExportCSV('expenses.csv', ['Category','Amount','Description','Date'], ownerExpenses.map(e => [String(e.category),'Rs.'+String(e.amount||0),String(e.description||''),String(e.expense_date||'')]))} className="bg-green-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><Download size={12}/> CSV</button>
-                      <button onClick={() => ownerExportPDF('Expense Report', ['Category','Amount','Description','Date'], ownerExpenses.map(e => [String(e.category),'Rs.'+String(e.amount||0),String(e.description||''),String(e.expense_date||'')]))} className="bg-red-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><FileText size={12}/> PDF</button>
-                    </>}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Add Expense</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="exp-cat">
-                      <option value="maintenance">Maintenance</option><option value="salary">Salary</option><option value="electricity">Electricity</option><option value="water">Water</option><option value="equipment">Equipment</option><option value="rent">Rent</option><option value="marketing">Marketing</option><option value="other">Other</option>
-                    </select>
-                    <input type="number" placeholder="Amount (Rs.)" className="border rounded-lg px-3 py-2 text-sm" id="exp-amount" />
-                    <input type="text" placeholder="Description" className="border rounded-lg px-3 py-2 text-sm" id="exp-desc" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="exp-date" />
-                  </div>
-                  <button onClick={async () => { const cat = (document.getElementById('exp-cat') as HTMLSelectElement)?.value; const amt = (document.getElementById('exp-amount') as HTMLInputElement)?.value; const desc = (document.getElementById('exp-desc') as HTMLInputElement)?.value; const date = (document.getElementById('exp-date') as HTMLInputElement)?.value; if (!amt || parseFloat(amt) <= 0) { alert('Enter valid amount'); return; } try { await api.addOwnerExpense({ category: cat, amount: parseFloat(amt), description: desc, expense_date: date }); alert('Expense added!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Add Expense</button>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
-                  <p className="text-sm text-gray-600">Total Expenses: <span className="font-bold text-red-600">Rs.{ownerExpenses.reduce((s: number, e: Record<string, unknown>) => s + (e.amount as number || 0), 0).toLocaleString()}</span></p>
-                </div>
-                <div className="space-y-3">
-                  {ownerExpenses.map((e: Record<string, unknown>) => (
-                    <div key={e.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">Rs.{(e.amount as number || 0).toLocaleString()} - {(e.category as string || '').replace('_', ' ')}</p>
-                        <p className="text-xs text-gray-500">{e.description as string} | {e.expense_date as string}</p>
-                        {e.ground_name ? <p className="text-xs text-purple-600">{String(e.ground_name)}</p> : null}
-                      </div>
-                      <button onClick={async () => { try { await api.deleteOwnerExpense(e.id as number); loadTab(); } catch { /* */ } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {ownerExpenses.length === 0 && <p className="text-gray-400 text-center py-8">No expenses recorded yet.</p>}
-                </div>
-              </>
-            )}
-
-            {/* MAINTENANCE SCHEDULE */}
-            {tab === 'maintenance' && (
-              <>
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                  <h3 className="font-bold text-gray-800 text-xl">Maintenance Schedule</h3>
-                  <div className="flex gap-2">
-                    {ownerMaintenance.length > 0 && <>
-                      <button onClick={() => ownerExportCSV('maintenance.csv', ['Ground','Title','Start','End','Status'], ownerMaintenance.map(m => [String(m.ground_name||''),String(m.title||''),String(m.start_date||''),String(m.end_date||''),String(m.status||'')]))} className="bg-green-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><Download size={12}/> CSV</button>
-                      <button onClick={() => ownerExportPDF('Maintenance Report', ['Ground','Title','Start','End','Status'], ownerMaintenance.map(m => [String(m.ground_name||''),String(m.title||''),String(m.start_date||''),String(m.end_date||''),String(m.status||'')]))} className="bg-red-600 text-white px-2 py-1.5 rounded-lg text-xs flex items-center gap-1"><FileText size={12}/> PDF</button>
-                    </>}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">Schedule Maintenance</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <select className="border rounded-lg px-3 py-2 text-sm" id="maint-ground">
-                      <option value="">Select Ground</option>
-                      {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
-                    </select>
-                    <input type="text" placeholder="Maintenance Title" className="border rounded-lg px-3 py-2 text-sm" id="maint-title" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="maint-start" />
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm" id="maint-end" />
-                  </div>
-                  <textarea placeholder="Description (optional)" className="w-full border rounded-lg px-3 py-2 text-sm mt-3 h-16" id="maint-desc" />
-                  <button onClick={async () => { const gid = (document.getElementById('maint-ground') as HTMLSelectElement)?.value; const title = (document.getElementById('maint-title') as HTMLInputElement)?.value; const start = (document.getElementById('maint-start') as HTMLInputElement)?.value; const end = (document.getElementById('maint-end') as HTMLInputElement)?.value; const desc = (document.getElementById('maint-desc') as HTMLTextAreaElement)?.value; if (!gid || !title || !start) { alert('Fill required fields'); return; } try { await api.addOwnerMaintenance({ ground_id: parseInt(gid), title, description: desc, start_date: start, end_date: end }); alert('Maintenance scheduled!'); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="mt-3 bg-purple-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700">Schedule</button>
-                </div>
-                <div className="space-y-3">
-                  {ownerMaintenance.map((m: Record<string, unknown>) => (
-                    <div key={m.id as number} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800">{m.title as string}</p>
-                        <p className="text-xs text-gray-500">{m.ground_name as string} | {m.start_date as string} to {m.end_date as string || 'TBD'}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{m.status as string}</span>
-                      </div>
-                      <button onClick={async () => { try { await api.deleteOwnerMaintenance(m.id as number); loadTab(); } catch { /* */ } }} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                    </div>
-                  ))}
-                  {ownerMaintenance.length === 0 && <p className="text-gray-400 text-center py-8">No maintenance scheduled.</p>}
-                </div>
-              </>
-            )}
+            {/* Expenses - Removed */}
+            {/* Maintenance - Removed */}
 
             {/* AUTO REPLIES */}
             {tab === 'autoreplies' && (
@@ -1607,69 +1455,7 @@ export default function OwnerDashboard() {
               </>
             )}
 
-            {/* Gallery */}
-            {tab === 'gallery' && (
-              <>
-                <h3 className="font-bold text-gray-800 text-xl mb-4">Ground Gallery</h3>
-                <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
-                  <label className="text-sm font-medium text-gray-600">Select Ground</label>
-                  <select className="w-full border rounded-lg px-4 py-2 mt-1" value={galleryGroundId} onChange={e => { setGalleryGroundId(parseInt(e.target.value)); if(parseInt(e.target.value)) api.getOwnerGallery(parseInt(e.target.value)).then(setGalleryImages).catch(() => setGalleryImages([])); }}>
-                    <option value={0}>Choose Ground</option>
-                    {grounds.map((g: Record<string, unknown>) => <option key={g.id as number} value={g.id as number}>{g.name as string}</option>)}
-                  </select>
-                </div>
-                {galleryGroundId > 0 && (
-                  <>
-                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
-                      <h4 className="font-medium text-gray-700 mb-3">Add Image</h4>
-                      <div className="space-y-3">
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="block text-sm text-gray-600 mb-1">Upload Photo</label>
-                            <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 text-sm" onChange={e => { const f = e.target.files?.[0]; if(f) setGalleryFile(f); }} />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-sm text-gray-600 mb-1">Or Image URL</label>
-                            <input type="text" placeholder="https://..." className="w-full border rounded-lg px-3 py-2 text-sm" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <input type="text" placeholder="Caption (optional)" className="flex-1 border rounded-lg px-3 py-2 text-sm" value={newImageCaption} onChange={e => setNewImageCaption(e.target.value)} />
-                          <button onClick={async () => {
-                            if(!galleryFile && !newImageUrl) { alert('Select an image file or enter URL'); return; }
-                            try {
-                              if(galleryFile) {
-                                await api.uploadGalleryImage(galleryGroundId, galleryFile, newImageCaption);
-                              } else {
-                                await api.addGalleryImage({ ground_id: galleryGroundId, image_url: newImageUrl, caption: newImageCaption });
-                              }
-                              setNewImageUrl(''); setNewImageCaption(''); setGalleryFile(null);
-                              const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement;
-                              if(fileInput) fileInput.value = '';
-                              api.getOwnerGallery(galleryGroundId).then(setGalleryImages);
-                            } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
-                          }} className="bg-green-600 text-white px-6 rounded-lg hover:bg-green-700 flex items-center gap-1"><Plus size={16} /> Add</button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {galleryImages.map((img: Record<string, unknown>) => (
-                        <div key={img.id as number} className="bg-white rounded-xl shadow-sm overflow-hidden group relative">
-                          <div className="h-40 bg-gray-100 flex items-center justify-center">
-                            <img src={img.image_url as string} alt={img.caption as string || 'Ground'} className="w-full h-full object-cover" onError={e => (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%23f3f4f6%22 width=%22100%22 height=%22100%22/><text fill=%22%239ca3af%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22>No Image</text></svg>'} />
-                          </div>
-                          <div className="p-3 flex items-center justify-between">
-                            <p className="text-sm text-gray-600 truncate">{(img.caption as string) || 'No caption'}</p>
-                            <button onClick={async () => { try { await api.deleteGalleryImage(img.id as number); api.getOwnerGallery(galleryGroundId).then(setGalleryImages); } catch {} }} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
-                          </div>
-                        </div>
-                      ))}
-                      {galleryImages.length === 0 && <p className="text-gray-400 text-center py-8 col-span-4">No images. Add gallery images above.</p>}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
+            {/* Gallery - Removed */}
 
             {/* Bulk Slot Management */}
             {tab === 'bulkslots' && (
