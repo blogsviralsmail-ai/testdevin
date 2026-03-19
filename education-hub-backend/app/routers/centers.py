@@ -2374,7 +2374,7 @@ async def list_counselor_leads(
 
     # Scope by center
     if role == "center":
-        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user["id"],)).fetchone()
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
         if center:
             all_ids = get_center_and_subcenter_ids(conn, center["id"])
             placeholders = ",".join(["?"] * len(all_ids))
@@ -2428,7 +2428,7 @@ async def create_counselor_lead(data: CounselorLeadCreate, user: dict = Depends(
 
     # Get center_id
     if role == "center":
-        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user["id"],)).fetchone()
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
         if center:
             center_id = center["id"]
     elif role in ("admin", "super_admin", "branch_admin"):
@@ -2438,7 +2438,7 @@ async def create_counselor_lead(data: CounselorLeadCreate, user: dict = Depends(
         INSERT INTO counselor_leads (name, father_name, mobile, email, counselor_name, counselor_user_id,
             current_status, followup_date, remarks, source, university_interest, course_interest, center_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (data.name, data.father_name, data.mobile, data.email, counselor_name, user["id"],
+    """, (data.name, data.father_name, data.mobile, data.email, counselor_name, user.get("sub"),
           data.current_status, data.followup_date, data.remarks, data.source,
           data.university_interest, data.course_interest, center_id))
     conn.commit()
@@ -2523,7 +2523,7 @@ async def counselor_lead_stats(user: dict = Depends(get_current_user)):
     where = "WHERE 1=1"
     params: list = []
     if role == "center":
-        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user["id"],)).fetchone()
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
         if center:
             all_ids = get_center_and_subcenter_ids(conn, center["id"])
             placeholders = ",".join(["?"] * len(all_ids))
