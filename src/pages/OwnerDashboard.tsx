@@ -15,7 +15,7 @@ export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const validTabs = ['dashboard','grounds','bookings','wallet','settlement','payout','ledger','tickets','addground','analytics','coupons','autoreplies','crm','bulkslots','profile','tournaments','equipment','chat'] as const;
+  const validTabs = ['dashboard','grounds','bookings','wallet','settlement','payout','ledger','tickets','addground','analytics','coupons','autoreplies','crm','bulkslots','profile','tournaments','equipment','chat','manageslots','editground'] as const;
   type TabType = typeof validTabs[number];
   const getInitialTab = (): TabType => {
     const hash = window.location.hash.replace('#','') as TabType;
@@ -474,92 +474,100 @@ export default function OwnerDashboard() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-2 flex-wrap">
-                    <button onClick={() => { setSelectedGround(g.id as number); loadSlots(g.id as number, selectedDate); }}
-                      className={`text-sm px-4 py-2 rounded-lg ${selectedGround === (g.id as number) ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
-                      {selectedGround === (g.id as number) ? 'Viewing Slots' : 'Manage Slots'}
+                    <button onClick={() => { setSelectedGround(g.id as number); loadSlots(g.id as number, selectedDate); changeTab('manageslots'); }}
+                      className="text-sm px-4 py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center gap-1">
+                      <Calendar size={14}/> Manage Slots
                     </button>
                     <button disabled={isSubmitting} onClick={async () => { if (isSubmitting) return; setIsSubmitting(true); try { await api.toggleOwnerGround(g.id as number); loadData(); } catch(e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed to toggle'); } finally { setIsSubmitting(false); } }}
                       className={`text-sm px-4 py-2 rounded-lg flex items-center gap-1 ${Number(g.is_active) ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}>
                       {Number(g.is_active) ? '🟢 Active' : '🔴 Inactive'}
                     </button>
-                    <button onClick={() => { setShowEditGroundModal(g); const amenitiesStr = (g.amenities as string) || ''; setEditSelectedAmenities(amenitiesStr ? amenitiesStr.split(',').map((a: string) => a.trim()).filter(Boolean) : []); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '', token_money_percent: g.token_money_percent || 100 }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
+                    <button onClick={() => { setShowEditGroundModal(g); const amenitiesStr = (g.amenities as string) || ''; setEditSelectedAmenities(amenitiesStr ? amenitiesStr.split(',').map((a: string) => a.trim()).filter(Boolean) : []); setEditGroundFormData({ name: g.name, address: g.address, city: g.city || 'Jaipur', weekday_price: g.weekday_price, weekend_price: g.weekend_price, evening_extra: g.evening_extra || 0, ground_type: g.ground_type || 'box', opening_time: g.opening_time || '06:00', closing_time: g.closing_time || '22:00', description: g.description || '', amenities: g.amenities || '', token_money_percent: g.token_money_percent || 100 }); setEditGroundPhoto(null); setEditGroundPhotos([]); setEditGroundPhotoPreviews([]); changeTab('editground'); }} className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Edit size={14}/> Edit</button>
                     <button disabled={isSubmitting} onClick={async () => { if (!confirm('Are you sure you want to delete this ground? This cannot be undone.')) return; setIsSubmitting(true); try { await api.deleteOwnerGround(g.id as number); setSuccessPopup('Ground deleted successfully!'); loadData(); } catch(e: unknown) { setErrorPopup(e instanceof Error ? e.message : 'Failed'); } finally { setIsSubmitting(false); } }} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 flex items-center gap-1 disabled:opacity-50"><Trash2 size={14}/> Delete</button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {selectedGround && (
-              <div className="bg-white rounded-xl shadow-sm p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-800 text-lg">Slot Management</h3>
-                  <div className="flex gap-2">
-                    <button onClick={() => setAddSlotDialog(true)} className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><Plus size={14}/> Add Slot</button>
-                  </div>
-                </div>
-                <div className="flex gap-2 overflow-x-auto mb-4">
-                  {getDates().map(d => (
-                    <button key={d} onClick={() => { setSelectedDate(d); loadSlots(selectedGround, d); }}
-                      className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap ${selectedDate === d ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                      {new Date(d).toLocaleDateString('en', {weekday:'short',day:'numeric',month:'short'})}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {slots.map((s: Record<string, unknown>) => (
-                    <div key={s.id as number} className={`p-3 rounded-xl text-sm border-2 ${s.status === 'available' ? 'bg-green-50 border-green-300' : s.status === 'booked' ? 'bg-red-50 border-red-300' : s.status === 'blocked' ? 'bg-gray-100 border-gray-400' : 'bg-yellow-50 border-yellow-300'}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-bold text-gray-800">{s.start_time as string} - {s.end_time as string}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status === 'available' ? 'bg-green-200 text-green-800' : s.status === 'booked' ? 'bg-red-200 text-red-800' : s.status === 'blocked' ? 'bg-gray-300 text-gray-700' : 'bg-yellow-200 text-yellow-800'}`}>{s.status as string}</span>
-                      </div>
-                      <p className="font-semibold text-blue-600 mb-2">Rs.{s.price as number}</p>
-                      {s.status !== 'booked' && s.status !== 'dayoff' && (
-                        <div className="flex gap-1 flex-wrap">
-                          <button onClick={() => { setEditingSlot(s); setEditSlotPrice(String(s.price)); }} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded flex items-center gap-0.5 hover:bg-blue-100"><Edit size={10}/> Price</button>
-                          <button onClick={() => handleBlockSlot(s.id as number)} className={`text-xs px-2 py-1 rounded flex items-center gap-0.5 ${s.status === 'blocked' ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}>
-                            {s.status === 'blocked' ? <><Unlock size={10}/> Unblock</> : <><Lock size={10}/> Block</>}
-                          </button>
-                          <button onClick={() => handleDeleteSlot(s.id as number)} className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded flex items-center gap-0.5 hover:bg-red-100"><Trash2 size={10}/> Delete</button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-3 mt-4 text-xs text-gray-500 flex-wrap">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-200 border border-green-400 rounded"></span> Available ({slots.filter((s: Record<string, unknown>) => s.status === 'available').length})</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-200 border border-red-400 rounded"></span> Booked ({slots.filter((s: Record<string, unknown>) => s.status === 'booked').length})</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 bg-gray-300 border border-gray-400 rounded"></span> Blocked ({slots.filter((s: Record<string, unknown>) => s.status === 'blocked').length})</span>
-                </div>
-
-                {/* Edit Slot Price Modal */}
-                {editingSlot && (
-                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingSlot(null)}>
-                    <div className="bg-white rounded-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
-                      <h3 className="text-lg font-bold text-gray-800 mb-3">Edit Slot Price</h3>
-                      <p className="text-sm text-gray-500 mb-3">{editingSlot.start_time as string} - {editingSlot.end_time as string}</p>
-                      <input type="number" placeholder="New Price" className="w-full border rounded-lg px-3 py-2 mb-3" value={editSlotPrice} onChange={e => setEditSlotPrice(e.target.value)} />
-                      <div className="flex gap-3"><button onClick={() => setEditingSlot(null)} className="flex-1 border-2 py-2 rounded-xl font-medium">Cancel</button><button onClick={() => handleUpdateSlotPrice(editingSlot.id as number, parseFloat(editSlotPrice))} className="flex-1 bg-blue-600 text-white py-2 rounded-xl font-medium">Save</button></div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Add Custom Slot Modal */}
-                {addSlotDialog && (
-                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setAddSlotDialog(false)}>
-                    <div className="bg-white rounded-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
-                      <h3 className="text-lg font-bold text-gray-800 mb-3">Add Custom Slot</h3>
-                      <div className="space-y-3">
-                        <div><label className="text-sm text-gray-600">Start Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newSlot.start_time} onChange={e => setNewSlot({...newSlot, start_time: e.target.value})} /></div>
-                        <div><label className="text-sm text-gray-600">End Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newSlot.end_time} onChange={e => setNewSlot({...newSlot, end_time: e.target.value})} /></div>
-                        <div><label className="text-sm text-gray-600">Price (Rs.)</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newSlot.price || ''} onChange={e => setNewSlot({...newSlot, price: parseInt(e.target.value) || 0})} /></div>
-                      </div>
-                      <div className="flex gap-3 mt-4"><button onClick={() => setAddSlotDialog(false)} className="flex-1 border-2 py-2 rounded-xl font-medium">Cancel</button><button onClick={handleAddSlot} className="flex-1 bg-green-600 text-white py-2 rounded-xl font-medium">Add Slot</button></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </>
+        )}
+
+        {/* MANAGE SLOTS TAB - opens as separate tab */}
+        {tab === 'manageslots' && selectedGround && (
+          <div className="space-y-4">
+            <button onClick={() => changeTab('grounds')} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-2"><ChevronLeft size={16}/> Back to My Grounds</button>
+            <div className="bg-white rounded-xl shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-bold text-gray-800 text-lg">Slot Management</h3>
+                  <p className="text-sm text-gray-500">{data.grounds.find((g: Record<string, unknown>) => g.id === selectedGround)?.name as string || 'Ground'}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setAddSlotDialog(true)} className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1"><Plus size={14}/> Add Slot</button>
+                </div>
+              </div>
+              <div className="flex gap-2 overflow-x-auto mb-4">
+                {getDates().map(d => (
+                  <button key={d} onClick={() => { setSelectedDate(d); loadSlots(selectedGround, d); }}
+                    className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap ${selectedDate === d ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    {new Date(d).toLocaleDateString('en', {weekday:'short',day:'numeric',month:'short'})}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {slots.map((s: Record<string, unknown>) => (
+                  <div key={s.id as number} className={`p-3 rounded-xl text-sm border-2 ${s.status === 'available' ? 'bg-green-50 border-green-300' : s.status === 'booked' ? 'bg-red-50 border-red-300' : s.status === 'blocked' ? 'bg-gray-100 border-gray-400' : 'bg-yellow-50 border-yellow-300'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-bold text-gray-800">{s.start_time as string} - {s.end_time as string}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status === 'available' ? 'bg-green-200 text-green-800' : s.status === 'booked' ? 'bg-red-200 text-red-800' : s.status === 'blocked' ? 'bg-gray-300 text-gray-700' : 'bg-yellow-200 text-yellow-800'}`}>{s.status as string}</span>
+                    </div>
+                    <p className="font-semibold text-blue-600 mb-2">Rs.{s.price as number}</p>
+                    {s.status !== 'booked' && s.status !== 'dayoff' && (
+                      <div className="flex gap-1 flex-wrap">
+                        <button onClick={() => { setEditingSlot(s); setEditSlotPrice(String(s.price)); }} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded flex items-center gap-0.5 hover:bg-blue-100"><Edit size={10}/> Price</button>
+                        <button onClick={() => handleBlockSlot(s.id as number)} className={`text-xs px-2 py-1 rounded flex items-center gap-0.5 ${s.status === 'blocked' ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}>
+                          {s.status === 'blocked' ? <><Unlock size={10}/> Unblock</> : <><Lock size={10}/> Block</>}
+                        </button>
+                        <button onClick={() => handleDeleteSlot(s.id as number)} className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded flex items-center gap-0.5 hover:bg-red-100"><Trash2 size={10}/> Delete</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-3 mt-4 text-xs text-gray-500 flex-wrap">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-200 border border-green-400 rounded"></span> Available ({slots.filter((s: Record<string, unknown>) => s.status === 'available').length})</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-200 border border-red-400 rounded"></span> Booked ({slots.filter((s: Record<string, unknown>) => s.status === 'booked').length})</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-gray-300 border border-gray-400 rounded"></span> Blocked ({slots.filter((s: Record<string, unknown>) => s.status === 'blocked').length})</span>
+              </div>
+
+              {/* Edit Slot Price Modal */}
+              {editingSlot && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingSlot(null)}>
+                  <div className="bg-white rounded-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">Edit Slot Price</h3>
+                    <p className="text-sm text-gray-500 mb-3">{editingSlot.start_time as string} - {editingSlot.end_time as string}</p>
+                    <input type="number" placeholder="New Price" className="w-full border rounded-lg px-3 py-2 mb-3" value={editSlotPrice} onChange={e => setEditSlotPrice(e.target.value)} />
+                    <div className="flex gap-3"><button onClick={() => setEditingSlot(null)} className="flex-1 border-2 py-2 rounded-xl font-medium">Cancel</button><button onClick={() => handleUpdateSlotPrice(editingSlot.id as number, parseFloat(editSlotPrice))} className="flex-1 bg-blue-600 text-white py-2 rounded-xl font-medium">Save</button></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Add Custom Slot Modal */}
+              {addSlotDialog && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setAddSlotDialog(false)}>
+                  <div className="bg-white rounded-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">Add Custom Slot</h3>
+                    <div className="space-y-3">
+                      <div><label className="text-sm text-gray-600">Start Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newSlot.start_time} onChange={e => setNewSlot({...newSlot, start_time: e.target.value})} /></div>
+                      <div><label className="text-sm text-gray-600">End Time</label><input type="time" className="w-full border rounded-lg px-3 py-2 mt-1" value={newSlot.end_time} onChange={e => setNewSlot({...newSlot, end_time: e.target.value})} /></div>
+                      <div><label className="text-sm text-gray-600">Price (Rs.)</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={newSlot.price || ''} onChange={e => setNewSlot({...newSlot, price: parseInt(e.target.value) || 0})} /></div>
+                    </div>
+                    <div className="flex gap-3 mt-4"><button onClick={() => setAddSlotDialog(false)} className="flex-1 border-2 py-2 rounded-xl font-medium">Cancel</button><button onClick={handleAddSlot} className="flex-1 bg-green-600 text-white py-2 rounded-xl font-medium">Add Slot</button></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* BOOKINGS TAB */}
@@ -1986,10 +1994,11 @@ export default function OwnerDashboard() {
           </div>
         )}
 
-        {/* Edit Ground Modal */}
-        {showEditGroundModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowEditGroundModal(null)}>
-            <div className="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* EDIT GROUND TAB - opens as separate tab */}
+        {tab === 'editground' && showEditGroundModal && (
+          <div className="space-y-4">
+            <button onClick={() => { setShowEditGroundModal(null); changeTab('grounds'); }} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-2"><ChevronLeft size={16}/> Back to My Grounds</button>
+            <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Edit size={20} className="text-blue-600"/> Edit Ground</h3>
               <div className="space-y-3">
                 <div><label className="text-sm font-medium text-gray-600">Ground Name</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" value={editGroundFormData.name as string || ''} onChange={e => setEditGroundFormData({...editGroundFormData, name: e.target.value})} /></div>
@@ -2030,7 +2039,7 @@ export default function OwnerDashboard() {
                       {(showEditGroundModal.gallery_images as Array<Record<string, unknown>>).map((img: Record<string, unknown>) => (
                         <div key={img.id as number} className="relative">
                           <img src={String(img.image_url || '')} alt="Ground" className="w-24 h-24 object-cover rounded-lg border" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                          <button onClick={async () => { try { await api.deleteGalleryImage(img.id as number); const updated = (showEditGroundModal.gallery_images as Array<Record<string, unknown>>).filter(i => i.id !== img.id); setShowEditGroundModal({...showEditGroundModal, gallery_images: updated}); } catch {} }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                          <button onClick={async () => { try { await api.deleteGalleryImage(img.id as number); const updated = (showEditGroundModal.gallery_images as Array<Record<string, unknown>>).filter(i => i.id !== img.id); setShowEditGroundModal({...showEditGroundModal, gallery_images: updated}); } catch {} }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">x</button>
                         </div>
                       ))}
                     </div>
@@ -2062,7 +2071,7 @@ export default function OwnerDashboard() {
                           <button type="button" onClick={() => {
                             setEditGroundPhotos(prev => prev.filter((_, i) => i !== idx));
                             setEditGroundPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
-                          }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                          }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">x</button>
                           <span className="absolute bottom-0 left-0 right-0 bg-green-500 text-white text-center text-[10px] rounded-b-lg">New</span>
                         </div>
                       ))}
@@ -2071,32 +2080,32 @@ export default function OwnerDashboard() {
                 </div>
               </div>
               <div className="flex gap-3 mt-5">
-                <button onClick={() => setShowEditGroundModal(null)} className="flex-1 border-2 py-2.5 rounded-xl font-medium">Cancel</button>
+                <button onClick={() => { setShowEditGroundModal(null); changeTab('grounds'); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium">Cancel</button>
                 <button onClick={async () => {
                   try {
                     const changes: Record<string, unknown> = {};
                     const fields = ['name','address','city','weekday_price','weekend_price','evening_extra','ground_type','opening_time','closing_time','description','amenities','token_money_percent'];
                     fields.forEach(f => { if(editGroundFormData[f] !== undefined && editGroundFormData[f] !== showEditGroundModal[f]) changes[f] = editGroundFormData[f]; });
                     if(editGroundPhotos.length > 0) changes['photo_updated'] = true;
-                    if(Object.keys(changes).length === 0 && editGroundPhotos.length === 0) { alert('No changes made'); return; }
+                    if(Object.keys(changes).length === 0 && editGroundPhotos.length === 0) { showOwnerToast('No changes made', 'warning'); return; }
                     if(Object.keys(changes).length > 0) {
                       await api.requestGroundChange({ ground_id: showEditGroundModal.id as number, changes });
                     }
-                    // Upload new photos directly to gallery
                     for (const preview of editGroundPhotoPreviews) {
                       try {
                         await api.addGalleryImage({ ground_id: showEditGroundModal.id as number, image_data: preview, caption: '' });
                       } catch { /* ignore individual upload errors */ }
                     }
-                    setShowEditGroundModal(null);
                     setEditGroundPhotos([]); setEditGroundPhotoPreviews([]);
                     if(Object.keys(changes).length > 0) {
-                      alert('Change request sent to admin + photos uploaded!');
+                      showOwnerToast('Change request sent to admin + photos uploaded!', 'success');
                     } else {
-                      alert('Photos uploaded successfully!');
+                      showOwnerToast('Photos uploaded successfully!', 'success');
                     }
-                    loadTab();
-                  } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
+                    setShowEditGroundModal(null);
+                    changeTab('grounds');
+                    loadData();
+                  } catch(e: unknown) { showOwnerToast(e instanceof Error ? e.message : 'Failed', 'error'); }
                 }} className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700">Submit Changes</button>
               </div>
             </div>
