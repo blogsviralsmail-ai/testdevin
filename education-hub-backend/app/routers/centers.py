@@ -537,7 +537,7 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
         (phone, email, hash_password(password), name, phone, "student", 1)
     )
     uid = cursor.lastrowid
-    conn.commit()
+    # NOTE: Do NOT commit yet - wait until student record is also created to avoid orphaned users
     
     # Determine admission_source
     admission_source = "self"
@@ -602,6 +602,8 @@ async def center_add_student(data: dict, user: dict = Depends(get_current_user))
         except sqlite3.IntegrityError:
             continue
     else:
+        # Rollback the uncommitted user INSERT to avoid orphaned user accounts
+        conn.rollback()
         conn.close()
         raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
     

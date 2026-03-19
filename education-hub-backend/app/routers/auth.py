@@ -94,7 +94,7 @@ async def register(req: RegisterRequest):
         (username, req.email, hash_password(req.password), req.name, req.phone, "student", 1)
     )
     user_id = cursor.lastrowid
-    conn.commit()
+    # NOTE: Do NOT commit yet - wait until student record is also created to avoid orphaned users
     
     # Auto-create student record with pending status (role is always student)
     # Use MAX(enrollment_no) + retry loop to avoid race condition duplicates
@@ -113,6 +113,8 @@ async def register(req: RegisterRequest):
         except sqlite3.IntegrityError:
             continue
     else:
+        # Rollback the uncommitted user INSERT to avoid orphaned user accounts
+        conn.rollback()
         conn.close()
         raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
     

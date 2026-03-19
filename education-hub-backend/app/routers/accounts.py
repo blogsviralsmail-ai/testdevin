@@ -627,7 +627,7 @@ async def create_razorpay_order(data: dict, user: dict = Depends(get_current_use
         conn.close()
         raise HTTPException(status_code=404, detail="Student record not found")
     
-    amount_paise = int(float(amount) * 100)  # Razorpay uses paise
+    amount_paise = round(float(amount) * 100)  # Razorpay uses paise
     
     try:
         import razorpay

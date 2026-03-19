@@ -531,7 +531,7 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
         (username, data.get("email", ""), hash_password(password), data.get("name", ""), data.get("phone", ""), "student", 1)
     )
     uid = cursor.lastrowid
-    conn.commit()
+    # NOTE: Do NOT commit yet - wait until student record is also created to avoid orphaned users
     
     # Create student record with all details - use MAX to avoid race condition
     import sqlite3
@@ -561,6 +561,8 @@ async def admin_add_student(data: dict, user: dict = Depends(require_admin)):
         except sqlite3.IntegrityError:
             continue
     else:
+        # Rollback the uncommitted user INSERT to avoid orphaned user accounts
+        conn.rollback()
         conn.close()
         raise HTTPException(status_code=500, detail="Could not generate unique enrollment number")
     conn.close()
