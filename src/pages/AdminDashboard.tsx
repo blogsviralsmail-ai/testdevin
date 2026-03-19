@@ -1356,9 +1356,13 @@ export default function AdminDashboard() {
                 {/* KYC Document Modal - supports multiple comma-separated URLs */}
                 {kycDocModal && (() => {
                   const BASE = ((import.meta as unknown as Record<string,Record<string,string>>).env?.VITE_API_URL || '');
-                  const docUrls = kycDocModal.split(',').map((u: string) => u.trim()).filter(Boolean).map((u: string) =>
-                    u.startsWith('http') || u.startsWith('data:') ? u : BASE + u
-                  );
+                  const cacheBust = `_cb=${Date.now()}`;
+                  const docUrls = kycDocModal.split(',').map((u: string) => u.trim()).filter(Boolean).map((u: string) => {
+                    const url = u.startsWith('http') || u.startsWith('data:') ? u : BASE + u;
+                    // Add cache-busting param to avoid Cloudflare serving cached 404s
+                    if (url.startsWith('data:')) return url;
+                    return url + (url.includes('?') ? '&' : '?') + cacheBust;
+                  });
                   return (
                   <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setKycDocModal(null)}>
                     <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-auto p-6" onClick={e => e.stopPropagation()}>
