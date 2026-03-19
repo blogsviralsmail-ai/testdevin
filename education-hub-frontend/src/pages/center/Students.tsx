@@ -111,7 +111,7 @@ export default function CenterStudents() {
   const handleSearch = () => { if (activeTab === "own") { setPage(1); load(); } else { setSubPage(1); loadSubCenterStudents(); } };
 
   const handleCSV = () => {
-    const header = ["Phone", "Enrollment", "Name", "Email", "University", "Course", "Status", "Total Fees", "Deposit", "Created"];
+    const header = ["Mobile", "Enrollment", "Name", "Email", "University", "Course", "Status", "Total Fees", "Deposit", "Created"];
     const rows = students.map(s => [
       s.phone || "", s.enrollment_no || "", s.name || "", s.email || "",
       s.university_name || "", s.category_name || "", s.status || "",
@@ -492,7 +492,8 @@ export default function CenterStudents() {
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student (Mobile = ID)</th>
+              <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student</th>
+              <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Mobile</th>
               <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">University</th>
               <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden lg:table-cell">Course</th>
               <th className="text-right px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">Fees</th>
@@ -513,10 +514,10 @@ export default function CenterStudents() {
                     )}
                     <div className="min-w-0">
                       <p className="font-medium text-sm truncate">{s.name}</p>
-                      <p className="text-xs text-gray-500 truncate flex items-center gap-1"><Phone className="h-3 w-3" />{s.phone || "No phone"}</p>
                     </div>
                   </div>
                 </td>
+                <td className="px-3 sm:px-4 py-3 text-sm text-gray-600">{s.phone || "\u2014"}</td>
                 <td className="px-3 sm:px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{s.university_name || "\u2014"}</td>
                 <td className="px-3 sm:px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{s.category_name || "\u2014"}</td>
                 <td className="px-3 sm:px-4 py-3 text-sm text-right font-medium hidden md:table-cell">{s.total_fees ? `\u20B9${Number(s.total_fees).toLocaleString()}` : "\u2014"}</td>
@@ -579,7 +580,8 @@ export default function CenterStudents() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student (Mobile = ID)</th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student</th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Mobile</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Sub-Center</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">University</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden lg:table-cell">Course</th>
@@ -600,10 +602,10 @@ export default function CenterStudents() {
                         )}
                         <div className="min-w-0">
                           <p className="font-medium text-sm truncate">{s.name}</p>
-                          <p className="text-xs text-gray-500 truncate flex items-center gap-1"><Phone className="h-3 w-3" />{s.phone || "No phone"}</p>
                         </div>
                       </div>
                     </td>
+                    <td className="px-3 sm:px-4 py-3 text-sm text-gray-600">{s.phone || "\u2014"}</td>
                     <td className="px-3 sm:px-4 py-3">
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{s.center_name || "\u2014"}</span>
                     </td>

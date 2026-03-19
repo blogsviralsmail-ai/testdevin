@@ -1088,6 +1088,13 @@ def init_db():
         conn.commit()
 
     # Student deals table (manual deal-based fee tracking - 3-tier)
+    # Add university_deal column if missing (migration for existing DBs)
+    try:
+        cursor.execute("ALTER TABLE student_deals ADD COLUMN university_deal REAL DEFAULT 0")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists or table doesn't exist yet
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS student_deals (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1095,6 +1102,7 @@ def init_db():
         sub_center_fee REAL DEFAULT 0,
         center_deal REAL DEFAULT 0,
         admin_deal REAL DEFAULT 0,
+        university_deal REAL DEFAULT 0,
         notes TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,

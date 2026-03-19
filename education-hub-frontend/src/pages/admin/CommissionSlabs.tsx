@@ -12,7 +12,7 @@ export default function AdminCommissionSlabs() {
   const [tab, setTab] = useState<"deals" | "summary" | "payments">("deals");
   const [showAdd, setShowAdd] = useState(false);
   const [editDeal, setEditDeal] = useState<any>(null);
-  const [form, setForm] = useState({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", notes: "" });
+  const [form, setForm] = useState({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", notes: "" });
   const [saving, setSaving] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [availableStudents, setAvailableStudents] = useState<any[]>([]);
@@ -21,7 +21,7 @@ export default function AdminCommissionSlabs() {
   const [showBulk, setShowBulk] = useState(false);
   const [bulkStudents, setBulkStudents] = useState<any[]>([]);
   const [bulkSelected, setBulkSelected] = useState<number[]>([]);
-  const [bulkForm, setBulkForm] = useState({ sub_center_fee: "", center_deal: "", admin_deal: "", notes: "" });
+  const [bulkForm, setBulkForm] = useState({ sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", notes: "" });
   const [bulkSaving, setBulkSaving] = useState(false);
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
@@ -80,14 +80,14 @@ export default function AdminCommissionSlabs() {
 
   const openAdd = () => {
     setEditDeal(null); setSelectedStudent(null); setStudentSearch("");
-    setForm({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", notes: "" });
+    setForm({ student_id: 0, sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", notes: "" });
     setShowAdd(true);
   };
 
   const openEdit = (deal: any) => {
     setEditDeal(deal);
     setSelectedStudent({ id: deal.student_id, name: deal.student_name, enrollment_no: deal.enrollment_no });
-    setForm({ student_id: deal.student_id, sub_center_fee: String(deal.sub_center_fee || 0), center_deal: String(deal.center_deal || 0), admin_deal: String(deal.admin_deal || 0), notes: deal.notes || "" });
+    setForm({ student_id: deal.student_id, sub_center_fee: String(deal.sub_center_fee || 0), center_deal: String(deal.center_deal || 0), admin_deal: String(deal.admin_deal || 0), university_deal: String(deal.university_deal || 0), notes: deal.notes || "" });
     setShowAdd(true);
   };
 
@@ -96,7 +96,7 @@ export default function AdminCommissionSlabs() {
     if (!studentId) { alert("Please select a student"); return; }
     setSaving(true);
     try {
-      const payload = { sub_center_fee: parseFloat(form.sub_center_fee) || 0, center_deal: parseFloat(form.center_deal) || 0, admin_deal: parseFloat(form.admin_deal) || 0, notes: form.notes };
+      const payload = { sub_center_fee: parseFloat(form.sub_center_fee) || 0, center_deal: parseFloat(form.center_deal) || 0, admin_deal: parseFloat(form.admin_deal) || 0, university_deal: parseFloat(form.university_deal) || 0, notes: form.notes };
       if (editDeal) { await api.put(`/api/centers/deals/${editDeal.id}`, payload); }
       else { await api.post("/api/centers/deals", { student_id: studentId, ...payload }); }
       setShowAdd(false); fetchDeals(); fetchSummary();
@@ -114,7 +114,7 @@ export default function AdminCommissionSlabs() {
     if (!bulkSelected.length) { alert("Select at least one student"); return; }
     setBulkSaving(true);
     try {
-      await api.post("/api/centers/deals/bulk", { student_ids: bulkSelected, sub_center_fee: parseFloat(bulkForm.sub_center_fee) || 0, center_deal: parseFloat(bulkForm.center_deal) || 0, admin_deal: parseFloat(bulkForm.admin_deal) || 0, notes: bulkForm.notes });
+      await api.post("/api/centers/deals/bulk", { student_ids: bulkSelected, sub_center_fee: parseFloat(bulkForm.sub_center_fee) || 0, center_deal: parseFloat(bulkForm.center_deal) || 0, admin_deal: parseFloat(bulkForm.admin_deal) || 0, university_deal: parseFloat(bulkForm.university_deal) || 0, notes: bulkForm.notes });
       setShowBulk(false); setBulkSelected([]); fetchDeals(); fetchSummary();
     } catch (err: any) { alert(err.response?.data?.detail || "Error"); }
     finally { setBulkSaving(false); }
@@ -186,7 +186,7 @@ export default function AdminCommissionSlabs() {
               </select>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { fetchBulkStudents(); setShowBulk(true); setBulkForm({ sub_center_fee: "", center_deal: "", admin_deal: "", notes: "" }); setBulkSelected([]); }} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 text-sm font-medium">
+              <button onClick={() => { fetchBulkStudents(); setShowBulk(true); setBulkForm({ sub_center_fee: "", center_deal: "", admin_deal: "", university_deal: "", notes: "" }); setBulkSelected([]); }} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 text-sm font-medium">
                 <Users className="h-4 w-4" /> Bulk Add
               </button>
               <button onClick={openAdd} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 text-sm font-medium">
@@ -201,51 +201,54 @@ export default function AdminCommissionSlabs() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Student</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Mobile</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Center</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Sub Center</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">University / Course</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Sub-center Fee</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Center Deal</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Admin Deal</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600">Univ Deal</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">SC Profit</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Center Profit</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600">Admin Profit</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={9} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={13} className="text-center py-8 text-gray-400">Loading...</td></tr>
               ) : deals.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-8 text-gray-400">No deals configured yet. Click "Add Deal" to start.</td></tr>
+                <tr><td colSpan={13} className="text-center py-8 text-gray-400">No deals configured yet. Click "Add Deal" to start.</td></tr>
               ) : deals.map(d => {
                 const scP = (d.sub_center_fee || 0) - (d.center_deal || 0);
                 const cP = (d.center_deal || 0) - (d.admin_deal || 0);
+                const aP = (d.admin_deal || 0) - (d.university_deal || 0);
                 return (
                   <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium">{d.student_name}</div>
-                      <div className="text-xs text-gray-400">{d.enrollment_no || d.student_phone}</div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{d.student_phone || d.enrollment_no || "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">{d.parent_center_name || d.center_name || "Direct"}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-xs">
-                        {d.center_level === "sub_center" ? (
-                          <>
-                            <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded">{d.center_name}</span>
-                            {d.parent_center_name && <div className="text-gray-400 mt-0.5">{"\u2514"} {d.parent_center_name}</div>}
-                          </>
-                        ) : (
-                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">{d.center_name || "Direct"}</span>
-                        )}
-                      </div>
+                      <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">{d.center_name || "Direct"}</span>
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600">{d.university_name || "-"}<br />{d.course_name || ""}</td>
                     <td className="px-4 py-3 text-right font-medium text-emerald-600">{fmt(d.sub_center_fee)}</td>
                     <td className="px-4 py-3 text-right font-medium text-blue-600">{fmt(d.center_deal)}</td>
                     <td className="px-4 py-3 text-right font-medium text-purple-600">{fmt(d.admin_deal)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-orange-600">{fmt(d.university_deal)}</td>
                     <td className="px-4 py-3 text-right">
                       <span className={`font-medium ${scP >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmt(scP)}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className={`font-medium ${cP >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmt(cP)}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`font-medium ${aP >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmt(aP)}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
@@ -262,7 +265,7 @@ export default function AdminCommissionSlabs() {
       </>)}
 
       {tab === "summary" && summary && (<>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg p-6">
             <p className="text-sm opacity-80">Sub-center Total Profit</p>
             <p className="text-3xl font-bold mt-1">{fmt(summary.sub_center_profit)}</p>
@@ -274,8 +277,13 @@ export default function AdminCommissionSlabs() {
             <p className="text-xs opacity-60 mt-1">Center Deals - Admin Deals</p>
           </div>
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-6">
-            <p className="text-sm opacity-80">Admin Total Revenue</p>
-            <p className="text-3xl font-bold mt-1">{fmt(summary.total_admin_deal)}</p>
+            <p className="text-sm opacity-80">Admin Profit</p>
+            <p className="text-3xl font-bold mt-1">{fmt(summary.admin_profit)}</p>
+            <p className="text-xs opacity-60 mt-1">Admin Deal - University Deal</p>
+          </div>
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl shadow-lg p-6">
+            <p className="text-sm opacity-80">University Total</p>
+            <p className="text-3xl font-bold mt-1">{fmt(summary.total_university_deal)}</p>
             <p className="text-xs opacity-60 mt-1">Received: {fmt(summary.admin_received)} | Pending: {fmt(summary.admin_pending)}</p>
           </div>
         </div>
@@ -291,13 +299,15 @@ export default function AdminCommissionSlabs() {
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Total SC Fee</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Total Center Deal</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Total Admin Deal</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600">Total Univ Deal</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">SC Profit</th>
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Center Profit</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600">Admin Profit</th>
               </tr>
             </thead>
             <tbody>
               {(!summary.center_breakdown || summary.center_breakdown.length === 0) ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">No data</td></tr>
+                <tr><td colSpan={11} className="text-center py-8 text-gray-400">No data</td></tr>
               ) : summary.center_breakdown.map((c: any) => (
                 <tr key={c.center_id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">{c.center_name}</td>
@@ -310,8 +320,10 @@ export default function AdminCommissionSlabs() {
                   <td className="px-4 py-3 text-right text-emerald-600 font-medium">{fmt(c.total_sub_center_fee)}</td>
                   <td className="px-4 py-3 text-right text-blue-600 font-medium">{fmt(c.total_center_deal)}</td>
                   <td className="px-4 py-3 text-right text-purple-600 font-medium">{fmt(c.total_admin_deal)}</td>
+                  <td className="px-4 py-3 text-right text-orange-600 font-medium">{fmt(c.total_university_deal || 0)}</td>
                   <td className="px-4 py-3 text-right font-medium text-emerald-600">{fmt(c.total_sub_center_fee - c.total_center_deal)}</td>
                   <td className="px-4 py-3 text-right font-medium text-blue-600">{fmt(c.total_center_deal - c.total_admin_deal)}</td>
+                  <td className="px-4 py-3 text-right font-medium text-purple-600">{fmt(c.total_admin_deal - (c.total_university_deal || 0))}</td>
                 </tr>
               ))}
             </tbody>
@@ -324,9 +336,10 @@ export default function AdminCommissionSlabs() {
             <p><strong>Sub-center Fee:</strong> The amount sub-center/center charges the student. Student sees this.</p>
             <p><strong>Center Deal:</strong> The amount center gets from sub-center fee. Center sees this.</p>
             <p><strong>Admin Deal:</strong> The amount admin gets from center deal. Only admin sees this.</p>
+            <p><strong>University Deal:</strong> The amount paid to the university. Only admin sees this.</p>
             <p className="pt-2 border-t border-blue-200">
-              <strong>Example:</strong> SC Fee: {"\u20B9"}50,000, Center Deal: {"\u20B9"}40,000, Admin Deal: {"\u20B9"}30,000
-              <br />SC profit: {"\u20B9"}10,000 | Center profit: {"\u20B9"}10,000 | Admin revenue: {"\u20B9"}30,000
+              <strong>Example:</strong> SC Fee: {"\u20B9"}50,000, Center Deal: {"\u20B9"}40,000, Admin Deal: {"\u20B9"}30,000, Univ Deal: {"\u20B9"}20,000
+              <br />SC profit: {"\u20B9"}10,000 | Center profit: {"\u20B9"}10,000 | Admin profit: {"\u20B9"}10,000 | University: {"\u20B9"}20,000
             </p>
           </div>
         </div>
@@ -423,7 +436,7 @@ export default function AdminCommissionSlabs() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sub-center Fee ({"\u20B9"})</label>
                   <input type="number" value={form.sub_center_fee} onChange={e => setForm({ ...form, sub_center_fee: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="50000" />
@@ -439,12 +452,17 @@ export default function AdminCommissionSlabs() {
                   <input type="number" value={form.admin_deal} onChange={e => setForm({ ...form, admin_deal: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="30000" />
                   <p className="text-xs text-gray-400 mt-0.5">Admin receives this</p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">University Deal ({"\u20B9"})</label>
+                  <input type="number" value={form.university_deal} onChange={e => setForm({ ...form, university_deal: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="20000" />
+                  <p className="text-xs text-gray-400 mt-0.5">Paid to university</p>
+                </div>
               </div>
 
-              {(form.sub_center_fee || form.center_deal || form.admin_deal) && (
+              {(form.sub_center_fee || form.center_deal || form.admin_deal || form.university_deal) && (
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="text-xs font-medium text-gray-600 mb-2">Profit Preview</p>
-                  <div className="flex gap-4 text-sm">
+                  <div className="flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">SC Profit:</span>
                       <span className="ml-1 font-medium text-emerald-600">{fmt((parseFloat(form.sub_center_fee) || 0) - (parseFloat(form.center_deal) || 0))}</span>
@@ -454,8 +472,12 @@ export default function AdminCommissionSlabs() {
                       <span className="ml-1 font-medium text-blue-600">{fmt((parseFloat(form.center_deal) || 0) - (parseFloat(form.admin_deal) || 0))}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Admin:</span>
-                      <span className="ml-1 font-medium text-purple-600">{fmt(parseFloat(form.admin_deal) || 0)}</span>
+                      <span className="text-gray-500">Admin Profit:</span>
+                      <span className="ml-1 font-medium text-purple-600">{fmt((parseFloat(form.admin_deal) || 0) - (parseFloat(form.university_deal) || 0))}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">University:</span>
+                      <span className="ml-1 font-medium text-orange-600">{fmt(parseFloat(form.university_deal) || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -486,7 +508,7 @@ export default function AdminCommissionSlabs() {
               <button onClick={() => setShowBulk(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sub-center Fee ({"\u20B9"})</label>
                   <input type="number" value={bulkForm.sub_center_fee} onChange={e => setBulkForm({ ...bulkForm, sub_center_fee: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -498,6 +520,10 @@ export default function AdminCommissionSlabs() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Admin Deal ({"\u20B9"})</label>
                   <input type="number" value={bulkForm.admin_deal} onChange={e => setBulkForm({ ...bulkForm, admin_deal: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">University Deal ({"\u20B9"})</label>
+                  <input type="number" value={bulkForm.university_deal} onChange={e => setBulkForm({ ...bulkForm, university_deal: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               </div>
               <div>

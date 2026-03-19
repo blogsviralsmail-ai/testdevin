@@ -139,7 +139,9 @@ export default function CenterDealFees() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Student</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">Mobile</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Center</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">Sub Center</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">University / Course</th>
               <th className="text-right px-4 py-3 font-semibold text-gray-600">Student Fee</th>
               {!isSubCenter && (
@@ -156,28 +158,22 @@ export default function CenterDealFees() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} className="text-center py-8 text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={isSubCenter ? 7 : 10} className="text-center py-8 text-gray-400">Loading...</td></tr>
             ) : deals.length === 0 ? (
-              <tr><td colSpan={8} className="text-center py-8 text-gray-400">No deal records. Deals are auto-created when students are admitted.</td></tr>
+              <tr><td colSpan={isSubCenter ? 7 : 10} className="text-center py-8 text-gray-400">No deal records. Deals are auto-created when students are admitted.</td></tr>
             ) : deals.map(d => {
               const profit = (d.sub_center_fee || 0) - (d.center_deal || 0);
               return (
                 <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="font-medium">{d.student_name}</div>
-                    <div className="text-xs text-gray-400">{d.enrollment_no || d.student_phone}</div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{d.student_phone || "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded">{d.parent_center_name || d.center_name || "Direct"}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-xs">
-                      {d.center_level === "sub_center" ? (
-                        <>
-                          <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded">{d.center_name}</span>
-                          {d.parent_center_name && <div className="text-gray-400 mt-0.5">{"\u2514"} {d.parent_center_name}</div>}
-                        </>
-                      ) : (
-                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded">{d.center_name || "Direct"}</span>
-                      )}
-                    </div>
+                    <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">{d.center_name || "Direct"}</span>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-600">{d.university_name || "-"}<br />{d.course_name || ""}</td>
                   <td className="px-4 py-3 text-right font-medium text-emerald-600">{fmt(d.sub_center_fee)}</td>

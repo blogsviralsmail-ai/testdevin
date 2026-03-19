@@ -1836,12 +1836,14 @@ class StudentDealCreate(BaseModel):
     sub_center_fee: float = 0
     center_deal: float = 0
     admin_deal: float = 0
+    university_deal: float = 0
     notes: Optional[str] = None
 
 class StudentDealUpdate(BaseModel):
     sub_center_fee: Optional[float] = None
     center_deal: Optional[float] = None
     admin_deal: Optional[float] = None
+    university_deal: Optional[float] = None
     notes: Optional[str] = None
 
 class DealPaymentCreate(BaseModel):
@@ -1918,15 +1920,17 @@ async def list_student_deals(
             params += [f"%{search}%", f"%{search}%", f"%{search}%"]
         query += " ORDER BY sd.updated_at DESC"
         deals = [dict(r) for r in conn.execute(query, params).fetchall()]
-        # Visibility: center sees sub_center_fee + center_deal, but NOT admin_deal
+        # Visibility: center sees sub_center_fee + center_deal, but NOT admin_deal/university_deal
         # Sub-center sees only sub_center_fee
         if center["level"] == "sub_center":
             for d in deals:
                 d.pop("admin_deal", None)
                 d.pop("center_deal", None)
+                d.pop("university_deal", None)
         else:
             for d in deals:
                 d.pop("admin_deal", None)
+                d.pop("university_deal", None)
     else:
         conn.close()
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -1942,14 +1946,14 @@ async def create_student_deal(data: StudentDealCreate, user: dict = Depends(requ
     existing = conn.execute("SELECT id FROM student_deals WHERE student_id = ?", (data.student_id,)).fetchone()
     if existing:
         conn.execute(
-            """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, notes = ?,
+            """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, university_deal = ?, notes = ?,
                updated_at = CURRENT_TIMESTAMP WHERE student_id = ?""",
-            (data.sub_center_fee, data.center_deal, data.admin_deal, data.notes, data.student_id)
+            (data.sub_center_fee, data.center_deal, data.admin_deal, data.university_deal, data.notes, data.student_id)
         )
     else:
         conn.execute(
-            "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, ?, ?, ?)",
-            (data.student_id, data.sub_center_fee, data.center_deal, data.admin_deal, data.notes)
+            "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, university_deal, notes) VALUES (?, ?, ?, ?, ?, ?)",
+            (data.student_id, data.sub_center_fee, data.center_deal, data.admin_deal, data.university_deal, data.notes)
         )
     conn.commit()
     conn.close()
@@ -1976,6 +1980,9 @@ async def update_student_deal(deal_id: int, data: StudentDealUpdate, user: dict 
     if data.admin_deal is not None:
         updates.append("admin_deal = ?")
         params.append(data.admin_deal)
+    if data.university_deal is not None:
+        updates.append("university_deal = ?")
+        params.append(data.university_deal)
     if data.notes is not None:
         updates.append("notes = ?")
         params.append(data.notes)
@@ -2063,6 +2070,7 @@ async def deal_summary(user: dict = Depends(get_current_user)):
         total_sub_center_fee = sum(d["sub_center_fee"] or 0 for d in deals)
         total_center_deal = sum(d["center_deal"] or 0 for d in deals)
         total_admin_deal = sum(d["admin_deal"] or 0 for d in deals)
+        total_university_deal = sum(d.get("university_deal") or 0 for d in deals)
 
         # Payment tracking: what has been paid
         admin_received = conn.execute(
@@ -2084,11 +2092,13 @@ async def deal_summary(user: dict = Depends(get_current_user)):
                     "total_sub_center_fee": 0,
                     "total_center_deal": 0,
                     "total_admin_deal": 0,
+                    "total_university_deal": 0,
                 }
             center_breakdown[cid]["student_count"] += 1
             center_breakdown[cid]["total_sub_center_fee"] += d["sub_center_fee"] or 0
             center_breakdown[cid]["total_center_deal"] += d["center_deal"] or 0
             center_breakdown[cid]["total_admin_deal"] += d["admin_deal"] or 0
+            center_breakdown[cid]["total_university_deal"] += d.get("university_deal") or 0
 
         conn.close()
         return {
@@ -2096,10 +2106,12 @@ async def deal_summary(user: dict = Depends(get_current_user)):
             "total_sub_center_fee": total_sub_center_fee,
             "total_center_deal": total_center_deal,
             "total_admin_deal": total_admin_deal,
+            "total_university_deal": total_university_deal,
             "admin_received": admin_received,
             "admin_pending": admin_pending,
             "sub_center_profit": total_sub_center_fee - total_center_deal,
             "center_profit": total_center_deal - total_admin_deal,
+            "admin_profit": total_admin_deal - total_university_deal,
             "center_breakdown": list(center_breakdown.values()),
         }
 
@@ -2193,6 +2205,7 @@ async def bulk_create_deals(data: dict, user: dict = Depends(require_admin)):
     sub_center_fee = data.get("sub_center_fee", 0)
     center_deal = data.get("center_deal", 0)
     admin_deal = data.get("admin_deal", 0)
+    university_deal = data.get("university_deal", 0)
     notes = data.get("notes", "")
 
     if not student_ids:
@@ -2205,15 +2218,15 @@ async def bulk_create_deals(data: dict, user: dict = Depends(require_admin)):
         existing = conn.execute("SELECT id FROM student_deals WHERE student_id = ?", (sid,)).fetchone()
         if existing:
             conn.execute(
-                """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, notes = ?,
+                """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, university_deal = ?, notes = ?,
                    updated_at = CURRENT_TIMESTAMP WHERE student_id = ?""",
-                (sub_center_fee, center_deal, admin_deal, notes, sid)
+                (sub_center_fee, center_deal, admin_deal, university_deal, notes, sid)
             )
             updated += 1
         else:
             conn.execute(
-                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, ?, ?, ?)",
-                (sid, sub_center_fee, center_deal, admin_deal, notes)
+                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, university_deal, notes) VALUES (?, ?, ?, ?, ?, ?)",
+                (sid, sub_center_fee, center_deal, admin_deal, university_deal, notes)
             )
             created += 1
     conn.commit()

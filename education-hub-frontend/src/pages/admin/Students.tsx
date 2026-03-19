@@ -457,7 +457,8 @@ export default function AdminStudents() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student (Mobile = ID)</th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student</th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Mobile</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">University</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden lg:table-cell">Course</th>
                   <th className="text-right px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">Fees</th>
@@ -478,10 +479,10 @@ export default function AdminStudents() {
                         )}
                         <div className="min-w-0">
                           <p className="font-medium text-sm truncate">{s.name}</p>
-                          <p className="text-xs text-gray-500 truncate flex items-center gap-1"><Phone className="h-3 w-3" />{s.phone || "No phone"}</p>
                         </div>
                       </div>
                     </td>
+                    <td className="px-3 sm:px-4 py-3 text-sm text-gray-600">{s.phone || "—"}</td>
                     <td className="px-3 sm:px-4 py-3 text-sm text-gray-600 hidden md:table-cell">{s.university_name || "—"}</td>
                     <td className="px-3 sm:px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">{s.category_name || "—"}</td>
                     <td className="px-3 sm:px-4 py-3 text-sm text-right font-medium hidden md:table-cell">{(s as any).total_fees ? `₹${Number((s as any).total_fees).toLocaleString()}` : "—"}</td>
@@ -544,7 +545,8 @@ export default function AdminStudents() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student (Mobile = ID)</th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student</th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Mobile</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Center</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Sub Center</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600 hidden md:table-cell">University</th>
@@ -566,10 +568,10 @@ export default function AdminStudents() {
                         )}
                         <div className="min-w-0">
                           <p className="font-medium text-sm truncate">{s.name}</p>
-                          <p className="text-xs text-gray-500 truncate flex items-center gap-1"><Phone className="h-3 w-3" />{s.phone || "No phone"}</p>
                         </div>
                       </div>
                     </td>
+                    <td className="px-3 sm:px-4 py-3 text-sm text-gray-600">{s.phone || "—"}</td>
                     <td className="px-3 sm:px-4 py-3">
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{s.parent_center_name || s.center_name || "—"}</span>
                     </td>
