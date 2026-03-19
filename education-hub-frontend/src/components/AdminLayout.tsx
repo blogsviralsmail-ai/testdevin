@@ -110,7 +110,7 @@ const menuGroups: MenuGroup[] = [
     title: "Centers",
     items: [
       { path: "/admin/centers", label: "Centers Management", icon: Building2 },
-      { path: "/admin/commission-slabs", label: "Commission Slabs", icon: BarChart3 },
+      { path: "/admin/commission-slabs", label: "Deal Fees", icon: BarChart3 },
     ],
   },
   {

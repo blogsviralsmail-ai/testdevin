@@ -1087,6 +1087,39 @@ def init_db():
                        ("12th (Senior Secondary)", nios_id, "NIOS 12th Class - Senior Secondary Education"))
         conn.commit()
 
+    # Student deals table (manual deal-based fee tracking - 3-tier)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS student_deals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL UNIQUE,
+        sub_center_fee REAL DEFAULT 0,
+        center_deal REAL DEFAULT 0,
+        admin_deal REAL DEFAULT 0,
+        notes TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES students(id)
+    )""")
+
+    # Deal payments table (tracks payments between entities)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS deal_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        from_entity_type TEXT NOT NULL,
+        from_entity_id INTEGER NOT NULL,
+        to_entity_type TEXT NOT NULL,
+        to_entity_id INTEGER,
+        amount REAL NOT NULL DEFAULT 0,
+        payment_mode TEXT DEFAULT 'cash',
+        utr_number TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'pending',
+        paid_date TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES students(id)
+    )""")
+
     # Seed testimonials
     existing_testimonials = conn.execute("SELECT COUNT(*) FROM testimonials").fetchone()[0]
     if existing_testimonials == 0:

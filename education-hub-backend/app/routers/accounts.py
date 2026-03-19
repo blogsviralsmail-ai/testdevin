@@ -79,7 +79,13 @@ def _get_fee_summary(conn, student_id: int) -> dict:
     total_fees = student["total_fees"] or 0
     fp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM fee_payments WHERE student_id=? AND status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL)", (student_id,)).fetchone()[0]
     txn = conn.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE student_id=? AND transaction_type='credit' AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL)", (student_id,)).fetchone()[0]
-    total_paid = fp + txn
+    # Include center_fee_payments (payments submitted via center portal)
+    cfp = 0
+    try:
+        cfp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM center_fee_payments WHERE student_id=? AND status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL)", (student_id,)).fetchone()[0]
+    except Exception:
+        pass
+    total_paid = fp + txn + cfp
     # Fetch course/university via JOINs (students table uses FK IDs, not direct columns)
     course = university = father_name = ""
     try:
@@ -444,7 +450,13 @@ async def get_my_fees(user: dict = Depends(get_current_user)):
     paid = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM fee_payments WHERE student_id = ? AND status = 'approved' AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)", (sid,)).fetchone()[0]
     # Only count admin-added transactions that are NOT from fee payment approvals (avoid double counting)
     admin_paid = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE student_id = ? AND transaction_type = 'credit' AND description NOT LIKE 'Online Fee Payment%' AND description NOT LIKE 'Razorpay Payment%' AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)", (sid,)).fetchone()[0]
-    total_paid = paid + admin_paid
+    # Include center_fee_payments (payments submitted via center portal)
+    center_paid = 0
+    try:
+        center_paid = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM center_fee_payments WHERE student_id = ? AND status = 'approved' AND (deleted_by_admin = 0 OR deleted_by_admin IS NULL)", (sid,)).fetchone()[0]
+    except Exception:
+        pass
+    total_paid = paid + admin_paid + center_paid
     pending = max(0, total_fees - total_paid)
     # Get all fee payments by this student (exclude deleted)
     fee_payment_rows = conn.execute(

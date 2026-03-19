@@ -1828,3 +1828,419 @@ async def bulk_mark_paid(data: dict, user: dict = Depends(get_current_user)):
     conn.commit()
     conn.close()
     return {"message": f"{len(ids)} entries marked as paid"}
+
+
+# ══════════════════════════════════════════════════════════════════
+# Deal-based Fee Tracking (3-tier: Sub-center fee → Center deal → Admin deal)
+# ══════════════════════════════════════════════════════════════════
+
+class StudentDealCreate(BaseModel):
+    student_id: int
+    sub_center_fee: float = 0
+    center_deal: float = 0
+    admin_deal: float = 0
+    notes: Optional[str] = None
+
+class StudentDealUpdate(BaseModel):
+    sub_center_fee: Optional[float] = None
+    center_deal: Optional[float] = None
+    admin_deal: Optional[float] = None
+    notes: Optional[str] = None
+
+class DealPaymentCreate(BaseModel):
+    student_id: int
+    from_entity_type: str  # 'sub_center', 'center'
+    from_entity_id: int
+    to_entity_type: str    # 'center', 'admin'
+    to_entity_id: Optional[int] = None
+    amount: float
+    payment_mode: str = "cash"
+    utr_number: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@router.get("/deals")
+async def list_student_deals(
+    user: dict = Depends(get_current_user),
+    search: str = "",
+    center_id: Optional[int] = None,
+):
+    """List all student deals. Admin sees all, center sees their own students."""
+    role = user.get("role", "")
+    conn = get_db()
+
+    if role in ("admin", "super_admin", "branch_admin"):
+        query = """
+            SELECT sd.*, s.name as student_name, s.phone as student_phone,
+                   s.enrollment_no, s.center_id,
+                   c.name as center_name, c.level as center_level,
+                   pc.name as parent_center_name, c.parent_center_id,
+                   u.name as university_name, cat.name as course_name
+            FROM student_deals sd
+            JOIN students s ON sd.student_id = s.id
+            LEFT JOIN centers c ON s.center_id = c.id
+            LEFT JOIN centers pc ON c.parent_center_id = pc.id
+            LEFT JOIN universities u ON s.university_id = u.id
+            LEFT JOIN categories cat ON s.category_id = cat.id
+            WHERE 1=1
+        """
+        params: list = []
+        if search:
+            query += " AND (s.name LIKE ? OR s.phone LIKE ? OR s.enrollment_no LIKE ?)"
+            params += [f"%{search}%", f"%{search}%", f"%{search}%"]
+        if center_id:
+            # Get this center + its sub-centers
+            all_ids = get_center_and_subcenter_ids(conn, center_id)
+            placeholders = ",".join(["?"] * len(all_ids))
+            query += f" AND s.center_id IN ({placeholders})"
+            params += all_ids
+        query += " ORDER BY sd.updated_at DESC"
+        deals = [dict(r) for r in conn.execute(query, params).fetchall()]
+    elif role == "center":
+        center = get_current_center(user)
+        cid = center["id"]
+        all_ids = get_center_and_subcenter_ids(conn, cid)
+        placeholders = ",".join(["?"] * len(all_ids))
+        query = f"""
+            SELECT sd.*, s.name as student_name, s.phone as student_phone,
+                   s.enrollment_no, s.center_id,
+                   c.name as center_name, c.level as center_level,
+                   pc.name as parent_center_name, c.parent_center_id,
+                   u.name as university_name, cat.name as course_name
+            FROM student_deals sd
+            JOIN students s ON sd.student_id = s.id
+            LEFT JOIN centers c ON s.center_id = c.id
+            LEFT JOIN centers pc ON c.parent_center_id = pc.id
+            LEFT JOIN universities u ON s.university_id = u.id
+            LEFT JOIN categories cat ON s.category_id = cat.id
+            WHERE s.center_id IN ({placeholders})
+        """
+        params = all_ids
+        if search:
+            query += " AND (s.name LIKE ? OR s.phone LIKE ? OR s.enrollment_no LIKE ?)"
+            params += [f"%{search}%", f"%{search}%", f"%{search}%"]
+        query += " ORDER BY sd.updated_at DESC"
+        deals = [dict(r) for r in conn.execute(query, params).fetchall()]
+        # Visibility: center sees sub_center_fee + center_deal, but NOT admin_deal
+        # Sub-center sees only sub_center_fee
+        if center["level"] == "sub_center":
+            for d in deals:
+                d.pop("admin_deal", None)
+                d.pop("center_deal", None)
+        else:
+            for d in deals:
+                d.pop("admin_deal", None)
+    else:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    conn.close()
+    return {"deals": deals}
+
+
+@router.post("/deals")
+async def create_student_deal(data: StudentDealCreate, user: dict = Depends(require_admin)):
+    """Admin creates/updates a deal for a student."""
+    conn = get_db()
+    existing = conn.execute("SELECT id FROM student_deals WHERE student_id = ?", (data.student_id,)).fetchone()
+    if existing:
+        conn.execute(
+            """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, notes = ?,
+               updated_at = CURRENT_TIMESTAMP WHERE student_id = ?""",
+            (data.sub_center_fee, data.center_deal, data.admin_deal, data.notes, data.student_id)
+        )
+    else:
+        conn.execute(
+            "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, ?, ?, ?)",
+            (data.student_id, data.sub_center_fee, data.center_deal, data.admin_deal, data.notes)
+        )
+    conn.commit()
+    conn.close()
+    return {"message": "Deal saved successfully"}
+
+
+@router.put("/deals/{deal_id}")
+async def update_student_deal(deal_id: int, data: StudentDealUpdate, user: dict = Depends(require_admin)):
+    """Admin updates an existing deal."""
+    conn = get_db()
+    deal = conn.execute("SELECT * FROM student_deals WHERE id = ?", (deal_id,)).fetchone()
+    if not deal:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    updates = []
+    params: list = []
+    if data.sub_center_fee is not None:
+        updates.append("sub_center_fee = ?")
+        params.append(data.sub_center_fee)
+    if data.center_deal is not None:
+        updates.append("center_deal = ?")
+        params.append(data.center_deal)
+    if data.admin_deal is not None:
+        updates.append("admin_deal = ?")
+        params.append(data.admin_deal)
+    if data.notes is not None:
+        updates.append("notes = ?")
+        params.append(data.notes)
+    
+    if updates:
+        updates.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(deal_id)
+        conn.execute(f"UPDATE student_deals SET {', '.join(updates)} WHERE id = ?", params)
+        conn.commit()
+    conn.close()
+    return {"message": "Deal updated successfully"}
+
+
+@router.delete("/deals/{deal_id}")
+async def delete_student_deal(deal_id: int, user: dict = Depends(require_admin)):
+    """Admin deletes a student deal."""
+    conn = get_db()
+    conn.execute("DELETE FROM student_deals WHERE id = ?", (deal_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Deal deleted"}
+
+
+@router.get("/deals/summary")
+async def deal_summary(user: dict = Depends(get_current_user)):
+    """Get deal summary with profit calculations and payment tracking."""
+    role = user.get("role", "")
+    conn = get_db()
+
+    if role in ("admin", "super_admin", "branch_admin"):
+        # Admin sees everything
+        deals = conn.execute("""
+            SELECT sd.*, s.name as student_name, s.center_id,
+                   c.name as center_name, c.level as center_level, c.parent_center_id,
+                   pc.name as parent_center_name
+            FROM student_deals sd
+            JOIN students s ON sd.student_id = s.id
+            LEFT JOIN centers c ON s.center_id = c.id
+            LEFT JOIN centers pc ON c.parent_center_id = pc.id
+        """).fetchall()
+        deals = [dict(d) for d in deals]
+
+        total_sub_center_fee = sum(d["sub_center_fee"] or 0 for d in deals)
+        total_center_deal = sum(d["center_deal"] or 0 for d in deals)
+        total_admin_deal = sum(d["admin_deal"] or 0 for d in deals)
+
+        # Payment tracking: what has been paid
+        admin_received = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM deal_payments WHERE to_entity_type = 'admin' AND status = 'paid'"
+        ).fetchone()[0]
+        admin_pending = total_admin_deal - admin_received
+
+        # Per-center breakdown
+        center_breakdown = {}
+        for d in deals:
+            cid = d["center_id"]
+            if cid not in center_breakdown:
+                center_breakdown[cid] = {
+                    "center_id": cid,
+                    "center_name": d["center_name"] or "Direct",
+                    "center_level": d["center_level"] or "direct",
+                    "parent_center_name": d["parent_center_name"],
+                    "student_count": 0,
+                    "total_sub_center_fee": 0,
+                    "total_center_deal": 0,
+                    "total_admin_deal": 0,
+                }
+            center_breakdown[cid]["student_count"] += 1
+            center_breakdown[cid]["total_sub_center_fee"] += d["sub_center_fee"] or 0
+            center_breakdown[cid]["total_center_deal"] += d["center_deal"] or 0
+            center_breakdown[cid]["total_admin_deal"] += d["admin_deal"] or 0
+
+        conn.close()
+        return {
+            "total_students": len(deals),
+            "total_sub_center_fee": total_sub_center_fee,
+            "total_center_deal": total_center_deal,
+            "total_admin_deal": total_admin_deal,
+            "admin_received": admin_received,
+            "admin_pending": admin_pending,
+            "sub_center_profit": total_sub_center_fee - total_center_deal,
+            "center_profit": total_center_deal - total_admin_deal,
+            "center_breakdown": list(center_breakdown.values()),
+        }
+
+    elif role == "center":
+        center = get_current_center(user)
+        cid = center["id"]
+        all_ids = get_center_and_subcenter_ids(conn, cid)
+        placeholders = ",".join(["?"] * len(all_ids))
+
+        deals = conn.execute(f"""
+            SELECT sd.*, s.name as student_name, s.center_id,
+                   c.name as center_name, c.level as center_level
+            FROM student_deals sd
+            JOIN students s ON sd.student_id = s.id
+            LEFT JOIN centers c ON s.center_id = c.id
+            WHERE s.center_id IN ({placeholders})
+        """, all_ids).fetchall()
+        deals = [dict(d) for d in deals]
+
+        total_sub_center_fee = sum(d["sub_center_fee"] or 0 for d in deals)
+        total_center_deal = sum(d["center_deal"] or 0 for d in deals)
+
+        if center["level"] == "sub_center":
+            # Sub-center only sees sub_center_fee
+            conn.close()
+            return {
+                "total_students": len(deals),
+                "total_sub_center_fee": total_sub_center_fee,
+                "level": "sub_center",
+                "center_name": center["name"],
+            }
+        else:
+            # Center sees sub_center_fee + center_deal
+            center_received = conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) FROM deal_payments WHERE to_entity_type = 'center' AND to_entity_id = ? AND status = 'paid'",
+                (cid,)
+            ).fetchone()[0]
+            conn.close()
+            return {
+                "total_students": len(deals),
+                "total_sub_center_fee": total_sub_center_fee,
+                "total_center_deal": total_center_deal,
+                "center_received": center_received,
+                "center_pending": total_center_deal - center_received,
+                "level": "center",
+                "center_name": center["name"],
+            }
+    else:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+
+@router.get("/deals/students-without-deals")
+async def students_without_deals(
+    user: dict = Depends(require_admin),
+    search: str = "",
+    center_id: Optional[int] = None,
+):
+    """List center students that don't have a deal entry yet."""
+    conn = get_db()
+    query = """
+        SELECT s.id, s.name, s.phone, s.enrollment_no, s.center_id,
+               c.name as center_name, c.level as center_level,
+               u.name as university_name, cat.name as course_name
+        FROM students s
+        LEFT JOIN centers c ON s.center_id = c.id
+        LEFT JOIN universities u ON s.university_id = u.id
+        LEFT JOIN categories cat ON s.category_id = cat.id
+        WHERE s.center_id IS NOT NULL
+          AND s.id NOT IN (SELECT student_id FROM student_deals)
+    """
+    params: list = []
+    if search:
+        query += " AND (s.name LIKE ? OR s.phone LIKE ? OR s.enrollment_no LIKE ?)"
+        params += [f"%{search}%", f"%{search}%", f"%{search}%"]
+    if center_id:
+        all_ids = get_center_and_subcenter_ids(conn, center_id)
+        ph = ",".join(["?"] * len(all_ids))
+        query += f" AND s.center_id IN ({ph})"
+        params += all_ids
+    query += " ORDER BY s.name LIMIT 50"
+    students = [dict(r) for r in conn.execute(query, params).fetchall()]
+    conn.close()
+    return {"students": students}
+
+
+@router.post("/deals/bulk")
+async def bulk_create_deals(data: dict, user: dict = Depends(require_admin)):
+    """Bulk create deals for multiple students with same amounts."""
+    student_ids = data.get("student_ids", [])
+    sub_center_fee = data.get("sub_center_fee", 0)
+    center_deal = data.get("center_deal", 0)
+    admin_deal = data.get("admin_deal", 0)
+    notes = data.get("notes", "")
+
+    if not student_ids:
+        raise HTTPException(status_code=400, detail="No student IDs provided")
+
+    conn = get_db()
+    created = 0
+    updated = 0
+    for sid in student_ids:
+        existing = conn.execute("SELECT id FROM student_deals WHERE student_id = ?", (sid,)).fetchone()
+        if existing:
+            conn.execute(
+                """UPDATE student_deals SET sub_center_fee = ?, center_deal = ?, admin_deal = ?, notes = ?,
+                   updated_at = CURRENT_TIMESTAMP WHERE student_id = ?""",
+                (sub_center_fee, center_deal, admin_deal, notes, sid)
+            )
+            updated += 1
+        else:
+            conn.execute(
+                "INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, notes) VALUES (?, ?, ?, ?, ?)",
+                (sid, sub_center_fee, center_deal, admin_deal, notes)
+            )
+            created += 1
+    conn.commit()
+    conn.close()
+    return {"message": f"Created {created}, Updated {updated} deals"}
+
+
+# Deal payments (track payments between entities)
+@router.get("/deals/payments")
+async def list_deal_payments(user: dict = Depends(get_current_user)):
+    """List deal payments. Admin sees all, center sees relevant ones."""
+    role = user.get("role", "")
+    conn = get_db()
+
+    if role in ("admin", "super_admin", "branch_admin"):
+        payments = conn.execute("""
+            SELECT dp.*, s.name as student_name, s.enrollment_no,
+                   fc.name as from_center_name, tc.name as to_center_name
+            FROM deal_payments dp
+            JOIN students s ON dp.student_id = s.id
+            LEFT JOIN centers fc ON dp.from_entity_id = fc.id AND dp.from_entity_type IN ('center', 'sub_center')
+            LEFT JOIN centers tc ON dp.to_entity_id = tc.id AND dp.to_entity_type = 'center'
+            ORDER BY dp.created_at DESC
+        """).fetchall()
+    elif role == "center":
+        center = get_current_center(user)
+        cid = center["id"]
+        payments = conn.execute("""
+            SELECT dp.*, s.name as student_name, s.enrollment_no,
+                   fc.name as from_center_name, tc.name as to_center_name
+            FROM deal_payments dp
+            JOIN students s ON dp.student_id = s.id
+            LEFT JOIN centers fc ON dp.from_entity_id = fc.id AND dp.from_entity_type IN ('center', 'sub_center')
+            LEFT JOIN centers tc ON dp.to_entity_id = tc.id AND dp.to_entity_type = 'center'
+            WHERE dp.from_entity_id = ? OR dp.to_entity_id = ?
+            ORDER BY dp.created_at DESC
+        """, (cid, cid)).fetchall()
+    else:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    conn.close()
+    return {"payments": [dict(p) for p in payments]}
+
+
+@router.post("/deals/payments")
+async def create_deal_payment(data: DealPaymentCreate, user: dict = Depends(require_admin)):
+    """Admin records a payment between entities."""
+    conn = get_db()
+    conn.execute(
+        """INSERT INTO deal_payments (student_id, from_entity_type, from_entity_id, to_entity_type, to_entity_id,
+           amount, payment_mode, utr_number, notes, status, paid_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', CURRENT_TIMESTAMP)""",
+        (data.student_id, data.from_entity_type, data.from_entity_id, data.to_entity_type, data.to_entity_id,
+         data.amount, data.payment_mode, data.utr_number, data.notes)
+    )
+    conn.commit()
+    conn.close()
+    return {"message": "Payment recorded"}
+
+
+@router.delete("/deals/payments/{payment_id}")
+async def delete_deal_payment(payment_id: int, user: dict = Depends(require_admin)):
+    """Admin deletes a deal payment."""
+    conn = get_db()
+    conn.execute("DELETE FROM deal_payments WHERE id = ?", (payment_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Payment deleted"}
