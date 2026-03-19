@@ -2188,3 +2188,104 @@ async def admin_delete_gallery_photo(photo_id: int, user: dict = Depends(get_cur
                 os.remove(filepath)
         db.execute("DELETE FROM ground_gallery WHERE id = ?", (photo_id,))
         return {"message": "Photo deleted"}
+
+
+# --- BULK OPERATIONS ---
+
+class BulkIdsRequest(BaseModel):
+    ids: list[int]
+
+
+@router.post("/grounds/bulk-delete")
+async def bulk_delete_grounds(req: BulkIdsRequest, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    if not req.ids:
+        raise HTTPException(400, "No IDs provided")
+    with get_db() as db:
+        placeholders = ",".join("?" for _ in req.ids)
+        db.execute(f"DELETE FROM grounds WHERE id IN ({placeholders})", req.ids)
+        return {"message": f"{len(req.ids)} ground(s) deleted"}
+
+
+@router.post("/users/bulk-delete")
+async def bulk_delete_users(req: BulkIdsRequest, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    if not req.ids:
+        raise HTTPException(400, "No IDs provided")
+    with get_db() as db:
+        # Don't allow deleting yourself
+        req.ids = [uid for uid in req.ids if uid != user["user_id"]]
+        if not req.ids:
+            raise HTTPException(400, "Cannot delete yourself")
+        placeholders = ",".join("?" for _ in req.ids)
+        db.execute(f"DELETE FROM users WHERE id IN ({placeholders})", req.ids)
+        return {"message": f"{len(req.ids)} user(s) deleted"}
+
+
+@router.post("/kyc/bulk-verify")
+async def bulk_verify_kyc(req: BulkIdsRequest, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    if not req.ids:
+        raise HTTPException(400, "No IDs provided")
+    with get_db() as db:
+        placeholders = ",".join("?" for _ in req.ids)
+        db.execute(
+            f"""UPDATE users SET kyc_status = 'verified',
+                kyc_reject_reason = NULL,
+                old_bank_name = NULL, old_bank_account = NULL, old_bank_ifsc = NULL,
+                old_upi_id = NULL, old_kyc_doc_type = NULL, old_kyc_doc_url = NULL
+            WHERE id IN ({placeholders})""",
+            req.ids
+        )
+        return {"message": f"{len(req.ids)} KYC(s) verified"}
+
+
+@router.post("/kyc/bulk-reject")
+async def bulk_reject_kyc(req: BulkIdsRequest, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    if not req.ids:
+        raise HTTPException(400, "No IDs provided")
+    with get_db() as db:
+        placeholders = ",".join("?" for _ in req.ids)
+        db.execute(
+            f"UPDATE users SET kyc_status = 'rejected', kyc_reject_reason = 'Bulk rejected by admin' WHERE id IN ({placeholders})",
+            req.ids
+        )
+        return {"message": f"{len(req.ids)} KYC(s) rejected"}
+
+
+@router.post("/withdrawals/bulk-approve")
+async def bulk_approve_withdrawals(req: BulkIdsRequest, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    if not req.ids:
+        raise HTTPException(400, "No IDs provided")
+    with get_db() as db:
+        count = 0
+        for wid in req.ids:
+            w = db.execute("SELECT * FROM withdraw_requests WHERE id = ? AND status = 'pending'", (wid,)).fetchone()
+            if w:
+                db.execute(
+                    "UPDATE withdraw_requests SET status='completed', processed_by=?, processed_at=CURRENT_TIMESTAMP WHERE id=?",
+                    (user["user_id"], wid)
+                )
+                count += 1
+        return {"message": f"{count} withdrawal(s) approved"}
+
+
+@router.post("/withdrawals/bulk-reject")
+async def bulk_reject_withdrawals(req: BulkIdsRequest, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    if not req.ids:
+        raise HTTPException(400, "No IDs provided")
+    with get_db() as db:
+        count = 0
+        for wid in req.ids:
+            w = db.execute("SELECT * FROM withdraw_requests WHERE id = ? AND status = 'pending'", (wid,)).fetchone()
+            if w:
+                db.execute("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?", (w["amount"], w["user_id"]))
+                db.execute(
+                    "UPDATE withdraw_requests SET status='rejected', processed_by=?, processed_at=CURRENT_TIMESTAMP WHERE id=?",
+                    (user["user_id"], wid)
+                )
+                count += 1
+        return {"message": f"{count} withdrawal(s) rejected"}
