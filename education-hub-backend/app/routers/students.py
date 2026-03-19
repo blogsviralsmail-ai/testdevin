@@ -128,6 +128,10 @@ async def list_students(
     limit: int = 50,
     user: dict = Depends(get_current_user)
 ):
+    # Role-based access: only admin, branch_admin, super_admin, and center roles can list students
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized to list students")
     conn = get_db()
     query = """SELECT s.*, u.name as university_name, c.name as category_name, b.name as branch_name,
                ct.name as center_name, pct.name as parent_center_name, s.admission_source
