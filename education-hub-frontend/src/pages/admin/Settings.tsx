@@ -316,7 +316,7 @@ export default function AdminSettings() {
   // Notification settings
   const [notifSettings, setNotifSettings] = useState({
     telegram_enabled: "true", telegram_bot_token: "", telegram_chat_id: "",
-    email_enabled: "true", notification_email: "harisoniofficial@gmail.com",
+    email_enabled: "true", notification_email: "",
     notify_payment: "true", notify_lead: "true", notify_student: "true",
     notify_enquiry: "true", notify_document: "true",
     notify_career: "true", notify_support: "true", notify_notice: "true",
@@ -334,7 +334,7 @@ export default function AdminSettings() {
 
   async function loadNotifSettings() {
     try {
-      const res = await api.get("/api/settings");
+      const res = await api.get("/api/settings/all");
       if (res.data) {
         setNotifSettings(prev => ({
           ...prev,
@@ -342,7 +342,7 @@ export default function AdminSettings() {
           telegram_bot_token: res.data.telegram_bot_token || "",
           telegram_chat_id: res.data.telegram_chat_id || "",
           email_enabled: res.data.email_enabled || "true",
-          notification_email: res.data.notification_email || "harisoniofficial@gmail.com",
+          notification_email: res.data.notification_email || "",
           notify_payment: res.data.notify_payment || "true",
           notify_lead: res.data.notify_lead || "true",
           notify_student: res.data.notify_student || "true",
@@ -405,7 +405,7 @@ export default function AdminSettings() {
 
   async function loadSettings() {
     try {
-      const res = await api.get("/api/settings");
+      const res = await api.get("/api/settings/all");
       if (res.data && typeof res.data === "object") {
         setSettings({ ...defaultSettings, ...res.data });
       }

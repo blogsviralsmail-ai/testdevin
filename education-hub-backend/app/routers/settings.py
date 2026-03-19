@@ -19,6 +19,14 @@ async def get_settings():
     # Filter out sensitive keys from public endpoint
     return {r["key"]: r["value"] for r in rows if not r["key"].startswith(SENSITIVE_PREFIXES)}
 
+@router.get("/all")
+async def get_all_settings(user: dict = Depends(require_admin)):
+    """Admin-only endpoint that returns ALL settings including sensitive keys."""
+    conn = get_db()
+    rows = conn.execute("SELECT key, value FROM settings").fetchall()
+    conn.close()
+    return {r["key"]: r["value"] for r in rows}
+
 @router.put("")
 async def update_settings(data: Dict[str, str], user: dict = Depends(require_admin)):
     conn = get_db()
