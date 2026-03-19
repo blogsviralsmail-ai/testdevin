@@ -2133,6 +2133,30 @@ export default function OwnerDashboard() {
           </div>
         </div>
       )}
+
+      {/* Success Popup */}
+      {successPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSuccessPopup(null)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3"><CheckCircle size={28} className="text-green-600"/></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Success!</h3>
+            <p className="text-gray-600 text-sm mb-4">{successPopup}</p>
+            <button onClick={() => setSuccessPopup(null)} className="w-full bg-green-600 text-white py-2.5 rounded-xl font-medium hover:bg-green-700">OK</button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Popup */}
+      {errorPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setErrorPopup(null)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3"><XCircle size={28} className="text-red-600"/></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Error</h3>
+            <p className="text-gray-600 text-sm mb-4">{errorPopup}</p>
+            <button onClick={() => setErrorPopup(null)} className="w-full bg-red-600 text-white py-2.5 rounded-xl font-medium hover:bg-red-700">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

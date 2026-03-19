@@ -690,6 +690,7 @@ export default function AdminDashboard() {
                     <thead className="bg-gray-50"><tr><th className="p-3 text-left">Ground</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Token %</th><th className="p-3">Commission</th><th className="p-3">Rating</th><th className="p-3">Approval</th><th className="p-3">Featured</th><th className="p-3">Actions</th></tr></thead>
                     <tbody>
                       {sortData(grounds.filter(g => {
+                        if (!g.is_active) return false;
                         if (groundsSearch && !String(g.name).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.city).toLowerCase().includes(groundsSearch.toLowerCase()) && !String(g.owner_name).toLowerCase().includes(groundsSearch.toLowerCase())) return false;
                         if (groundsTypeFilter !== 'all' && String(g.ground_type) !== groundsTypeFilter) return false;
                         if (groundsCityFilter !== 'all' && String(g.city) !== groundsCityFilter) return false;
