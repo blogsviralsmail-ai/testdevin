@@ -230,7 +230,10 @@ async def withdraw_money(req: WithdrawRequest, user: dict = Depends(get_current_
         # Allow withdrawals if KYC is verified/approved, OR if this is a Re-KYC (old bank details exist)
         if kyc not in ("verified", "approved") and not is_rekyc:
             raise HTTPException(status_code=400, detail="KYC verification required for withdrawals. Please complete KYC first.")
-        charge = round(req.amount * 0.03, 2)
+        # Get withdrawal charge from settings
+        charge_row = db.execute("SELECT value FROM settings WHERE key='withdrawal_charge_percent'").fetchone()
+        charge_pct = float(charge_row["value"]) if charge_row else 3.0
+        charge = round(req.amount * charge_pct / 100, 2)
         net = req.amount - charge
         # Deduct from wallet and create pending withdrawal request
         db.execute("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?", (req.amount, user["user_id"]))
@@ -238,7 +241,25 @@ async def withdraw_money(req: WithdrawRequest, user: dict = Depends(get_current_
             "INSERT INTO withdraw_requests (user_id, amount, charge, net_amount, status) VALUES (?, ?, ?, ?, 'pending')",
             (user["user_id"], req.amount, charge, net),
         )
-        return {"message": f"Withdrawal request of Rs.{net} submitted (3% charge: Rs.{charge}). Admin will process it.", "charge": charge, "net_amount": net, "status": "pending"}
+        wid = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        # Auto-payout: attempt if payout API is configured
+        from app.payout_utils import attempt_auto_payout
+        payout_result = attempt_auto_payout(db, wid, user["user_id"], net)
+        if payout_result.get("auto"):
+            return {
+                "message": payout_result["message"],
+                "charge": charge, "net_amount": net,
+                "status": "completed",
+                "payout_id": payout_result.get("payout_id", ""),
+                "utr": payout_result.get("utr", ""),
+                "mode": payout_result.get("mode", ""),
+            }
+        else:
+            return {
+                "message": payout_result["message"],
+                "charge": charge, "net_amount": net,
+                "status": "pending",
+            }
 
 
 @router.post("/me/kyc")

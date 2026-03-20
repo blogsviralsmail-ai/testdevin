@@ -892,4 +892,20 @@ def add_missing_columns():
         except Exception:
             pass
 
+
+    # Payout API settings (separate from payment collection)
+    payout_settings = [
+        ("auto_payout_enabled", "0", "Enable auto-payout for withdrawals (1=auto via API, 0=manual admin)"),
+        ("payout_api_key", "", "Payout API Key (RazorpayX Key ID)"),
+        ("payout_api_secret", "", "Payout API Secret (RazorpayX Key Secret)"),
+        ("payout_account_number", "", "Payout Account Number (RazorpayX Account Number)"),
+        ("withdrawal_charge_percent", "3", "Withdrawal charge percentage"),
+    ]
+    for key, value, desc in payout_settings:
+        try:
+            conn.execute("INSERT OR IGNORE INTO settings (key, value, description) VALUES (?, ?, ?)", (key, value, desc))
+            conn.commit()
+        except Exception:
+            pass
+
     conn.close()

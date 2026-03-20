@@ -1332,6 +1332,58 @@ async def upload_withdrawal_proof(wid: int, file: UploadFile = File(...), user: 
     return {"proof_url": proof_url, "message": "Proof uploaded"}
 
 
+# --- PAYOUT API CONFIGURATION (separate from payment collection) ---
+@router.get("/payout-config")
+async def get_payout_config(user: dict = Depends(get_current_user)):
+    """Get payout API configuration for auto-withdrawals"""
+    require_role(user, ["admin"])
+    with get_db() as db:
+        keys = ["auto_payout_enabled", "payout_api_key", "payout_api_secret", "payout_account_number", "withdrawal_charge_percent"]
+        config = {}
+        for k in keys:
+            row = db.execute("SELECT value FROM settings WHERE key=?", (k,)).fetchone()
+            config[k] = row["value"] if row else ""
+        # Mask API secret for security
+        if config.get("payout_api_secret"):
+            secret = config["payout_api_secret"]
+            config["payout_api_secret_masked"] = secret[:4] + "****" + secret[-4:] if len(secret) > 8 else "****"
+        else:
+            config["payout_api_secret_masked"] = ""
+        return config
+
+
+class PayoutConfigRequest(BaseModel):
+    auto_payout_enabled: str = "0"
+    payout_api_key: str = ""
+    payout_api_secret: str = ""
+    payout_account_number: str = ""
+    withdrawal_charge_percent: str = "3"
+
+
+@router.post("/payout-config")
+async def update_payout_config(req: PayoutConfigRequest, user: dict = Depends(get_current_user)):
+    """Update payout API configuration"""
+    require_role(user, ["admin"])
+    with get_db() as db:
+        settings = {
+            "auto_payout_enabled": req.auto_payout_enabled,
+            "payout_api_key": req.payout_api_key,
+            "payout_account_number": req.payout_account_number,
+            "withdrawal_charge_percent": req.withdrawal_charge_percent,
+        }
+        # Only update secret if a new one is provided (not masked)
+        if req.payout_api_secret and "****" not in req.payout_api_secret:
+            settings["payout_api_secret"] = req.payout_api_secret
+
+        for key, value in settings.items():
+            existing = db.execute("SELECT id FROM settings WHERE key=?", (key,)).fetchone()
+            if existing:
+                db.execute("UPDATE settings SET value=? WHERE key=?", (value, key))
+            else:
+                db.execute("INSERT INTO settings (key, value) VALUES (?, ?)", (key, value))
+        return {"message": "Payout API configuration updated successfully"}
+
+
 # --- TEAM DATA (for admin promotion) ---
 @router.get("/teams")
 async def admin_list_teams(user: dict = Depends(get_current_user)):

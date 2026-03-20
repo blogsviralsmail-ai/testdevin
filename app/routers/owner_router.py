@@ -509,13 +509,34 @@ async def request_payout(req: PayoutRequest, user: dict = Depends(get_current_us
         if available_balance < req.amount:
             raise HTTPException(status_code=400, detail=f"Insufficient balance. Available: Rs.{available_balance}")
 
-        charge = round(req.amount * 0.03, 2)
+        # Get withdrawal charge from settings
+        charge_row = db.execute("SELECT value FROM settings WHERE key='withdrawal_charge_percent'").fetchone()
+        charge_pct = float(charge_row["value"]) if charge_row else 3.0
+        charge = round(req.amount * charge_pct / 100, 2)
         net = req.amount - charge
         db.execute(
             "INSERT INTO withdraw_requests (user_id, amount, charge, net_amount, status) VALUES (?, ?, ?, ?, 'pending')",
             (user["user_id"], req.amount, charge, net),
         )
-        return {"message": f"Payout request of Rs.{net} submitted (3% charge: Rs.{charge}). Admin will process it.", "amount": req.amount, "charge": charge, "net_amount": net, "status": "pending"}
+        wid = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        # Auto-payout: attempt if payout API is configured
+        from app.payout_utils import attempt_auto_payout
+        payout_result = attempt_auto_payout(db, wid, user["user_id"], net)
+        if payout_result.get("auto"):
+            return {
+                "message": payout_result["message"],
+                "amount": req.amount, "charge": charge, "net_amount": net,
+                "status": "completed",
+                "payout_id": payout_result.get("payout_id", ""),
+                "utr": payout_result.get("utr", ""),
+                "mode": payout_result.get("mode", ""),
+            }
+        else:
+            return {
+                "message": payout_result["message"],
+                "amount": req.amount, "charge": charge, "net_amount": net,
+                "status": "pending",
+            }
 
 
 @router.post("/kyc")
