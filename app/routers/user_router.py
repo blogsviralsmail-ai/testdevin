@@ -565,7 +565,8 @@ async def apply_referral(referral_code: str, user: dict = Depends(get_current_us
         existing = db.execute("SELECT * FROM referrals WHERE referee_id = ?", (user["user_id"],)).fetchone()
         if existing:
             raise HTTPException(status_code=400, detail="Already referred")
-        reward = float(db.execute("SELECT value FROM settings WHERE key='user_referral_reward'").fetchone()["value"])
+        reward_row = db.execute("SELECT value FROM settings WHERE key='user_referral_reward'").fetchone()
+        reward = float(reward_row["value"]) if reward_row else 50
         db.execute(
             "INSERT INTO referrals (referrer_id, referee_id, referral_type, reward_amount, status) VALUES (?, ?, 'user', ?, 'pending')",
             (referrer["id"], user["user_id"], reward),

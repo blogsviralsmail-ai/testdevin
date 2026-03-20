@@ -463,6 +463,8 @@ async def block_slot(slot_id: int, user: dict = Depends(get_current_user)):
         ).fetchone()
         if not slot:
             raise HTTPException(status_code=404, detail="Slot not found")
+        if slot["status"] == "booked":
+            raise HTTPException(status_code=400, detail="Cannot block a booked slot")
         new_status = "available" if slot["status"] == "blocked" else "blocked"
         db.execute("UPDATE slots SET status = ? WHERE id = ?", (new_status, slot_id))
         return {"message": f"Slot {new_status}", "status": new_status}
