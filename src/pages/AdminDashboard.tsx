@@ -387,6 +387,7 @@ export default function AdminDashboard() {
   const [showSettlementPayout, setShowSettlementPayout] = useState(false);
   const [settlementPayoutMode, setSettlementPayoutMode] = useState<'manual' | 'razorpay'>('manual');
   const [settlementRazorpayId, setSettlementRazorpayId] = useState('');
+  const [razorpayPayoutMode, setRazorpayPayoutMode] = useState<'NEFT' | 'IMPS' | 'UPI'>('NEFT');
   const [settlementNotes, setSettlementNotes] = useState('');
   const [settlementProcessing, setSettlementProcessing] = useState(false);
   const [settlementStatement, setSettlementStatement] = useState<Array<Record<string, unknown>>>([]);
@@ -1272,10 +1273,24 @@ export default function AdminDashboard() {
                     )}
                     {settlementPayoutMode === 'razorpay' && (
                       <>
-                        <div><label className="text-sm font-medium text-gray-600">Razorpay Payment ID *</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="pay_XXXXXXXXXX" value={settlementRazorpayId} onChange={e => setSettlementRazorpayId(e.target.value)} /></div>
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <p className="text-xs text-blue-700">Razorpay se manually payout karo, phir yahan Payment ID daalke record karo.</p>
+                          <p className="text-xs text-blue-700 font-semibold">RazorpayX Auto Payout - Click button and paise seedha owner ke bank mein jayenge!</p>
                         </div>
+                        <div><label className="text-sm font-medium text-gray-600">Payout Mode</label>
+                          <div className="flex gap-2 mt-1">
+                            {(['NEFT', 'IMPS', 'UPI'] as const).map(mode => (
+                              <button key={mode} onClick={() => setRazorpayPayoutMode(mode)} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${razorpayPayoutMode === mode ? 'bg-blue-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{mode}</button>
+                            ))}
+                          </div>
+                        </div>
+                        {(() => { const ownerData = settlements.find(s => s.owner_id === settlementPayoutOwnerId); return ownerData ? (
+                          <div className="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                            <p className="font-semibold text-gray-700">Owner: {String(ownerData.owner_name || '')}</p>
+                            {ownerData.bank_account ? <p>Bank: {String(ownerData.bank_name || '-')} | A/C: {String(ownerData.bank_account)} | IFSC: {String(ownerData.bank_ifsc || '')}</p> : null}
+                            {ownerData.upi_id ? <p>UPI: {String(ownerData.upi_id)}</p> : null}
+                            {!ownerData.bank_account && !ownerData.upi_id && <p className="text-red-500">No bank/UPI details found. KYC required!</p>}
+                          </div>
+                        ) : null; })()}
                       </>
                     )}
                     <div><label className="text-sm font-medium text-gray-600">Notes (Optional)</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Any additional notes" value={settlementNotes} onChange={e => setSettlementNotes(e.target.value)} /></div>
@@ -1284,7 +1299,6 @@ export default function AdminDashboard() {
                     <button onClick={() => { setShowSettlementPayout(false); setSettlementPayoutMode('manual'); setSettlementUTR(''); setSettlementProof(''); setSettlementRazorpayId(''); setSettlementNotes(''); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium">Cancel</button>
                     <button disabled={settlementProcessing} onClick={async () => {
                       if (settlementPayoutMode === 'manual' && !settlementUTR) { alert('UTR number required'); return; }
-                      if (settlementPayoutMode === 'razorpay' && !settlementRazorpayId) { alert('Razorpay Payment ID required'); return; }
                       if (!settlementAmount || parseFloat(settlementAmount) <= 0) { alert('Valid amount required'); return; }
                       setSettlementProcessing(true);
                       try {
@@ -1295,6 +1309,7 @@ export default function AdminDashboard() {
                           utr_number: settlementUTR || undefined,
                           proof_photo: settlementProof || undefined,
                           razorpay_payment_id: settlementRazorpayId || undefined,
+                          payout_mode: settlementPayoutMode === 'razorpay' ? razorpayPayoutMode : undefined,
                           notes: settlementNotes || undefined,
                         });
                         alert(`Payout of Rs.${settlementAmount} processed via ${settlementPayoutMode === 'manual' ? 'Bank Transfer' : 'Razorpay'}!`);
@@ -1303,7 +1318,7 @@ export default function AdminDashboard() {
                       } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Payout failed'); }
                       setSettlementProcessing(false);
                     }} className={`flex-1 ${settlementPayoutMode === 'razorpay' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} text-white py-2.5 rounded-xl font-medium disabled:opacity-50`}>
-                      {settlementProcessing ? 'Processing...' : settlementPayoutMode === 'manual' ? 'Process Bank Payout' : 'Record Razorpay Payout'}
+                      {settlementProcessing ? 'Processing...' : settlementPayoutMode === 'manual' ? 'Process Bank Payout' : `Send Payout via Razorpay (${razorpayPayoutMode})`}
                     </button>
                   </div>
                 </div>
