@@ -565,8 +565,8 @@ def add_missing_columns():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (promo_id) REFERENCES promo_codes(id)
-        )
-        CREATE TABLE IF NOT EXISTS wallet_transactions (
+        )""",
+        """CREATE TABLE IF NOT EXISTS wallet_transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             type TEXT NOT NULL,
@@ -576,8 +576,7 @@ def add_missing_columns():
             reference_id TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
-        );
-""",
+        )""",
     ]
     for sql in new_tables:
         try:
