@@ -469,6 +469,22 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (split_id) REFERENCES split_payments(id)
         )""")
+    # Settlement records table (used by owner_dashboard, owner_wallet, request_payout, admin settlements)
+    with get_db() as db4:
+        db4.execute("""CREATE TABLE IF NOT EXISTS settlement_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            owner_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            settlement_type TEXT,
+            utr_number TEXT,
+            proof_photo TEXT,
+            notes TEXT,
+            status TEXT DEFAULT 'pending',
+            balance_before REAL DEFAULT 0,
+            balance_after REAL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (owner_id) REFERENCES users(id)
+        )""")
     # Initialize V17 tables
     _init_v17_tables()
 
@@ -531,6 +547,8 @@ def add_missing_columns():
                 net_amount REAL NOT NULL,
                 status TEXT DEFAULT 'pending',
                 processed_by INTEGER,
+                transaction_id TEXT,
+                proof_url TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 processed_at TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
