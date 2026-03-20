@@ -140,6 +140,11 @@ async def owner_dashboard(user: dict = Depends(get_current_user)):
 
         owner_user = db.execute("SELECT wallet_balance FROM users WHERE id = ?", (user["user_id"],)).fetchone()
 
+        # Subtract already withdrawn + already settled from net_payable
+        already_withdrawn_dash = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_requests WHERE user_id=? AND status IN ('pending','completed')", (user["user_id"],)).fetchone()["total"]
+        already_settled_dash = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM settlement_records WHERE owner_id=?", (user["user_id"],)).fetchone()["total"]
+        total_paid_out_dash = already_withdrawn_dash + already_settled_dash
+
         return {
             "grounds": [dict(g) for g in grounds],
             "stats": {
@@ -155,11 +160,12 @@ async def owner_dashboard(user: dict = Depends(get_current_user)):
                 "online_collected": online_total,
                 "cash_collected": cash_total,
                 "commission_due": round(total_commission, 2),
-                "net_payable": round(online_total - total_commission, 2),
+                "net_payable": round(online_total - total_commission - total_paid_out_dash, 2),
                 "online_commission": round(online_commission, 2),
                 "cash_commission": round(cash_commission, 2),
                 "commission_owed": round(cash_commission, 2),
-                "settlement_balance": round(online_total - total_commission, 2),
+                "settlement_balance": round(online_total - total_commission - total_paid_out_dash, 2),
+                "already_withdrawn": round(total_paid_out_dash, 2),
             },
             "wallet_balance": owner_user["wallet_balance"] if owner_user else 0,
         }
