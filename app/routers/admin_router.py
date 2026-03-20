@@ -1160,6 +1160,144 @@ async def approve_withdrawal(wid: int, data: dict = None, user: dict = Depends(g
             raise HTTPException(status_code=400, detail="Already processed")
 
 
+@router.post("/withdrawals/{wid}/razorpay-payout")
+async def withdrawal_razorpay_payout(wid: int, request: Request, user: dict = Depends(get_current_user)):
+    """Process withdrawal via RazorpayX Payout API - sends money directly to user's bank/UPI"""
+    require_role(user, ["admin"])
+    with get_db() as db:
+        w = db.execute("SELECT * FROM withdraw_requests WHERE id = ? AND status = 'pending'", (wid,)).fetchone()
+        if not w:
+            raise HTTPException(status_code=404, detail="Withdrawal not found or already processed")
+
+        # Get user bank details
+        u = db.execute("SELECT id, name, phone, email, bank_name, bank_account, bank_ifsc, upi_id FROM users WHERE id = ?", (w["user_id"],)).fetchone()
+        if not u:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Get RazorpayX credentials
+        gw = db.execute("SELECT api_key, secret_key FROM payment_gateways WHERE gateway_name='razorpay' AND is_active=1").fetchone()
+        if not gw:
+            raise HTTPException(status_code=400, detail="Razorpay gateway not configured")
+
+        api_key = gw["api_key"]
+        api_secret = gw["secret_key"]
+
+        acc_row = db.execute("SELECT value FROM settings WHERE key='razorpayx_account_number'").fetchone()
+        if not acc_row:
+            raise HTTPException(status_code=400, detail="RazorpayX account number not configured in settings")
+        account_number = acc_row["value"]
+
+        amount = float(w["net_amount"])
+        amount_paise = int(round(amount * 100))
+        idempotency_key = str(uuid.uuid4())
+
+        user_name = u["name"] or "User"
+        user_phone = u["phone"] or ""
+        user_email = u["email"] if u["email"] else None
+        user_bank_account = u["bank_account"]
+        user_bank_ifsc = u["bank_ifsc"]
+        user_upi_id = u["upi_id"]
+
+        # Build payout payload - prefer UPI if available, else bank account
+        if user_upi_id:
+            payout_payload = {
+                "account_number": account_number,
+                "amount": amount_paise,
+                "currency": "INR",
+                "mode": "UPI",
+                "purpose": "payout",
+                "fund_account": {
+                    "account_type": "vpa",
+                    "vpa": {"address": user_upi_id},
+                    "contact": {
+                        "name": user_name,
+                        "email": user_email,
+                        "contact": user_phone,
+                        "type": "customer",
+                        "reference_id": f"user_{u['id']}"
+                    }
+                },
+                "queue_if_low_balance": True,
+                "reference_id": f"wd_{wid}_{datetime.now(IST).strftime('%Y%m%d%H%M%S')}",
+                "narration": "BookAGround Withdrawal",
+                "notes": {"withdrawal_id": str(wid), "user_id": str(u["id"])}
+            }
+        elif user_bank_account and user_bank_ifsc:
+            payout_payload = {
+                "account_number": account_number,
+                "amount": amount_paise,
+                "currency": "INR",
+                "mode": "NEFT",
+                "purpose": "payout",
+                "fund_account": {
+                    "account_type": "bank_account",
+                    "bank_account": {
+                        "name": user_name,
+                        "ifsc": user_bank_ifsc,
+                        "account_number": user_bank_account
+                    },
+                    "contact": {
+                        "name": user_name,
+                        "email": user_email,
+                        "contact": user_phone,
+                        "type": "customer",
+                        "reference_id": f"user_{u['id']}"
+                    }
+                },
+                "queue_if_low_balance": True,
+                "reference_id": f"wd_{wid}_{datetime.now(IST).strftime('%Y%m%d%H%M%S')}",
+                "narration": "BookAGround Withdrawal",
+                "notes": {"withdrawal_id": str(wid), "user_id": str(u["id"])}
+            }
+        else:
+            raise HTTPException(status_code=400, detail="User has no bank account or UPI details. KYC required first.")
+
+        # Remove None values from contact
+        contact = payout_payload["fund_account"]["contact"]
+        payout_payload["fund_account"]["contact"] = {k: v for k, v in contact.items() if v is not None}
+
+        # Call RazorpayX Composite Payout API
+        try:
+            resp = http_requests.post(
+                "https://api.razorpay.com/v1/payouts",
+                json=payout_payload,
+                auth=(api_key, api_secret),
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Payout-Idempotency": idempotency_key
+                },
+                timeout=30
+            )
+            resp_data = resp.json()
+
+            if resp.status_code not in (200, 201):
+                error_desc = resp_data.get("error", {}).get("description", "Unknown error")
+                raise HTTPException(status_code=400, detail=f"Razorpay Payout failed: {error_desc}")
+
+            payout_id = resp_data.get("id", "")
+            payout_utr = resp_data.get("utr", "")
+            payout_status = resp_data.get("status", "processing")
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Razorpay API error: {str(e)}")
+
+        # Mark withdrawal as completed with RazorpayX payout details
+        transaction_id = payout_id or f"RZP_{wid}_{datetime.now(IST).strftime('%Y%m%d%H%M%S')}"
+        db.execute(
+            "UPDATE withdraw_requests SET status='completed', processed_by=?, processed_at=CURRENT_TIMESTAMP, transaction_id=?, proof_url=? WHERE id=?",
+            (user["user_id"], transaction_id, f"RazorpayX Payout | UTR: {payout_utr} | Status: {payout_status}", wid)
+        )
+
+        return {
+            "message": f"Razorpay payout of Rs.{amount} initiated! Payout ID: {payout_id}",
+            "payout_id": payout_id,
+            "utr": payout_utr,
+            "status": payout_status
+        }
+
+
 @router.post("/withdrawals/{wid}/reject")
 async def reject_withdrawal(wid: int, user: dict = Depends(get_current_user)):
     require_role(user, ["admin"])

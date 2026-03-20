@@ -754,6 +754,7 @@ async def owner_transaction_ledger(user: dict = Depends(get_current_user)):
         result = []
         for r in rows:
             d = dict(r)
+            d["txn_type"] = "booking"
             # Calculate online and cash amounts for each booking
             if d["status"] == "no_show":
                 # No-show: only token amount was actually paid, remaining never collected
@@ -766,6 +767,51 @@ async def owner_transaction_ledger(user: dict = Depends(get_current_user)):
                 d["online_amount"] = d["token_amount"] or d["total_amount"]
                 d["cash_amount"] = d["remaining_amount"] or 0
             result.append(d)
+
+        # Also include settlement records
+        settlement_rows = db.execute(
+            "SELECT id, amount, settlement_type, utr_number, notes, status, balance_before, balance_after, created_at FROM settlement_records WHERE owner_id = ? ORDER BY created_at DESC",
+            (user["user_id"],),
+        ).fetchall()
+        for s in settlement_rows:
+            d = dict(s)
+            d["txn_type"] = "settlement"
+            d["user_name"] = "-"
+            d["user_phone"] = "-"
+            d["ground_name"] = "-"
+            d["booking_date"] = str(d["created_at"] or "")[:10]
+            d["start_time"] = d["settlement_type"] or ""
+            d["end_time"] = ""
+            d["total_amount"] = d["amount"]
+            d["online_amount"] = d["utr_number"] or ""
+            d["cash_amount"] = 0
+            d["payment_mode"] = "settlement"
+            d["booking_type"] = "settlement"
+            result.append(d)
+
+        # Also include withdrawal records
+        withdrawal_rows = db.execute(
+            "SELECT id, amount, charge, net_amount, status, transaction_id, created_at FROM withdraw_requests WHERE user_id = ? ORDER BY created_at DESC",
+            (user["user_id"],),
+        ).fetchall()
+        for w in withdrawal_rows:
+            d = dict(w)
+            d["txn_type"] = "withdrawal"
+            d["user_name"] = "-"
+            d["user_phone"] = "-"
+            d["ground_name"] = "-"
+            d["booking_date"] = str(d["created_at"] or "")[:10]
+            d["start_time"] = ""
+            d["end_time"] = ""
+            d["total_amount"] = d["amount"]
+            d["online_amount"] = d.get("charge", 0)
+            d["cash_amount"] = d.get("net_amount", 0)
+            d["payment_mode"] = "withdrawal"
+            d["booking_type"] = "withdrawal"
+            result.append(d)
+
+        # Sort all by created_at descending
+        result.sort(key=lambda x: str(x.get("created_at", "")), reverse=True)
         return result
 
 @router.post("/grounds/{ground_id}/dayoff")
