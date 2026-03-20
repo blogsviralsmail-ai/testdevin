@@ -288,18 +288,21 @@ export default function AdminDashboard() {
     if (!showApprovalModal) return;
     setApproving(true);
     try {
-      let proofUrl = approvalProofUrl;
-      // Upload proof file first if selected
-      if (approvalProofFile) {
-        const uploadRes = await api.uploadWithdrawalProof(showApprovalModal, approvalProofFile);
-        proofUrl = uploadRes.proof_url || proofUrl;
+      if (approvalMethod === 'razorpay') {
+        // Call actual RazorpayX Payout API endpoint
+        const result = await api.withdrawalRazorpayPayout(showApprovalModal);
+        alert(`Razorpay Payout initiated! ${result.payout_id ? 'Payout ID: ' + result.payout_id : result.message}`);
+      } else {
+        // Manual transfer flow
+        let proofUrl = approvalProofUrl;
+        if (approvalProofFile) {
+          const uploadRes = await api.uploadWithdrawalProof(showApprovalModal, approvalProofFile);
+          proofUrl = uploadRes.proof_url || proofUrl;
+        }
+        const txnId = approvalTxnId;
+        await api.approveWithdrawalWithDetails(showApprovalModal, { transaction_id: txnId, proof_url: proofUrl });
+        alert('Withdrawal approved successfully!');
       }
-      let txnId = approvalTxnId;
-      if (approvalMethod === 'razorpay' && !txnId) {
-        txnId = 'RZP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8).toUpperCase();
-      }
-      await api.approveWithdrawalWithDetails(showApprovalModal, { transaction_id: txnId, proof_url: proofUrl });
-      alert('Withdrawal approved successfully!');
       setShowApprovalModal(null);
       setApprovalProofFile(null);
       loadTab();
@@ -1403,14 +1406,14 @@ export default function AdminDashboard() {
                 )}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = withdrawals.filter(w => { if (withdrawalRoleFilter !== 'all' && ((withdrawalRoleFilter === 'owner' && w.user_role !== 'owner') || (withdrawalRoleFilter === 'user' && w.user_role === 'owner'))) return false; if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false; if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false; return true; }).map(w => w.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="p-3 w-10 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600" checked={bulkSelectAll} onChange={e => { setBulkSelectAll(e.target.checked); if (e.target.checked) { const filteredIds = withdrawals.filter(w => { if (withdrawalRoleFilter !== 'all' && ((withdrawalRoleFilter === 'owner' && w.user_role !== 'owner') || (withdrawalRoleFilter === 'user' && w.user_role === 'owner'))) return false; if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false; if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false; return true; }).map(w => w.id as number); setSelectedBulkIds(new Set(filteredIds)); } else { setSelectedBulkIds(new Set()); } }} /></th><th className="p-3 text-left">User</th><th className="p-3">Role</th><th className="p-3">Amount</th><th className="p-3">Charge</th><th className="p-3">Net</th><th className="p-3">Bank Details</th><th className="p-3">UPI</th><th className="p-3">Status</th><th className="p-3">Method</th><th className="p-3">Date</th><th className="p-3">Action</th></tr></thead>
                     <tbody>
                       {sortData(withdrawals.filter(w => {
                         if (withdrawalRoleFilter !== 'all' && ((withdrawalRoleFilter === 'owner' && w.user_role !== 'owner') || (withdrawalRoleFilter === 'user' && w.user_role === 'owner'))) return false;
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
                         return true;
-                      }), withdrawalsSortBy, withdrawalsSortOrder).length === 0 ? <tr><td colSpan={11} className="p-4 text-center text-gray-400">No withdrawal requests</td></tr> : sortData(withdrawals.filter(w => {
+                      }), withdrawalsSortBy, withdrawalsSortOrder).length === 0 ? <tr><td colSpan={12} className="p-4 text-center text-gray-400">No withdrawal requests</td></tr> : sortData(withdrawals.filter(w => {
                         if (withdrawalRoleFilter !== 'all' && ((withdrawalRoleFilter === 'owner' && w.user_role !== 'owner') || (withdrawalRoleFilter === 'user' && w.user_role === 'owner'))) return false;
                         if (withdrawalFilter !== 'all' && w.status !== withdrawalFilter) return false;
                         if (withdrawalsSearch && !String(w.user_name).toLowerCase().includes(withdrawalsSearch.toLowerCase()) && !String(w.user_phone).includes(withdrawalsSearch)) return false;
@@ -1425,8 +1428,9 @@ export default function AdminDashboard() {
                           <td className="p-3 text-center font-bold text-green-600">Rs.{(w.net_amount as number)?.toFixed(2)}</td>
                           <td className="p-3 text-xs">{w.bank_name ? <div><p className="font-medium">{w.bank_name as string}</p><p className="text-gray-500">A/C: {w.bank_account as string}</p><p className="text-gray-500">IFSC: {w.bank_ifsc as string}</p></div> : <span className="text-gray-400">No bank</span>}</td>
                           <td className="p-3 text-center text-xs">{(w.upi_id as string) ? <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded">{w.upi_id as string}</span> : '-'}</td>
-                          <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${w.status === 'pending' ? 'bg-orange-100 text-orange-700' : w.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{w.status as string}</span></td>
-                          <td className="p-3 text-center text-xs">{(w.created_at as string)?.split('T')[0]}</td>
+                                                    <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${w.status === 'pending' ? 'bg-orange-100 text-orange-700' : w.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{w.status as string}</span></td>
+                                                    <td className="p-3 text-center text-xs">{w.status !== 'pending' ? (String(w.transaction_id || '').startsWith('pout_') || String(w.proof_url || '').includes('RazorpayX') ? <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Razorpay</span> : <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Manual</span>) : <span className="text-gray-400">-</span>}</td>
+                                                    <td className="p-3 text-center text-xs">{(w.created_at as string)?.split('T')[0]}</td>
                           <td className="p-3 text-center">{w.status === 'pending' && <div className="flex gap-1 justify-center"><button onClick={() => handleApproveWithdrawal(w.id as number)} className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded"><CheckCircle size={10} className="inline mr-0.5"/>Approve</button><button onClick={() => handleRejectWithdrawal(w.id as number)} className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded"><XCircle size={10} className="inline mr-0.5"/>Reject</button></div>}</td>
                         </tr>
                       ))}

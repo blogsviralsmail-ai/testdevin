@@ -151,6 +151,7 @@ export const api = {
   // v9 - Team data, withdrawal with txn details
   getAdminTeams: () => fetchAPI('/api/admin/teams'),
   approveWithdrawalWithDetails: (id: number, data: Record<string, unknown>) => fetchAPI('/api/admin/withdrawals/' + id + '/approve', { method: 'POST', body: JSON.stringify(data) }),
+  withdrawalRazorpayPayout: (id: number) => fetchAPI('/api/admin/withdrawals/' + id + '/razorpay-payout', { method: 'POST', body: JSON.stringify({}) }),
   uploadWithdrawalProof: async (wid: number, file: File) => {
     const token = localStorage.getItem('token');
     const formData = new FormData();

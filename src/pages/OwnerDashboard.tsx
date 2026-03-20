@@ -1373,7 +1373,39 @@ export default function OwnerDashboard() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50"><tr><th className="p-3 text-left">User</th><th className="p-3">Phone</th><th className="p-3">Ground</th><th className="p-3">Date</th><th className="p-3">Slot Time</th><th className="p-3">Total</th><th className="p-3">Online</th><th className="p-3">Cash</th><th className="p-3">Commission</th><th className="p-3">Mode</th><th className="p-3">Status</th></tr></thead>
                   <tbody>
-                    {ownerTxns.map((t: Record<string, unknown>, i: number) => (
+                    {ownerTxns.map((t: Record<string, unknown>, i: number) => {
+                      const txnType = String(t.txn_type || 'booking');
+                      if (txnType === 'settlement') return (
+                        <tr key={i} className="border-t hover:bg-purple-50 bg-purple-50/30">
+                          <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">Settlement</span></td>
+                          <td className="p-3 text-xs text-gray-400">-</td>
+                          <td className="p-3 text-xs text-gray-400">-</td>
+                          <td className="p-3 text-center text-xs">{String(t.booking_date || '-')}</td>
+                          <td className="p-3 text-center text-xs">{String(t.start_time || '-')}</td>
+                          <td className="p-3 text-center font-bold text-purple-600">Rs.{Number(t.total_amount || 0).toLocaleString()}</td>
+                          <td className="p-3 text-center text-xs text-gray-500">{String(t.online_amount || '-')}</td>
+                          <td className="p-3 text-center text-gray-400">-</td>
+                          <td className="p-3 text-center text-gray-400">-</td>
+                          <td className="p-3 text-center"><span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">settlement</span></td>
+                          <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${String(t.status) === 'completed' || String(t.status) === 'processed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{String(t.status || '-')}</span></td>
+                        </tr>
+                      );
+                      if (txnType === 'withdrawal') return (
+                        <tr key={i} className="border-t hover:bg-orange-50 bg-orange-50/30">
+                          <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Withdrawal</span></td>
+                          <td className="p-3 text-xs text-gray-400">-</td>
+                          <td className="p-3 text-xs text-gray-400">-</td>
+                          <td className="p-3 text-center text-xs">{String(t.booking_date || '-')}</td>
+                          <td className="p-3 text-center text-xs">-</td>
+                          <td className="p-3 text-center font-bold text-red-600">-Rs.{Number(t.total_amount || 0).toLocaleString()}</td>
+                          <td className="p-3 text-center text-xs text-red-400">Rs.{String(t.online_amount || 0)}</td>
+                          <td className="p-3 text-center text-green-600">Rs.{String(t.cash_amount || 0)}</td>
+                          <td className="p-3 text-center text-gray-400">-</td>
+                          <td className="p-3 text-center"><span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">withdrawal</span></td>
+                          <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${String(t.status) === 'completed' ? 'bg-green-100 text-green-700' : String(t.status) === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>{String(t.status || '-')}</span></td>
+                        </tr>
+                      );
+                      return (
                       <tr key={i} className="border-t hover:bg-gray-50">
                         <td className="p-3 font-medium">{String(t.user_name || '-')}</td>
                         <td className="p-3 text-xs text-blue-600">{String(t.user_phone || '-')}</td>
@@ -1387,7 +1419,8 @@ export default function OwnerDashboard() {
                         <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${String(t.payment_mode) === 'cash' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>{String(t.payment_mode || 'online')}</span></td>
                         <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${String(t.status) === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{String(t.status || '-')}</span></td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
