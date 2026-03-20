@@ -507,7 +507,8 @@ async def request_payout(req: PayoutRequest, user: dict = Depends(get_current_us
             online_revenue += online_rev
             total_commission += online_rev * rate / 100
         already_withdrawn = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_requests WHERE user_id=? AND status IN ('pending','completed')", (user["user_id"],)).fetchone()["total"]
-        available_balance = round(online_revenue - total_commission - already_withdrawn, 2)
+        already_settled = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM settlement_records WHERE owner_id=?", (user["user_id"],)).fetchone()["total"]
+        available_balance = round(online_revenue - total_commission - already_withdrawn - already_settled, 2)
         if available_balance < req.amount:
             raise HTTPException(status_code=400, detail=f"Insufficient balance. Available: Rs.{available_balance}")
 
