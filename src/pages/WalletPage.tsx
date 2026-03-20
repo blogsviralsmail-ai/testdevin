@@ -642,10 +642,13 @@ export default function WalletPage() {
                     <p className="text-xs text-gray-500 truncate">{t.description}</p>
                     {t.reference_id && <p className="text-xs text-gray-400">Ref: {t.reference_id}</p>}
                     {t.transaction_id && <p className="text-xs text-blue-600 font-medium">TXN: {t.transaction_id}</p>}
-                    {t.proof_url && (
+                    {t.proof_url && !String(t.proof_url).startsWith('RazorpayX') && (
                       <a href={t.proof_url} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-600 hover:underline flex items-center gap-1 mt-0.5">
                         <FileText size={10} /> View Proof
                       </a>
+                    )}
+                    {t.proof_url && String(t.proof_url).startsWith('RazorpayX') && (
+                      <p className="text-xs text-purple-600 mt-0.5">{t.proof_url}</p>
                     )}
                     <p className="text-xs text-gray-400">{formatDate(t.created_at)}</p>
                   </div>

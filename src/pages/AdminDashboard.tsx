@@ -291,7 +291,7 @@ export default function AdminDashboard() {
       if (approvalMethod === 'razorpay') {
         // Call actual RazorpayX Payout API endpoint
         const result = await api.withdrawalRazorpayPayout(showApprovalModal);
-        alert(`Razorpay Payout initiated! ${result.payout_id ? 'Payout ID: ' + result.payout_id : result.message}`);
+        alert(`Razorpay Payout Success!\n\nMode: ${result.mode || 'UPI'}\nPayout ID: ${result.payout_id || '-'}\nUTR: ${result.utr || 'pending'}\nStatus: ${result.status || 'processing'}`);
       } else {
         // Manual transfer flow
         let proofUrl = approvalProofUrl;
@@ -1429,7 +1429,7 @@ export default function AdminDashboard() {
                           <td className="p-3 text-xs">{w.bank_name ? <div><p className="font-medium">{w.bank_name as string}</p><p className="text-gray-500">A/C: {w.bank_account as string}</p><p className="text-gray-500">IFSC: {w.bank_ifsc as string}</p></div> : <span className="text-gray-400">No bank</span>}</td>
                           <td className="p-3 text-center text-xs">{(w.upi_id as string) ? <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded">{w.upi_id as string}</span> : '-'}</td>
                                                     <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${w.status === 'pending' ? 'bg-orange-100 text-orange-700' : w.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{w.status as string}</span></td>
-                                                    <td className="p-3 text-center text-xs">{w.status !== 'pending' ? (String(w.transaction_id || '').startsWith('pout_') || String(w.proof_url || '').includes('RazorpayX') ? <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Razorpay</span> : <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Manual</span>) : <span className="text-gray-400">-</span>}</td>
+                                                    <td className="p-3 text-center text-xs">{w.status !== 'pending' ? (String(w.transaction_id || '').startsWith('pout_') || String(w.proof_url || '').includes('RazorpayX') ? (() => { const proofStr = String(w.proof_url || ''); const modeMatch = proofStr.match(/Mode:\s*(UPI|NEFT|IMPS|RTGS)/i); const mode = modeMatch ? modeMatch[1].toUpperCase() : 'UPI'; return <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{mode} via Razorpay</span>; })() : <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Manual</span>) : <span className="text-gray-400">-</span>}</td>
                                                     <td className="p-3 text-center text-xs">{(w.created_at as string)?.split('T')[0]}</td>
                           <td className="p-3 text-center">{w.status === 'pending' && <div className="flex gap-1 justify-center"><button onClick={() => handleApproveWithdrawal(w.id as number)} className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded"><CheckCircle size={10} className="inline mr-0.5"/>Approve</button><button onClick={() => handleRejectWithdrawal(w.id as number)} className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded"><XCircle size={10} className="inline mr-0.5"/>Reject</button></div>}</td>
                         </tr>
