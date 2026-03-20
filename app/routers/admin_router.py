@@ -1175,7 +1175,7 @@ async def withdrawal_razorpay_payout(wid: int, request: Request, user: dict = De
             raise HTTPException(status_code=404, detail="User not found")
 
         # Get RazorpayX credentials
-        gw = db.execute("SELECT api_key, secret_key FROM payment_gateways WHERE gateway_name='razorpay' AND is_active=1").fetchone()
+        gw = db.execute("SELECT api_key, secret_key FROM payment_gateways WHERE LOWER(name)='razorpay' AND is_active=1").fetchone()
         if not gw:
             raise HTTPException(status_code=400, detail="Razorpay gateway not configured")
 
