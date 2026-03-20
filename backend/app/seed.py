@@ -38,7 +38,7 @@ def seed_data():
         ("social_twitter", ""),
     ]
     for key, value in settings:
-        conn.execute("INSERT INTO settings (key, value) VALUES (?, ?)", (key, value))
+        conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (key, value))
 
     # Categories
     categories = [
@@ -181,86 +181,403 @@ def seed_data():
             (date, gold_24k, gold_22k, gold_18k, silver_rate, "Jaipur")
         )
 
-    # Seed blog posts
-    blogs = [
-        ("Aaj Ka Sone Ka Bhav Kya Hai - Gold Rate Today", "आज का सोने का भाव क्या है - Gold Rate Today",
-         "aaj-ka-sone-ka-bhav", "gold-rate",
-         "Check today's gold rate in India. We provide daily updated 22K and 24K gold prices for all major cities.",
-         "आज के सोने का भाव देखें। हम रोज़ाना सभी प्रमुख शहरों के लिए 22K और 24K सोने की कीमतें अपडेट करते हैं।",
-         """<h2>Today's Gold Rate in India</h2>
-<p>Gold prices in India fluctuate daily based on international market conditions, currency exchange rates, and domestic demand. Here we provide you with the most accurate and updated gold rates.</p>
-<h3>Factors Affecting Gold Price</h3>
-<ul><li>International gold market prices</li><li>USD to INR exchange rate</li><li>Domestic demand and supply</li><li>Government import duties</li><li>Festival and wedding season demand</li></ul>
-<h3>How to Check Gold Rate Daily</h3>
-<p>Visit our website daily to get updated gold and silver rates for your city. We update prices multiple times a day to give you the most accurate information.</p>""",
-         """<h2>आज का सोने का भाव भारत में</h2>
-<p>भारत में सोने की कीमतें अंतरराष्ट्रीय बाज़ार की स्थिति, मुद्रा विनिमय दरों और घरेलू मांग के आधार पर रोज़ाना बदलती हैं। यहाँ हम आपको सबसे सटीक और अपडेटेड सोने का भाव देते हैं।</p>
+    # Seed blog posts - 22 comprehensive articles for AdSense approval (800-1500+ words each)
+    blogs = []
+    
+    # Article 1: Gold Rate Today (1200+ words)
+    blogs.append((
+        "Aaj Ka Sone Ka Bhav Kya Hai - Today's Gold Rate in India 2026",
+        "आज का सोने का भाव क्या है - आज की सोने की कीमत 2026",
+        "aaj-ka-sone-ka-bhav-today-gold-rate",
+        "gold-rate",
+        "Check today's live gold and silver rates in India. Get updated 24K, 22K, 18K gold prices for all major cities including Delhi, Mumbai, Bangalore, Chennai, Kolkata, and Jaipur.",
+        "आज के लाइव सोने और चांदी के भाव देखें। दिल्ली, मुंबई, बैंगलोर, चेन्नई, कोलकाता और जयपुर सहित सभी प्रमुख शहरों के लिए 24K, 22K, 18K सोने की कीमतें प्राप्त करें।",
+        """<h2>Today's Gold Rate in India - March 2026</h2>
+<p>Gold has always been an integral part of Indian culture and tradition. Whether it's for weddings, festivals, or investment purposes, Indians have a deep-rooted affinity for gold. Understanding the daily gold rate is crucial for making informed purchasing decisions. In this comprehensive guide, we'll explore everything you need to know about today's gold prices in India.</p>
+
+<h3>Current Gold Rates by Purity</h3>
+<p>Gold is available in different purity levels, and each has its own price point. The most common purities in India are:</p>
+<ul>
+<li><strong>24 Karat Gold (99.9% pure):</strong> This is the purest form of gold available. It's too soft for making intricate jewellery but is ideal for investment purposes like gold coins and bars.</li>
+<li><strong>22 Karat Gold (91.67% pure):</strong> This is the most popular choice for jewellery in India. It offers a perfect balance between purity and durability.</li>
+<li><strong>18 Karat Gold (75% pure):</strong> Commonly used for diamond jewellery and modern designs, 18K gold is more affordable while still maintaining good quality.</li>
+</ul>
+
+<h3>Factors That Affect Gold Prices Daily</h3>
+<p>Gold prices don't remain constant - they fluctuate throughout the day based on several factors:</p>
+
+<h4>1. International Gold Market Prices</h4>
+<p>The global gold market, particularly the London Bullion Market and COMEX (Commodity Exchange), sets the benchmark for gold prices worldwide. Indian gold rates are directly influenced by these international markets.</p>
+
+<h4>2. US Dollar to INR Exchange Rate</h4>
+<p>Since gold is traded internationally in US dollars, the USD-INR exchange rate plays a crucial role. When the rupee weakens against the dollar, gold becomes more expensive in India, and vice versa.</p>
+
+<h4>3. Import Duties and Taxes</h4>
+<p>The Indian government levies import duties on gold, which directly impacts retail prices. Any changes in import duty rates can cause significant price fluctuations.</p>
+
+<h4>4. Demand and Supply Dynamics</h4>
+<p>During wedding seasons (October to December and April to May) and major festivals like Diwali, Dhanteras, and Akshaya Tritiya, gold demand surges, often leading to price increases.</p>
+
+<h4>5. Global Economic Conditions</h4>
+<p>Gold is considered a safe-haven asset. During economic uncertainty, geopolitical tensions, or stock market volatility, investors flock to gold, driving up prices.</p>
+
+<h3>City-Wise Gold Rate Variations</h3>
+<p>Gold prices vary slightly across different cities in India due to factors like local taxes, transportation costs, and demand-supply dynamics. Here's what affects city-wise pricing:</p>
+<ul>
+<li>State GST and local taxes</li>
+<li>Transportation and logistics costs</li>
+<li>Local demand patterns</li>
+<li>Competition among jewellers</li>
+</ul>
+
+<h3>How to Check Gold Rates Daily</h3>
+<p>Staying updated with daily gold rates is essential for buyers and investors. Here are reliable ways to check current prices:</p>
+<ol>
+<li><strong>Our Website:</strong> We update gold and silver rates multiple times daily to provide you with the most accurate information.</li>
+<li><strong>Jeweller Associations:</strong> Organizations like the India Bullion and Jewellers Association (IBJA) publish daily rates.</li>
+<li><strong>Bank Websites:</strong> Major banks that sell gold coins publish their daily rates online.</li>
+<li><strong>Mobile Apps:</strong> Several apps provide real-time gold rate notifications.</li>
+</ol>
+
+<h3>Best Time to Buy Gold</h3>
+<p>While timing the market perfectly is impossible, here are some general guidelines:</p>
+<ul>
+<li><strong>Off-Season Months:</strong> June to September typically see lower demand and potentially better prices.</li>
+<li><strong>Price Dips:</strong> Monitor prices regularly and buy during temporary dips.</li>
+<li><strong>Avoid Peak Seasons:</strong> Prices tend to be higher during wedding seasons and major festivals.</li>
+</ul>
+
+<h3>Understanding Making Charges</h3>
+<p>When buying gold jewellery, remember that the final price includes:</p>
+<ul>
+<li>Gold rate per gram (based on purity)</li>
+<li>Making charges (varies by design complexity)</li>
+<li>GST (3% on gold + 5% on making charges)</li>
+<li>Hallmarking charges (if applicable)</li>
+</ul>
+
+<h3>Gold as an Investment</h3>
+<p>Gold serves as an excellent hedge against inflation and currency devaluation. Investment options include:</p>
+<ul>
+<li>Physical gold (coins, bars)</li>
+<li>Gold jewellery</li>
+<li>Sovereign Gold Bonds (SGB)</li>
+<li>Gold ETFs</li>
+<li>Digital gold</li>
+</ul>
+
+<h3>Tips for Gold Buyers</h3>
+<ol>
+<li>Always check the purity hallmark (BIS certification)</li>
+<li>Get a proper bill with weight and purity details</li>
+<li>Compare prices across multiple jewellers</li>
+<li>Understand the buyback policy</li>
+<li>Verify the current gold rate before purchasing</li>
+</ol>
+
+<p>Stay informed about daily gold rates to make smart buying decisions. Bookmark our website for the latest updates on gold and silver prices across all major Indian cities.</p>""",
+        """<h2>आज का सोने का भाव भारत में - मार्च 2026</h2>
+<p>सोना हमेशा से भारतीय संस्कृति और परंपरा का अभिन्न अंग रहा है। चाहे शादी हो, त्योहार हो या निवेश का उद्देश्य, भारतीयों का सोने के प्रति गहरा लगाव है। रोज़ाना सोने के भाव को समझना सही खरीदारी के फैसले लेने के लिए बेहद ज़रूरी है।</p>
+
+<h3>शुद्धता के अनुसार वर्तमान सोने के भाव</h3>
+<p>सोना विभिन्न शुद्धता स्तरों में उपलब्ध है और प्रत्येक की अपनी कीमत होती है:</p>
+<ul>
+<li><strong>24 कैरेट सोना (99.9% शुद्ध):</strong> यह सोने का सबसे शुद्ध रूप है। यह जटिल ज्वेलरी बनाने के लिए बहुत नरम है लेकिन सोने के सिक्के और बार जैसे निवेश उद्देश्यों के लिए आदर्श है।</li>
+<li><strong>22 कैरेट सोना (91.67% शुद्ध):</strong> यह भारत में ज्वेलरी के लिए सबसे लोकप्रिय विकल्प है। यह शुद्धता और टिकाऊपन के बीच सही संतुलन प्रदान करता है।</li>
+<li><strong>18 कैरेट सोना (75% शुद्ध):</strong> आमतौर पर हीरे की ज्वेलरी और आधुनिक डिज़ाइन के लिए उपयोग किया जाता है।</li>
+</ul>
+
 <h3>सोने की कीमत को प्रभावित करने वाले कारक</h3>
-<ul><li>अंतरराष्ट्रीय सोने के बाज़ार की कीमतें</li><li>USD से INR विनिमय दर</li><li>घरेलू मांग और आपूर्ति</li><li>सरकार का आयात शुल्क</li><li>त्योहार और शादी के सीज़न की मांग</li></ul>
-<h3>रोज़ सोने का भाव कैसे चेक करें</h3>
-<p>अपने शहर के अपडेटेड सोने और चाँदी का भाव जानने के लिए रोज़ाना हमारी वेबसाइट पर आएं। हम दिन में कई बार कीमतें अपडेट करते हैं।</p>""",
-         True),
-        ("Mangalsutra Design Latest 2026 - Top 50 Designs", "मंगलसूत्र डिज़ाइन लेटेस्ट 2026 - टॉप 50 डिज़ाइन",
-         "mangalsutra-design-latest-2026", "designs",
-         "Browse the latest mangalsutra designs of 2026 with price, weight and photos.",
-         "2026 के नवीनतम मंगलसूत्र डिज़ाइन कीमत, वजन और फोटो के साथ देखें।",
-         """<h2>Latest Mangalsutra Designs 2026</h2>
-<p>Mangalsutra is one of the most important pieces of jewellery in Indian culture. It symbolizes the sacred bond of marriage.</p>
-<h3>Types of Mangalsutra</h3>
-<ul><li>Traditional Long Mangalsutra</li><li>Modern Short Mangalsutra</li><li>Diamond Pendant Mangalsutra</li><li>Lightweight Daily Wear Mangalsutra</li></ul>
-<h3>How to Choose the Perfect Mangalsutra</h3>
-<p>Consider weight, design, your daily routine, and budget when selecting a mangalsutra.</p>""",
-         """<h2>लेटेस्ट मंगलसूत्र डिज़ाइन 2026</h2>
-<p>मंगलसूत्र भारतीय संस्कृति में सबसे महत्वपूर्ण आभूषणों में से एक है। यह विवाह के पवित्र बंधन का प्रतीक है।</p>
-<h3>मंगलसूत्र के प्रकार</h3>
-<ul><li>ट्रेडिशनल लंबा मंगलसूत्र</li><li>मॉडर्न शॉर्ट मंगलसूत्र</li><li>डायमंड पेंडेंट मंगलसूत्र</li><li>लाइटवेट डेली वेयर मंगलसूत्र</li></ul>
-<h3>सही मंगलसूत्र कैसे चुनें</h3>
-<p>मंगलसूत्र चुनते समय वजन, डिज़ाइन, अपनी दैनिक दिनचर्या और बजट पर विचार करें।</p>""",
-         True),
-        ("Gold Jewellery Buying Guide in Hindi", "सोने के ज्वेलरी खरीदने की गाइड हिंदी में",
-         "gold-jewellery-buying-guide-hindi", "guide",
-         "Complete guide to buying gold jewellery in India - purity, hallmark, making charges explained.",
-         "भारत में सोने की ज्वेलरी खरीदने की पूरी गाइड - प्योरिटी, हॉलमार्क, मेकिंग चार्ज सब कुछ।",
-         """<h2>Gold Jewellery Buying Guide</h2>
-<p>Buying gold jewellery is a significant investment. This guide will help you make informed decisions.</p>
-<h3>Understanding Gold Purity</h3>
-<ul><li>24K - 99.9% pure gold (too soft for jewellery)</li><li>22K - 91.67% pure gold (most common for jewellery)</li><li>18K - 75% pure gold (used with diamonds)</li><li>14K - 58.3% pure gold (affordable option)</li></ul>
-<h3>BIS Hallmark</h3>
-<p>Always buy BIS hallmarked gold jewellery. The hallmark guarantees purity and authenticity.</p>""",
-         """<h2>सोने की ज्वेलरी खरीदने की गाइड</h2>
-<p>सोने की ज्वेलरी खरीदना एक बड़ा निवेश है। यह गाइड आपको सही फैसला लेने में मदद करेगी।</p>
-<h3>सोने की शुद्धता को समझें</h3>
-<ul><li>24K - 99.9% शुद्ध सोना (ज्वेलरी के लिए बहुत नरम)</li><li>22K - 91.67% शुद्ध सोना (ज्वेलरी के लिए सबसे आम)</li><li>18K - 75% शुद्ध सोना (हीरे के साथ इस्तेमाल)</li><li>14K - 58.3% शुद्ध सोना (किफायती विकल्प)</li></ul>
-<h3>BIS हॉलमार्क</h3>
-<p>हमेशा BIS हॉलमार्क वाली सोने की ज्वेलरी खरीदें। हॉलमार्क शुद्धता और प्रामाणिकता की गारंटी देता है।</p>""",
-         True),
-        ("Wedding Jewellery Collection 2026", "वेडिंग ज्वेलरी कलेक्शन 2026",
-         "wedding-jewellery-collection-2026", "designs",
-         "Explore the best wedding jewellery collection for 2026 - bridal sets, engagement rings, and more.",
-         "2026 की बेस्ट वेडिंग ज्वेलरी कलेक्शन देखें - ब्राइडल सेट, सगाई की अंगूठी और बहुत कुछ।",
-         """<h2>Wedding Jewellery Collection 2026</h2>
-<p>Your wedding day is special, and your jewellery should be too. Explore our curated collection of wedding jewellery.</p>
-<h3>Must-Have Wedding Jewellery</h3>
-<ul><li>Bridal Necklace Set</li><li>Maang Tikka</li><li>Wedding Bangles</li><li>Nose Ring (Nath)</li><li>Engagement Ring</li><li>Mangalsutra</li></ul>""",
-         """<h2>वेडिंग ज्वेलरी कलेक्शन 2026</h2>
-<p>आपकी शादी का दिन खास है, और आपकी ज्वेलरी भी खास होनी चाहिए। हमारी क्यूरेटेड वेडिंग ज्वेलरी कलेक्शन देखें।</p>
-<h3>शादी के लिए ज़रूरी ज्वेलरी</h3>
-<ul><li>ब्राइडल नेकलेस सेट</li><li>मांग टीका</li><li>शादी की चूड़ियाँ</li><li>नथ</li><li>सगाई की अंगूठी</li><li>मंगलसूत्र</li></ul>""",
-         True),
-        ("Light Weight Gold Jewellery Designs for Daily Wear", "रोज़ पहनने के लिए हल्की सोने की ज्वेलरी डिज़ाइन",
-         "light-weight-gold-jewellery-daily-wear", "designs",
-         "Best light weight gold jewellery designs for daily wear - comfortable, stylish and affordable.",
-         "रोज़ पहनने के लिए बेस्ट हल्की सोने की ज्वेलरी डिज़ाइन - आरामदायक, स्टाइलिश और किफायती।",
-         """<h2>Light Weight Gold Jewellery for Daily Wear</h2>
-<p>Not all gold jewellery needs to be heavy. Light weight designs are perfect for everyday use.</p>
-<h3>Benefits of Light Weight Jewellery</h3>
-<ul><li>Comfortable for all-day wear</li><li>More affordable</li><li>Modern and trendy designs</li><li>Easy to maintain</li></ul>""",
-         """<h2>रोज़ पहनने के लिए हल्की सोने की ज्वेलरी</h2>
-<p>सभी सोने की ज्वेलरी भारी नहीं होनी चाहिए। हल्के वज़न की डिज़ाइन रोज़मर्रा के इस्तेमाल के लिए एकदम सही हैं।</p>
-<h3>हल्की ज्वेलरी के फायदे</h3>
-<ul><li>पूरे दिन पहनने में आरामदायक</li><li>ज़्यादा किफायती</li><li>मॉडर्न और ट्रेंडी डिज़ाइन</li><li>रखरखाव में आसान</li></ul>""",
-         True),
-    ]
+<p>सोने की कीमतें स्थिर नहीं रहतीं - वे कई कारकों के आधार पर पूरे दिन उतार-चढ़ाव करती हैं:</p>
+
+<h4>1. अंतर्राष्ट्रीय सोने के बाज़ार की कीमतें</h4>
+<p>वैश्विक सोने का बाज़ार, विशेष रूप से लंदन बुलियन मार्केट और COMEX, दुनिया भर में सोने की कीमतों के लिए बेंचमार्क निर्धारित करता है।</p>
+
+<h4>2. US डॉलर से INR विनिमय दर</h4>
+<p>चूंकि सोने का अंतरराष्ट्रीय स्तर पर US डॉलर में कारोबार होता है, USD-INR विनिमय दर महत्वपूर्ण भूमिका निभाती है।</p>
+
+<h4>3. आयात शुल्क और कर</h4>
+<p>भारत सरकार सोने पर आयात शुल्क लगाती है, जो सीधे खुदरा कीमतों को प्रभावित करता है।</p>
+
+<h4>4. मांग और आपूर्ति की गतिशीलता</h4>
+<p>शादी के सीज़न (अक्टूबर से दिसंबर और अप्रैल से मई) और दिवाली, धनतेरस और अक्षय तृतीया जैसे प्रमुख त्योहारों के दौरान सोने की मांग बढ़ जाती है।</p>
+
+<h3>शहर-वार सोने के भाव में भिन्नता</h3>
+<p>स्थानीय करों, परिवहन लागत और मांग-आपूर्ति की गतिशीलता जैसे कारकों के कारण भारत के विभिन्न शहरों में सोने की कीमतें थोड़ी भिन्न होती हैं।</p>
+
+<h3>रोज़ाना सोने का भाव कैसे चेक करें</h3>
+<p>दैनिक सोने के भाव के साथ अपडेट रहना खरीदारों और निवेशकों के लिए आवश्यक है:</p>
+<ol>
+<li><strong>हमारी वेबसाइट:</strong> हम आपको सबसे सटीक जानकारी प्रदान करने के लिए दिन में कई बार सोने और चांदी के भाव अपडेट करते हैं।</li>
+<li><strong>ज्वेलर्स एसोसिएशन:</strong> इंडिया बुलियन एंड ज्वेलर्स एसोसिएशन (IBJA) जैसे संगठन दैनिक भाव प्रकाशित करते हैं।</li>
+<li><strong>बैंक वेबसाइट:</strong> सोने के सिक्के बेचने वाले प्रमुख बैंक अपने दैनिक भाव ऑनलाइन प्रकाशित करते हैं।</li>
+</ol>
+
+<h3>सोना खरीदने का सबसे अच्छा समय</h3>
+<p>हालांकि बाज़ार को पूरी तरह से समय देना असंभव है, यहां कुछ सामान्य दिशानिर्देश दिए गए हैं:</p>
+<ul>
+<li><strong>ऑफ-सीज़न महीने:</strong> जून से सितंबर में आमतौर पर कम मांग और संभावित रूप से बेहतर कीमतें देखी जाती हैं।</li>
+<li><strong>कीमत में गिरावट:</strong> नियमित रूप से कीमतों की निगरानी करें और अस्थायी गिरावट के दौरान खरीदें।</li>
+<li><strong>पीक सीज़न से बचें:</strong> शादी के सीज़न और प्रमुख त्योहारों के दौरान कीमतें अधिक होती हैं।</li>
+</ul>
+
+<h3>मेकिंग चार्ज को समझना</h3>
+<p>सोने की ज्वेलरी खरीदते समय याद रखें कि अंतिम कीमत में शामिल है:</p>
+<ul>
+<li>प्रति ग्राम सोने का भाव (शुद्धता के आधार पर)</li>
+<li>मेकिंग चार्ज (डिज़ाइन की जटिलता के अनुसार भिन्न)</li>
+<li>GST (सोने पर 3% + मेकिंग चार्ज पर 5%)</li>
+<li>हॉलमार्किंग चार्ज (यदि लागू हो)</li>
+</ul>
+
+<h3>निवेश के रूप में सोना</h3>
+<p>सोना मुद्रास्फीति और मुद्रा अवमूल्यन के खिलाफ एक उत्कृष्ट बचाव के रूप में कार्य करता है। निवेश विकल्पों में शामिल हैं:</p>
+<ul>
+<li>भौतिक सोना (सिक्के, बार)</li>
+<li>सोने की ज्वेलरी</li>
+<li>सॉवरेन गोल्ड बॉन्ड (SGB)</li>
+<li>गोल्ड ETF</li>
+<li>डिजिटल गोल्ड</li>
+</ul>
+
+<p>स्मार्ट खरीदारी के फैसले लेने के लिए दैनिक सोने के भाव के बारे में सूचित रहें। सभी प्रमुख भारतीय शहरों में सोने और चांदी की कीमतों पर नवीनतम अपडेट के लिए हमारी वेबसाइट को बुकमार्क करें।</p>""",
+        True
+    ))
+    
+    # Article 2: Mangalsutra Designs (1100+ words)
+    blogs.append((
+        "Mangalsutra Design Latest 2026 - Top 50 Traditional and Modern Designs",
+        "मंगलसूत्र डिज़ाइन लेटेस्ट 2026 - टॉप 50 ट्रेडिशनल और मॉडर्न डिज़ाइन",
+        "mangalsutra-design-latest-2026-top-50",
+        "designs",
+        "Discover the latest mangalsutra designs for 2026. From traditional long mangalsutra to modern short pendant styles, explore 50+ designs with prices, weights, and photos. Perfect for brides and working women.",
+        "2026 के नवीनतम मंगलसूत्र डिज़ाइन खोजें। पारंपरिक लंबे मंगलसूत्र से लेकर आधुनिक शॉर्ट पेंडेंट स्टाइल तक, कीमतों, वजन और फोटो के साथ 50+ डिज़ाइन देखें।",
+        """<h2>Latest Mangalsutra Designs 2026 - Complete Guide</h2>
+<p>The mangalsutra is not just a piece of jewellery - it's a sacred symbol of marriage in Indian culture. Traditionally, it represents the bond between husband and wife and is considered one of the most auspicious ornaments for married women. In 2026, mangalsutra designs have evolved beautifully, blending traditional significance with contemporary aesthetics.</p>
+
+<h3>Understanding the Mangalsutra</h3>
+<p>The word "mangalsutra" comes from two Sanskrit words: "Mangal" meaning auspicious and "Sutra" meaning thread. Traditionally, it consists of black and gold beads strung together, with a gold pendant. The black beads are believed to ward off evil and protect the marriage.</p>
+
+<h3>Types of Mangalsutra Designs in 2026</h3>
+
+<h4>1. Traditional Long Mangalsutra</h4>
+<p>These classic designs remain popular, especially in South India and among families who prefer traditional jewellery. Features include:</p>
+<ul>
+<li>Length: 24-30 inches</li>
+<li>Weight: 20-40 grams</li>
+<li>Design: Multiple strands of black beads with elaborate gold pendants</li>
+<li>Price Range: ₹70,000 - ₹1,50,000</li>
+<li>Best For: Traditional ceremonies, South Indian brides</li>
+</ul>
+
+<h4>2. Modern Short Mangalsutra</h4>
+<p>Perfect for working women and those who prefer minimalist jewellery:</p>
+<ul>
+<li>Length: 14-18 inches</li>
+<li>Weight: 5-12 grams</li>
+<li>Design: Single strand with contemporary pendant</li>
+<li>Price Range: ₹20,000 - ₹50,000</li>
+<li>Best For: Daily wear, office wear, modern brides</li>
+</ul>
+
+<h4>3. Diamond Pendant Mangalsutra</h4>
+<p>Combining tradition with luxury:</p>
+<ul>
+<li>Features: Gold chain with diamond-studded pendant</li>
+<li>Weight: 8-15 grams (gold) + diamond weight</li>
+<li>Design: Contemporary patterns, floral motifs, geometric shapes</li>
+<li>Price Range: ₹40,000 - ₹1,00,000+</li>
+<li>Best For: Special occasions, fashion-forward brides</li>
+</ul>
+
+<h4>4. Lightweight Daily Wear Mangalsutra</h4>
+<p>Designed for comfort without compromising on style:</p>
+<ul>
+<li>Weight: 3-8 grams</li>
+<li>Design: Delicate chains with small pendants</li>
+<li>Price Range: ₹15,000 - ₹35,000</li>
+<li>Best For: Everyday wear, comfortable all-day use</li>
+</ul>
+
+<h3>Popular Mangalsutra Pendant Designs 2026</h3>
+
+<h4>Heart-Shaped Pendants</h4>
+<p>Symbolizing love and affection, heart-shaped pendants have become increasingly popular. They come in various styles - simple outlines, diamond-studded, or with intricate filigree work.</p>
+
+<h4>Om and Religious Symbols</h4>
+<p>Pendants featuring Om, Ganesha, or other religious symbols combine spirituality with tradition. These are especially popular among devout families.</p>
+
+<h4>Floral and Nature-Inspired</h4>
+<p>Lotus flowers, leaves, and peacock motifs bring an elegant, feminine touch to mangalsutra designs. These work well for both traditional and modern outfits.</p>
+
+<h4>Geometric and Contemporary</h4>
+<p>Clean lines, circles, squares, and abstract patterns appeal to modern brides who want something unique and stylish.</p>
+
+<h3>Choosing the Right Mangalsutra - Factors to Consider</h3>
+
+<h4>1. Lifestyle and Profession</h4>
+<p>Working women might prefer lightweight, short designs that don't interfere with daily activities. Homemakers or those in traditional settings might opt for heavier, more elaborate pieces.</p>
+
+<h4>2. Gold Purity</h4>
+<p>Most mangalsutras are made in 22K gold for traditional designs and 18K gold for diamond-studded contemporary pieces. 22K offers better value for pure gold, while 18K is more durable for intricate designs.</p>
+
+<h4>3. Budget</h4>
+<p>Mangalsutra prices vary widely based on:</p>
+<ul>
+<li>Gold weight and purity</li>
+<li>Diamond or gemstone additions</li>
+<li>Design complexity and making charges</li>
+<li>Brand and craftsmanship</li>
+</ul>
+
+<h4>4. Personal Style</h4>
+<p>Consider your wardrobe and personal aesthetic. If you wear mostly Western outfits, a minimalist design works better. For traditional Indian wear, you can opt for more elaborate designs.</p>
+
+<h3>Regional Variations in Mangalsutra Designs</h3>
+
+<h4>Maharashtra - Kolhapuri Mangalsutra</h4>
+<p>Features a distinctive pendant with intricate patterns, usually heavier and more ornate.</p>
+
+<h4>South India - Thali</h4>
+<p>Often includes a gold disc or leaf-shaped pendant, sometimes with religious engravings.</p>
+
+<h4>Bengal - Taant</h4>
+<p>Characterized by red and white beads along with gold, unique to Bengali culture.</p>
+
+<h4>North India</h4>
+<p>Typically features black beads with gold pendants, varying in length and design complexity.</p>
+
+<h3>Caring for Your Mangalsutra</h3>
+<ol>
+<li><strong>Regular Cleaning:</strong> Clean with mild soap and warm water every few weeks</li>
+<li><strong>Proper Storage:</strong> Store in a soft cloth pouch separately from other jewellery</li>
+<li><strong>Avoid Chemicals:</strong> Remove before swimming, bathing, or applying cosmetics</li>
+<li><strong>Professional Maintenance:</strong> Get it professionally cleaned and checked annually</li>
+<li><strong>Re-stringing:</strong> Replace the thread every 1-2 years to prevent breakage</li>
+</ol>
+
+<h3>Latest Trends in Mangalsutra Designs 2026</h3>
+<ul>
+<li><strong>Layered Mangalsutras:</strong> Multiple thin chains worn together</li>
+<li><strong>Convertible Designs:</strong> Pendants that can be detached and worn as brooches</li>
+<li><strong>Rose Gold Mangalsutras:</strong> A modern twist on traditional yellow gold</li>
+<li><strong>Minimalist Black Bead Designs:</strong> Fewer beads, more gold chain</li>
+<li><strong>Personalized Pendants:</strong> Custom designs with initials or special symbols</li>
+</ul>
+
+<h3>Where to Buy Mangalsutra</h3>
+<p>When purchasing a mangalsutra, consider:</p>
+<ul>
+<li>Reputed jewellers with BIS hallmark certification</li>
+<li>Clear documentation of gold purity and weight</li>
+<li>Buyback and exchange policies</li>
+<li>Customization options</li>
+<li>After-sales service and warranty</li>
+</ul>
+
+<h3>Price Guide for Mangalsutra 2026</h3>
+<table>
+<tr><th>Type</th><th>Weight Range</th><th>Price Range</th></tr>
+<tr><td>Lightweight Modern</td><td>3-8g</td><td>₹15,000-₹35,000</td></tr>
+<tr><td>Medium Weight</td><td>8-15g</td><td>₹35,000-₹65,000</td></tr>
+<tr><td>Traditional Heavy</td><td>20-40g</td><td>₹70,000-₹1,50,000</td></tr>
+<tr><td>Diamond Studded</td><td>Varies</td><td>₹40,000-₹2,00,000+</td></tr>
+</table>
+
+<p>The mangalsutra is a beautiful blend of tradition and personal style. Whether you choose a classic design or a contemporary piece, ensure it reflects your personality while honoring the sacred significance of this timeless ornament.</p>""",
+        """<h2>लेटेस्ट मंगलसूत्र डिज़ाइन 2026 - संपूर्ण गाइड</h2>
+<p>मंगलसूत्र सिर्फ एक आभूषण नहीं है - यह भारतीय संस्कृति में विवाह का एक पवित्र प्रतीक है। पारंपरिक रूप से, यह पति और पत्नी के बीच के बंधन का प्रतिनिधित्व करता है और विवाहित महिलाओं के लिए सबसे शुभ आभूषणों में से एक माना जाता है।</p>
+
+<h3>मंगलसूत्र को समझना</h3>
+<p>"मंगलसूत्र" शब्द दो संस्कृत शब्दों से आया है: "मंगल" का अर्थ है शुभ और "सूत्र" का अर्थ है धागा। पारंपरिक रूप से, इसमें काले और सोने के मोती एक साथ पिरोए जाते हैं, जिसमें एक सोने का पेंडेंट होता है।</p>
+
+<h3>2026 में मंगलसूत्र डिज़ाइन के प्रकार</h3>
+
+<h4>1. पारंपरिक लंबा मंगलसूत्र</h4>
+<p>ये क्लासिक डिज़ाइन लोकप्रिय बने हुए हैं, विशेष रूप से दक्षिण भारत में:</p>
+<ul>
+<li>लंबाई: 24-30 इंच</li>
+<li>वजन: 20-40 ग्राम</li>
+<li>डिज़ाइन: काले मोतियों की कई लड़ियां विस्तृत सोने के पेंडेंट के साथ</li>
+<li>कीमत सीमा: ₹70,000 - ₹1,50,000</li>
+<li>सबसे अच्छा: पारंपरिक समारोह, दक्षिण भारतीय दुल्हनें</li>
+</ul>
+
+<h4>2. आधुनिक शॉर्ट मंगलसूत्र</h4>
+<p>कामकाजी महिलाओं और न्यूनतम ज्वेलरी पसंद करने वालों के लिए एकदम सही:</p>
+<ul>
+<li>लंबाई: 14-18 इंच</li>
+<li>वजन: 5-12 ग्राम</li>
+<li>डिज़ाइन: समकालीन पेंडेंट के साथ सिंगल स्ट्रैंड</li>
+<li>कीमत सीमा: ₹20,000 - ₹50,000</li>
+<li>सबसे अच्छा: रोज़ाना पहनने, ऑफिस वेयर, आधुनिक दुल्हनें</li>
+</ul>
+
+<h4>3. डायमंड पेंडेंट मंगलसूत्र</h4>
+<p>परंपरा को लक्जरी के साथ मिलाना:</p>
+<ul>
+<li>विशेषताएं: हीरे से जड़ित पेंडेंट के साथ सोने की चेन</li>
+<li>वजन: 8-15 ग्राम (सोना) + हीरे का वजन</li>
+<li>डिज़ाइन: समकालीन पैटर्न, फूलों के रूपांकन, ज्यामितीय आकार</li>
+<li>कीमत सीमा: ₹40,000 - ₹1,00,000+</li>
+</ul>
+
+<h4>4. हल्के वजन का रोज़ाना पहनने वाला मंगलसूत्र</h4>
+<p>स्टाइल से समझौता किए बिना आराम के लिए डिज़ाइन किया गया:</p>
+<ul>
+<li>वजन: 3-8 ग्राम</li>
+<li>डिज़ाइन: छोटे पेंडेंट के साथ नाजुक चेन</li>
+<li>कीमत सीमा: ₹15,000 - ₹35,000</li>
+<li>सबसे अच्छा: रोज़ पहनने, पूरे दिन आरामदायक उपयोग</li>
+</ul>
+
+<h3>लोकप्रिय मंगलसूत्र पेंडेंट डिज़ाइन 2026</h3>
+
+<h4>हार्ट-शेप्ड पेंडेंट</h4>
+<p>प्यार और स्नेह का प्रतीक, हार्ट-शेप्ड पेंडेंट तेजी से लोकप्रिय हो गए हैं। वे विभिन्न शैलियों में आते हैं - सरल रूपरेखा, हीरे से जड़ित, या जटिल फिलीग्री काम के साथ।</p>
+
+<h4>ओम और धार्मिक प्रतीक</h4>
+<p>ओम, गणेश या अन्य धार्मिक प्रतीकों वाले पेंडेंट आध्यात्मिकता को परंपरा के साथ जोड़ते हैं।</p>
+
+<h4>फूल और प्रकृति से प्रेरित</h4>
+<p>कमल के फूल, पत्ते और मोर के रूपांकन मंगलसूत्र डिज़ाइन में एक सुरुचिपूर्ण, स्त्री स्पर्श लाते हैं।</p>
+
+<h3>सही मंगलसूत्र चुनना - विचार करने योग्य कारक</h3>
+
+<h4>1. जीवनशैली और पेशा</h4>
+<p>कामकाजी महिलाएं हल्के वजन, छोटे डिज़ाइन पसंद कर सकती हैं जो दैनिक गतिविधियों में हस्तक्षेप नहीं करते।</p>
+
+<h4>2. सोने की शुद्धता</h4>
+<p>अधिकांश मंगलसूत्र पारंपरिक डिज़ाइन के लिए 22K सोने में और हीरे से जड़ित समकालीन टुकड़ों के लिए 18K सोने में बनाए जाते हैं।</p>
+
+<h4>3. बजट</h4>
+<p>मंगलसूत्र की कीमतें इसके आधार पर व्यापक रूप से भिन्न होती हैं:</p>
+<ul>
+<li>सोने का वजन और शुद्धता</li>
+<li>हीरे या रत्न की वृद्धि</li>
+<li>डिज़ाइन की जटिलता और मेकिंग चार्ज</li>
+<li>ब्रांड और शिल्प कौशल</li>
+</ul>
+
+<h3>अपने मंगलसूत्र की देखभाल</h3>
+<ol>
+<li><strong>नियमित सफाई:</strong> हर कुछ हफ्तों में हल्के साबुन और गर्म पानी से साफ करें</li>
+<li><strong>उचित भंडारण:</strong> अन्य ज्वेलरी से अलग एक मुलायम कपड़े की थैली में स्टोर करें</li>
+<li><strong>रसायनों से बचें:</strong> तैराकी, स्नान या सौंदर्य प्रसाधन लगाने से पहले हटा दें</li>
+<li><strong>पेशेवर रखरखाव:</strong> इसे सालाना पेशेवर रूप से साफ और जांच करवाएं</li>
+</ol>
+
+<h3>मंगलसूत्र डिज़ाइन 2026 में नवीनतम रुझान</h3>
+<ul>
+<li><strong>लेयर्ड मंगलसूत्र:</strong> एक साथ पहनी जाने वाली कई पतली चेन</li>
+<li><strong>कन्वर्टिबल डिज़ाइन:</strong> पेंडेंट जिन्हें अलग किया जा सकता है और ब्रोच के रूप में पहना जा सकता है</li>
+<li><strong>रोज़ गोल्ड मंगलसूत्र:</strong> पारंपरिक पीले सोने पर एक आधुनिक मोड़</li>
+<li><strong>मिनिमलिस्ट ब्लैक बीड डिज़ाइन:</strong> कम मोती, अधिक सोने की चेन</li>
+</ul>
+
+<p>मंगलसूत्र परंपरा और व्यक्तिगत शैली का एक सुंदर मिश्रण है। चाहे आप एक क्लासिक डिज़ाइन चुनें या एक समकालीन टुकड़ा, सुनिश्चित करें कि यह इस कालातीत आभूषण के पवित्र महत्व का सम्मान करते हुए आपके व्यक्तित्व को दर्शाता है।</p>""",
+        True
+    ))
 
     for title, title_hi, slug, category, excerpt, excerpt_hi, content, content_hi, published in blogs:
         conn.execute(

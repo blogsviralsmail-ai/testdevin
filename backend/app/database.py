@@ -3,7 +3,7 @@ import os
 import json
 from datetime import datetime
 
-DB_PATH = os.environ.get("DB_PATH", "/data/app.db") if os.path.isdir("/data") else "app.db"
+DB_PATH = os.environ.get("DB_PATH", "/opt/aabhooshanbazaar-backend/aabhooshan.db")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

@@ -10,7 +10,7 @@ import DesignPage from "./pages/DesignPage";
 import GoldRatePage from "./pages/GoldRatePage";
 import BlogListPage from "./pages/BlogListPage";
 import BlogPage from "./pages/BlogPage";
-import { AboutPage, ContactPage, PrivacyPage, DisclaimerPage } from "./pages/StaticPages";
+import { AboutPage, ContactPage, PrivacyPage, DisclaimerPage, TermsPage } from "./pages/StaticPages";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCategories from "./pages/admin/AdminCategories";
@@ -52,6 +52,7 @@ function App() {
             <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
             <Route path="/privacy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
             <Route path="/disclaimer" element={<PublicLayout><DisclaimerPage /></PublicLayout>} />
+            <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
