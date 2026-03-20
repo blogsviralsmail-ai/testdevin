@@ -617,14 +617,16 @@ async def list_settlements(user: dict = Depends(get_current_user)):
                 cash_rev += c_r
                 total_comm += o_r * rate / 100
             withdrawn = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_requests WHERE user_id=? AND status IN ('pending','completed')", (owner["id"],)).fetchone()["total"]
+            settled = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM settlement_records WHERE owner_id=?", (owner["id"],)).fetchone()["total"]
+            total_paid_out = withdrawn + settled
             result.append({
                 "owner_id": owner["id"], "owner_name": owner["name"], "owner_phone": owner["phone"],
                 "bank_name": owner["bank_name"] or "", "bank_account": owner["bank_account"] or "",
                 "bank_ifsc": owner["bank_ifsc"] or "", "upi_id": owner["upi_id"] or "",
                 "online_revenue": online_rev, "cash_revenue": cash_rev,
                 "total_revenue": online_rev + cash_rev, "commission": round(total_comm, 2),
-                "net_payable": round(online_rev - total_comm - withdrawn, 2),
-                "already_withdrawn": withdrawn, "status": "pending"
+                "net_payable": round(online_rev - total_comm - total_paid_out, 2),
+                "already_withdrawn": total_paid_out, "status": "pending"
             })
         return result
 
@@ -696,7 +698,23 @@ async def settlement_payout(request: Request, user: dict = Depends(get_current_u
         if not owner:
             raise HTTPException(status_code=404, detail="Owner not found")
 
-        balance_before = owner["wallet_balance"] or 0
+        # Calculate actual net_payable from bookings (not wallet_balance which is for customer wallet)
+        cr_row = db.execute("SELECT value FROM settings WHERE key='standard_commission'").fetchone()
+        commission_rate_default = float(cr_row["value"]) if cr_row else 10
+        grounds = db.execute("SELECT id, commission_rate FROM grounds WHERE owner_id=?", (owner_id,)).fetchall()
+        online_rev_total = 0
+        total_comm = 0
+        for g in grounds:
+            o_r = db.execute("SELECT COALESCE(SUM(CASE WHEN status='no_show' THEN COALESCE(token_amount,0) ELSE total_amount END),0) as v FROM bookings WHERE ground_id=? AND status NOT IN ('cancelled') AND payment_mode NOT IN ('cash','offline')", (g["id"],)).fetchone()["v"]
+            rate = g["commission_rate"] if g["commission_rate"] is not None else commission_rate_default
+            online_rev_total += o_r
+            total_comm += o_r * rate / 100
+        already_withdrawn = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_requests WHERE user_id=? AND status IN ('pending','completed')", (owner_id,)).fetchone()["total"]
+        already_settled = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM settlement_records WHERE owner_id=?", (owner_id,)).fetchone()["total"]
+        balance_before = round(online_rev_total - total_comm - already_withdrawn - already_settled, 2)
+
+        if amount > balance_before:
+            raise HTTPException(status_code=400, detail=f"Amount Rs.{amount} exceeds available balance Rs.{balance_before}")
 
         # --- RAZORPAY AUTO PAYOUT via RazorpayX Composite API ---
         if settlement_type == "razorpay":
@@ -822,9 +840,8 @@ async def settlement_payout(request: Request, user: dict = Depends(get_current_u
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Razorpay API error: {str(e)}")
 
-            # Deduct from wallet
+            # Calculate new balance (settlement balance, not wallet_balance)
             new_balance = round(balance_before - amount, 2)
-            db.execute("UPDATE users SET wallet_balance = ? WHERE id = ?", (new_balance, owner_id))
 
             # Record in settlement_records
             db.execute(
@@ -844,7 +861,6 @@ async def settlement_payout(request: Request, user: dict = Depends(get_current_u
         # --- MANUAL BANK TRANSFER ---
         else:
             new_balance = round(balance_before - amount, 2)
-            db.execute("UPDATE users SET wallet_balance = ? WHERE id = ?", (new_balance, owner_id))
 
             ref_id = utr_number
 

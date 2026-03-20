@@ -633,12 +633,22 @@ async def owner_wallet(user: dict = Depends(get_current_user)):
             cash_revenue += cash_rev
             total_commission += online_rev * rate / 100
         already_withdrawn = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_requests WHERE user_id=? AND status IN ('pending','completed')", (user["user_id"],)).fetchone()["total"]
-        available_balance = round(online_revenue - total_commission - already_withdrawn, 2)
+        already_settled = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM settlement_records WHERE owner_id=?", (user["user_id"],)).fetchone()["total"]
+        total_paid_out = already_withdrawn + already_settled
+        available_balance = round(online_revenue - total_commission - total_paid_out, 2)
+
+        # Get settlement records to show in wallet
+        settlements = db.execute(
+            "SELECT id, amount, settlement_type, utr_number, notes, status, balance_before, balance_after, created_at FROM settlement_records WHERE owner_id = ? ORDER BY created_at DESC",
+            (user["user_id"],),
+        ).fetchall()
+
         return {
             "balance": available_balance, "online_revenue": online_revenue, "cash_revenue": cash_revenue,
-            "total_commission": round(total_commission, 2), "already_withdrawn": already_withdrawn,
+            "total_commission": round(total_commission, 2), "already_withdrawn": total_paid_out,
             "kyc_status": u["kyc_status"] if "kyc_status" in u.keys() else "not_submitted",
             "withdrawals": [dict(w) for w in withdrawals],
+            "settlements": [dict(s) for s in settlements],
         }
 
 
