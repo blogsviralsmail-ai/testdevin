@@ -922,7 +922,8 @@ export default function OwnerDashboard() {
                         {(() => {
                           const bookingItems = data.recent_bookings.filter((b: Record<string, unknown>) => b.status !== 'cancelled').map((b: Record<string, unknown>) => ({ type: 'booking' as const, date: String(b.booking_date || ''), data: b }));
                           const withdrawalItems = ownerWithdrawals.map((w: Record<string, unknown>) => ({ type: 'withdrawal' as const, date: String(w.created_at || '').split('T')[0], data: w }));
-                          const settlementItems = ownerSettlements.map((s: Record<string, unknown>) => ({ type: 'settlement' as const, date: String(s.created_at || '').split('T')[0], data: s }));
+                          const dashSettlements = (Array.isArray((data as unknown as Record<string, unknown>).settlements) ? (data as unknown as Record<string, unknown>).settlements as Record<string, unknown>[] : ownerSettlements);
+                          const settlementItems = dashSettlements.map((s: Record<string, unknown>) => ({ type: 'settlement' as const, date: String(s.created_at || '').split('T')[0], data: s }));
                           const allItems = [...bookingItems, ...withdrawalItems, ...settlementItems].sort((a, b) => b.date.localeCompare(a.date));
                           if (allItems.length === 0) return <tr><td colSpan={10} className="p-4 text-center text-gray-400">No transactions yet</td></tr>;
                           return allItems.map((item, idx) => {
