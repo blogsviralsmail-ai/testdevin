@@ -44,6 +44,7 @@ export default function OwnerDashboard() {
   const [ownerListSearch, setOwnerListSearch] = useState('');
   const [, _setWallet] = useState<Record<string, unknown> | null>(null);
   const [ownerWithdrawals, setOwnerWithdrawals] = useState<Record<string, unknown>[]>([]);
+  const [ownerSettlements, setOwnerSettlements] = useState<Record<string, unknown>[]>([]);
   const [withdrawAmt, setWithdrawAmt] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNo, setAccountNo] = useState('');
@@ -154,7 +155,7 @@ export default function OwnerDashboard() {
   const loadData = () => {
     api.getOwnerDashboard().then(setData).catch(() => navigate('/login')).finally(() => setLoading(false));
     api.getWallet().then(_setWallet).catch(() => {});
-    api.getOwnerWallet().then((w: Record<string, unknown>) => { if (w && Array.isArray(w.withdrawals)) setOwnerWithdrawals(w.withdrawals as Record<string, unknown>[]); }).catch(() => {});
+    api.getOwnerWallet().then((w: Record<string, unknown>) => { if (w && Array.isArray(w.withdrawals)) setOwnerWithdrawals(w.withdrawals as Record<string, unknown>[]); if (w && Array.isArray(w.settlements)) setOwnerSettlements(w.settlements as Record<string, unknown>[]); }).catch(() => {});
     api.getProfile().then(p => { setOwnerProfile(p); setOwnerKycStatus(String(p.kyc_status || 'none')); if(p.bank_name && !bankName) setBankName(String(p.bank_name)); if(p.bank_account && !accountNo) setAccountNo(String(p.bank_account)); if(p.bank_ifsc && !ifsc) setIfsc(String(p.bank_ifsc)); if(p.upi_id && !upiId) setUpiId(String(p.upi_id)); if(p.kyc_doc_type && !kycDoc) setKycDoc(String(p.kyc_doc_type)); }).catch(() => {});
   };
 
@@ -921,7 +922,8 @@ export default function OwnerDashboard() {
                         {(() => {
                           const bookingItems = data.recent_bookings.filter((b: Record<string, unknown>) => b.status !== 'cancelled').map((b: Record<string, unknown>) => ({ type: 'booking' as const, date: String(b.booking_date || ''), data: b }));
                           const withdrawalItems = ownerWithdrawals.map((w: Record<string, unknown>) => ({ type: 'withdrawal' as const, date: String(w.created_at || '').split('T')[0], data: w }));
-                          const allItems = [...bookingItems, ...withdrawalItems].sort((a, b) => b.date.localeCompare(a.date));
+                          const settlementItems = ownerSettlements.map((s: Record<string, unknown>) => ({ type: 'settlement' as const, date: String(s.created_at || '').split('T')[0], data: s }));
+                          const allItems = [...bookingItems, ...withdrawalItems, ...settlementItems].sort((a, b) => b.date.localeCompare(a.date));
                           if (allItems.length === 0) return <tr><td colSpan={10} className="p-4 text-center text-gray-400">No transactions yet</td></tr>;
                           return allItems.map((item, idx) => {
                             if (item.type === 'booking') {
@@ -940,7 +942,7 @@ export default function OwnerDashboard() {
                                   <td className="p-3 text-center text-red-500 font-medium">{String(b.booking_type) === 'owner_self' ? <span className="text-gray-400">N/A</span> : String(b.status) === 'no_show' ? `Rs.${Math.round((b.token_amount as number) * 10 / 100)}` : `Rs.${Math.round((b.total_amount as number) * 10 / 100)}`}</td>
                                 </tr>
                               );
-                            } else {
+                            } else if (item.type === 'withdrawal') {
                               const w = item.data;
                               return (
                                 <tr key={`w-${w.id || idx}`} className="border-t hover:bg-orange-50/50">
@@ -953,6 +955,22 @@ export default function OwnerDashboard() {
                                   <td className="p-3 text-center font-bold text-orange-600">-Rs.{Number(w.amount).toLocaleString()}</td>
                                   <td className="p-3 text-center text-red-500">Rs.{Number(w.charge || 0).toFixed(2)}</td>
                                   <td className="p-3 text-center text-green-600 font-medium">Rs.{Number(w.net_amount || 0).toFixed(2)}</td>
+                                  <td className="p-3 text-center text-gray-400">-</td>
+                                </tr>
+                              );
+                            } else {
+                              const s = item.data;
+                              return (
+                                <tr key={`s-${s.id || idx}`} className="border-t hover:bg-purple-50/50">
+                                  <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">Settlement</span></td>
+                                  <td className="p-3 text-gray-400 text-xs" colSpan={1}>-</td>
+                                  <td className="p-3 text-gray-400 text-xs">-</td>
+                                  <td className="p-3 text-center text-xs">{String(s.created_at || '').split('T')[0]}</td>
+                                  <td className="p-3 text-center text-xs">{String(s.settlement_type || '-')}</td>
+                                  <td className="p-3 text-center"><span className={`text-xs px-2 py-1 rounded-full font-medium ${s.status === 'processed' || s.status === 'completed' ? 'bg-green-100 text-green-700' : s.status === 'processing' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{String(s.status)}</span></td>
+                                  <td className="p-3 text-center font-bold text-purple-600">Rs.{Number(s.amount).toLocaleString()}</td>
+                                  <td className="p-3 text-center text-xs text-gray-500">{String(s.utr_number || '-')}</td>
+                                  <td className="p-3 text-center text-xs text-gray-500">-</td>
                                   <td className="p-3 text-center text-gray-400">-</td>
                                 </tr>
                               );
