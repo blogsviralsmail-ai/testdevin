@@ -670,6 +670,60 @@ async def process_settlement(owner_id: int, user: dict = Depends(get_current_use
         return {"message": f"Settlement processed. Revenue: Rs.{total_revenue}, Commission: Rs.{round(total_commission, 2)}, Net paid: Rs.{net_payable}"}
 
 
+@router.post("/settlement-payout")
+async def settlement_payout(request: Request, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    data = await request.json()
+    owner_id = data.get("owner_id")
+    amount = float(data.get("amount", 0))
+    settlement_type = data.get("settlement_type", "bank_transfer")  # bank_transfer or razorpay
+    utr_number = data.get("utr_number", "")
+    proof_photo = data.get("proof_photo", "")
+    razorpay_payment_id = data.get("razorpay_payment_id", "")
+    notes = data.get("notes", "")
+
+    if not owner_id or amount <= 0:
+        raise HTTPException(status_code=400, detail="Owner ID and valid amount required")
+
+    if settlement_type == "bank_transfer" and not utr_number:
+        raise HTTPException(status_code=400, detail="UTR number required for manual bank transfer")
+
+    if settlement_type == "razorpay" and not razorpay_payment_id:
+        raise HTTPException(status_code=400, detail="Razorpay payment ID required")
+
+    with get_db() as db:
+        owner = db.execute("SELECT id, wallet_balance FROM users WHERE id = ?", (owner_id,)).fetchone()
+        if not owner:
+            raise HTTPException(status_code=404, detail="Owner not found")
+
+        balance_before = owner["wallet_balance"] or 0
+        # Deduct from wallet (payout means money sent to owner)
+        new_balance = round(balance_before - amount, 2)
+        db.execute("UPDATE users SET wallet_balance = ? WHERE id = ?", (new_balance, owner_id))
+
+        ref_id = razorpay_payment_id if settlement_type == "razorpay" else utr_number
+
+        # Record in settlement_records
+        db.execute(
+            """INSERT INTO settlement_records (owner_id, amount, settlement_type, utr_number, proof_photo, notes, status, balance_before, balance_after)
+               VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?)""",
+            (owner_id, amount, settlement_type, ref_id, proof_photo, notes, balance_before, new_balance)
+        )
+
+        return {"message": f"Payout of Rs.{amount} processed via {settlement_type}. Ref: {ref_id}"}
+
+
+@router.get("/settlement-statement/{owner_id}")
+async def settlement_statement(owner_id: int, user: dict = Depends(get_current_user)):
+    require_role(user, ["admin"])
+    with get_db() as db:
+        records = db.execute(
+            "SELECT * FROM settlement_records WHERE owner_id = ? ORDER BY created_at DESC",
+            (owner_id,)
+        ).fetchall()
+        return {"records": [dict(r) for r in records]}
+
+
 # --- NOTIFICATIONS CONFIG ---
 @router.get("/notifications/config")
 async def get_notification_config(user: dict = Depends(get_current_user)):
