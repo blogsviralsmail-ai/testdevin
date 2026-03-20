@@ -1199,6 +1199,7 @@ async def withdrawal_razorpay_payout(wid: int, request: Request, user: dict = De
         user_upi_id = u["upi_id"]
 
         # Build payout payload - prefer UPI if available, else bank account
+        payout_mode = "UPI" if user_upi_id else "NEFT"
         if user_upi_id:
             payout_payload = {
                 "account_number": account_number,
@@ -1257,6 +1258,7 @@ async def withdrawal_razorpay_payout(wid: int, request: Request, user: dict = De
         payout_payload["fund_account"]["contact"] = {k: v for k, v in contact.items() if v is not None}
 
         # Call RazorpayX Composite Payout API
+        import requests as http_requests
         try:
             resp = http_requests.post(
                 "https://api.razorpay.com/v1/payouts",
@@ -1285,16 +1287,18 @@ async def withdrawal_razorpay_payout(wid: int, request: Request, user: dict = De
 
         # Mark withdrawal as completed with RazorpayX payout details
         transaction_id = payout_id or f"RZP_{wid}_{datetime.now(IST).strftime('%Y%m%d%H%M%S')}"
+        proof_info = f"RazorpayX | Mode: {payout_mode} | UTR: {payout_utr or 'pending'} | Status: {payout_status}"
         db.execute(
             "UPDATE withdraw_requests SET status='completed', processed_by=?, processed_at=CURRENT_TIMESTAMP, transaction_id=?, proof_url=? WHERE id=?",
-            (user["user_id"], transaction_id, f"RazorpayX Payout | UTR: {payout_utr} | Status: {payout_status}", wid)
+            (user["user_id"], transaction_id, proof_info, wid)
         )
 
         return {
-            "message": f"Razorpay payout of Rs.{amount} initiated! Payout ID: {payout_id}",
+            "message": f"Razorpay payout of Rs.{amount} initiated via {payout_mode}!",
             "payout_id": payout_id,
             "utr": payout_utr,
-            "status": payout_status
+            "status": payout_status,
+            "mode": payout_mode
         }
 
 
