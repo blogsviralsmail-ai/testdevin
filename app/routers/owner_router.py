@@ -145,6 +145,12 @@ async def owner_dashboard(user: dict = Depends(get_current_user)):
         already_settled_dash = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM settlement_records WHERE owner_id=?", (user["user_id"],)).fetchone()["total"]
         total_paid_out_dash = already_withdrawn_dash + already_settled_dash
 
+        # Fetch settlement records to include in dashboard response for transaction ledger
+        settlement_rows = db.execute(
+            "SELECT id, amount, settlement_type, utr_number, notes, status, balance_before, balance_after, created_at FROM settlement_records WHERE owner_id = ? ORDER BY created_at DESC",
+            (user["user_id"],),
+        ).fetchall()
+
         return {
             "grounds": [dict(g) for g in grounds],
             "stats": {
@@ -156,6 +162,7 @@ async def owner_dashboard(user: dict = Depends(get_current_user)):
                 "available_slots": 0,
             },
             "recent_bookings": [dict(r) for r in recent],
+            "settlements": [dict(s) for s in settlement_rows],
             "cash_tracking": {
                 "online_collected": online_total,
                 "cash_collected": cash_total,
