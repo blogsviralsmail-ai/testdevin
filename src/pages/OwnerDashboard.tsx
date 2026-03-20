@@ -775,9 +775,9 @@ export default function OwnerDashboard() {
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4 text-xs text-orange-700">
                     <p className="font-semibold mb-1">Withdrawal Info:</p>
                     <p>- Minimum withdrawal: Rs.100</p>
-                    <p>- 3% processing charge applicable</p>
-                    <p>- Admin approval ke baad bank account mein transfer hoga</p>
-                    <p>- Processing time: 1-3 business days</p>
+                    <p>- Processing charge applicable</p>
+                    <p>- Auto-payout: Instant transfer to your UPI/Bank (if enabled)</p>
+                    <p>- Manual: Admin will process within 1-3 business days</p>
                   </div>
                   <p className="text-sm text-gray-500 mb-2">Available Balance: <span className="font-bold text-green-600">Rs.{(data?.cash_tracking?.net_payable ?? data?.wallet_balance ?? 0).toLocaleString()}</span></p>
                   <div className="flex gap-2 mb-3">

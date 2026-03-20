@@ -6,7 +6,7 @@ import { TrendingUp, Users, MapPin, Calendar, IndianRupee, Settings, Tag, Credit
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const adminValidTabs = ['dashboard','grounds','bookings','users','settlements','withdrawals','promos','settings','reports','kyc','tickets','teamdata','history','customize','gateways','marketing','blog','affiliates','pushnotifs','cityreports','appversion','ownerwallets','ownerstaff','adminprofile','rolemanagement','tournaments','auditlog','equipment','loyalty','autosettlement','emailtemplates','pages','bulkops','groundchanges','chat','contactsubs','splitpayments'] as const;
+  const adminValidTabs = ['dashboard','grounds','bookings','users','settlements','withdrawals','promos','settings','reports','kyc','tickets','teamdata','history','customize','gateways','marketing','blog','affiliates','pushnotifs','cityreports','appversion','ownerwallets','ownerstaff','adminprofile','rolemanagement','tournaments','auditlog','equipment','loyalty','autosettlement','emailtemplates','pages','bulkops','groundchanges','chat','contactsubs','splitpayments','payoutconfig'] as const;
   type AdminTabType = typeof adminValidTabs[number];
   const getAdminInitialTab = (): AdminTabType => {
     const path = location.pathname.replace('/admin/', '').replace('/admin', '');
@@ -99,6 +99,9 @@ export default function AdminDashboard() {
   const [ownerStaffData, setOwnerStaffData] = useState<Record<string, unknown> | null>(null);
   const [ownerStaffOwnerId, setOwnerStaffOwnerId] = useState<number>(0);
   const [splitPayments, setSplitPayments] = useState<Array<Record<string, unknown>>>([]);
+  // Payout API Config state
+  const [payoutConfig, setPayoutConfig] = useState<Record<string, string>>({ auto_payout_enabled: '0', payout_api_key: '', payout_api_secret: '', payout_api_secret_masked: '', payout_account_number: '', withdrawal_charge_percent: '3' });
+  const [savingPayoutConfig, setSavingPayoutConfig] = useState(false);
   // V16 - listSearch replaced by per-tab search state
 
   const changeAdminTab = (t: AdminTabType) => {
@@ -134,6 +137,9 @@ export default function AdminDashboard() {
           break;
         case 'withdrawals':
           try { setWithdrawals(await api.getWithdrawals()); } catch { setWithdrawals([]); }
+          break;
+        case 'payoutconfig':
+          try { setPayoutConfig(await api.getPayoutConfig()); } catch { /* ignore */ }
           break;
         case 'customize':
           try { setCustomizeSettings(await api.getCustomizeSettings()); } catch { setCustomizeSettings({}); }
@@ -356,6 +362,7 @@ export default function AdminDashboard() {
     { id: 'reports', label: 'Reports', icon: FileText },
     { id: 'cityreports', label: 'City Reports', icon: MapPin },
     { id: 'gateways', label: 'Gateways', icon: CreditCard },
+    { id: 'payoutconfig', label: 'Payout API', icon: CreditCard },
     { id: 'tickets', label: 'Tickets', icon: MessageSquare },
     { id: 'contactsubs', label: 'Contact Forms', icon: MessageSquare },
     { id: 'chat', label: 'Chat', icon: MessageSquare },
@@ -2120,6 +2127,77 @@ export default function AdminDashboard() {
                       )}
                     </div>
                   );})}
+                </div>
+              </>
+            )}
+
+            {/* PAYOUT API CONFIG TAB */}
+            {tab === 'payoutconfig' && (
+              <>
+                <h3 className="font-bold text-gray-800 text-xl mb-4">Payout API Configuration</h3>
+                <p className="text-sm text-gray-500 mb-6">Configure RazorpayX payout API for auto-withdrawals. When enabled, customer and owner withdrawals will be processed instantly via UPI/NEFT. When disabled, withdrawals will require manual admin approval.</p>
+                <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+                  <div className="space-y-5">
+                    {/* Auto Payout Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div>
+                        <p className="font-bold text-gray-800">Auto Payout</p>
+                        <p className="text-xs text-gray-500 mt-1">Enable instant auto-withdrawal via RazorpayX API</p>
+                      </div>
+                      <button onClick={() => setPayoutConfig({...payoutConfig, auto_payout_enabled: payoutConfig.auto_payout_enabled === '1' ? '0' : '1'})} className={`w-14 h-7 rounded-full transition-colors ${payoutConfig.auto_payout_enabled === '1' ? 'bg-green-500' : 'bg-gray-300'} relative`}>
+                        <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all ${payoutConfig.auto_payout_enabled === '1' ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+                    {payoutConfig.auto_payout_enabled === '1' && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-700">
+                        <p className="font-semibold">Auto-payout is ON</p>
+                        <p>Withdrawals with verified KYC will be processed instantly via RazorpayX.</p>
+                      </div>
+                    )}
+                    {payoutConfig.auto_payout_enabled !== '1' && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-xs text-orange-700">
+                        <p className="font-semibold">Manual mode active</p>
+                        <p>All withdrawals will stay pending until you manually approve them from the Withdrawals tab.</p>
+                      </div>
+                    )}
+                    {/* API Key */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">RazorpayX API Key</label>
+                      <input type="text" placeholder="rzp_live_XXXXXXXX" className="w-full border-2 border-gray-200 focus:border-purple-400 rounded-lg px-3 py-2.5 text-sm outline-none" value={payoutConfig.payout_api_key || ''} onChange={e => setPayoutConfig({...payoutConfig, payout_api_key: e.target.value})} />
+                    </div>
+                    {/* API Secret */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">RazorpayX API Secret</label>
+                      <input type="password" placeholder={payoutConfig.payout_api_secret_masked ? `Current: ${payoutConfig.payout_api_secret_masked}` : 'Enter API Secret'} className="w-full border-2 border-gray-200 focus:border-purple-400 rounded-lg px-3 py-2.5 text-sm outline-none" value={payoutConfig.payout_api_secret || ''} onChange={e => setPayoutConfig({...payoutConfig, payout_api_secret: e.target.value})} />
+                      <p className="text-xs text-gray-400 mt-1">Leave empty to keep current secret unchanged</p>
+                    </div>
+                    {/* Account Number */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">RazorpayX Account Number</label>
+                      <input type="text" placeholder="2323230012345678" className="w-full border-2 border-gray-200 focus:border-purple-400 rounded-lg px-3 py-2.5 text-sm outline-none" value={payoutConfig.payout_account_number || ''} onChange={e => setPayoutConfig({...payoutConfig, payout_account_number: e.target.value})} />
+                    </div>
+                    {/* Withdrawal Charge */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">Withdrawal Charge (%)</label>
+                      <input type="number" min="0" max="100" step="0.5" placeholder="3" className="w-full border-2 border-gray-200 focus:border-purple-400 rounded-lg px-3 py-2.5 text-sm outline-none" value={payoutConfig.withdrawal_charge_percent || '3'} onChange={e => setPayoutConfig({...payoutConfig, withdrawal_charge_percent: e.target.value})} />
+                      <p className="text-xs text-gray-400 mt-1">Percentage deducted from each withdrawal as processing fee</p>
+                    </div>
+                    {/* Save Button */}
+                    <button disabled={savingPayoutConfig} onClick={async () => {
+                      setSavingPayoutConfig(true);
+                      try {
+                        await api.updatePayoutConfig(payoutConfig);
+                        alert('Payout configuration saved successfully!');
+                        loadTab();
+                      } catch (e: unknown) {
+                        alert(e instanceof Error ? e.message : 'Failed to save payout config');
+                      } finally {
+                        setSavingPayoutConfig(false);
+                      }
+                    }} className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-purple-700 transition disabled:opacity-50">
+                      {savingPayoutConfig ? 'Saving...' : 'Save Payout Configuration'}
+                    </button>
+                  </div>
                 </div>
               </>
             )}
