@@ -8,7 +8,7 @@ import os
 
 from app.database import init_db
 from app.seed import seed_data
-from app.routes import gold_rate, categories, designs, blogs, admin
+from app.routes import gold_rate, categories, designs, blogs, admin, sitemap
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
@@ -36,6 +36,7 @@ app.include_router(categories.router)
 app.include_router(designs.router)
 app.include_router(blogs.router)
 app.include_router(admin.router)
+app.include_router(sitemap.router)
 
 os.makedirs("uploads", exist_ok=True)
 
@@ -63,7 +64,7 @@ if STATIC_DIR.exists():
 
     @app.get("/{full_path:path}")
     async def serve_frontend(request: Request, full_path: str):
-        if full_path.startswith("api/") or full_path == "healthz":
+        if full_path.startswith("api/") or full_path in ("healthz", "sitemap.xml", "robots.txt"):
             return None
         file_path = STATIC_DIR / full_path
         if file_path.exists() and file_path.is_file():
