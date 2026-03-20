@@ -385,6 +385,10 @@ export default function AdminDashboard() {
   const [settlementProof, setSettlementProof] = useState('');
   const [settlementAmount, setSettlementAmount] = useState('');
   const [showSettlementPayout, setShowSettlementPayout] = useState(false);
+  const [settlementPayoutMode, setSettlementPayoutMode] = useState<'manual' | 'razorpay'>('manual');
+  const [settlementRazorpayId, setSettlementRazorpayId] = useState('');
+  const [settlementNotes, setSettlementNotes] = useState('');
+  const [settlementProcessing, setSettlementProcessing] = useState(false);
   const [settlementStatement, setSettlementStatement] = useState<Array<Record<string, unknown>>>([]);
   const [showStatement, setShowStatement] = useState<number | null>(null);
   const [loyaltyCoinsPerBooking, setLoyaltyCoinsPerBooking] = useState(100);
@@ -1245,22 +1249,62 @@ export default function AdminDashboard() {
               </>
             )}
 
-            {/* Settlement Payout Modal */}
+            {/* Settlement Payout Modal - Manual + Razorpay */}
             {showSettlementPayout && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSettlementPayout(false)}>
                 <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
                   <h3 className="text-lg font-bold text-gray-800 mb-4">Settlement Payout</h3>
+                  {/* Mode Tabs */}
+                  <div className="flex gap-2 mb-4">
+                    <button onClick={() => setSettlementPayoutMode('manual')} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-1.5 ${settlementPayoutMode === 'manual' ? 'bg-green-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}><IndianRupee size={14}/> Manual (Bank/UPI)</button>
+                    <button onClick={() => setSettlementPayoutMode('razorpay')} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-1.5 ${settlementPayoutMode === 'razorpay' ? 'bg-blue-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}><CreditCard size={14}/> Razorpay</button>
+                  </div>
                   <div className="space-y-3">
                     <div><label className="text-sm font-medium text-gray-600">Amount (Rs)</label><input type="number" className="w-full border rounded-lg px-3 py-2 mt-1" value={settlementAmount} onChange={e => setSettlementAmount(e.target.value)} /></div>
-                    <div><label className="text-sm font-medium text-gray-600">UTR Number *</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Enter UTR/Transaction ID" value={settlementUTR} onChange={e => setSettlementUTR(e.target.value)} /></div>
-                    <div><label className="text-sm font-medium text-gray-600">Proof Photo</label>
-                      <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 mt-1 text-sm" onChange={e => { const file = e.target.files?.[0]; if(file) { const reader = new FileReader(); reader.onload = () => setSettlementProof(reader.result as string); reader.readAsDataURL(file); } }} />
-                      {settlementProof && <img src={settlementProof} alt="Proof" className="mt-2 w-full h-32 object-cover rounded-lg border" />}
-                    </div>
+                    {settlementPayoutMode === 'manual' && (
+                      <>
+                        <div><label className="text-sm font-medium text-gray-600">UTR / Transaction ID *</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Enter UTR or UPI Transaction ID" value={settlementUTR} onChange={e => setSettlementUTR(e.target.value)} /></div>
+                        <div><label className="text-sm font-medium text-gray-600">Payment Proof (Screenshot)</label>
+                          <input type="file" accept="image/*" className="w-full border rounded-lg px-3 py-2 mt-1 text-sm" onChange={e => { const file = e.target.files?.[0]; if(file) { const reader = new FileReader(); reader.onload = () => setSettlementProof(reader.result as string); reader.readAsDataURL(file); } }} />
+                          {settlementProof && <img src={settlementProof} alt="Proof" className="mt-2 w-full h-32 object-cover rounded-lg border" />}
+                        </div>
+                      </>
+                    )}
+                    {settlementPayoutMode === 'razorpay' && (
+                      <>
+                        <div><label className="text-sm font-medium text-gray-600">Razorpay Payment ID *</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="pay_XXXXXXXXXX" value={settlementRazorpayId} onChange={e => setSettlementRazorpayId(e.target.value)} /></div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-xs text-blue-700">Razorpay se manually payout karo, phir yahan Payment ID daalke record karo.</p>
+                        </div>
+                      </>
+                    )}
+                    <div><label className="text-sm font-medium text-gray-600">Notes (Optional)</label><input type="text" className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Any additional notes" value={settlementNotes} onChange={e => setSettlementNotes(e.target.value)} /></div>
                   </div>
                   <div className="flex gap-3 mt-5">
-                    <button onClick={() => setShowSettlementPayout(false)} className="flex-1 border-2 py-2.5 rounded-xl font-medium">Cancel</button>
-                    <button onClick={async () => { if(!settlementUTR) { alert('UTR number required'); return; } try { await api.adminSettlementPayout({ owner_id: settlementPayoutOwnerId, amount: parseFloat(settlementAmount), utr_number: settlementUTR, proof_photo: settlementProof || undefined, settlement_type: 'bank_transfer' }); alert('Payout processed!'); setShowSettlementPayout(false); setSettlementUTR(''); setSettlementProof(''); loadTab(); } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); } }} className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-medium hover:bg-green-700">Process Payout</button>
+                    <button onClick={() => { setShowSettlementPayout(false); setSettlementPayoutMode('manual'); setSettlementUTR(''); setSettlementProof(''); setSettlementRazorpayId(''); setSettlementNotes(''); }} className="flex-1 border-2 py-2.5 rounded-xl font-medium">Cancel</button>
+                    <button disabled={settlementProcessing} onClick={async () => {
+                      if (settlementPayoutMode === 'manual' && !settlementUTR) { alert('UTR number required'); return; }
+                      if (settlementPayoutMode === 'razorpay' && !settlementRazorpayId) { alert('Razorpay Payment ID required'); return; }
+                      if (!settlementAmount || parseFloat(settlementAmount) <= 0) { alert('Valid amount required'); return; }
+                      setSettlementProcessing(true);
+                      try {
+                        await api.adminSettlementPayout({
+                          owner_id: settlementPayoutOwnerId,
+                          amount: parseFloat(settlementAmount),
+                          settlement_type: settlementPayoutMode === 'manual' ? 'bank_transfer' : 'razorpay',
+                          utr_number: settlementUTR || undefined,
+                          proof_photo: settlementProof || undefined,
+                          razorpay_payment_id: settlementRazorpayId || undefined,
+                          notes: settlementNotes || undefined,
+                        });
+                        alert(`Payout of Rs.${settlementAmount} processed via ${settlementPayoutMode === 'manual' ? 'Bank Transfer' : 'Razorpay'}!`);
+                        setShowSettlementPayout(false); setSettlementUTR(''); setSettlementProof(''); setSettlementRazorpayId(''); setSettlementNotes(''); setSettlementPayoutMode('manual');
+                        loadTab();
+                      } catch(e: unknown) { alert(e instanceof Error ? e.message : 'Payout failed'); }
+                      setSettlementProcessing(false);
+                    }} className={`flex-1 ${settlementPayoutMode === 'razorpay' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} text-white py-2.5 rounded-xl font-medium disabled:opacity-50`}>
+                      {settlementProcessing ? 'Processing...' : settlementPayoutMode === 'manual' ? 'Process Bank Payout' : 'Record Razorpay Payout'}
+                    </button>
                   </div>
                 </div>
               </div>
