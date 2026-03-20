@@ -600,7 +600,7 @@ async def update_gateway(gateway_id: int, req: GatewayUpdateRequest, user: dict 
 async def list_settlements(user: dict = Depends(get_current_user)):
     require_role(user, ["admin"])
     with get_db() as db:
-        owners = db.execute("SELECT DISTINCT u.id, u.name, u.phone FROM users u JOIN grounds g ON u.id = g.owner_id WHERE u.role = 'owner'").fetchall()
+        owners = db.execute("SELECT DISTINCT u.id, u.name, u.phone, u.email, u.bank_name, u.bank_account, u.bank_ifsc, u.upi_id FROM users u JOIN grounds g ON u.id = g.owner_id WHERE u.role = 'owner'").fetchall()
         result = []
         cr_row = db.execute("SELECT value FROM settings WHERE key='standard_commission'").fetchone()
         commission_rate = float(cr_row["value"]) if cr_row else 10
@@ -619,6 +619,8 @@ async def list_settlements(user: dict = Depends(get_current_user)):
             withdrawn = db.execute("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_requests WHERE user_id=? AND status IN ('pending','completed')", (owner["id"],)).fetchone()["total"]
             result.append({
                 "owner_id": owner["id"], "owner_name": owner["name"], "owner_phone": owner["phone"],
+                "bank_name": owner["bank_name"] or "", "bank_account": owner["bank_account"] or "",
+                "bank_ifsc": owner["bank_ifsc"] or "", "upi_id": owner["upi_id"] or "",
                 "online_revenue": online_rev, "cash_revenue": cash_rev,
                 "total_revenue": online_rev + cash_rev, "commission": round(total_comm, 2),
                 "net_payable": round(online_rev - total_comm - withdrawn, 2),
@@ -681,6 +683,7 @@ async def settlement_payout(request: Request, user: dict = Depends(get_current_u
     proof_photo = data.get("proof_photo", "")
     razorpay_payment_id = data.get("razorpay_payment_id", "")
     notes = data.get("notes", "")
+    payout_mode = data.get("payout_mode", "NEFT")  # NEFT, IMPS, UPI
 
     if not owner_id or amount <= 0:
         raise HTTPException(status_code=400, detail="Owner ID and valid amount required")
@@ -688,29 +691,171 @@ async def settlement_payout(request: Request, user: dict = Depends(get_current_u
     if settlement_type == "bank_transfer" and not utr_number:
         raise HTTPException(status_code=400, detail="UTR number required for manual bank transfer")
 
-    if settlement_type == "razorpay" and not razorpay_payment_id:
-        raise HTTPException(status_code=400, detail="Razorpay payment ID required")
-
     with get_db() as db:
-        owner = db.execute("SELECT id, wallet_balance FROM users WHERE id = ?", (owner_id,)).fetchone()
+        owner = db.execute("SELECT id, name, phone, email, wallet_balance, bank_name, bank_account, bank_ifsc, upi_id FROM users WHERE id = ?", (owner_id,)).fetchone()
         if not owner:
             raise HTTPException(status_code=404, detail="Owner not found")
 
         balance_before = owner["wallet_balance"] or 0
-        # Deduct from wallet (payout means money sent to owner)
-        new_balance = round(balance_before - amount, 2)
-        db.execute("UPDATE users SET wallet_balance = ? WHERE id = ?", (new_balance, owner_id))
 
-        ref_id = razorpay_payment_id if settlement_type == "razorpay" else utr_number
+        # --- RAZORPAY AUTO PAYOUT via RazorpayX Composite API ---
+        if settlement_type == "razorpay":
+            import requests as http_requests
+            gw = db.execute("SELECT * FROM payment_gateways WHERE LOWER(name) = 'razorpay' AND is_active = 1").fetchone()
+            if not gw:
+                raise HTTPException(status_code=400, detail="Razorpay gateway not configured")
 
-        # Record in settlement_records
-        db.execute(
-            """INSERT INTO settlement_records (owner_id, amount, settlement_type, utr_number, proof_photo, notes, status, balance_before, balance_after)
-               VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?)""",
-            (owner_id, amount, settlement_type, ref_id, proof_photo, notes, balance_before, new_balance)
-        )
+            # Get RazorpayX account number from settings (Customer Identifier)
+            razorpayx_account = db.execute("SELECT value FROM settings WHERE key = 'razorpayx_account_number'").fetchone()
+            if not razorpayx_account:
+                raise HTTPException(status_code=400, detail="RazorpayX account number not configured. Add 'razorpayx_account_number' in Settings.")
 
-        return {"message": f"Payout of Rs.{amount} processed via {settlement_type}. Ref: {ref_id}"}
+            account_number = razorpayx_account["value"]
+            api_key = gw["api_key"]
+            api_secret = gw["secret_key"]
+
+            # Determine payout method: UPI or Bank Account
+            owner_upi = (owner["upi_id"] or "").strip()
+            owner_bank_account = (owner["bank_account"] or "").strip()
+            owner_bank_ifsc = (owner["bank_ifsc"] or "").strip()
+            owner_name = owner["name"] or "Owner"
+            owner_phone = owner["phone"] or ""
+            owner_email = owner["email"] or ""
+
+            amount_paise = int(amount * 100)
+
+            # Build composite payout request
+            idempotency_key = str(uuid.uuid4())
+
+            if payout_mode == "UPI" and owner_upi:
+                # UPI Payout
+                payout_payload = {
+                    "account_number": account_number,
+                    "amount": amount_paise,
+                    "currency": "INR",
+                    "mode": "UPI",
+                    "purpose": "payout",
+                    "fund_account": {
+                        "account_type": "vpa",
+                        "vpa": {
+                            "address": owner_upi
+                        },
+                        "contact": {
+                            "name": owner_name,
+                            "email": owner_email if owner_email else None,
+                            "contact": owner_phone,
+                            "type": "vendor",
+                            "reference_id": f"owner_{owner_id}"
+                        }
+                    },
+                    "queue_if_low_balance": True,
+                    "reference_id": f"settle_{owner_id}_{datetime.now(IST).strftime('%Y%m%d%H%M%S')}",
+                    "narration": f"BookAGround Payout",
+                    "notes": {
+                        "owner_id": str(owner_id),
+                        "note": notes or "Settlement payout"
+                    }
+                }
+            elif owner_bank_account and owner_bank_ifsc:
+                # Bank Account Payout (NEFT/IMPS)
+                payout_payload = {
+                    "account_number": account_number,
+                    "amount": amount_paise,
+                    "currency": "INR",
+                    "mode": payout_mode if payout_mode in ("NEFT", "IMPS", "RTGS") else "NEFT",
+                    "purpose": "payout",
+                    "fund_account": {
+                        "account_type": "bank_account",
+                        "bank_account": {
+                            "name": owner_name,
+                            "ifsc": owner_bank_ifsc,
+                            "account_number": owner_bank_account
+                        },
+                        "contact": {
+                            "name": owner_name,
+                            "email": owner_email if owner_email else None,
+                            "contact": owner_phone,
+                            "type": "vendor",
+                            "reference_id": f"owner_{owner_id}"
+                        }
+                    },
+                    "queue_if_low_balance": True,
+                    "reference_id": f"settle_{owner_id}_{datetime.now(IST).strftime('%Y%m%d%H%M%S')}",
+                    "narration": f"BookAGround Payout",
+                    "notes": {
+                        "owner_id": str(owner_id),
+                        "note": notes or "Settlement payout"
+                    }
+                }
+            else:
+                raise HTTPException(status_code=400, detail="Owner has no bank account or UPI details. KYC required first.")
+
+            # Remove None values from contact
+            contact = payout_payload["fund_account"]["contact"]
+            payout_payload["fund_account"]["contact"] = {k: v for k, v in contact.items() if v is not None}
+
+            # Call RazorpayX Composite Payout API
+            try:
+                resp = http_requests.post(
+                    "https://api.razorpay.com/v1/payouts",
+                    json=payout_payload,
+                    auth=(api_key, api_secret),
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Payout-Idempotency": idempotency_key
+                    },
+                    timeout=30
+                )
+                resp_data = resp.json()
+
+                if resp.status_code not in (200, 201):
+                    error_desc = resp_data.get("error", {}).get("description", "Unknown error")
+                    raise HTTPException(status_code=400, detail=f"Razorpay Payout failed: {error_desc}")
+
+                razorpay_payout_id = resp_data.get("id", "")
+                razorpay_utr = resp_data.get("utr", "")
+                payout_status = resp_data.get("status", "processing")
+                ref_id = razorpay_payout_id
+
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Razorpay API error: {str(e)}")
+
+            # Deduct from wallet
+            new_balance = round(balance_before - amount, 2)
+            db.execute("UPDATE users SET wallet_balance = ? WHERE id = ?", (new_balance, owner_id))
+
+            # Record in settlement_records
+            db.execute(
+                """INSERT INTO settlement_records (owner_id, amount, settlement_type, utr_number, proof_photo, notes, status, balance_before, balance_after)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (owner_id, amount, "razorpay", ref_id, "", f"Razorpay Payout | UTR: {razorpay_utr} | Status: {payout_status} | {notes}",
+                 payout_status if payout_status == "processed" else "processing", balance_before, new_balance)
+            )
+
+            return {
+                "message": f"Razorpay payout of Rs.{amount} initiated! Payout ID: {razorpay_payout_id}",
+                "payout_id": razorpay_payout_id,
+                "utr": razorpay_utr,
+                "status": payout_status
+            }
+
+        # --- MANUAL BANK TRANSFER ---
+        else:
+            new_balance = round(balance_before - amount, 2)
+            db.execute("UPDATE users SET wallet_balance = ? WHERE id = ?", (new_balance, owner_id))
+
+            ref_id = utr_number
+
+            # Record in settlement_records
+            db.execute(
+                """INSERT INTO settlement_records (owner_id, amount, settlement_type, utr_number, proof_photo, notes, status, balance_before, balance_after)
+                   VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?)""",
+                (owner_id, amount, "bank_transfer", ref_id, proof_photo, notes, balance_before, new_balance)
+            )
+
+            return {"message": f"Manual payout of Rs.{amount} recorded. UTR: {ref_id}"}
 
 
 @router.get("/settlement-statement/{owner_id}")
