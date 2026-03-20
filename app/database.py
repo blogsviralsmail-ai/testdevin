@@ -490,6 +490,7 @@ def add_missing_columns():
         ("bookings", "attendance", "TEXT"),
         ("bookings", "cash_verified", "INTEGER DEFAULT 0"),
         ("bookings", "cash_verified_by", "INTEGER"),
+        ("bookings", "booking_type", "TEXT DEFAULT 'online'"),
         ("grounds", "approval_required", "INTEGER DEFAULT 0"),
         ("users", "upi_id", "TEXT"),
         ("withdraw_requests", "transaction_id", "TEXT"),

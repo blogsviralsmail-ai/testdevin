@@ -206,15 +206,23 @@ async def verify_wallet_topup(req: WalletTopupVerifyRequest, user: dict = Depend
         ).fetchone()
         if existing:
             return {"status": "already_processed", "message": "This payment was already processed."}
-        # Add to wallet
-        db.execute("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?", (req.amount, user["user_id"]))
+        # Fetch actual paid amount from Razorpay API (never trust client-supplied amount)
+        try:
+            import razorpay
+            client = razorpay.Client(auth=(gw["api_key"], gw["secret_key"]))
+            payment = client.payment.fetch(req.razorpay_payment_id)
+            verified_amount = payment["amount"] / 100  # convert paise to rupees
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to verify payment amount from Razorpay: {str(e)}")
+        # Add to wallet using server-verified amount
+        db.execute("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?", (verified_amount, user["user_id"]))
         # Record in withdraw_requests as completed topup
         db.execute(
             "INSERT INTO withdraw_requests (user_id, amount, charge, net_amount, status, transaction_id, processed_at) VALUES (?, ?, 0, ?, 'topup_completed', ?, CURRENT_TIMESTAMP)",
-            (user["user_id"], req.amount, req.amount, req.razorpay_payment_id),
+            (user["user_id"], verified_amount, verified_amount, req.razorpay_payment_id),
         )
         u = db.execute("SELECT wallet_balance FROM users WHERE id = ?", (user["user_id"],)).fetchone()
-        return {"status": "success", "message": f"Rs.{int(req.amount)} added to wallet successfully!", "new_balance": u["wallet_balance"]}
+        return {"status": "success", "message": f"Rs.{int(verified_amount)} added to wallet successfully!", "new_balance": u["wallet_balance"]}
 
 
 @router.post("/me/wallet/withdraw")
