@@ -78,9 +78,9 @@ async def revenue_trends(months: int = 12, user: dict = Depends(require_admin)):
         d = now - timedelta(days=i * 30)
         month_str = d.strftime("%Y-%m")
         month_label = d.strftime("%b %Y")
-        fp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM fee_payments WHERE status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%%Y-%%m', created_at)=?", (month_str,)).fetchone()[0]
-        txn = conn.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE transaction_type='credit' AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%%Y-%%m', created_at)=?", (month_str,)).fetchone()[0]
-        students = conn.execute("SELECT COUNT(*) FROM students WHERE strftime('%%Y-%%m', created_at)=?", (month_str,)).fetchone()[0]
+        fp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM fee_payments WHERE status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%Y-%m', created_at)=?", (month_str,)).fetchone()[0]
+        txn = conn.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE transaction_type='credit' AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%Y-%m', created_at)=?", (month_str,)).fetchone()[0]
+        students = conn.execute("SELECT COUNT(*) FROM students WHERE strftime('%Y-%m', created_at)=?", (month_str,)).fetchone()[0]
         results.append({"month": month_label, "month_key": month_str, "revenue": fp + txn, "students": students})
     conn.close()
     return results
@@ -175,8 +175,8 @@ async def overview(user: dict = Depends(require_admin)):
     lead_conversion = round((converted_leads / total_leads * 100), 1) if total_leads > 0 else 0
     now = datetime.now()
     month_str = now.strftime("%Y-%m")
-    month_fp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM fee_payments WHERE status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%%Y-%%m', created_at)=?", (month_str,)).fetchone()[0]
-    month_txn = conn.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE transaction_type='credit' AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%%Y-%%m', created_at)=?", (month_str,)).fetchone()[0]
+    month_fp = conn.execute("SELECT COALESCE(SUM(amount),0) FROM fee_payments WHERE status='approved' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%Y-%m', created_at)=?", (month_str,)).fetchone()[0]
+    month_txn = conn.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE transaction_type='credit' AND description NOT LIKE 'Online Fee Payment%%' AND description NOT LIKE 'Razorpay Payment%%' AND (deleted_by_admin=0 OR deleted_by_admin IS NULL) AND strftime('%Y-%m', created_at)=?", (month_str,)).fetchone()[0]
     this_month_revenue = month_fp + month_txn
     conn.close()
     return {
