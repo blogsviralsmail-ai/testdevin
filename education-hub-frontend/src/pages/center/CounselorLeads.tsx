@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../lib/api";
 import { Plus, Edit2, Trash2, X, Search, Phone, ArrowUpDown, UserCheck, RefreshCw, Download, Upload, FileSpreadsheet } from "lucide-react";
 
@@ -52,9 +52,10 @@ export default function CenterCounselorLeads() {
     university_interest: "", course_interest: "",
   });
 
-  // Convert to Admission state
+  // Convert to Admission state - use ref to prevent data loss during re-renders
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertLead, setConvertLead] = useState<any>(null);
+  const convertLeadRef = useRef<any>(null);
   const [converting, setConverting] = useState(false);
   const [convertForm, setConvertForm] = useState({
     password: "", email: "", university_id: "", category_id: "", total_fees: "",
@@ -139,9 +140,15 @@ export default function CenterCounselorLeads() {
   };
 
   const openConvertModal = (lead: any, e?: React.MouseEvent) => {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    // Deep-copy lead data so it won't change if leads list re-renders
+    // Maximum event isolation to prevent any parent/sibling handlers from firing
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.nativeEvent) { e.nativeEvent.stopImmediatePropagation(); }
+    }
+    // Deep-copy lead data into both state AND ref so it survives any re-render
     const leadCopy = JSON.parse(JSON.stringify(lead));
+    convertLeadRef.current = leadCopy;
     setConvertLead(leadCopy);
     setConvertForm({
       password: "", email: leadCopy.email || "", university_id: leadCopy.university_interest ? String(leadCopy.university_interest) : "",
@@ -167,10 +174,12 @@ export default function CenterCounselorLeads() {
         category_id: convertForm.category_id ? parseInt(String(convertForm.category_id)) : null,
         total_fees: convertForm.total_fees ? parseFloat(String(convertForm.total_fees)) : 0,
       };
-      const res = await api.post(`/api/centers/counselor-leads/${convertLead.id}/convert`, payload);
+      const leadData = convertLeadRef.current || convertLead;
+      const res = await api.post(`/api/centers/counselor-leads/${leadData.id}/convert`, payload);
       setShowConvertModal(false);
+      convertLeadRef.current = null;
       fetchLeads(); fetchStats();
-      alert(`Student created successfully!\n\nLogin: ${convertLead.mobile}\nStudent ID: ${res.data.student_id}\n\nStudent has been added to the Students list.`);
+      alert(`Student created successfully!\n\nLogin: ${leadData.mobile}\nStudent ID: ${res.data.student_id}\n\nStudent has been added to the Students list.`);
     } catch (err: any) {
       alert(err.response?.data?.detail || "Error converting lead to admission");
     } finally { setConverting(false); }
@@ -344,7 +353,14 @@ export default function CenterCounselorLeads() {
                     <div className="flex gap-1 items-center">
                       <button onClick={() => openEdit(l)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded" title="Edit"><Edit2 className="h-4 w-4" /></button>
                       {l.current_status !== "converted" && (
-                        <button onClick={(e) => openConvertModal(l, e)} className="px-2 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 font-medium flex items-center gap-1" title="Convert to Admission">
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation(); openConvertModal(l, e); }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="px-2 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 font-medium flex items-center gap-1"
+                          title="Convert to Admission"
+                          type="button"
+                        >
                           <UserCheck className="h-3.5 w-3.5" /> Convert to Admission
                         </button>
                       )}
@@ -399,13 +415,13 @@ export default function CenterCounselorLeads() {
       )}
 
       {/* Convert to Admission Modal */}
-      {showConvertModal && convertLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+      {showConvertModal && (convertLead || convertLeadRef.current) && (() => { const cl = convertLead || convertLeadRef.current; return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowConvertModal(false); }}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center p-5 border-b bg-emerald-50">
               <div>
                 <h2 className="text-lg font-bold text-emerald-800">Convert to Admission</h2>
-                <p className="text-sm text-emerald-600">Converting: {convertLead.name} ({convertLead.mobile})</p>
+                <p className="text-sm text-emerald-600">Converting: {cl.name} ({cl.mobile})</p>
               </div>
               <button onClick={() => setShowConvertModal(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
@@ -413,15 +429,15 @@ export default function CenterCounselorLeads() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm font-medium text-blue-800">Lead Information (auto-filled)</p>
                 <div className="grid grid-cols-3 gap-2 mt-2 text-sm text-blue-700">
-                  <span>Name: <strong>{convertLead.name}</strong></span>
-                  <span>Mobile: <strong>{convertLead.mobile}</strong></span>
-                  <span>Father: <strong>{convertLead.father_name || "N/A"}</strong></span>
+                  <span>Name: <strong>{cl.name}</strong></span>
+                  <span>Mobile: <strong>{cl.mobile}</strong></span>
+                  <span>Father: <strong>{cl.father_name || "N/A"}</strong></span>
                 </div>
               </div>
               <div className="border border-red-200 rounded-lg p-3 bg-red-50">
                 <p className="text-sm font-bold text-red-800 mb-2">Student Login Credentials *</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-medium text-gray-600 mb-1">Username (Mobile)</label><input type="text" value={convertLead.mobile} disabled className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100" /></div>
+                  <div><label className="block text-xs font-medium text-gray-600 mb-1">Username (Mobile)</label><input type="text" value={cl.mobile} disabled className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Password *</label><input type="password" value={convertForm.password} onChange={e => setConvertForm({ ...convertForm, password: e.target.value })} className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="Set student password" /></div>
                 </div>
               </div>
@@ -479,7 +495,7 @@ export default function CenterCounselorLeads() {
             </div>
           </div>
         </div>
-      )}
+      ); })()}
 
       {/* Bulk Upload Modal */}
       {showBulkModal && (
