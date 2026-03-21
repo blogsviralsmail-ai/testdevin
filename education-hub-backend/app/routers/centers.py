@@ -2443,15 +2443,15 @@ async def create_counselor_lead(data: CounselorLeadCreate, user: dict = Depends(
           data.university_interest, data.course_interest, center_id))
     conn.commit()
     lead_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-    conn.close()
 
-    # Send notification
+    # Send notification (before closing conn)
     try:
         from app.utils.notifications import send_notification
-        send_notification("lead", f"New counselor lead: {data.name} ({data.mobile})", f"/admin/counselor-leads")
+        send_notification(conn, "lead", f"New Counselor Lead: {data.name}", f"Name: {data.name}\nMobile: {data.mobile}\nCounselor: {counselor_name or 'N/A'}\nStatus: {data.current_status}", "/admin/counselor-leads")
     except Exception:
         pass
 
+    conn.close()
     return {"message": "Lead created successfully", "id": lead_id}
 
 
@@ -2492,26 +2492,169 @@ async def delete_counselor_lead(lead_id: int, user: dict = Depends(get_current_u
     return {"message": "Lead deleted"}
 
 
+class ConvertLeadRequest(BaseModel):
+    password: str
+    email: Optional[str] = None
+    university_id: Optional[int] = None
+    category_id: Optional[int] = None
+    total_fees: Optional[float] = 0
+    admission_type: str = "FRESH_ADMISSION"
+    gender: Optional[str] = None
+    dob: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    aadhar_number: Optional[str] = None
+    category_caste: Optional[str] = None
+    nationality: str = "Indian"
+    mother_name: Optional[str] = None
+    guardian_name: Optional[str] = None
+    guardian_phone: Optional[str] = None
+    tenth_board: Optional[str] = None
+    tenth_year: Optional[str] = None
+    tenth_percentage: Optional[str] = None
+    twelfth_board: Optional[str] = None
+    twelfth_year: Optional[str] = None
+    twelfth_percentage: Optional[str] = None
+
+
 @router.post("/counselor-leads/{lead_id}/convert")
-async def convert_lead_to_admission(lead_id: int, user: dict = Depends(get_current_user)):
-    """Convert a counselor lead to a student admission. Returns lead data for pre-filling the admission form."""
+async def convert_lead_to_admission(lead_id: int, data: ConvertLeadRequest, user: dict = Depends(get_current_user)):
+    """Convert a counselor lead to a student admission. Creates user account + student record."""
     conn = get_db()
     lead = conn.execute("SELECT * FROM counselor_leads WHERE id = ?", (lead_id,)).fetchone()
     if not lead:
         conn.close()
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    lead_data = dict(lead)
+    if lead["current_status"] == "converted":
+        conn.close()
+        raise HTTPException(status_code=400, detail="Lead already converted")
 
-    # Mark lead as converted (but don't create student yet - frontend will do that via student add form)
-    conn.execute("UPDATE counselor_leads SET current_status = 'converted', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (lead_id,))
+    lead_data = dict(lead)
+    phone = lead_data["mobile"]
+    name = lead_data["name"]
+    father_name = lead_data.get("father_name", "")
+    email = data.email or lead_data.get("email", "")
+
+    # Check if phone already registered
+    existing = conn.execute("SELECT id FROM users WHERE username = ?", (phone,)).fetchone()
+    if existing:
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"A user with mobile {phone} already exists. Cannot create duplicate.")
+
+    # Create user account
+    hashed = hash_password(data.password)
+    role = user.get("role", "admin")
+    center_id = lead_data.get("center_id")
+
+    conn.execute(
+        "INSERT INTO users (username, password, role, name, email, phone) VALUES (?, ?, 'student', ?, ?, ?)",
+        (phone, hashed, name, email, phone)
+    )
+    conn.commit()
+    user_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    # Create student record
+    conn.execute("""
+        INSERT INTO students (user_id, name, phone, email, father_name, enrollment_number,
+            university_id, category_id, total_fees, admission_type, status,
+            gender, dob, address, city, state, pincode, aadhar_number,
+            category_caste, nationality, mother_name, guardian_name, guardian_phone,
+            tenth_board, tenth_year, tenth_percentage,
+            twelfth_board, twelfth_year, twelfth_percentage,
+            center_id, counselor_name, admission_source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active',
+            ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?,
+            ?, ?, ?,
+            ?, ?, ?)
+    """, (
+        user_id, name, phone, email, father_name, phone,
+        data.university_id, data.category_id, data.total_fees or 0, data.admission_type,
+        data.gender, data.dob, data.address, data.city, data.state, data.pincode, data.aadhar_number,
+        data.category_caste, data.nationality, data.mother_name, data.guardian_name, data.guardian_phone,
+        data.tenth_board, data.tenth_year, data.tenth_percentage,
+        data.twelfth_board, data.twelfth_year, data.twelfth_percentage,
+        center_id, lead_data.get("counselor_name", ""),
+        "chain" if center_id else "self"
+    ))
+    conn.commit()
+    student_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    # Mark lead as converted
+    conn.execute("UPDATE counselor_leads SET current_status = 'converted', converted_to_student_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (student_id, lead_id))
+    conn.commit()
+
+    # Auto-create deal if center admission
+    if center_id:
+        try:
+            conn.execute("""
+                INSERT INTO student_deals (student_id, sub_center_fee, center_deal, admin_deal, university_deal, admission_date, counselor_name)
+                VALUES (?, ?, 0, 0, 0, date('now'), ?)
+            """, (student_id, data.total_fees or 0, lead_data.get("counselor_name", "")))
+            conn.commit()
+        except Exception:
+            pass
+
+    # Send notification
+    try:
+        from app.utils.notifications import send_notification
+        send_notification(conn, "student", f"Lead Converted: {name}", f"Lead '{name}' ({phone}) converted to student admission.\nUniversity ID: {data.university_id}\nCourse ID: {data.category_id}", "/admin/students")
+    except Exception:
+        pass
+
+    conn.close()
+    return {
+        "message": "Lead converted to student successfully",
+        "student_id": student_id,
+        "user_id": user_id,
+        "login": {"username": phone, "password": "(as set)"}
+    }
+
+
+@router.post("/counselor-leads/bulk-import")
+async def bulk_import_counselor_leads(user: dict = Depends(get_current_user), leads: List[dict] = []):
+    """Bulk import counselor leads from CSV/paste data."""
+    role = user.get("role", "")
+    conn = get_db()
+
+    center_id = None
+    if role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
+        if center:
+            center_id = center["id"]
+
+    imported = 0
+    errors = []
+    for i, lead in enumerate(leads):
+        name = (lead.get("name") or "").strip()
+        mobile = (lead.get("mobile") or "").strip()
+        if not name or not mobile:
+            errors.append(f"Row {i+1}: Name and Mobile are required")
+            continue
+        try:
+            conn.execute("""
+                INSERT INTO counselor_leads (name, father_name, mobile, email, counselor_name, counselor_user_id,
+                    current_status, followup_date, remarks, source, university_interest, course_interest, center_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                name, lead.get("father_name", ""), mobile, lead.get("email", ""),
+                lead.get("counselor_name", ""), user.get("sub"),
+                lead.get("current_status", "new"), lead.get("followup_date", ""),
+                lead.get("remarks", ""), lead.get("source", "manual"),
+                lead.get("university_interest", ""), lead.get("course_interest", ""),
+                center_id
+            ))
+            imported += 1
+        except Exception as e:
+            errors.append(f"Row {i+1}: {str(e)}")
+
     conn.commit()
     conn.close()
-
-    return {
-        "message": "Lead marked for conversion. Use the returned data to create student admission.",
-        "lead_data": lead_data
-    }
+    return {"imported": imported, "errors": errors, "total": len(leads)}
 
 
 @router.get("/counselor-leads/stats")
