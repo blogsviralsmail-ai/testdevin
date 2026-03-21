@@ -19,7 +19,13 @@ router = APIRouter(prefix="/api/accounts", tags=["Accounts"])
 def _generate_receipt_no(conn, prefix: str, tid: int, sid: int, amount: float) -> str:
     """Generate a unique receipt number with retry loop to handle race conditions."""
     for _attempt in range(5):
-        max_num = conn.execute("SELECT MAX(CAST(SUBSTR(receipt_no, -6) AS INTEGER)) FROM receipts").fetchone()[0] or 1000
+        # Extract number after last hyphen to avoid SUBSTR(-6) overflow for receipts with 1M+ numbers
+        row = conn.execute(
+            "SELECT MAX(CAST(CASE WHEN INSTR(receipt_no, '-') > 0 "
+            "THEN SUBSTR(receipt_no, INSTR(receipt_no, '-') + 1) "
+            "ELSE receipt_no END AS INTEGER)) FROM receipts"
+        ).fetchone()
+        max_num = (row[0] if row and row[0] else 1000)
         receipt_no = f"{prefix}-{str(max_num + 1).zfill(6)}"
         try:
             conn.execute("INSERT INTO receipts (transaction_id, student_id, receipt_no, amount) VALUES (?, ?, ?, ?)",
@@ -277,12 +283,15 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
         print(f"Notification error: {e}")
     conn.close()
     # Send receipt email + WhatsApp (after closing connection to avoid DB lock)
+    notify_conn = None
     try:
         notify_conn = get_db()
         _send_receipt_notifications(notify_conn, sid, receipt_no, data.amount, data.payment_mode, data.utr_number)
-        notify_conn.close()
     except Exception as e:
         print(f"Receipt notification error: {e}")
+    finally:
+        if notify_conn:
+            notify_conn.close()
     return {"id": tid, "receipt_no": receipt_no, "message": "Transaction recorded"}
 
 @router.get("/receipts")
@@ -355,12 +364,15 @@ async def resend_receipt(receipt_id: int, user: dict = Depends(get_current_user)
     utr_number = txn["utr_number"] if txn else ""
     conn.close()
 
+    notify_conn = None
     try:
         notify_conn = get_db()
         _send_receipt_notifications(notify_conn, sid, receipt_no, amount, payment_mode, utr_number)
-        notify_conn.close()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to resend receipt: {e}")
+    finally:
+        if notify_conn:
+            notify_conn.close()
 
     return {"message": "Receipt resent"}
 
@@ -584,12 +596,15 @@ async def approve_fee_payment(pid: int, user: dict = Depends(require_admin)):
     conn.commit()
     conn.close()
     # Send receipt email + WhatsApp (after closing connection to avoid DB lock)
+    notify_conn = None
     try:
         notify_conn = get_db()
         _send_receipt_notifications(notify_conn, sid, receipt_no, payment["amount"], payment["payment_mode"], payment["utr_number"])
-        notify_conn.close()
     except Exception as e:
         print(f"Receipt notification error: {e}")
+    finally:
+        if notify_conn:
+            notify_conn.close()
     return {"message": "Payment approved and added to accounts"}
 
 @router.put("/fee-payments/{pid}/reject")
@@ -760,12 +775,15 @@ async def verify_razorpay_payment(data: dict, user: dict = Depends(get_current_u
     conn.commit()
     conn.close()
     # Send receipt email + WhatsApp (after closing connection to avoid DB lock)
+    notify_conn = None
     try:
         notify_conn = get_db()
         _send_receipt_notifications(notify_conn, sid, receipt_no, float(amount), "razorpay", razorpay_payment_id)
-        notify_conn.close()
     except Exception as e:
         print(f"Receipt notification error: {e}")
+    finally:
+        if notify_conn:
+            notify_conn.close()
     return {"message": "Payment verified and recorded successfully", "receipt_no": receipt_no}
 
 @router.get("/student-statement")
@@ -1164,12 +1182,15 @@ async def center_record_payment(student_id: int, data: dict, user: dict = Depend
     conn.close()
     
     # Send receipt notifications
+    notify_conn = None
     try:
         notify_conn = get_db()
         _send_receipt_notifications(notify_conn, student_id, receipt_no, float(amount), payment_mode, utr_number)
-        notify_conn.close()
     except Exception:
         pass
+    finally:
+        if notify_conn:
+            notify_conn.close()
     
     return {"receipt_no": receipt_no, "message": f"Payment of Rs.{float(amount):,.0f} recorded for {student['name']}"}
 

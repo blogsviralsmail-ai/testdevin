@@ -47,7 +47,7 @@ export default function CenterCounselorLeads() {
   const [bulkTab, setBulkTab] = useState<"csv" | "paste">("csv");
   const [pasteData, setPasteData] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", source: "website", status: "new", university_interest: "", course_interest: "", notes: "", assigned_to: "", follow_up_date: "" });
+  const [form, setForm] = useState({ name: "", father_name: "", mobile: "", email: "", counselor_name: "", current_status: "new", followup_date: "", remarks: "", source: "website", university_interest: "", course_interest: "" });
   // Convert to Admission state
   const [universities, setUniversities] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -82,16 +82,16 @@ export default function CenterCounselorLeads() {
   }, []);
 
 
+  const emptyForm = { name: "", father_name: "", mobile: "", email: "", counselor_name: "", current_status: "new", followup_date: "", remarks: "", source: "website", university_interest: "", course_interest: "" };
   const save = async () => {
     if (!form.name) return;
-    const payload = { ...form, assigned_to: form.assigned_to ? parseInt(form.assigned_to) : null };
-    if (editing) { await api.put(`/api/centers/counselor-leads/${editing.id}`, payload); }
-    else { await api.post("/api/centers/counselor-leads", payload); }
-    setShowForm(false); setEditing(null); setForm({ name: "", email: "", phone: "", source: "website", status: "new", university_interest: "", course_interest: "", notes: "", assigned_to: "", follow_up_date: "" }); load();
+    if (editing) { await api.put(`/api/centers/counselor-leads/${editing.id}`, form); }
+    else { await api.post("/api/centers/counselor-leads", form); }
+    setShowForm(false); setEditing(null); setForm(emptyForm); load();
   };
 
   const del = async (id: number) => { if (confirm("Delete?")) { await api.delete(`/api/centers/counselor-leads/${id}`); load(); } };
-  const edit = (l: any) => { setForm({ name: l.name, email: l.email || "", phone: l.phone || "", source: l.source, status: l.status, university_interest: l.university_interest || "", course_interest: l.course_interest || "", notes: l.notes || "", assigned_to: l.assigned_to?.toString() || "", follow_up_date: l.follow_up_date || "" }); setEditing(l); setShowForm(true); };
+  const edit = (l: any) => { setForm({ name: l.name || "", father_name: l.father_name || "", mobile: l.mobile || "", email: l.email || "", counselor_name: l.counselor_name || "", current_status: l.current_status || "new", followup_date: l.followup_date || "", remarks: l.remarks || "", source: l.source || "website", university_interest: l.university_interest || "", course_interest: l.course_interest || "" }); setEditing(l); setShowForm(true); };
   const toggleSelect = (id: number) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   const toggleAll = () => setSelectedIds(prev => prev.length === leads.length ? [] : leads.map(l => l.id));
   const bulkDelete = async () => { if (!selectedIds.length || !confirm(`Delete ${selectedIds.length} leads?`)) return; await api.delete("/api/centers/counselor-leads/bulk", { data: { ids: selectedIds } }); setSelectedIds([]); load(); };
@@ -100,8 +100,8 @@ export default function CenterCounselorLeads() {
   const addFollowUp = async () => { if (!fuForm.note) return; await api.post(`/api/centers/counselor-leads/${showFollowUp.id}/follow-up`, fuForm); setFuForm({ note: "", follow_up_type: "call", next_follow_up: "" }); const r = await api.get(`/api/centers/counselor-leads/${showFollowUp.id}/follow-ups`); setFollowUps(r.data || []); };
   const autoAssign = async () => { await api.post("/api/centers/counselor-leads/auto-assign"); load(); };
   const downloadCSV = () => {
-    const headers = ["Name", "Email", "Phone", "Source", "Status", "Interest", "Assigned To", "Follow-up Date", "Notes"];
-    const rows = leads.map(l => [l.name, l.email || "", l.phone || "", l.source || "", l.status || "", `${l.university_interest || ""} / ${l.course_interest || ""}`, l.assigned_name || "", l.follow_up_date || "", l.notes || ""]);
+    const headers = ["Name", "Father's Name", "Mobile Number", "Email", "Counselor Name", "Status", "Follow-up Date", "Remarks", "Enquiry Date", "Source", "University", "Course"];
+    const rows = leads.map(l => [l.name, l.father_name || "", l.mobile || "", l.email || "", l.counselor_name || "", l.current_status || "", l.followup_date || "", l.remarks || "", l.created_at ? formatDate(l.created_at) : "", l.source || "", l.university_name || l.university_interest || "", l.course_name || l.course_interest || ""]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const u = URL.createObjectURL(blob);
@@ -219,7 +219,7 @@ export default function CenterCounselorLeads() {
           <button onClick={downloadCSV} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"><Download className="h-4 w-4" /> CSV</button>
           <button onClick={autoAssign} className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700"><Zap className="h-4 w-4" /> Auto-Assign</button>
           <button onClick={() => { setShowBulkUpload(true); setBulkResult(null); }} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700"><Upload className="h-4 w-4" /> Bulk Upload</button>
-          <button onClick={() => { setShowForm(true); setEditing(null); setForm({ name: "", email: "", phone: "", source: "website", status: "new", university_interest: "", course_interest: "", notes: "", assigned_to: "", follow_up_date: "" }); }}
+          <button onClick={() => { setShowForm(true); setEditing(null); setForm(emptyForm); }}
             className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700"><Plus className="h-4 w-4" /> Add Lead</button>
         </div>
       </div>
@@ -261,29 +261,34 @@ export default function CenterCounselorLeads() {
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3">
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name *" className="w-full px-3 py-2 border rounded-lg text-sm" />
               <div className="grid grid-cols-2 gap-3">
-                <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="px-3 py-2 border rounded-lg text-sm" />
-                <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Phone" className="px-3 py-2 border rounded-lg text-sm" />
+                <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name *" className="px-3 py-2 border rounded-lg text-sm" />
+                <input value={form.father_name} onChange={e => setForm({ ...form, father_name: e.target.value })} placeholder="Father's Name" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
-                  <option value="website">Website</option><option value="referral">Referral</option><option value="walk-in">Walk-in</option><option value="phone">Phone</option><option value="social">Social Media</option>
+              <div className="grid grid-cols-2 gap-3">
+                <input value={form.mobile} onChange={e => setForm({ ...form, mobile: e.target.value })} placeholder="Mobile Number *" className="px-3 py-2 border rounded-lg text-sm" />
+                <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <select value={form.counselor_name} onChange={e => setForm({ ...form, counselor_name: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
+                  <option value="">Select Counselor</option>
+                  {counselors.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
-                <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
+                <select value={form.current_status} onChange={e => setForm({ ...form, current_status: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <select value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
-                  <option value="">Unassigned</option>
-                  {counselors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input type="date" value={form.followup_date} onChange={e => setForm({ ...form, followup_date: e.target.value })} className="px-3 py-2 border rounded-lg text-sm" placeholder="Follow-up Date" />
+                <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
+                  <option value="website">Website</option><option value="referral">Referral</option><option value="walk-in">Walk-in</option><option value="phone">Phone</option><option value="social">Social Media</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <input value={form.university_interest} onChange={e => setForm({ ...form, university_interest: e.target.value })} placeholder="University Interest" className="px-3 py-2 border rounded-lg text-sm" />
                 <input value={form.course_interest} onChange={e => setForm({ ...form, course_interest: e.target.value })} placeholder="Course Interest" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <input type="date" value={form.follow_up_date} onChange={e => setForm({ ...form, follow_up_date: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notes" rows={3} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <textarea value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Remarks" rows={3} className="w-full px-3 py-2 border rounded-lg text-sm" />
               <button onClick={save} className="w-full py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">{editing ? "Update" : "Add Lead"}</button>
             </div>
           </div>
@@ -566,29 +571,32 @@ export default function CenterCounselorLeads() {
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="px-3 py-3 w-10"><input type="checkbox" checked={selectedIds.length === leads.length && leads.length > 0} onChange={toggleAll} /></th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Lead</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Source</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Interest</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Assigned To</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Follow-up</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Name</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Father's Name</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Number</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Email</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Counselor Name</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Status</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Follow-up</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Remarks</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Enquiry</th>
+              <th className="text-left px-3 py-3 font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
           <tbody>
             {leads.map(l => (
               <tr key={l.id} className="border-b hover:bg-gray-50">
                 <td className="px-3 py-3"><input type="checkbox" checked={selectedIds.includes(l.id)} onChange={() => toggleSelect(l.id)} /></td>
-                <td className="px-4 py-3">
-                  <div className="font-medium">{l.name}</div>
-                  <div className="text-xs text-gray-500">{l.email} | {l.phone}</div>
-                </td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">{l.source}</span></td>
-                <td className="px-4 py-3 text-xs">{l.university_interest} {l.course_interest && `/ ${l.course_interest}`}</td>
-                <td className="px-4 py-3 text-xs">{l.assigned_name || "Unassigned"}</td>
-                <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs capitalize ${STATUS_COLORS[l.status] || "bg-gray-100 text-gray-600"}`}>{l.status}</span></td>
-                <td className="px-4 py-3 text-xs">{l.follow_up_date ? formatDate(l.follow_up_date) : "N/A"}</td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-3 font-medium whitespace-nowrap">{l.name}</td>
+                <td className="px-3 py-3 text-xs whitespace-nowrap">{l.father_name || "-"}</td>
+                <td className="px-3 py-3 text-xs whitespace-nowrap">{l.mobile || "-"}</td>
+                <td className="px-3 py-3 text-xs">{l.email || "-"}</td>
+                <td className="px-3 py-3 text-xs whitespace-nowrap">{l.counselor_name || "-"}</td>
+                <td className="px-3 py-3"><span className={`px-2 py-1 rounded-full text-xs capitalize ${STATUS_COLORS[l.current_status] || "bg-gray-100 text-gray-600"}`}>{l.current_status}</span></td>
+                <td className="px-3 py-3 text-xs whitespace-nowrap">{l.followup_date ? formatDate(l.followup_date) : "-"}</td>
+                <td className="px-3 py-3 text-xs max-w-[150px] truncate" title={l.remarks || ""}>{l.remarks || "-"}</td>
+                <td className="px-3 py-3 text-xs whitespace-nowrap">{l.created_at ? formatDate(l.created_at) : "-"}</td>
+                <td className="px-3 py-3">
                   <div className="flex gap-1">
                     <button onClick={() => openFollowUps(l)} className="p-1.5 text-purple-600 hover:bg-purple-50 rounded" title="Follow-ups"><MessageSquare className="h-4 w-4" /></button>
                     <button onClick={() => openHistory(l)} className="p-1.5 text-amber-600 hover:bg-amber-50 rounded" title="History"><History className="h-4 w-4" /></button>
@@ -608,7 +616,7 @@ export default function CenterCounselorLeads() {
                 </td>
               </tr>
             ))}
-            {leads.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-gray-500">No leads found</td></tr>}
+            {leads.length === 0 && <tr><td colSpan={11} className="text-center py-8 text-gray-500">No leads found</td></tr>}
           </tbody>
         </table>
       </div>
