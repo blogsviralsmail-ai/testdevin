@@ -2746,7 +2746,8 @@ async def counselor_lead_stats(user: dict = Depends(get_current_user)):
 
     total = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where}", params).fetchone()[0]
     statuses = {}
-    for status in ["new", "followup", "callback", "not_picked", "interested", "not_interested", "converted", "closed"]:
+    for status in ["new", "contacted", "interested", "qualified", "negotiation", "converted", "lost",
+                    "followup", "callback", "not_picked", "not_interested", "closed"]:
         count = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where} AND current_status = ?", params + [status]).fetchone()[0]
         statuses[status] = count
 
@@ -2760,6 +2761,132 @@ async def counselor_lead_stats(user: dict = Depends(get_current_user)):
         "today_followups": today_followups,
         "overdue_followups": overdue_followups,
     }
+
+
+# ══════════════════ Counselor Leads: Transfer, Auto-Assign, Bulk Delete, Follow-ups, History ═══════════
+
+@router.put("/counselor-leads/transfer")
+async def transfer_counselor_leads(data: dict, user: dict = Depends(get_current_user)):
+    """Transfer selected counselor leads to another counselor."""
+    ids = data.get("ids", [])
+    assigned_to = data.get("assigned_to")
+    note = data.get("note", "")
+    if not ids or not assigned_to:
+        raise HTTPException(status_code=400, detail="Lead IDs and assigned_to are required")
+    conn = get_db()
+    # Get counselor name
+    counselor = conn.execute("SELECT name FROM users WHERE id = ?", (assigned_to,)).fetchone()
+    counselor_name = counselor["name"] if counselor else "Unknown"
+    placeholders = ",".join(["?"] * len(ids))
+    # Log history for each lead
+    for lid in ids:
+        lead = conn.execute("SELECT * FROM counselor_leads WHERE id = ?", (lid,)).fetchone()
+        if lead:
+            old_counselor = lead["counselor_name"] or "Unassigned"
+            conn.execute("""INSERT INTO counselor_lead_history (lead_id, action, old_status, new_status, from_user_name, to_user_name, note, performed_by)
+                VALUES (?, 'transfer', ?, ?, ?, ?, ?, ?)""",
+                (lid, lead["current_status"], lead["current_status"], old_counselor, counselor_name, note, user.get("sub")))
+    conn.execute(f"UPDATE counselor_leads SET counselor_name = ?, counselor_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
+                 [counselor_name, assigned_to] + ids)
+    conn.commit()
+    conn.close()
+    return {"message": f"Transferred {len(ids)} leads to {counselor_name}"}
+
+
+@router.post("/counselor-leads/auto-assign")
+async def auto_assign_counselor_leads(user: dict = Depends(get_current_user)):
+    """Auto-assign unassigned counselor leads to counselors round-robin."""
+    conn = get_db()
+    role = user.get("role", "")
+    # Get counselors based on role
+    if role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
+        if not center:
+            conn.close()
+            return {"message": "No center found"}
+        counselors = conn.execute("SELECT id, name FROM counselors WHERE center_id = ?", (center["id"],)).fetchall()
+        unassigned = conn.execute("SELECT id FROM counselor_leads WHERE (counselor_name IS NULL OR counselor_name = '') AND center_id = ?", (center["id"],)).fetchall()
+    else:
+        counselors = conn.execute("SELECT id, name FROM counselors WHERE center_id IS NULL").fetchall()
+        unassigned = conn.execute("SELECT id FROM counselor_leads WHERE (counselor_name IS NULL OR counselor_name = '') AND center_id IS NULL").fetchall()
+
+    if not counselors:
+        conn.close()
+        return {"message": "No counselors found. Add counselors first."}
+    if not unassigned:
+        conn.close()
+        return {"message": "No unassigned leads to distribute."}
+
+    for i, lead in enumerate(unassigned):
+        c = counselors[i % len(counselors)]
+        conn.execute("UPDATE counselor_leads SET counselor_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                     (c["name"], lead["id"]))
+    conn.commit()
+    conn.close()
+    return {"message": f"Auto-assigned {len(unassigned)} leads to {len(counselors)} counselors"}
+
+
+@router.delete("/counselor-leads/bulk")
+async def bulk_delete_counselor_leads(data: dict, user: dict = Depends(get_current_user)):
+    """Bulk delete counselor leads."""
+    ids = data.get("ids", [])
+    if not ids:
+        raise HTTPException(status_code=400, detail="No IDs provided")
+    conn = get_db()
+    placeholders = ",".join(["?"] * len(ids))
+    conn.execute(f"DELETE FROM counselor_lead_history WHERE lead_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM counselor_lead_follow_ups WHERE lead_id IN ({placeholders})", ids)
+    conn.execute(f"DELETE FROM counselor_leads WHERE id IN ({placeholders})", ids)
+    conn.commit()
+    conn.close()
+    return {"message": f"Deleted {len(ids)} leads"}
+
+
+@router.get("/counselor-leads/{lead_id}/follow-ups")
+async def get_counselor_lead_followups(lead_id: int, user: dict = Depends(get_current_user)):
+    """Get follow-ups for a counselor lead."""
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM counselor_lead_follow_ups WHERE lead_id = ? ORDER BY created_at DESC", (lead_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@router.post("/counselor-leads/{lead_id}/follow-up")
+async def add_counselor_lead_followup(lead_id: int, data: dict, user: dict = Depends(get_current_user)):
+    """Add a follow-up to a counselor lead."""
+    conn = get_db()
+    note = data.get("note", "")
+    follow_up_type = data.get("follow_up_type", "call")
+    next_follow_up = data.get("next_follow_up", "")
+    conn.execute("INSERT INTO counselor_lead_follow_ups (lead_id, note, follow_up_type, next_follow_up, created_by) VALUES (?, ?, ?, ?, ?)",
+                 (lead_id, note, follow_up_type, next_follow_up, user.get("sub")))
+    # Update lead's follow-up date if next_follow_up provided
+    if next_follow_up:
+        conn.execute("UPDATE counselor_leads SET followup_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (next_follow_up, lead_id))
+    conn.commit()
+    conn.close()
+    return {"message": "Follow-up added"}
+
+
+@router.get("/counselor-leads/{lead_id}/history")
+async def get_counselor_lead_history(lead_id: int, user: dict = Depends(get_current_user)):
+    """Get history for a counselor lead."""
+    conn = get_db()
+    rows = conn.execute("""SELECT h.*, u.name as performed_by_name
+        FROM counselor_lead_history h
+        LEFT JOIN users u ON h.performed_by = u.id
+        WHERE h.lead_id = ? ORDER BY h.created_at DESC""", (lead_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@router.get("/counselor-leads/counselors-list")
+async def get_counselor_leads_counselors(user: dict = Depends(get_current_user)):
+    """Get list of users for transfer dropdown (counselors + admins)."""
+    conn = get_db()
+    rows = conn.execute("SELECT id, name, email, role FROM users WHERE role IN ('admin', 'super_admin', 'branch_admin', 'center') ORDER BY name").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # ══════════════════════════════════════════════════════════════════
