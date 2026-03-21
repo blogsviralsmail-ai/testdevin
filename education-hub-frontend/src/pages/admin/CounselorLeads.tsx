@@ -616,7 +616,7 @@ export default function AdminCounselorLeads() {
                 </td>
               </tr>
             ))}
-            {leads.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-gray-500">No leads found</td></tr>}
+            {leads.length === 0 && <tr><td colSpan={11} className="text-center py-8 text-gray-500">No leads found</td></tr>}
           </tbody>
         </table>
       </div>
