@@ -629,6 +629,23 @@ async def create_razorpay_order(data: dict, user: dict = Depends(get_current_use
     
     amount_paise = round(float(amount) * 100)  # Razorpay uses paise
     
+    # Cleanup abandoned Razorpay order entries older than 24 hours
+    try:
+        stale_rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE 'rzp_order_%'").fetchall()
+        now_ts = datetime.now().timestamp()
+        for row in stale_rows:
+            try:
+                order_data_stored = json.loads(row["value"])
+                created_ts = order_data_stored.get("created_at", 0)
+                if created_ts and (now_ts - created_ts) > 86400:  # 24 hours
+                    conn.execute("DELETE FROM settings WHERE key = ?", (row["key"],))
+            except (json.JSONDecodeError, TypeError):
+                # Malformed entry — delete it
+                conn.execute("DELETE FROM settings WHERE key = ?", (row["key"],))
+        conn.commit()
+    except Exception as e:
+        print(f"[Razorpay] Cleanup error: {e}")
+    
     try:
         import razorpay
         client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
@@ -643,10 +660,10 @@ async def create_razorpay_order(data: dict, user: dict = Depends(get_current_use
             }
         }
         order = client.order.create(data=order_data)
-        # Store order amount + student_id server-side for verification later
+        # Store order amount + student_id + timestamp server-side for verification later
         conn.execute(
             "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-            (f"rzp_order_{order['id']}", json.dumps({"amount": amount_paise, "student_id": student["id"]}))
+            (f"rzp_order_{order['id']}", json.dumps({"amount": amount_paise, "student_id": student["id"], "created_at": datetime.now().timestamp()}))
         )
         conn.commit()
         conn.close()

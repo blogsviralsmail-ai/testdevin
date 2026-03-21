@@ -616,24 +616,34 @@ async def bulk_upload(data: dict, user: dict = Depends(require_admin)):
     created = 0
     import sqlite3
     for s in students:
-        max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
-        next_num = (max_row[0] or 1000) + 1
-        enrollment_no = f"EDU{str(next_num).zfill(6)}"
         # Build dynamic insert with all provided fields
-        field_names = ["enrollment_no"]
-        field_values = [enrollment_no]
+        base_field_names = []
+        base_field_values = []
         for f in ALL_FIELDS:
             if f in s and s[f] is not None and s[f] != "":
-                field_names.append(f)
-                field_values.append(s[f])
+                base_field_names.append(f)
+                base_field_values.append(s[f])
         # Ensure status is set
-        if "status" not in field_names:
-            field_names.append("status")
-            field_values.append("active")
-        placeholders = ", ".join(["?"] * len(field_names))
-        names_str = ", ".join(field_names)
-        conn.execute(f"INSERT INTO students ({names_str}) VALUES ({placeholders})", field_values)
-        created += 1
+        if "status" not in base_field_names:
+            base_field_names.append("status")
+            base_field_values.append("active")
+        # Retry loop for enrollment number collision (matches create_student / admin_add_student pattern)
+        for _attempt in range(5):
+            max_row = conn.execute("SELECT MAX(CAST(SUBSTR(enrollment_no, 4) AS INTEGER)) FROM students").fetchone()
+            next_num = (max_row[0] or 1000) + 1
+            enrollment_no = f"EDU{str(next_num).zfill(6)}"
+            field_names = ["enrollment_no"] + base_field_names
+            field_values = [enrollment_no] + base_field_values
+            placeholders = ", ".join(["?"] * len(field_names))
+            names_str = ", ".join(field_names)
+            try:
+                conn.execute(f"INSERT INTO students ({names_str}) VALUES ({placeholders})", field_values)
+                created += 1
+                break
+            except sqlite3.IntegrityError:
+                continue
+        else:
+            print(f"[BulkUpload] Skipped student {s.get('name', 'unknown')} - could not generate unique enrollment number after 5 attempts")
     conn.commit()
     conn.close()
     return {"message": f"{created} students uploaded successfully"}
