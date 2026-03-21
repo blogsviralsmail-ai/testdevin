@@ -191,6 +191,11 @@ def provision_tenant(
     from app.utils.auth import hash_password
     from app.database import init_db
 
+    # Validate admin username BEFORE any provisioning to avoid partial state
+    admin_username = admin_email or admin_phone
+    if not admin_username:
+        raise ValueError("Either admin_email or admin_phone must be provided for tenant admin login")
+
     # 1. Create tenant record in master DB
     conn = get_master_db()
     try:
@@ -229,10 +234,7 @@ def provision_tenant(
     # 4. Update tenant admin credentials in tenant DB
     tenant_conn = sqlite3.connect(tenant_db_path)
     tenant_conn.row_factory = sqlite3.Row
-    # Update the default seeded admin with tenant-specific info
-    admin_username = admin_email or admin_phone
-    if not admin_username:
-        raise ValueError("Either admin_email or admin_phone must be provided for tenant admin login")
+    # Update the default seeded admin with tenant-specific info (already validated above)
     tenant_conn.execute(
         "UPDATE users SET username = ?, email = ?, password_hash = ?, name = ?, phone = ? WHERE username = 'admin'",
         (admin_username, admin_email, hash_password(admin_password), admin_name, admin_phone),

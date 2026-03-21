@@ -45,9 +45,20 @@ def get_current_user(authorization: str = Header(None), x_auth_token: str = Head
 ADMIN_ROLES = ("admin", "super_admin", "branch_admin")
 
 def require_admin(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ADMIN_ROLES:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return current_user
+    role = current_user.get("role")
+    if role in ADMIN_ROLES:
+        return current_user
+    # Check if it's a custom role from the roles table
+    from app.database import get_db
+    conn = get_db()
+    try:
+        role_row = conn.execute("SELECT id FROM roles WHERE name = ? AND status = 'active'", (role,)).fetchone()
+    except Exception:
+        role_row = None
+    conn.close()
+    if role_row:
+        return current_user
+    raise HTTPException(status_code=403, detail="Admin access required")
 
 def require_only_admin(current_user: dict = Depends(get_current_user)):
     """Only super_admin and admin can access - NOT branch_admin/employee."""
