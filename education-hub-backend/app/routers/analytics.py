@@ -478,22 +478,34 @@ async def bulk_send_whatsapp(data: dict, user: dict = Depends(require_admin)):
     return {"recipients": recipients, "count": len(recipients)}
 
 # ==================== BACKUP & RESTORE ====================
+def _get_current_db_path():
+    """Get the current database path, tenant-aware. Falls back to main DB_PATH."""
+    try:
+        from app.tenant import current_tenant_db_path
+        tenant_db = current_tenant_db_path.get()
+        if tenant_db:
+            return tenant_db
+    except (ImportError, LookupError):
+        pass
+    from app.database import DB_PATH
+    return DB_PATH
+
 @router.get("/backup")
 async def create_backup(user: dict = Depends(require_admin)):
-    from app.database import DB_PATH
-    backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+    db_path = _get_current_db_path()
+    backup_dir = os.path.join(os.path.dirname(db_path), "backups")
     os.makedirs(backup_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_filename = f"eduhub_backup_{timestamp}.db"
     backup_path = os.path.join(backup_dir, backup_filename)
-    shutil.copy2(DB_PATH, backup_path)
+    shutil.copy2(db_path, backup_path)
     file_size = os.path.getsize(backup_path)
     return {"message": "Backup created successfully", "filename": backup_filename, "size": file_size, "size_mb": round(file_size / (1024*1024), 2), "created_at": datetime.now().isoformat()}
 
 @router.get("/backup/download")
 async def download_backup(user: dict = Depends(require_admin)):
-    from app.database import DB_PATH
-    backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+    db_path = _get_current_db_path()
+    backup_dir = os.path.join(os.path.dirname(db_path), "backups")
     if not os.path.exists(backup_dir):
         raise HTTPException(status_code=404, detail="No backups found")
     backups = sorted([f for f in os.listdir(backup_dir) if f.endswith(".db")], reverse=True)
@@ -506,8 +518,8 @@ async def download_backup(user: dict = Depends(require_admin)):
 
 @router.get("/backup/list")
 async def list_backups(user: dict = Depends(require_admin)):
-    from app.database import DB_PATH
-    backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+    db_path = _get_current_db_path()
+    backup_dir = os.path.join(os.path.dirname(db_path), "backups")
     if not os.path.exists(backup_dir):
         return []
     backups = []
@@ -520,25 +532,25 @@ async def list_backups(user: dict = Depends(require_admin)):
 
 @router.post("/backup/restore")
 async def restore_backup(data: dict, user: dict = Depends(require_admin)):
-    from app.database import DB_PATH
+    db_path = _get_current_db_path()
     filename = data.get("filename", "")
     if not filename or "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
-    backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+    backup_dir = os.path.join(os.path.dirname(db_path), "backups")
     backup_path = os.path.join(backup_dir, filename)
     if not os.path.exists(backup_path):
         raise HTTPException(status_code=404, detail="Backup file not found")
     safety_backup = os.path.join(backup_dir, f"pre_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db")
-    shutil.copy2(DB_PATH, safety_backup)
-    shutil.copy2(backup_path, DB_PATH)
+    shutil.copy2(db_path, safety_backup)
+    shutil.copy2(backup_path, db_path)
     return {"message": f"Database restored from {filename}. Safety backup: {os.path.basename(safety_backup)}"}
 
 @router.delete("/backup/{filename}")
 async def delete_backup(filename: str, user: dict = Depends(require_admin)):
     if not filename or "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
-    from app.database import DB_PATH
-    backup_dir = os.path.join(os.path.dirname(DB_PATH), "backups")
+    db_path = _get_current_db_path()
+    backup_dir = os.path.join(os.path.dirname(db_path), "backups")
     backup_path = os.path.join(backup_dir, filename)
     if not os.path.exists(backup_path):
         raise HTTPException(status_code=404, detail="Backup file not found")
