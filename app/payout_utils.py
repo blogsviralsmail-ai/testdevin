@@ -17,7 +17,8 @@ IST = timezone(timedelta(hours=5, minutes=30))
 def get_payout_config(db):
     """Get payout API configuration from settings.
     Returns dict with keys: enabled, api_key, api_secret, account_number
-    Returns None if payout API is not configured.
+    Returns None if payout API is not enabled.
+    Returns dict with enabled=True but incomplete=True if enabled but credentials missing.
     """
     # Check if auto-payout is enabled
     enabled_row = db.execute("SELECT value FROM settings WHERE key='auto_payout_enabled'").fetchone()
@@ -29,18 +30,28 @@ def get_payout_config(db):
     api_secret_row = db.execute("SELECT value FROM settings WHERE key='payout_api_secret'").fetchone()
     account_row = db.execute("SELECT value FROM settings WHERE key='payout_account_number'").fetchone()
 
-    if not api_key_row or not api_secret_row or not account_row:
-        return None
-
-    api_key = (api_key_row["value"] or "").strip()
-    api_secret = (api_secret_row["value"] or "").strip()
-    account_number = (account_row["value"] or "").strip()
+    api_key = ((api_key_row["value"] if api_key_row else "") or "").strip()
+    api_secret = ((api_secret_row["value"] if api_secret_row else "") or "").strip()
+    account_number = ((account_row["value"] if account_row else "") or "").strip()
 
     if not api_key or not api_secret or not account_number:
-        return None
+        # Auto-payout is ON but credentials are incomplete
+        missing = []
+        if not api_key:
+            missing.append("API Key")
+        if not api_secret:
+            missing.append("API Secret")
+        if not account_number:
+            missing.append("Account Number")
+        return {
+            "enabled": True,
+            "incomplete": True,
+            "missing": missing,
+        }
 
     return {
         "enabled": True,
+        "incomplete": False,
         "api_key": api_key,
         "api_secret": api_secret,
         "account_number": account_number,
@@ -213,11 +224,20 @@ def attempt_auto_payout(db, withdrawal_id: int, user_id: int, net_amount: float,
     config = get_payout_config(db)
 
     if not config:
-        # No payout API configured - manual processing by admin
+        # Auto-payout not enabled - manual processing by admin
         return {
             "auto": False,
             "success": True,
             "message": "Withdrawal request submitted. Admin will process it manually.",
+        }
+
+    if config.get("incomplete"):
+        # Auto-payout is ON but credentials are missing
+        missing_str = ", ".join(config.get("missing", []))
+        return {
+            "auto": False,
+            "success": True,
+            "message": f"Auto-payout is enabled but RazorpayX credentials are incomplete (missing: {missing_str}). Withdrawal submitted for manual processing. Please ask admin to complete payout API configuration.",
         }
 
     # Get user details for payout

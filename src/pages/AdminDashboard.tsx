@@ -2148,10 +2148,16 @@ export default function AdminDashboard() {
                         <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all ${payoutConfig.auto_payout_enabled === '1' ? 'right-1' : 'left-1'}`} />
                       </button>
                     </div>
-                    {payoutConfig.auto_payout_enabled === '1' && (
+                    {payoutConfig.auto_payout_enabled === '1' && (payoutConfig.payout_api_key || '').trim() && (payoutConfig.payout_account_number || '').trim() && ((payoutConfig.payout_api_secret || '').trim() || (payoutConfig.payout_api_secret_masked || '').trim()) && (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-700">
                         <p className="font-semibold">Auto-payout is ON</p>
                         <p>Withdrawals with verified KYC will be processed instantly via RazorpayX.</p>
+                      </div>
+                    )}
+                    {payoutConfig.auto_payout_enabled === '1' && (!(payoutConfig.payout_api_key || '').trim() || !(payoutConfig.payout_account_number || '').trim() || (!(payoutConfig.payout_api_secret || '').trim() && !(payoutConfig.payout_api_secret_masked || '').trim())) && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+                        <p className="font-semibold">Auto-payout is ON but credentials are incomplete!</p>
+                        <p>Please fill in API Key, API Secret, and Account Number below. Without these, withdrawals will fall back to manual pending mode.</p>
                       </div>
                     )}
                     {payoutConfig.auto_payout_enabled !== '1' && (
@@ -2184,6 +2190,15 @@ export default function AdminDashboard() {
                     </div>
                     {/* Save Button */}
                     <button disabled={savingPayoutConfig} onClick={async () => {
+                      if (payoutConfig.auto_payout_enabled === '1') {
+                        const hasKey = (payoutConfig.payout_api_key || '').trim();
+                        const hasSecret = (payoutConfig.payout_api_secret || '').trim() || (payoutConfig.payout_api_secret_masked || '').trim();
+                        const hasAccount = (payoutConfig.payout_account_number || '').trim();
+                        if (!hasKey || !hasSecret || !hasAccount) {
+                          alert('Auto-payout is enabled but API credentials are incomplete. Please fill in API Key, API Secret, and Account Number, or turn off auto-payout.');
+                          return;
+                        }
+                      }
                       setSavingPayoutConfig(true);
                       try {
                         await api.updatePayoutConfig(payoutConfig);
