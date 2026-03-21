@@ -230,9 +230,12 @@ def provision_tenant(
     tenant_conn = sqlite3.connect(tenant_db_path)
     tenant_conn.row_factory = sqlite3.Row
     # Update the default seeded admin with tenant-specific info
+    admin_username = admin_email or admin_phone
+    if not admin_username:
+        raise ValueError("Either admin_email or admin_phone must be provided for tenant admin login")
     tenant_conn.execute(
         "UPDATE users SET username = ?, email = ?, password_hash = ?, name = ?, phone = ? WHERE username = 'admin'",
-        (admin_email or admin_phone, admin_email, hash_password(admin_password), admin_name, admin_phone),
+        (admin_username, admin_email, hash_password(admin_password), admin_name, admin_phone),
     )
 
     # 5. Set tenant-specific settings
