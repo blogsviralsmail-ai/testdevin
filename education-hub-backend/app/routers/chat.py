@@ -43,6 +43,16 @@ async def list_conversations(user: dict = Depends(get_current_user)):
 async def get_messages(cid: int, user: dict = Depends(get_current_user)):
     conn = get_db()
     uid = int(user["sub"])
+    role = user.get("role", "")
+    
+    # Authorization: verify user is a participant
+    conv = conn.execute("SELECT student_user_id, admin_user_id FROM conversations WHERE id = ?", (cid,)).fetchone()
+    if not conv:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if role == "student" and uid != conv["student_user_id"] and uid != conv["admin_user_id"]:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized to access this conversation")
     
     # Mark messages as read
     conn.execute("UPDATE chat_messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ?", (cid, uid))
@@ -108,10 +118,20 @@ async def create_conversation(data: dict, user: dict = Depends(get_current_user)
 async def send_message(cid: int, data: dict, user: dict = Depends(get_current_user)):
     conn = get_db()
     uid = int(user["sub"])
+    role = user.get("role", "")
     msg = data.get("message", "")
     if not msg:
         conn.close()
         raise HTTPException(status_code=400, detail="Message required")
+    
+    # Authorization: verify user is a participant
+    conv = conn.execute("SELECT student_user_id, admin_user_id FROM conversations WHERE id = ?", (cid,)).fetchone()
+    if not conv:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if role == "student" and uid != conv["student_user_id"] and uid != conv["admin_user_id"]:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized to send messages in this conversation")
     
     conn.execute(
         "INSERT INTO chat_messages (conversation_id, sender_id, message) VALUES (?, ?, ?)",

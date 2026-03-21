@@ -90,6 +90,29 @@ async def get_ticket(tid: int, user: dict = Depends(get_current_user)):
 @router.get("/tickets/{tid}/messages")
 async def get_ticket_messages(tid: int, user: dict = Depends(get_current_user)):
     conn = get_db()
+    uid = int(user["sub"])
+    role = user.get("role", "")
+    
+    # Authorization: verify user owns this ticket or is admin/center
+    ticket = conn.execute("SELECT student_id FROM tickets WHERE id = ?", (tid,)).fetchone()
+    if not ticket:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if role == "student":
+        student = conn.execute("SELECT id FROM students WHERE user_id = ?", (uid,)).fetchone()
+        if not student or student["id"] != ticket["student_id"]:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Not authorized to view this ticket")
+    elif role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (uid,)).fetchone()
+        if center:
+            from app.routers.centers import get_center_and_subcenter_ids
+            center_ids = get_center_and_subcenter_ids(conn, center["id"])
+            st = conn.execute("SELECT center_id FROM students WHERE id = ?", (ticket["student_id"],)).fetchone() if ticket["student_id"] else None
+            if not st or st["center_id"] not in center_ids:
+                conn.close()
+                raise HTTPException(status_code=403, detail="Not authorized to view this ticket")
+    
     messages = conn.execute(
         """SELECT tm.*, u.name as sender_name, u.role as sender_type 
            FROM ticket_messages tm JOIN users u ON tm.sender_id = u.id 
