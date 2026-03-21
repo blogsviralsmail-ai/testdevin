@@ -260,14 +260,19 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
         (sid, data.amount, data.transaction_type, data.utr_number, data.account_name, data.payment_mode, description, data.proof_url, data.status)
     )
     tid = cursor.lastrowid
-    # Auto create receipt with prefix from settings (retry loop for race condition)
+    # Auto create receipt only for credit transactions
     branding = _get_branding_for_student(conn, sid)
     prefix = branding.get("receipt_prefix", "ASFF")
-    receipt_no = _generate_receipt_no(conn, prefix, tid, sid, data.amount)
+    receipt_no = None
+    if data.transaction_type == "credit":
+        receipt_no = _generate_receipt_no(conn, prefix, tid, sid, data.amount)
     # Update fee record
     fee = conn.execute("SELECT * FROM fee_records WHERE student_id = ?", (sid,)).fetchone()
     if fee:
-        new_paid = fee["paid_amount"] + data.amount
+        if data.transaction_type == "credit":
+            new_paid = fee["paid_amount"] + data.amount
+        else:
+            new_paid = fee["paid_amount"] - data.amount
         conn.execute("UPDATE fee_records SET paid_amount=?, pending_amount=total_fee-?, last_utr=?, account_name=? WHERE student_id=?",
                      (new_paid, new_paid, data.utr_number, data.account_name, sid))
     conn.commit()
@@ -282,16 +287,17 @@ async def create_transaction(data: TransactionCreate, user: dict = Depends(get_c
     except Exception as e:
         print(f"Notification error: {e}")
     conn.close()
-    # Send receipt email + WhatsApp (after closing connection to avoid DB lock)
-    notify_conn = None
-    try:
-        notify_conn = get_db()
-        _send_receipt_notifications(notify_conn, sid, receipt_no, data.amount, data.payment_mode, data.utr_number)
-    except Exception as e:
-        print(f"Receipt notification error: {e}")
-    finally:
-        if notify_conn:
-            notify_conn.close()
+    # Send receipt email + WhatsApp only for credit transactions (debit has no receipt)
+    if receipt_no:
+        notify_conn = None
+        try:
+            notify_conn = get_db()
+            _send_receipt_notifications(notify_conn, sid, receipt_no, data.amount, data.payment_mode, data.utr_number)
+        except Exception as e:
+            print(f"Receipt notification error: {e}")
+        finally:
+            if notify_conn:
+                notify_conn.close()
     return {"id": tid, "receipt_no": receipt_no, "message": "Transaction recorded"}
 
 @router.get("/receipts")
