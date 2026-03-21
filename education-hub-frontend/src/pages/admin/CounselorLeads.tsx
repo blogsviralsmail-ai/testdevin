@@ -138,11 +138,14 @@ export default function AdminCounselorLeads() {
     catch (err: any) { alert(err.response?.data?.detail || "Error deleting"); }
   };
 
-  const openConvertModal = (lead: any) => {
-    setConvertLead(lead);
+  const openConvertModal = (lead: any, e?: React.MouseEvent) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    // Deep-copy lead data so it won't change if leads list re-renders
+    const leadCopy = JSON.parse(JSON.stringify(lead));
+    setConvertLead(leadCopy);
     setConvertForm({
-      password: "", email: lead.email || "", university_id: lead.university_interest || "",
-      category_id: lead.course_interest || "", total_fees: "",
+      password: "", email: leadCopy.email || "", university_id: leadCopy.university_interest ? String(leadCopy.university_interest) : "",
+      category_id: leadCopy.course_interest ? String(leadCopy.course_interest) : "", total_fees: "",
       admission_type: "FRESH_ADMISSION", gender: "", dob: "", address: "", city: "", state: "",
       pincode: "", aadhar_number: "", category_caste: "", nationality: "Indian",
       mother_name: "", guardian_name: "", guardian_phone: "",
@@ -341,7 +344,7 @@ export default function AdminCounselorLeads() {
                     <div className="flex gap-1 items-center">
                       <button onClick={() => openEdit(l)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit"><Edit2 className="h-4 w-4" /></button>
                       {l.current_status !== "converted" && (
-                        <button onClick={() => openConvertModal(l)} className="px-2 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 font-medium flex items-center gap-1" title="Convert to Admission">
+                        <button onClick={(e) => openConvertModal(l, e)} className="px-2 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 font-medium flex items-center gap-1" title="Convert to Admission">
                           <UserCheck className="h-3.5 w-3.5" /> Convert to Admission
                         </button>
                       )}
