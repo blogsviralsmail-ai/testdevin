@@ -329,7 +329,7 @@ async def create_offline_booking(req: OfflineBookingRequest, user: dict = Depend
         ground = db.execute("SELECT * FROM grounds WHERE id = ? AND owner_id = ?", (req.ground_id, user["user_id"])).fetchone()
         if not ground:
             raise HTTPException(status_code=404, detail="Ground not found or not yours")
-        slot = db.execute("SELECT * FROM slots WHERE id = ? AND status = 'available'", (req.slot_id,)).fetchone()
+        slot = db.execute("SELECT * FROM slots WHERE id = ? AND ground_id = ? AND status = 'available'", (req.slot_id, req.ground_id)).fetchone()
         if not slot:
             raise HTTPException(status_code=400, detail="Slot not available")
 
