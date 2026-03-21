@@ -813,6 +813,18 @@ async def dashboard_stats(user: dict = Depends(require_admin)):
 @router.get("/{sid}/documents")
 async def get_student_documents(sid: int, user: dict = Depends(get_current_user)):
     """Get all documents for a student."""
+    role = user.get("role", "")
+    if role == "student":
+        conn = get_db()
+        student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user.get("sub", 0)),)).fetchone()
+        if not student or student["id"] != sid:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Access denied")
+        rows = conn.execute(
+            "SELECT * FROM documents WHERE student_id = ? ORDER BY created_at DESC", (sid,)
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
     conn = get_db()
     rows = conn.execute(
         "SELECT * FROM documents WHERE student_id = ? ORDER BY created_at DESC", (sid,)
