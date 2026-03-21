@@ -394,7 +394,11 @@ async def owner_cancel_booking(booking_id: str, user: dict = Depends(get_current
 async def rate_user(booking_id: str, req: RateUserRequest, user: dict = Depends(get_current_user)):
     require_role(user, ["owner", "admin"])
     with get_db() as db:
-        booking = db.execute("SELECT * FROM bookings WHERE booking_id = ?", (booking_id,)).fetchone()
+        booking = db.execute(
+            """SELECT b.* FROM bookings b JOIN grounds g ON b.ground_id = g.id
+            WHERE b.booking_id = ? AND g.owner_id = ?""",
+            (booking_id, user["user_id"]),
+        ).fetchone()
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         u = db.execute("SELECT * FROM users WHERE id = ?", (booking["user_id"],)).fetchone()
