@@ -45,6 +45,7 @@ export default function CenterCounselorLeads() {
   const [saving, setSaving] = useState(false);
   const [universities, setUniversities] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
+  const [counselors, setCounselors] = useState<any[]>([]);
   const [form, setForm] = useState({
     name: "", father_name: "", mobile: "", email: "", counselor_name: "",
     current_status: "new", followup_date: "", remarks: "", source: "manual",
@@ -93,6 +94,7 @@ export default function CenterCounselorLeads() {
   useEffect(() => {
     api.get("/api/universities").then(r => setUniversities(r.data.universities || r.data || [])).catch(() => {});
     api.get("/api/categories", { params: { limit: 500 } }).then(r => setCourses(r.data.categories || r.data || [])).catch(() => {});
+    api.get("/api/centers/counselors").then(r => setCounselors(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, []);
 
   const resetForm = () => setForm({
@@ -372,7 +374,7 @@ export default function CenterCounselorLeads() {
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="email@example.com" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Counselor Name</label><input type="text" value={form.counselor_name} onChange={e => setForm({ ...form, counselor_name: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Counselor who handled" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Counselor Name</label><select value={form.counselor_name} onChange={e => setForm({ ...form, counselor_name: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"><option value="">Select Counselor</option>{counselors.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Status</label><select value={form.current_status} onChange={e => setForm({ ...form, current_status: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">{STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
               </div>
               <div className="grid grid-cols-2 gap-3">

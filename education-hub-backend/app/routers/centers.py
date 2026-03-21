@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from app.database import get_db
@@ -2347,6 +2347,73 @@ async def delete_deal_payment(payment_id: int, user: dict = Depends(require_admi
 
 
 # ══════════════════════════════════════════════════════════════════
+#  COUNSELORS MANAGEMENT (per panel)
+# ══════════════════════════════════════════════════════════════════
+
+@router.get("/counselors")
+async def list_counselors(user: dict = Depends(get_current_user)):
+    """List counselors for the current panel. Admin sees admin counselors, center sees center counselors."""
+    role = user.get("role", "")
+    conn = get_db()
+    
+    if role in ("super_admin", "admin", "branch_admin"):
+        rows = conn.execute(
+            "SELECT * FROM counselors WHERE panel_type='admin' AND status='active' ORDER BY name"
+        ).fetchall()
+    elif role == "center":
+        center_id = user.get("center", {}).get("id") if isinstance(user.get("center"), dict) else user.get("center_id")
+        rows = conn.execute(
+            "SELECT * FROM counselors WHERE panel_type='center' AND center_id=? AND status='active' ORDER BY name",
+            (center_id,)
+        ).fetchall()
+    else:
+        rows = []
+    
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@router.post("/counselors")
+async def create_counselor(request: Request, user: dict = Depends(get_current_user)):
+    """Create a counselor for the current panel."""
+    role = user.get("role", "")
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Counselor name is required")
+    
+    conn = get_db()
+    if role in ("super_admin", "admin", "branch_admin"):
+        conn.execute(
+            "INSERT INTO counselors (name, phone, email, panel_type, center_id) VALUES (?, ?, ?, 'admin', NULL)",
+            (name, data.get("phone", ""), data.get("email", ""))
+        )
+    elif role == "center":
+        center_id = user.get("center", {}).get("id") if isinstance(user.get("center"), dict) else user.get("center_id")
+        conn.execute(
+            "INSERT INTO counselors (name, phone, email, panel_type, center_id) VALUES (?, ?, ?, 'center', ?)",
+            (name, data.get("phone", ""), data.get("email", ""), center_id)
+        )
+    else:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    conn.commit()
+    conn.close()
+    return {"message": "Counselor created successfully"}
+
+
+@router.delete("/counselors/{counselor_id}")
+async def delete_counselor(counselor_id: int, user: dict = Depends(get_current_user)):
+    """Delete a counselor."""
+    conn = get_db()
+    conn.execute("DELETE FROM counselors WHERE id=?", (counselor_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Counselor deleted"}
+
+
+# ══════════════════════════════════════════════════════════════════
 #  COUNSELOR LEADS / CRM MODULE
 # ══════════════════════════════════════════════════════════════════
 
@@ -2549,19 +2616,23 @@ async def convert_lead_to_admission(lead_id: int, data: ConvertLeadRequest, user
     role = user.get("role", "admin")
     center_id = lead_data.get("center_id")
 
-    conn.execute(
-        "INSERT INTO users (username, password, role, name, email, phone) VALUES (?, ?, 'student', ?, ?, ?)",
-        (phone, hashed, name, email, phone)
-    )
-    conn.commit()
-    user_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    try:
+        cursor = conn.execute(
+            "INSERT INTO users (username, password_hash, role, name, email, phone) VALUES (?, ?, 'student', ?, ?, ?)",
+            (phone, hashed, name, email, phone)
+        )
+        user_id = cursor.lastrowid
+        conn.commit()
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"User creation failed: {str(e)}")
 
-    # Create student record
+    # Create student record (column names match production DB schema)
     conn.execute("""
-        INSERT INTO students (user_id, name, phone, email, father_name, enrollment_number,
+        INSERT INTO students (user_id, name, phone, email, father_name, enrollment_no,
             university_id, category_id, total_fees, admission_type, status,
-            gender, dob, address, city, state, pincode, aadhar_number,
-            category_caste, nationality, mother_name, guardian_name, guardian_phone,
+            gender, date_of_birth, current_address, current_city, current_state, current_pincode, aadhar_no,
+            category_type, nationality, mother_name, guardian_name, parent_phone,
             tenth_board, tenth_year, tenth_percentage,
             twelfth_board, twelfth_year, twelfth_percentage,
             center_id, counselor_name, admission_source)

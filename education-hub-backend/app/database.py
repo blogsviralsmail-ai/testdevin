@@ -622,6 +622,20 @@ def init_db():
         FOREIGN KEY (performed_by) REFERENCES users(id)
     )""")
 
+    # Counselors table (per panel - admin/center)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS counselors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT,
+        email TEXT,
+        panel_type TEXT NOT NULL DEFAULT 'admin',
+        center_id INTEGER,
+        status TEXT DEFAULT 'active',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (center_id) REFERENCES centers(id)
+    )""")
+
     # Campaigns table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS campaigns (
