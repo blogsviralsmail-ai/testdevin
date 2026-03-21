@@ -43,8 +43,6 @@ def _get_branding(conn) -> dict:
         "receipt_prefix": s.get("receipt_prefix", "ASFF"),
         "receipt_footer": s.get("receipt_footer", "This is a computer generated receipt."),
         "site_tagline": s.get("site_tagline", ""),
-        "whatsapp_api_url": s.get("whatsapp_api_url", ""),
-        "whatsapp_api_key": s.get("whatsapp_api_key", ""),
     }
 
 
@@ -137,9 +135,11 @@ def _send_receipt_notifications(conn, student_id: int, receipt_no: str, amount: 
             except Exception as e:
                 print(f"Receipt email failed: {e}")
 
-        # Send WhatsApp if API configured
-        wa_api_url = branding.get("whatsapp_api_url", "")
-        wa_api_key = branding.get("whatsapp_api_key", "")
+        # Send WhatsApp if API configured (read credentials directly from DB, not from branding dict)
+        settings_rows = conn.execute("SELECT key, value FROM settings WHERE key IN ('whatsapp_api_url', 'whatsapp_api_key')").fetchall()
+        wa_settings = {r["key"]: r["value"] for r in settings_rows}
+        wa_api_url = wa_settings.get("whatsapp_api_url", "")
+        wa_api_key = wa_settings.get("whatsapp_api_key", "")
         if wa_api_url and wa_api_key and summary["phone"]:
             try:
                 import requests
