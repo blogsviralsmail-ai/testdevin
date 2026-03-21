@@ -818,12 +818,22 @@ async def student_statement(phone: str = "", user: dict = Depends(require_admin)
         f"AND (t.deleted_by_admin = 0 OR t.deleted_by_admin IS NULL) "
         f"ORDER BY t.created_at DESC", student_ids
     ).fetchall()
-    all_payments = [dict(p) for p in fee_payments] + [dict(t) for t in transactions]
+    # Get center_fee_payments (payments submitted via center portal)
+    center_fee_payments = []
+    try:
+        center_fee_payments = conn.execute(
+            f"SELECT cfp.id, cfp.amount, cfp.payment_mode, cfp.utr_number, cfp.status, cfp.created_at, NULL as approved_at, cfp.remarks, cfp.proof_url, "
+            f"'center' as source FROM center_fee_payments cfp WHERE cfp.student_id IN ({placeholders}) AND cfp.status='approved' ORDER BY cfp.created_at DESC", student_ids
+        ).fetchall()
+    except Exception:
+        pass
+    all_payments = [dict(p) for p in fee_payments] + [dict(t) for t in transactions] + [dict(c) for c in center_fee_payments]
     all_payments.sort(key=lambda x: x.get("created_at", "") or "", reverse=True)
     # Calculate totals across all matching students
     total_paid_online = sum(p["amount"] for p in fee_payments if p["status"] == "approved")
     total_paid_admin = sum(t["amount"] for t in transactions)
-    total_paid = total_paid_online + total_paid_admin
+    total_paid_center = sum(c["amount"] for c in center_fee_payments)
+    total_paid = total_paid_online + total_paid_admin + total_paid_center
     total_fees = sum(s["total_fees"] or 0 for s in students)
     conn.close()
     return {
