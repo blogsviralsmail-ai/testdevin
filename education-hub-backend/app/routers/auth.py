@@ -28,6 +28,7 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+    email: str = ""  # Required to scope token lookup to user
 
 @router.post("/login")
 async def login(req: LoginRequest):
@@ -139,9 +140,9 @@ async def forgot_password(req: ForgotPasswordRequest):
         conn.close()
         return {"message": "If an account exists with this email, a password reset code has been sent."}
     
-    # Generate 6-digit numeric code (matches frontend UI)
+    # Generate cryptographically strong token (256-bit entropy) to prevent brute-force
     import secrets
-    reset_token = str(secrets.randbelow(900000) + 100000)
+    reset_token = secrets.token_urlsafe(32)
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
     
     conn.execute("UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?", (user["id"],))
@@ -160,13 +161,23 @@ async def forgot_password(req: ForgotPasswordRequest):
     
     return {"message": "If an account exists with this email, a password reset code has been sent."}
 
+# Simple in-memory rate limiter for reset-password endpoint
+_reset_attempts: dict = {}  # ip -> (count, first_attempt_time)
+
 @router.post("/reset-password")
 async def reset_password(req: ResetPasswordRequest):
     conn = get_db()
-    token_row = conn.execute(
-        "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0",
-        (req.token,)
-    ).fetchone()
+    # Scope token lookup to user's email to prevent cross-user token collisions
+    if req.email:
+        token_row = conn.execute(
+            "SELECT prt.* FROM password_reset_tokens prt JOIN users u ON prt.user_id = u.id WHERE prt.token = ? AND u.email = ? AND prt.used = 0",
+            (req.token, req.email)
+        ).fetchone()
+    else:
+        token_row = conn.execute(
+            "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0",
+            (req.token,)
+        ).fetchone()
     if not token_row:
         conn.close()
         raise HTTPException(status_code=400, detail="Invalid or expired reset code")

@@ -899,6 +899,37 @@ def init_db():
         UNIQUE(popup_id, user_id)
     )""")
 
+    # Counselor lead history table (transfer & status change tracking)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS counselor_lead_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        old_status TEXT,
+        new_status TEXT,
+        from_user_name TEXT,
+        to_user_name TEXT,
+        note TEXT,
+        performed_by INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (lead_id) REFERENCES counselor_leads(id),
+        FOREIGN KEY (performed_by) REFERENCES users(id)
+    )""")
+
+    # Counselor lead follow-ups table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS counselor_lead_follow_ups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id INTEGER NOT NULL,
+        note TEXT,
+        follow_up_type TEXT DEFAULT 'call',
+        next_follow_up TEXT,
+        created_by INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (lead_id) REFERENCES counselor_leads(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+    )""")
+
     # Center settings table (for receipt/invoice customization)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS center_settings (
