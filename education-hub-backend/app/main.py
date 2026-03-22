@@ -7,7 +7,8 @@ from app.database import init_db
 from app.tenant import init_master_db, current_tenant_upload_dir, current_tenant_info
 import os
 
-UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/data/uploads")
+_default_upload = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "uploads")
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", _default_upload)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @asynccontextmanager
@@ -33,6 +34,7 @@ from app.middleware import TenantMiddleware
 app.add_middleware(TenantMiddleware)
 
 from app.routers import auth, universities, categories, form_fields, students, exams, accounts, support, documents, branches, settings, enquiries, seed, team, testimonials, roles, blog, gallery, careers, leads, analytics, communication, student_status, notices, chat, placements, centers, popups
+from app.routers import fees_chain, center_roles
 from app.routers import tenants as tenants_router
 
 app.include_router(auth.router)
@@ -63,6 +65,8 @@ app.include_router(chat.router)
 app.include_router(placements.router)
 app.include_router(centers.router)
 app.include_router(popups.router)
+app.include_router(fees_chain.router)
+app.include_router(center_roles.router)
 
 # Platform admin routes (tenant management)
 app.include_router(tenants_router.router)

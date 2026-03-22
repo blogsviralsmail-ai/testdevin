@@ -49,6 +49,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { path: "/center/deal-fees", label: "Deal Fees", icon: Wallet },
       { path: "/center/commission", label: "Commission Report", icon: BarChart3 },
+      { path: "/center/fees-chain", label: "Fees Chain", icon: Building2 },
     ],
   },
   {
@@ -72,6 +73,7 @@ const menuGroups: MenuGroup[] = [
   {
     title: "Settings",
     items: [
+      { path: "/center/roles", label: "Roles & Team", icon: Users },
       { path: "/center/settings", label: "Center Settings", icon: Settings },
     ],
   },
@@ -129,7 +131,7 @@ export default function CenterLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex w-full overflow-x-hidden">
       {activePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={dismissPopup} />
@@ -176,9 +178,9 @@ export default function CenterLayout() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-emerald-900 text-white transform transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[70] w-64 bg-emerald-900 text-white transform transition-transform duration-200 lg:translate-x-0 lg:relative lg:inset-auto ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between h-16 px-4 bg-emerald-800">
-          <Link to="/center" className="flex items-center gap-2">
+          <Link to="/center" className="flex flex-wrap items-center gap-2">
             {siteSettings.navbar_logo_url || siteSettings.logo_url ? (
               <div className="h-10 w-10 rounded-lg overflow-hidden flex-shrink-0 bg-white/10 p-0.5">
                 <img src={(siteSettings.navbar_logo_url || siteSettings.logo_url || "").startsWith("/") ? API + (siteSettings.navbar_logo_url || siteSettings.logo_url) : (siteSettings.navbar_logo_url || siteSettings.logo_url)} alt="Logo" className="h-full w-full object-contain" />
@@ -265,7 +267,7 @@ export default function CenterLayout() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 w-full">
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-600 hover:text-gray-900">
             <Menu className="h-6 w-6" />

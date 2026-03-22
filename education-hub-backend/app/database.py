@@ -1221,6 +1221,83 @@ def init_db():
         FOREIGN KEY (student_id) REFERENCES students(id)
     )""")
 
+    # ── Fees Chain System (SC → Center → Admin → University) ──────────
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS level_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_level TEXT NOT NULL,
+        from_id INTEGER NOT NULL,
+        to_level TEXT NOT NULL,
+        to_id INTEGER,
+        amount REAL NOT NULL DEFAULT 0,
+        payment_mode TEXT DEFAULT 'cash',
+        utr_number TEXT,
+        proof_urls TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'pending',
+        approved_by INTEGER,
+        approved_at TEXT,
+        invoice_number TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )""")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS level_invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoice_number TEXT UNIQUE NOT NULL,
+        from_level TEXT NOT NULL,
+        from_id INTEGER NOT NULL,
+        to_level TEXT NOT NULL,
+        to_id INTEGER,
+        amount REAL NOT NULL DEFAULT 0,
+        items TEXT,
+        status TEXT DEFAULT 'generated',
+        payment_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (payment_id) REFERENCES level_payments(id)
+    )""")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS university_receipts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_id INTEGER NOT NULL,
+        file_url TEXT NOT NULL,
+        file_name TEXT,
+        notes TEXT,
+        uploaded_by INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (payment_id) REFERENCES level_payments(id),
+        FOREIGN KEY (uploaded_by) REFERENCES users(id)
+    )""")
+
+    # ── Center/Sub-center Role Management ──────────────────────────
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS center_roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        center_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        permissions TEXT DEFAULT '{}',
+        status TEXT DEFAULT 'active',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (center_id) REFERENCES centers(id)
+    )""")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS center_role_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        center_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        role_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (center_id) REFERENCES centers(id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (role_id) REFERENCES center_roles(id)
+    )""")
+
+    conn.commit()
+
     # Seed testimonials
     existing_testimonials = conn.execute("SELECT COUNT(*) FROM testimonials").fetchone()[0]
     if existing_testimonials == 0:

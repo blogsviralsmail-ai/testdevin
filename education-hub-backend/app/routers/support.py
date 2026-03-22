@@ -161,6 +161,18 @@ async def update_ticket_status(tid: int, data: dict, user: dict = Depends(get_cu
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+    # Center ownership check
+    if role == "center":
+        ticket = conn.execute("SELECT student_id FROM tickets WHERE id = ?", (tid,)).fetchone()
+        if ticket and ticket["student_id"]:
+            center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+            if center:
+                from app.routers.centers import get_center_and_subcenter_ids
+                center_ids = get_center_and_subcenter_ids(conn, center["id"])
+                st = conn.execute("SELECT center_id FROM students WHERE id = ?", (ticket["student_id"],)).fetchone()
+                if not st or st["center_id"] not in center_ids:
+                    conn.close()
+                    raise HTTPException(status_code=403, detail="Not authorized to update this ticket")
     conn.execute("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (data.get("status"), tid))
     conn.commit()
     conn.close()
@@ -169,8 +181,29 @@ async def update_ticket_status(tid: int, data: dict, user: dict = Depends(get_cu
 @router.post("/tickets/{tid}/messages")
 async def add_ticket_message(tid: int, data: dict, user: dict = Depends(get_current_user)):
     conn = get_db()
+    role = user.get("role", "")
+    uid = int(user["sub"])
+    # Ownership check: students can only message their own tickets, centers only their students' tickets
+    ticket = conn.execute("SELECT student_id FROM tickets WHERE id = ?", (tid,)).fetchone()
+    if not ticket:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if role == "student":
+        student = conn.execute("SELECT id FROM students WHERE user_id = ?", (uid,)).fetchone()
+        if not student or student["id"] != ticket["student_id"]:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Not authorized")
+    elif role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (uid,)).fetchone()
+        if center and ticket["student_id"]:
+            from app.routers.centers import get_center_and_subcenter_ids
+            center_ids = get_center_and_subcenter_ids(conn, center["id"])
+            st = conn.execute("SELECT center_id FROM students WHERE id = ?", (ticket["student_id"],)).fetchone()
+            if not st or st["center_id"] not in center_ids:
+                conn.close()
+                raise HTTPException(status_code=403, detail="Not authorized")
     conn.execute("INSERT INTO ticket_messages (ticket_id, sender_id, message) VALUES (?, ?, ?)",
-                 (tid, int(user["sub"]), data.get("message", "")))
+                 (tid, uid, data.get("message", "")))
     conn.execute("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (tid,))
     conn.commit()
     conn.close()
@@ -204,6 +237,18 @@ async def add_ticket_solution(tid: int, data: dict, user: dict = Depends(get_cur
     if role not in ("admin", "super_admin", "branch_admin", "center"):
         raise HTTPException(status_code=403, detail="Not authorized")
     conn = get_db()
+    # Center ownership check
+    if role == "center":
+        ticket = conn.execute("SELECT student_id FROM tickets WHERE id = ?", (tid,)).fetchone()
+        if ticket and ticket["student_id"]:
+            center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (int(user["sub"]),)).fetchone()
+            if center:
+                from app.routers.centers import get_center_and_subcenter_ids
+                center_ids = get_center_and_subcenter_ids(conn, center["id"])
+                st = conn.execute("SELECT center_id FROM students WHERE id = ?", (ticket["student_id"],)).fetchone()
+                if not st or st["center_id"] not in center_ids:
+                    conn.close()
+                    raise HTTPException(status_code=403, detail="Not authorized to resolve this ticket")
     solution = data.get("solution", "")
     conn.execute("UPDATE tickets SET solution = ?, status = 'resolved', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (solution, tid))
     # Also add as a message

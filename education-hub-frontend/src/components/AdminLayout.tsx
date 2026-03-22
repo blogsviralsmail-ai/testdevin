@@ -9,7 +9,7 @@ import {
   ClipboardList, Wallet, LifeBuoy, FileText, GitBranch,
   Settings, MessageSquare, Menu, X, LogOut, ChevronDown, UsersRound, Star, Shield,
   Upload, Tag, Search, PhoneCall,
-  FileText as BlogIcon, Image, Briefcase, Target, BarChart3, Megaphone, Bell, ChevronRight
+  FileText as BlogIcon, Image, Briefcase, BarChart3, Megaphone, Bell, ChevronRight
 } from "lucide-react";
 
 interface MenuItem {
@@ -32,7 +32,6 @@ const pathToPermission: Record<string, string> = {
   "/admin/exams": "exams",
   "/admin/students": "students",
   "/admin/student-status": "students",
-  "/admin/leads": "enquiries",
   "/admin/counselor-leads": "enquiries",
   "/admin/enquiries": "enquiries",
   "/admin/bulk-upload": "students",
@@ -53,6 +52,7 @@ const pathToPermission: Record<string, string> = {
   "/admin/settings": "settings",
   "/admin/centers": "dashboard",
   "/admin/commission-slabs": "dashboard",
+  "/admin/fees-chain": "accounts",
 };
 
 const menuGroups: MenuGroup[] = [
@@ -76,8 +76,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { path: "/admin/students", label: "Students", icon: Users },
       { path: "/admin/student-status", label: "Student Status", icon: Tag },
-      { path: "/admin/leads", label: "Leads / CRM", icon: Target },
-      { path: "/admin/counselor-leads", label: "Counselor Leads", icon: PhoneCall },
+      { path: "/admin/counselor-leads", label: "Leads / CRM", icon: PhoneCall },
       { path: "/admin/enquiries", label: "Enquiries", icon: MessageSquare },
       { path: "/admin/bulk-upload", label: "Bulk Upload", icon: Upload },
     ],
@@ -86,6 +85,7 @@ const menuGroups: MenuGroup[] = [
     title: "Finance",
     items: [
       { path: "/admin/accounts", label: "Accounts", icon: Wallet },
+      { path: "/admin/fees-chain", label: "Fees Chain", icon: GitBranch },
     ],
   },
   {
@@ -175,11 +175,11 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex w-full overflow-x-hidden">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[70] w-64 bg-slate-900 text-white transform transition-transform duration-200 lg:translate-x-0 lg:relative lg:inset-auto ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between h-16 px-4 bg-slate-800">
-          <Link to="/admin" className="flex items-center gap-2">
+          <Link to="/admin" className="flex flex-wrap items-center gap-2">
             {siteSettings.navbar_logo_url || siteSettings.logo_url ? (
               <div className="h-10 w-10 rounded-lg overflow-hidden flex-shrink-0 bg-white/10 p-0.5">
                 <img src={(siteSettings.navbar_logo_url || siteSettings.logo_url || "").startsWith("/") ? API + (siteSettings.navbar_logo_url || siteSettings.logo_url) : (siteSettings.navbar_logo_url || siteSettings.logo_url)} alt="Logo" className="h-full w-full object-contain" />
@@ -270,7 +270,7 @@ export default function AdminLayout() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 w-full">
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-600 hover:text-gray-900">
             <Menu className="h-6 w-6" />

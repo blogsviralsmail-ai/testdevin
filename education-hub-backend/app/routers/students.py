@@ -148,6 +148,14 @@ async def list_students(
                LEFT JOIN centers pct ON ct.parent_center_id = pct.id
                WHERE 1=1"""
     params = []
+    # Center users can only see students from their own center hierarchy
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        allowed_ids = get_center_and_subcenter_ids(conn, center["id"])
+        placeholders = ",".join("?" * len(allowed_ids))
+        query += f" AND s.center_id IN ({placeholders})"
+        params.extend(allowed_ids)
     if university_id:
         query += " AND s.university_id = ?"
         params.append(university_id)
@@ -288,14 +296,24 @@ async def get_student(sid: int, user: dict = Depends(get_current_user)):
                           LEFT JOIN categories c ON s.category_id = c.id 
                           LEFT JOIN branches b ON s.branch_id = b.id 
                           WHERE s.id = ?""", (sid,)).fetchone()
-    conn.close()
     if not row:
+        conn.close()
         raise HTTPException(status_code=404, detail="Student not found")
-    # Ownership check: students can only view their own record
     role = user.get("role", "")
+    # Ownership check: students can only view their own record
     if role == "student":
         if row["user_id"] != int(user.get("sub", 0)):
+            conn.close()
             raise HTTPException(status_code=403, detail="Access denied")
+    # Center users can only view their own center's students (including sub-centers)
+    elif role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        allowed_ids = get_center_and_subcenter_ids(conn, center["id"])
+        if row["center_id"] not in allowed_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Access denied - student does not belong to your center")
+    conn.close()
     result = dict(row)
     if result.get("form_data"):
         try:
@@ -814,18 +832,20 @@ async def dashboard_stats(user: dict = Depends(require_admin)):
 async def get_student_documents(sid: int, user: dict = Depends(get_current_user)):
     """Get all documents for a student."""
     role = user.get("role", "")
+    conn = get_db()
     if role == "student":
-        conn = get_db()
         student = conn.execute("SELECT id FROM students WHERE user_id = ?", (int(user.get("sub", 0)),)).fetchone()
         if not student or student["id"] != sid:
             conn.close()
             raise HTTPException(status_code=403, detail="Access denied")
-        rows = conn.execute(
-            "SELECT * FROM documents WHERE student_id = ? ORDER BY created_at DESC", (sid,)
-        ).fetchall()
-        conn.close()
-        return [dict(r) for r in rows]
-    conn = get_db()
+    elif role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        allowed_ids = get_center_and_subcenter_ids(conn, center["id"])
+        student_row = conn.execute("SELECT center_id FROM students WHERE id = ?", (sid,)).fetchone()
+        if not student_row or student_row["center_id"] not in allowed_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Access denied - student does not belong to your center")
     rows = conn.execute(
         "SELECT * FROM documents WHERE student_id = ? ORDER BY created_at DESC", (sid,)
     ).fetchall()
@@ -850,6 +870,14 @@ async def lookup_student_by_phone(phone: str, user: dict = Depends(get_current_u
     if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Student not found")
+    # Center users can only look up their own center's students
+    if role == "center":
+        from app.routers.centers import get_current_center, get_center_and_subcenter_ids
+        center = get_current_center(user)
+        allowed_ids = get_center_and_subcenter_ids(conn, center["id"])
+        if row["center_id"] not in allowed_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="Access denied - student does not belong to your center")
     student = dict(row)
     # Also get documents
     docs = conn.execute("SELECT * FROM documents WHERE student_id = ? ORDER BY created_at DESC", (student["id"],)).fetchall()

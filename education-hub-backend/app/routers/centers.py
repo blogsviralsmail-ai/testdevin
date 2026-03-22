@@ -410,6 +410,29 @@ async def list_center_students(
     """List students for a center (and optionally its sub-centers).
     sub_centers_only=true returns ONLY sub-center students (excludes parent center's own students).
     """
+    role = user.get("role", "")
+    # RBAC: Only admin or the center owner (or parent center) can view
+    if role in ("student",):
+        raise HTTPException(status_code=403, detail="Access denied")
+    if role == "center":
+        # Verify requesting center owns or is parent of target center_id
+        my_center = get_current_center(user)
+        conn_check = get_db()
+        allowed = get_center_and_subcenter_ids(conn_check, my_center["id"])
+        conn_check.close()
+        if center_id not in allowed:
+            raise HTTPException(status_code=403, detail="Access denied - not your center")
+    elif role not in ("admin", "super_admin", "branch_admin"):
+        # Custom roles: check if they have admin-level access via require_admin logic
+        from app.database import get_db as _get_db
+        _conn = _get_db()
+        try:
+            role_row = _conn.execute("SELECT id FROM roles WHERE name = ? AND status = 'active'", (role,)).fetchone()
+        except Exception:
+            role_row = None
+        _conn.close()
+        if not role_row:
+            raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
     
     if sub_centers_only:
@@ -2406,7 +2429,18 @@ async def create_counselor(request: Request, user: dict = Depends(get_current_us
 @router.delete("/counselors/{counselor_id}")
 async def delete_counselor(counselor_id: int, user: dict = Depends(get_current_user)):
     """Delete a counselor."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
+    # Center ownership check
+    if role == "center":
+        counselor = conn.execute("SELECT center_id FROM counselors WHERE id = ?", (counselor_id,)).fetchone()
+        if counselor:
+            center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
+            if center and counselor["center_id"] != center["id"]:
+                conn.close()
+                raise HTTPException(status_code=403, detail="Access denied - not your counselor")
     conn.execute("DELETE FROM counselors WHERE id=?", (counselor_id,))
     conn.commit()
     conn.close()
@@ -2426,8 +2460,10 @@ async def list_counselor_leads(
     sort_by: str = "created_at",
     sort_order: str = "desc",
 ):
-    """List counselor leads. Admin sees all, center sees their own."""
+    """List counselor leads. Admin sees all, center sees their own, counselor sees assigned."""
     role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
 
     query = """
@@ -2450,6 +2486,10 @@ async def list_counselor_leads(
         else:
             conn.close()
             return []
+    elif role not in ("admin", "super_admin", "branch_admin"):
+        # Custom role users (counselor etc.) only see leads assigned to them
+        query += " AND cl.counselor_user_id = ?"
+        params.append(int(user.get("sub", 0)))
 
     if search:
         query += " AND (cl.name LIKE ? OR cl.mobile LIKE ? OR cl.email LIKE ? OR cl.counselor_name LIKE ?)"
@@ -2484,6 +2524,8 @@ async def list_counselor_leads(
 async def create_counselor_lead(data: CounselorLeadCreate, user: dict = Depends(get_current_user)):
     """Create a new counselor lead. Auto-fills counselor_name if user is a counselor."""
     role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
 
     center_id = None
@@ -2501,11 +2543,21 @@ async def create_counselor_lead(data: CounselorLeadCreate, user: dict = Depends(
     elif role in ("admin", "super_admin", "branch_admin"):
         center_id = None  # Admin leads are global
 
+    # Resolve counselor_user_id from counselor_name (for auto-assign)
+    counselor_user_id = user.get("sub")  # default to current user
+    if counselor_name:
+        matched = conn.execute(
+            "SELECT id FROM users WHERE (LOWER(name) = ? OR LOWER(username) = ?) AND role NOT IN ('student', 'center')",
+            (counselor_name.strip().lower(), counselor_name.strip().lower())
+        ).fetchone()
+        if matched:
+            counselor_user_id = matched["id"]
+
     conn.execute("""
         INSERT INTO counselor_leads (name, father_name, mobile, email, counselor_name, counselor_user_id,
             current_status, followup_date, remarks, source, university_interest, course_interest, center_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (data.name, data.father_name, data.mobile, data.email, counselor_name, user.get("sub"),
+    """, (data.name, data.father_name, data.mobile, data.email, counselor_name, counselor_user_id,
           data.current_status, data.followup_date, data.remarks, data.source,
           data.university_interest, data.course_interest, center_id))
     conn.commit()
@@ -2525,11 +2577,28 @@ async def create_counselor_lead(data: CounselorLeadCreate, user: dict = Depends(
 @router.put("/counselor-leads/{lead_id}")
 async def update_counselor_lead(lead_id: int, data: CounselorLeadUpdate, user: dict = Depends(get_current_user)):
     """Update a counselor lead."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
     lead = conn.execute("SELECT * FROM counselor_leads WHERE id = ?", (lead_id,)).fetchone()
     if not lead:
         conn.close()
         raise HTTPException(status_code=404, detail="Lead not found")
+    # Center ownership check: center can only update its own leads
+    if role == "center":
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
+        if center:
+            allowed_ids = get_center_and_subcenter_ids(conn, center["id"])
+            if lead["center_id"] not in allowed_ids:
+                conn.close()
+                raise HTTPException(status_code=403, detail="Access denied - not your lead")
+
+    # Custom role users can only update their own assigned leads
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        if lead["counselor_user_id"] != int(user.get("sub", 0)):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Access denied - not your lead")
 
     updates = []
     params: list = []
@@ -2539,6 +2608,17 @@ async def update_counselor_lead(lead_id: int, data: CounselorLeadUpdate, user: d
         if val is not None:
             updates.append(f"{field} = ?")
             params.append(val)
+
+    # When counselor_name changes, also update counselor_user_id
+    new_counselor_name = getattr(data, "counselor_name", None)
+    if new_counselor_name:
+        matched = conn.execute(
+            "SELECT id FROM users WHERE (LOWER(name) = ? OR LOWER(username) = ?) AND role NOT IN ('student', 'center')",
+            (new_counselor_name.strip().lower(), new_counselor_name.strip().lower())
+        ).fetchone()
+        if matched:
+            updates.append("counselor_user_id = ?")
+            params.append(matched["id"])
 
     if updates:
         updates.append("updated_at = CURRENT_TIMESTAMP")
@@ -2552,7 +2632,20 @@ async def update_counselor_lead(lead_id: int, data: CounselorLeadUpdate, user: d
 @router.delete("/counselor-leads/{lead_id}")
 async def delete_counselor_lead(lead_id: int, user: dict = Depends(get_current_user)):
     """Delete a counselor lead."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
+    # Center ownership check
+    if role == "center":
+        lead = conn.execute("SELECT center_id FROM counselor_leads WHERE id = ?", (lead_id,)).fetchone()
+        if lead:
+            center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
+            if center:
+                allowed_ids = get_center_and_subcenter_ids(conn, center["id"])
+                if lead["center_id"] not in allowed_ids:
+                    conn.close()
+                    raise HTTPException(status_code=403, detail="Access denied - not your lead")
     conn.execute("DELETE FROM counselor_leads WHERE id = ?", (lead_id,))
     conn.commit()
     conn.close()
@@ -2589,15 +2682,18 @@ class ConvertLeadRequest(BaseModel):
 @router.post("/counselor-leads/{lead_id}/convert")
 async def convert_lead_to_admission(lead_id: int, data: ConvertLeadRequest, user: dict = Depends(get_current_user)):
     """Convert a counselor lead to a student admission. Creates user account + student record."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Only admin/center users can convert leads")
     conn = get_db()
     lead = conn.execute("SELECT * FROM counselor_leads WHERE id = ?", (lead_id,)).fetchone()
     if not lead:
         conn.close()
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    if lead["current_status"] == "converted":
+    if lead["current_status"] in ("converted", "admitted"):
         conn.close()
-        raise HTTPException(status_code=400, detail="Lead already converted")
+        raise HTTPException(status_code=400, detail="Lead already converted/admitted")
 
     lead_data = dict(lead)
     phone = lead_data["mobile"]
@@ -2655,8 +2751,8 @@ async def convert_lead_to_admission(lead_id: int, data: ConvertLeadRequest, user
     conn.commit()
     student_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
-    # Mark lead as converted
-    conn.execute("UPDATE counselor_leads SET current_status = 'converted', converted_to_student_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (student_id, lead_id))
+    # Mark lead as admitted (student created)
+    conn.execute("UPDATE counselor_leads SET current_status = 'admitted', converted_to_student_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (student_id, lead_id))
     conn.commit()
 
     # Auto-create deal if center admission
@@ -2690,6 +2786,8 @@ async def convert_lead_to_admission(lead_id: int, data: ConvertLeadRequest, user
 async def bulk_import_counselor_leads(user: dict = Depends(get_current_user), leads: List[dict] = []):
     """Bulk import counselor leads from CSV/paste data."""
     role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
 
     center_id = None
@@ -2697,6 +2795,18 @@ async def bulk_import_counselor_leads(user: dict = Depends(get_current_user), le
         center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
         if center:
             center_id = center["id"]
+
+    # Build counselor name → user_id lookup for auto-assign
+    counselor_lookup = {}
+    try:
+        counselors = conn.execute("SELECT id, name, username FROM users WHERE role NOT IN ('student', 'center')").fetchall()
+        for c in counselors:
+            if c["name"]:
+                counselor_lookup[c["name"].strip().lower()] = c["id"]
+            if c["username"]:
+                counselor_lookup[c["username"].strip().lower()] = c["id"]
+    except Exception:
+        pass
 
     imported = 0
     errors = []
@@ -2707,13 +2817,21 @@ async def bulk_import_counselor_leads(user: dict = Depends(get_current_user), le
             errors.append(f"Row {i+1}: Name and Mobile are required")
             continue
         try:
+            counselor_name = (lead.get("counselor_name") or "").strip()
+            # Auto-assign counselor_user_id based on counselor_name
+            counselor_user_id = user.get("sub")  # default to uploader
+            if counselor_name:
+                matched_id = counselor_lookup.get(counselor_name.lower())
+                if matched_id:
+                    counselor_user_id = matched_id
+
             conn.execute("""
                 INSERT INTO counselor_leads (name, father_name, mobile, email, counselor_name, counselor_user_id,
                     current_status, followup_date, remarks, source, university_interest, course_interest, center_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 name, lead.get("father_name", ""), mobile, lead.get("email", ""),
-                lead.get("counselor_name", ""), user.get("sub"),
+                counselor_name, counselor_user_id,
                 lead.get("current_status", "new"), lead.get("followup_date", ""),
                 lead.get("remarks", ""), lead.get("source", "manual"),
                 lead.get("university_interest", ""), lead.get("course_interest", ""),
@@ -2732,6 +2850,8 @@ async def bulk_import_counselor_leads(user: dict = Depends(get_current_user), le
 async def counselor_lead_stats(user: dict = Depends(get_current_user)):
     """Get counselor lead statistics."""
     role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
 
     where = "WHERE 1=1"
@@ -2743,10 +2863,14 @@ async def counselor_lead_stats(user: dict = Depends(get_current_user)):
             placeholders = ",".join(["?"] * len(all_ids))
             where += f" AND center_id IN ({placeholders})"
             params += all_ids
+    elif role not in ("admin", "super_admin", "branch_admin"):
+        # Custom role users only see stats for their assigned leads
+        where += " AND counselor_user_id = ?"
+        params.append(int(user.get("sub", 0)))
 
     total = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where}", params).fetchone()[0]
     statuses = {}
-    for status in ["new", "contacted", "interested", "qualified", "negotiation", "converted", "lost",
+    for status in ["new", "contacted", "interested", "qualified", "negotiation", "converted", "admitted", "lost",
                     "followup", "callback", "not_picked", "not_interested", "closed"]:
         count = conn.execute(f"SELECT COUNT(*) FROM counselor_leads {where} AND current_status = ?", params + [status]).fetchone()[0]
         statuses[status] = count
@@ -2768,6 +2892,9 @@ async def counselor_lead_stats(user: dict = Depends(get_current_user)):
 @router.put("/counselor-leads/transfer")
 async def transfer_counselor_leads(data: dict, user: dict = Depends(get_current_user)):
     """Transfer selected counselor leads to another counselor."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     ids = data.get("ids", [])
     assigned_to = data.get("assigned_to")
     note = data.get("note", "")
@@ -2796,8 +2923,10 @@ async def transfer_counselor_leads(data: dict, user: dict = Depends(get_current_
 @router.post("/counselor-leads/auto-assign")
 async def auto_assign_counselor_leads(user: dict = Depends(get_current_user)):
     """Auto-assign unassigned counselor leads to counselors round-robin."""
-    conn = get_db()
     role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
+    conn = get_db()
     # Get counselors based on role
     if role == "center":
         center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
@@ -2829,6 +2958,9 @@ async def auto_assign_counselor_leads(user: dict = Depends(get_current_user)):
 @router.delete("/counselor-leads/bulk")
 async def bulk_delete_counselor_leads(data: dict, user: dict = Depends(get_current_user)):
     """Bulk delete counselor leads."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     ids = data.get("ids", [])
     if not ids:
         raise HTTPException(status_code=400, detail="No IDs provided")
@@ -2845,6 +2977,8 @@ async def bulk_delete_counselor_leads(data: dict, user: dict = Depends(get_curre
 @router.get("/counselor-leads/{lead_id}/follow-ups")
 async def get_counselor_lead_followups(lead_id: int, user: dict = Depends(get_current_user)):
     """Get follow-ups for a counselor lead."""
+    if user.get("role") == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
     rows = conn.execute("SELECT * FROM counselor_lead_follow_ups WHERE lead_id = ? ORDER BY created_at DESC", (lead_id,)).fetchall()
     conn.close()
@@ -2854,6 +2988,8 @@ async def get_counselor_lead_followups(lead_id: int, user: dict = Depends(get_cu
 @router.post("/counselor-leads/{lead_id}/follow-up")
 async def add_counselor_lead_followup(lead_id: int, data: dict, user: dict = Depends(get_current_user)):
     """Add a follow-up to a counselor lead."""
+    if user.get("role") == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
     note = data.get("note", "")
     follow_up_type = data.get("follow_up_type", "call")
@@ -2871,6 +3007,8 @@ async def add_counselor_lead_followup(lead_id: int, data: dict, user: dict = Dep
 @router.get("/counselor-leads/{lead_id}/history")
 async def get_counselor_lead_history(lead_id: int, user: dict = Depends(get_current_user)):
     """Get history for a counselor lead."""
+    if user.get("role") == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
     rows = conn.execute("""SELECT h.*, u.name as performed_by_name
         FROM counselor_lead_history h
@@ -2882,9 +3020,24 @@ async def get_counselor_lead_history(lead_id: int, user: dict = Depends(get_curr
 
 @router.get("/counselor-leads/counselors-list")
 async def get_counselor_leads_counselors(user: dict = Depends(get_current_user)):
-    """Get list of users for transfer dropdown (counselors + admins)."""
+    """Get list of users for transfer dropdown (counselors + admins). Scoped by role."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
     conn = get_db()
-    rows = conn.execute("SELECT id, name, email, role FROM users WHERE role IN ('admin', 'super_admin', 'branch_admin', 'center') ORDER BY name").fetchall()
+    if role == "center":
+        # Center only sees its own counselors + itself
+        center = conn.execute("SELECT id FROM centers WHERE user_id = ?", (user.get("sub"),)).fetchone()
+        if center:
+            rows = conn.execute(
+                "SELECT id, name, email, 'counselor' as role FROM counselors WHERE center_id = ? AND status = 'active' ORDER BY name",
+                (center["id"],)
+            ).fetchall()
+        else:
+            rows = []
+    else:
+        # Admin sees admin-level users only (no center/student data leak)
+        rows = conn.execute("SELECT id, name, email, role FROM users WHERE role IN ('admin', 'super_admin', 'branch_admin') ORDER BY name").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -2896,6 +3049,18 @@ async def get_counselor_leads_counselors(user: dict = Depends(get_current_user))
 @router.get("/{center_id}")
 async def get_center(center_id: int, user: dict = Depends(get_current_user)):
     """Get single center details."""
+    role = user.get("role", "")
+    # Students cannot view center details directly
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Access denied")
+    # Centers can only view their own or sub-center details
+    if role == "center":
+        my_center = get_current_center(user)
+        conn_check = get_db()
+        allowed = get_center_and_subcenter_ids(conn_check, my_center["id"])
+        conn_check.close()
+        if center_id not in allowed:
+            raise HTTPException(status_code=403, detail="Access denied - not your center")
     conn = get_db()
     row = conn.execute("""SELECT c.*, pc.name as parent_center_name,
                           (SELECT COUNT(*) FROM students WHERE center_id = c.id) as student_count,

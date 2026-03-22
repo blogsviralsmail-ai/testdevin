@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
 from app.utils.auth import hash_password, verify_password, create_access_token, get_current_user
-import uuid
+import uuid, time
 from datetime import datetime, timedelta, timezone
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -141,16 +141,24 @@ async def forgot_password(req: ForgotPasswordRequest):
         return {"message": "If an account exists with this email, a password reset code has been sent."}
     
     # Generate secure 6-digit code matching frontend's maxLength=6 input
-    import secrets
-    reset_token = str(secrets.randbelow(900000) + 100000)
+    import secrets, sqlite3
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
     
     conn.execute("UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?", (user["id"],))
-    conn.execute(
-        "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
-        (user["id"], reset_token, expires_at)
-    )
-    conn.commit()
+    for _retry in range(5):
+        reset_token = str(secrets.randbelow(900000) + 100000)
+        try:
+            conn.execute(
+                "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+                (user["id"], reset_token, expires_at)
+            )
+            conn.commit()
+            break
+        except sqlite3.IntegrityError:
+            continue
+    else:
+        conn.close()
+        raise HTTPException(status_code=500, detail="Could not generate reset token")
     conn.close()
     
     try:
@@ -163,9 +171,25 @@ async def forgot_password(req: ForgotPasswordRequest):
 
 # Simple in-memory rate limiter for reset-password endpoint
 _reset_attempts: dict = {}  # ip -> (count, first_attempt_time)
+_RATE_LIMIT_WINDOW = 300  # 5 minutes
+_RATE_LIMIT_MAX = 10  # max 10 attempts per window
 
 @router.post("/reset-password")
-async def reset_password(req: ResetPasswordRequest):
+async def reset_password(req: ResetPasswordRequest, request: Request):
+    # Rate limiting: max 10 attempts per IP per 5 minutes
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    if client_ip in _reset_attempts:
+        count, first_time = _reset_attempts[client_ip]
+        if now - first_time > _RATE_LIMIT_WINDOW:
+            _reset_attempts[client_ip] = (1, now)
+        elif count >= _RATE_LIMIT_MAX:
+            raise HTTPException(status_code=429, detail="Too many attempts. Please try again later.")
+        else:
+            _reset_attempts[client_ip] = (count + 1, first_time)
+    else:
+        _reset_attempts[client_ip] = (1, now)
+
     conn = get_db()
     # Scope token lookup to user's email to prevent cross-user token collisions
     if req.email:

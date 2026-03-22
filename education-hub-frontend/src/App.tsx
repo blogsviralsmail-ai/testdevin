@@ -85,6 +85,9 @@ import AdminCommissionSlabs from "./pages/admin/CommissionSlabs";
 import AdminPopups from "./pages/admin/Popups";
 import AdminCounselorLeads from "./pages/admin/CounselorLeads";
 import CenterCounselorLeads from "./pages/center/CounselorLeads";
+import AdminFeesChain from "./pages/admin/FeesChain";
+import CenterFeesChain from "./pages/center/FeesChain";
+import CenterRoleManagement from "./pages/center/RoleManagement";
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role: string }) {
   const user = getUser();
@@ -147,6 +150,7 @@ function App() {
           <Route path="centers" element={<AdminCenters />} />
           <Route path="commission-slabs" element={<AdminCommissionSlabs />} />
           <Route path="counselor-leads" element={<AdminCounselorLeads />} />
+          <Route path="fees-chain" element={<AdminFeesChain />} />
         </Route>
         
         <Route path="/center" element={<ProtectedRoute role="center"><CenterLayout /></ProtectedRoute>}>
@@ -163,6 +167,8 @@ function App() {
           <Route path="settings" element={<CenterSettings />} />
           <Route path="deal-fees" element={<CenterDealFees />} />
           <Route path="counselor-leads" element={<CenterCounselorLeads />} />
+          <Route path="fees-chain" element={<CenterFeesChain />} />
+          <Route path="roles" element={<CenterRoleManagement />} />
         </Route>
         
         <Route path="/student" element={<ProtectedRoute role="student"><StudentLayout /></ProtectedRoute>}>
