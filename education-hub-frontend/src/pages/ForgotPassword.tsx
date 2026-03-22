@@ -52,7 +52,7 @@ export default function ForgotPassword() {
     }
     setLoading(true);
     try {
-      await api.post("/api/auth/reset-password", { token, new_password: newPassword });
+      await api.post("/api/auth/reset-password", { token, new_password: newPassword, email });
       setStep("done");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
