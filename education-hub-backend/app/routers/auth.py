@@ -140,9 +140,9 @@ async def forgot_password(req: ForgotPasswordRequest):
         conn.close()
         return {"message": "If an account exists with this email, a password reset code has been sent."}
     
-    # Generate cryptographically strong token (256-bit entropy) to prevent brute-force
+    # Generate secure 6-digit code matching frontend's maxLength=6 input
     import secrets
-    reset_token = secrets.token_urlsafe(32)
+    reset_token = str(secrets.randbelow(900000) + 100000)
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
     
     conn.execute("UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?", (user["id"],))
