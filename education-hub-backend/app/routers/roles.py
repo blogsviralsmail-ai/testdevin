@@ -39,8 +39,13 @@ async def list_roles(user: dict = Depends(require_admin)):
     conn.close()
     return [dict(r) for r in rows]
 
+# Reserved role names that cannot be created as custom roles
+RESERVED_ROLE_NAMES = ("student", "center", "super_admin", "admin", "branch_admin", "platform_admin")
+
 @router.post("")
 async def create_role(data: RoleCreate, user: dict = Depends(require_admin)):
+    if data.name.lower().strip() in RESERVED_ROLE_NAMES:
+        raise HTTPException(status_code=400, detail=f"Cannot create role with reserved name '{data.name}'. Reserved names: {', '.join(RESERVED_ROLE_NAMES)}")
     conn = get_db()
     perms = data.permissions if data.permissions else "{}"
     cursor = conn.execute(
@@ -99,11 +104,11 @@ async def create_role_user(data: UserWithRole, user: dict = Depends(require_admi
         role_row = conn.execute("SELECT name FROM roles WHERE id = ?", (data.role_id,)).fetchone()
         if role_row:
             role_name = role_row["name"]
-    # Prevent privilege escalation: branch_admin cannot create super_admin or admin users
+    # Prevent privilege escalation: only super_admin and admin can create admin-level users
     caller_role = user.get("role", "")
-    if caller_role == "branch_admin" and role_name in ("super_admin", "admin"):
+    if caller_role not in ("super_admin", "admin") and role_name in ("super_admin", "admin", "branch_admin"):
         conn.close()
-        raise HTTPException(status_code=403, detail="branch_admin cannot create users with admin or super_admin role")
+        raise HTTPException(status_code=403, detail="Only admin or super_admin can create users with admin-level roles")
     cursor = conn.execute(
         "INSERT INTO users (username, email, password_hash, name, phone, role, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (data.username, data.email, hash_password(data.password), data.name, data.phone, role_name, 1)
@@ -123,11 +128,11 @@ async def update_role_user(uid: int, data: dict, user: dict = Depends(require_ad
         role_row = conn.execute("SELECT name FROM roles WHERE id = ?", (data["role_id"],)).fetchone()
         if role_row:
             role_name = role_row["name"]
-    # Prevent privilege escalation: branch_admin cannot assign super_admin or admin roles
+    # Prevent privilege escalation: only super_admin and admin can assign admin-level roles
     caller_role = user.get("role", "")
-    if caller_role == "branch_admin" and role_name in ("super_admin", "admin"):
+    if caller_role not in ("super_admin", "admin") and role_name in ("super_admin", "admin", "branch_admin"):
         conn.close()
-        raise HTTPException(status_code=403, detail="branch_admin cannot assign admin or super_admin role")
+        raise HTTPException(status_code=403, detail="Only admin or super_admin can assign admin-level roles")
     if data.get("name"):
         conn.execute("UPDATE users SET name=?, email=?, phone=?, role=? WHERE id=?",
                      (data.get("name"), data.get("email", ""), data.get("phone", ""), role_name, uid))

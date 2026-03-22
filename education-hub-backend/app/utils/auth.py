@@ -43,11 +43,16 @@ def get_current_user(authorization: str = Header(None), x_auth_token: str = Head
 
 # Allowlist of admin-level roles (used by require_admin)
 ADMIN_ROLES = ("admin", "super_admin", "branch_admin")
+# Built-in non-admin roles that must NEVER pass require_admin even if a custom role with the same name exists
+BUILTIN_NON_ADMIN_ROLES = ("student", "center")
 
 def require_admin(current_user: dict = Depends(get_current_user)):
     role = current_user.get("role")
     if role in ADMIN_ROLES:
         return current_user
+    # Block built-in non-admin roles immediately - prevents bypass if a custom role named "student"/"center" exists
+    if role in BUILTIN_NON_ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="Admin access required")
     # Check if it's a custom role from the roles table
     from app.database import get_db
     conn = get_db()
