@@ -62,16 +62,25 @@ class LevelPaymentUpdate(BaseModel):
 # ── Helper: Generate invoice number ──────────────────────────────
 
 def _generate_invoice_number(conn, prefix="INV"):
-    max_num = conn.execute(
-        "SELECT invoice_number FROM level_invoices ORDER BY id DESC LIMIT 1"
-    ).fetchone()
-    if max_num and max_num["invoice_number"]:
-        try:
-            num = int(max_num["invoice_number"].split("-")[-1]) + 1
-        except (ValueError, IndexError):
+    for _attempt in range(5):
+        max_num = conn.execute(
+            "SELECT invoice_number FROM level_invoices ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        if max_num and max_num["invoice_number"]:
+            try:
+                num = int(max_num["invoice_number"].split("-")[-1]) + 1
+            except (ValueError, IndexError):
+                num = 1001
+        else:
             num = 1001
-    else:
-        num = 1001
+        invoice_num = f"{prefix}-{num:06d}"
+        # Check if already exists to avoid UNIQUE constraint violation
+        exists = conn.execute(
+            "SELECT 1 FROM level_invoices WHERE invoice_number = ?", (invoice_num,)
+        ).fetchone()
+        if not exists:
+            return invoice_num
+        num += 1
     return f"{prefix}-{num:06d}"
 
 
