@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import api, { getUser } from "../../lib/api";
 import { Loader2, Save, User, Camera } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 const INDIAN_STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat",

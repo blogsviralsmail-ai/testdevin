@@ -83,7 +83,7 @@ export default function AdminPlacements() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Briefcase className="h-6 w-6 text-blue-600" />
           <h1 className="text-2xl font-bold">Placement Portal</h1>
         </div>
@@ -169,16 +169,16 @@ export default function AdminPlacements() {
               <button onClick={() => setShowJobForm(false)}><X className="h-5 w-5 text-gray-500" /></button>
             </div>
             <div className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium mb-1">Company *</label><input value={jobForm.company_name} onChange={e => setJobForm({...jobForm, company_name: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
                 <div><label className="block text-sm font-medium mb-1">Job Title *</label><input value={jobForm.title} onChange={e => setJobForm({...jobForm, title: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
               </div>
               <div><label className="block text-sm font-medium mb-1">Description</label><textarea value={jobForm.description} onChange={e => setJobForm({...jobForm, description: e.target.value})} rows={3} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium mb-1">Location</label><input value={jobForm.location} onChange={e => setJobForm({...jobForm, location: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
                 <div><label className="block text-sm font-medium mb-1">Job Type</label><select value={jobForm.job_type} onChange={e => setJobForm({...jobForm, job_type: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm">{JOB_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium mb-1">Salary Range</label><input value={jobForm.salary_range} onChange={e => setJobForm({...jobForm, salary_range: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 3-5 LPA" /></div>
                 <div><label className="block text-sm font-medium mb-1">Last Date</label><input type="date" value={jobForm.last_date} onChange={e => setJobForm({...jobForm, last_date: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
               </div>
@@ -203,7 +203,7 @@ export default function AdminPlacements() {
             </div>
             <div className="p-4 space-y-4">
               <div><label className="block text-sm font-medium mb-1">Company Name *</label><input value={visitForm.company_name} onChange={e => setVisitForm({...visitForm, company_name: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium mb-1">Visit Date</label><input type="date" value={visitForm.visit_date} onChange={e => setVisitForm({...visitForm, visit_date: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
                 <div><label className="block text-sm font-medium mb-1">Visit Time</label><input type="time" value={visitForm.visit_time} onChange={e => setVisitForm({...visitForm, visit_time: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
               </div>
@@ -238,7 +238,7 @@ export default function AdminPlacements() {
                         <p className="text-xs text-gray-500">{a.enrollment_no} | Applied: {new Date(a.created_at).toLocaleDateString("en-IN")}</p>
                         {a.cover_letter && <p className="text-xs text-gray-600 mt-1">{a.cover_letter}</p>}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {a.resume_url && <a href={a.resume_url} target="_blank" className="text-xs px-3 py-1 bg-blue-50 text-blue-600 rounded-full">Resume</a>}
                         <select value={a.status} onChange={e => updateAppStatus(a.id, e.target.value)} className="text-xs px-2 py-1 border rounded-lg">
                           <option value="applied">Applied</option>

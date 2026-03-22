@@ -166,7 +166,7 @@ export default function AdminRoles() {
 
       {tab === "users" && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">User</th>
@@ -253,7 +253,7 @@ export default function AdminRoles() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
                 <input value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input type="email" value={userForm.email} onChange={e => setUserForm({ ...userForm, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />

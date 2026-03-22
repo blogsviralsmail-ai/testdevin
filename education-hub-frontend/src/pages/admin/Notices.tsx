@@ -58,7 +58,7 @@ export default function AdminNotices() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Bell className="h-6 w-6 text-blue-600" />
           <h1 className="text-2xl font-bold">Notice Board</h1>
           <span className="text-sm text-gray-500">({notices.length})</span>
@@ -120,7 +120,7 @@ export default function AdminNotices() {
                 <label className="block text-sm font-medium mb-1">Content *</label>
                 <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} rows={5} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Category</label>
                   <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm">
@@ -134,7 +134,7 @@ export default function AdminNotices() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Status</label>
                   <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm">

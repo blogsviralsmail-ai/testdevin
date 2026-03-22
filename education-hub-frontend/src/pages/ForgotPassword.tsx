@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { ArrowLeft, Mail, KeyRound, CheckCircle } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function ForgotPassword() {
   const [step, setStep] = useState<"email" | "code" | "done">("email");

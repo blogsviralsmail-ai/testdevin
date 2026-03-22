@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FileText, Plus, Pencil, Trash2, X, Upload } from "lucide-react";
 import api from "../../lib/api";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function Blog() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -46,7 +46,7 @@ export default function Blog() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-2xl p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">{editing ? "Edit Post" : "New Post"}</h2>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -65,7 +65,7 @@ export default function Blog() {
                 </div>
                 <input value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} placeholder="Or paste URL" className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option>General</option><option>Education</option><option>Admissions</option><option>University News</option><option>Career</option><option>Tips</option>
                 </select>

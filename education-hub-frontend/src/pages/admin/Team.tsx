@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Plus, Pencil, Trash2, X, Users, Upload } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface TeamMember {
   id: number;
@@ -155,7 +155,7 @@ export default function AdminTeam() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Position *</label>
                 <input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" required />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Role Type</label>
                   <select value={form.role_type} onChange={(e) => setForm({ ...form, role_type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
@@ -184,7 +184,7 @@ export default function AdminTeam() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Bio</label>
                 <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
                   <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />

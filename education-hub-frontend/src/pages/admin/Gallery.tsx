@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Image, Plus, Pencil, Trash2, X, Upload, Search, ChevronDown, CheckSquare, Square } from "lucide-react";
 import api from "../../lib/api";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function GalleryAdmin() {
   const [images, setImages] = useState<any[]>([]);
@@ -207,7 +207,7 @@ export default function GalleryAdmin() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-lg p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">{editing ? "Edit Image" : "Add Image"}</h2>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -293,7 +293,7 @@ export default function GalleryAdmin() {
                       <input type="file" accept="image/*" multiple className="hidden" onChange={handleMultiFiles} />
                     </label>
                     {pendingFiles.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
                         {pendingFiles.map((pf, idx) => (
                           <div key={idx} className="relative group">
                             <img src={pf.preview} alt="" className="h-20 w-full rounded object-cover border" />

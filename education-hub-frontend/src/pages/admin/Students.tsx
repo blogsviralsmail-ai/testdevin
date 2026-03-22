@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Plus, Download, Search, Eye, Trash2, X, User, CheckCircle, XCircle, Edit3, Calendar, Key, FileText, RefreshCw, IndianRupee, Building2 } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 const INDIAN_STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Chandigarh","Puducherry"];
 
 interface Student {
@@ -247,12 +247,12 @@ export default function AdminStudents() {
               {inp("password", "Password *", "password")}
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("name", "Full Name *")}
             {inp("phone", "Mobile Number *")}
           </div>
           {inp("email", "Email", "email")}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">University</label>
               <select value={form.university_id} onChange={(e) => set("university_id", e.target.value)}
@@ -285,19 +285,19 @@ export default function AdminStudents() {
       {formStep === 2 && (
         <>
           <h3 className="text-sm font-semibold text-gray-800 border-b pb-2">Personal Details</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("date_of_birth", "Date of Birth", "date")}
             {slct("gender", "Gender", ["Male", "Female", "Other"])}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {slct("category_type", "Category", ["General", "OBC", "SC", "ST", "EWS"])}
             {inp("nationality", "Nationality")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("aadhar_no", "Aadhar Number")}
             {slct("marital_status", "Marital Status", ["Single", "Married", "Other"])}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {slct("blood_group", "Blood Group", ["A+","A-","B+","B-","AB+","AB-","O+","O-"])}
             {slct("disability", "Disability", ["No", "Yes"])}
           </div>
@@ -306,15 +306,15 @@ export default function AdminStudents() {
       {formStep === 3 && (
         <>
           <h3 className="text-sm font-semibold text-gray-800 border-b pb-2">Family Details</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("father_name", "Father's Name")}
             {inp("mother_name", "Mother's Name")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("guardian_name", "Guardian Name")}
             {inp("father_occupation", "Father's Occupation")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("parent_phone", "Parent Phone")}
             {inp("parent_email", "Parent Email", "email")}
           </div>
@@ -324,13 +324,13 @@ export default function AdminStudents() {
         <>
           <h3 className="text-sm font-semibold text-gray-800 border-b pb-2">Address</h3>
           {inp("current_address", "Current Address")}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {inp("current_city", "City")}
             {slct("current_state", "State", INDIAN_STATES)}
             {inp("current_pincode", "Pincode")}
           </div>
           {inp("permanent_address", "Permanent Address")}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {inp("permanent_city", "City")}
             {slct("permanent_state", "State", INDIAN_STATES)}
             {inp("permanent_pincode", "Pincode")}
@@ -340,31 +340,31 @@ export default function AdminStudents() {
       {formStep === 5 && (
         <>
           <h3 className="text-sm font-semibold text-gray-800 border-b pb-2">Education</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("tenth_board", "10th Board")}
             {inp("tenth_school", "10th School")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("tenth_year", "10th Year")}
             {inp("tenth_percentage", "10th %")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("twelfth_board", "12th Board")}
             {inp("twelfth_school", "12th School")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("twelfth_year", "12th Year")}
             {inp("twelfth_percentage", "12th %")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("graduation_degree", "Graduation Degree")}
             {inp("graduation_university", "Grad University")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inp("graduation_year", "Grad Year")}
             {inp("graduation_percentage", "Grad %")}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {slct("hostel_required", "Hostel Required", ["No", "Yes"])}
             {slct("transport_required", "Transport Required", ["No", "Yes"])}
           </div>
@@ -394,7 +394,7 @@ export default function AdminStudents() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Students</h1>
           {pendingCount > 0 && <p className="text-sm text-amber-600 font-medium">{pendingCount} pending approval</p>}
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -460,7 +460,7 @@ export default function AdminStudents() {
 
           {/* Direct Students Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
-            <table className="w-full">
+            <table className="w-full min-w-[640px]">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student</th>
@@ -548,7 +548,7 @@ export default function AdminStudents() {
       {activeTab === "center" && (
         <>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
-            <table className="w-full">
+            <table className="w-full min-w-[640px]">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-600">Student</th>
@@ -617,7 +617,7 @@ export default function AdminStudents() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg sm:text-xl font-bold">Student Details</h2>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {showDetail.status === "pending" && (
                   <>
                     <button onClick={() => { handleApprove(showDetail.id); setShowDetail(null); }} className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg">Approve</button>
@@ -629,7 +629,7 @@ export default function AdminStudents() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 mb-5 pb-4 border-b">
+            <div className="flex flex-wrap items-center gap-4 mb-5 pb-4 border-b">
               {showDetail.photo ? (
                 <img src={showDetail.photo.startsWith("/") ? API + showDetail.photo : showDetail.photo} alt={showDetail.name} className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover border-4 border-blue-100" />
               ) : (
@@ -646,7 +646,7 @@ export default function AdminStudents() {
             {(showDetail as any).total_fees > 0 && (
               <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4 mb-4">
                 <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1"><IndianRupee className="h-4 w-4" /> Fee Details</h4>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div><span className="text-gray-400 text-xs">Total Fees</span><p className="font-bold text-lg text-gray-900">₹{((showDetail as any).total_fees || 0).toLocaleString()}</p></div>
                 </div>
               </div>
@@ -720,7 +720,7 @@ export default function AdminStudents() {
               <h2 className="text-lg font-bold">Add Student (with Login)</h2>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
-            <div className="flex gap-1 mb-4">
+            <div className="flex flex-wrap gap-1 mb-4">
               {["Basic", "Personal", "Family", "Address", "Education"].map((n, i) => (
                 <button key={n} onClick={() => setFormStep(i + 1)}
                   className={`flex-1 py-1.5 text-xs rounded-lg font-medium ${formStep === i + 1 ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"}`}>{n}</button>
@@ -762,7 +762,7 @@ export default function AdminStudents() {
               <h2 className="text-lg font-bold">Edit Student: {editStudent.name}</h2>
               <button onClick={() => { setEditStudent(null); setFormStep(1); }}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
-            <div className="flex gap-1 mb-4">
+            <div className="flex flex-wrap gap-1 mb-4">
               {["Basic", "Personal", "Family", "Address", "Education"].map((n, i) => (
                 <button key={n} onClick={() => setFormStep(i + 1)}
                   className={`flex-1 py-1.5 text-xs rounded-lg font-medium ${formStep === i + 1 ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500"}`}>{n}</button>

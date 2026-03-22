@@ -65,12 +65,12 @@ export default function About() {
               </div>
             </div>
             <div className="relative">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <img src={s.about_image_1 || "https://adypu.edu.in/wp-content/uploads/2025/12/banner-1.jpeg"} alt="Students studying" className="rounded-2xl w-full h-72 object-cover shadow-lg" loading="lazy" decoding="async" />
                 <img src={s.about_image_2 || "https://www.uudoon.in/assets/images/sliders/Slider-Convocation-2025-v1.jpg"} alt="Graduation" className="rounded-2xl w-full h-52 object-cover shadow-lg mt-20" loading="lazy" decoding="async" />
               </div>
               <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-xl p-4 border border-gray-100 animate-float">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center"><Sparkles className="h-6 w-6 text-blue-600" /></div>
                   <div><div className="text-xl font-extrabold text-gray-900">{s.about_stat_3_value || "5000+"}</div><div className="text-xs text-gray-500">Happy Students</div></div>
                 </div>

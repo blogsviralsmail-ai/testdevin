@@ -47,7 +47,7 @@ export default function AnalyticsDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {statCards.map(s => (
               <div key={s.label} className={`${s.bg} rounded-xl border ${s.border} p-4 transition-all hover:shadow-md`}>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="p-2.5 rounded-lg bg-white/80 shadow-sm"><s.icon className={`h-5 w-5 ${s.color}`} /></div>
                   <div>
                     <p className="text-xs text-gray-500 font-medium">{s.label}</p>
@@ -102,7 +102,7 @@ export default function AnalyticsDashboard() {
               {leadConversion.by_status?.length > 0 ? (
                 <div className="space-y-2">
                   {leadConversion.by_status.map((s: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3">
+                    <div key={i} className="flex flex-wrap items-center gap-3">
                       <span className="w-24 text-xs text-gray-600 capitalize font-medium">{s.status}</span>
                       <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all" style={{ width: `${leadConversion.total > 0 ? (s.count / leadConversion.total) * 100 : 0}%`, backgroundColor: COLORS[i % COLORS.length] }} />
@@ -146,7 +146,7 @@ export default function AnalyticsDashboard() {
               {studentGrowth.by_university?.length > 0 ? (
                 <div className="space-y-2">
                   {studentGrowth.by_university.map((u: any, i: number) => (
-                    <div key={i} className="flex items-center gap-2">
+                    <div key={i} className="flex flex-wrap items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                       <span className="flex-1 text-xs truncate">{u.university}</span>
                       <span className="text-sm font-bold">{u.count}</span>
@@ -160,7 +160,7 @@ export default function AnalyticsDashboard() {
               {studentGrowth.by_course?.length > 0 ? (
                 <div className="space-y-2">
                   {studentGrowth.by_course.map((c: any, i: number) => (
-                    <div key={i} className="flex items-center gap-2">
+                    <div key={i} className="flex flex-wrap items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                       <span className="flex-1 text-xs truncate">{c.course}</span>
                       <span className="text-sm font-bold">{c.count}</span>
@@ -208,7 +208,7 @@ export default function AnalyticsDashboard() {
                   {counselorPerf.map((c: any, i: number) => {
                     const rate = c.total_leads > 0 ? Math.round((c.converted / c.total_leads) * 100) : 0;
                     return (
-                      <div key={i} className="flex items-center gap-3">
+                      <div key={i} className="flex flex-wrap items-center gap-3">
                         <span className="w-28 text-sm font-medium truncate">{c.counselor}</span>
                         <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full bg-blue-500 rounded-full" style={{ width: `${rate}%` }} />

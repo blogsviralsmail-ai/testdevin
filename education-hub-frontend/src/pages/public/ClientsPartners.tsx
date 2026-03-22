@@ -3,7 +3,7 @@ import { Handshake, Building2, Globe, Award } from "lucide-react";
 import api from "../../lib/api";
 import SEO from "../../components/SEO";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function ClientsPartners() {
   const [universities, setUniversities] = useState<any[]>([]);

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Plus, Pencil, Trash2, X, Building2, Search, Upload } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface University {
   id: number; name: string; code: string; description: string; website: string; address: string; logo: string; status: string;
@@ -74,7 +74,7 @@ export default function AdminUniversities() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Universities</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Universities</h1>
         <button onClick={() => { setEditing(null); setForm({ name: "", code: "", description: "", website: "", address: "", logo: "" }); setShowForm(true); }} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
           <Plus className="h-4 w-4" /> Add University
         </button>
@@ -89,7 +89,7 @@ export default function AdminUniversities() {
         {filtered.map((u) => (
           <div key={u.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {u.logo ? (
                   <img src={logoSrc(u.logo)} alt={u.name} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
                 ) : (
@@ -129,7 +129,7 @@ export default function AdminUniversities() {
               {/* Logo Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   {form.logo ? (
                     <img src={logoSrc(form.logo)} alt="Logo" className="h-16 w-16 rounded-lg object-cover border border-gray-200" />
                   ) : (

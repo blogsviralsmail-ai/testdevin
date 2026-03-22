@@ -140,7 +140,7 @@ export default function StudentPlacements() {
                   <Building2 className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-semibold text-gray-900">{v.company_name}</h3>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${v.status === "upcoming" ? "bg-blue-100 text-blue-700" : v.status === "completed" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{v.status}</span>
                   </div>

@@ -51,7 +51,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
         {data.target.target_count > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
             <p className="text-sm text-blue-700">
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
           const Icon = stat.icon;
           return (
             <div key={stat.label} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className={`${stat.color} p-2.5 rounded-lg`}>
                   <Icon className="h-5 w-5 text-white" />
                 </div>

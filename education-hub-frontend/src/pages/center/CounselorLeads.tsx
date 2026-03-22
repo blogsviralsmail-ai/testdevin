@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Target, Plus, Pencil, Trash2, X, MessageSquare, Zap, ArrowUpDown, Calendar, Download, ArrowRightLeft, History, Upload, FileSpreadsheet, Loader2, UserCheck } from "lucide-react";
 import api from "../../lib/api";
 
-const STATUSES = ["new", "contacted", "interested", "qualified", "negotiation", "converted", "lost"];
+const STATUSES = ["new", "contacted", "interested", "qualified", "negotiation", "converted", "admitted", "lost"];
 const formatDate = (d: string) => { if (!d) return ""; try { const dt = new Date(d.replace(" ", "T")); return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); } catch { return d; } };
-const STATUS_COLORS: Record<string, string> = { new: "bg-blue-100 text-blue-700", contacted: "bg-amber-100 text-amber-700", interested: "bg-purple-100 text-purple-700", qualified: "bg-cyan-100 text-cyan-700", negotiation: "bg-orange-100 text-orange-700", converted: "bg-green-100 text-green-700", lost: "bg-red-100 text-red-700" };
+const STATUS_COLORS: Record<string, string> = { new: "bg-blue-100 text-blue-700", contacted: "bg-amber-100 text-amber-700", interested: "bg-purple-100 text-purple-700", qualified: "bg-cyan-100 text-cyan-700", negotiation: "bg-orange-100 text-orange-700", converted: "bg-green-100 text-green-700", admitted: "bg-emerald-100 text-emerald-700", lost: "bg-red-100 text-red-700" };
 const FOLLOW_UP_FILTERS = [
   { value: "", label: "All Follow-ups" },
   { value: "today", label: "Today" },
@@ -67,10 +67,18 @@ export default function CenterCounselorLeads() {
 
   const load = () => {
     const params: any = {};
-    if (filter) params.status = filter;
+    if (filter) params.status_filter = filter;
     if (followUpFilter) params.follow_up_filter = followUpFilter;
     if (sortBy) { params.sort_by = sortBy; params.sort_order = sortOrder; }
-    api.get("/api/centers/counselor-leads", { params }).then(r => setLeads(r.data || [])).catch(() => {});
+    api.get("/api/centers/counselor-leads", { params }).then(r => {
+      const data = r.data || [];
+      // When showing 'All', hide converted and admitted leads
+      if (!filter) {
+        setLeads(data.filter((l: any) => l.current_status !== 'admitted' && l.current_status !== 'converted'));
+      } else {
+        setLeads(data);
+      }
+    }).catch(() => {});
     api.get("/api/centers/counselor-leads/stats").then(r => setStats(r.data || {})).catch(() => {});
   };
   useEffect(() => { load(); api.get("/api/centers/counselor-leads/counselors-list").then(r => setCounselors(r.data || [])).catch(() => {}); }, []);
@@ -225,8 +233,8 @@ export default function CenterCounselorLeads() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
-        {[{ label: "Total", val: stats.total, color: "bg-gray-600" }, { label: "New", val: stats.new, color: "bg-blue-600" }, { label: "Contacted", val: stats.contacted, color: "bg-amber-600" }, { label: "Interested", val: stats.interested, color: "bg-purple-600" }, { label: "Qualified", val: stats.qualified, color: "bg-cyan-600" }, { label: "Negotiation", val: stats.negotiation, color: "bg-orange-600" }, { label: "Converted", val: stats.converted, color: "bg-green-600" }, { label: "Lost", val: stats.lost, color: "bg-red-600" }].map(s => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3 mb-6">
+        {[{ label: "Total", val: stats.total, color: "bg-gray-600" }, { label: "New", val: stats.statuses?.new, color: "bg-blue-600" }, { label: "Contacted", val: stats.statuses?.contacted, color: "bg-amber-600" }, { label: "Interested", val: stats.statuses?.interested, color: "bg-purple-600" }, { label: "Qualified", val: stats.statuses?.qualified, color: "bg-cyan-600" }, { label: "Negotiation", val: stats.statuses?.negotiation, color: "bg-orange-600" }, { label: "Converted", val: stats.statuses?.converted, color: "bg-green-600" }, { label: "Admitted", val: stats.statuses?.admitted, color: "bg-emerald-600" }, { label: "Lost", val: stats.statuses?.lost, color: "bg-red-600" }].map(s => (
           <div key={s.label} className="bg-white rounded-xl shadow-sm border p-4 text-center cursor-pointer hover:shadow-md" onClick={() => setFilter(s.label === "Total" ? "" : s.label.toLowerCase())}>
             <div className={`text-2xl font-bold text-white ${s.color} w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2`}>{s.val || 0}</div>
             <p className="text-xs font-medium text-gray-600">{s.label}</p>
@@ -254,22 +262,22 @@ export default function CenterCounselorLeads() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-2xl p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">{editing ? "Edit Lead" : "Add Lead"}</h2>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name *" className="px-3 py-2 border rounded-lg text-sm" />
                 <input value={form.father_name} onChange={e => setForm({ ...form, father_name: e.target.value })} placeholder="Father's Name" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input value={form.mobile} onChange={e => setForm({ ...form, mobile: e.target.value })} placeholder="Mobile Number *" className="px-3 py-2 border rounded-lg text-sm" />
                 <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select value={form.counselor_name} onChange={e => setForm({ ...form, counselor_name: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option value="">Select Counselor</option>
                   {counselors.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -278,13 +286,13 @@ export default function CenterCounselorLeads() {
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input type="date" value={form.followup_date} onChange={e => setForm({ ...form, followup_date: e.target.value })} className="px-3 py-2 border rounded-lg text-sm" placeholder="Follow-up Date" />
                 <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option value="website">Website</option><option value="referral">Referral</option><option value="walk-in">Walk-in</option><option value="phone">Phone</option><option value="social">Social Media</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input value={form.university_interest} onChange={e => setForm({ ...form, university_interest: e.target.value })} placeholder="University Interest" className="px-3 py-2 border rounded-lg text-sm" />
                 <input value={form.course_interest} onChange={e => setForm({ ...form, course_interest: e.target.value })} placeholder="Course Interest" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
@@ -297,15 +305,15 @@ export default function CenterCounselorLeads() {
 
       {/* Follow-ups Modal */}
       {showFollowUp && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-lg p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Follow-ups: {showFollowUp.name}</h2>
               <button onClick={() => setShowFollowUp(null)}><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3 mb-4">
               <textarea value={fuForm.note} onChange={e => setFuForm({ ...fuForm, note: e.target.value })} placeholder="Follow-up note..." rows={2} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select value={fuForm.follow_up_type} onChange={e => setFuForm({ ...fuForm, follow_up_type: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option value="call">Call</option><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="meeting">Meeting</option>
                 </select>
@@ -332,9 +340,9 @@ export default function CenterCounselorLeads() {
 
       {/* Transfer Modal */}
       {showTransfer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Transfer {selectedIds.length} Lead(s)</h2>
               <button onClick={() => setShowTransfer(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -352,9 +360,9 @@ export default function CenterCounselorLeads() {
 
       {/* History Modal */}
       {showHistory && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-lg p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Lead History: {showHistory.name}</h2>
               <button onClick={() => setShowHistory(null)}><X className="h-5 w-5" /></button>
             </div>
@@ -383,9 +391,9 @@ export default function CenterCounselorLeads() {
 
       {/* Bulk Upload Modal */}
       {showBulkUpload && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-2xl p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold flex items-center gap-2"><FileSpreadsheet className="h-5 w-5 text-purple-600" /> Bulk Lead Upload</h2>
               <button onClick={() => setShowBulkUpload(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -484,7 +492,7 @@ export default function CenterCounselorLeads() {
 
       {/* Convert to Admission Modal */}
       {showConvertModal && (convertLead || convertLeadRef.current) && (() => { const cl = convertLead || convertLeadRef.current; return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowConvertModal(false); }}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowConvertModal(false); }}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center p-5 border-b bg-emerald-50">
               <div>
@@ -496,7 +504,7 @@ export default function CenterCounselorLeads() {
             <div className="p-5 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm font-medium text-blue-800">Lead Information (auto-filled)</p>
-                <div className="grid grid-cols-3 gap-2 mt-2 text-sm text-blue-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 text-sm text-blue-700">
                   <span>Name: <strong>{cl.name}</strong></span>
                   <span>Phone: <strong>{cl.mobile || cl.phone || ""}</strong></span>
                   <span>Email: <strong>{cl.email || "N/A"}</strong></span>
@@ -504,14 +512,14 @@ export default function CenterCounselorLeads() {
               </div>
               <div className="border border-red-200 rounded-lg p-3 bg-red-50">
                 <p className="text-sm font-bold text-red-800 mb-2">Student Login Credentials *</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Username (Phone)</label><input type="text" value={cl.mobile || cl.phone || ""} disabled className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Password *</label><input type="password" value={convertForm.password} onChange={e => setConvertForm({ ...convertForm, password: e.target.value })} className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="Set student password" /></div>
                 </div>
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700 mb-2">Academic Information *</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">University *</label><select value={convertForm.university_id} onChange={e => setConvertForm({ ...convertForm, university_id: e.target.value, category_id: "" })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"><option value="">Select University</option>{universities.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Course *</label><select value={convertForm.category_id} onChange={e => setConvertForm({ ...convertForm, category_id: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"><option value="">Select Course</option>{filteredCourses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Total Fees</label><input type="number" value={convertForm.total_fees} onChange={e => setConvertForm({ ...convertForm, total_fees: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="0" /></div>
@@ -519,7 +527,7 @@ export default function CenterCounselorLeads() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700 mb-2">Personal Details</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Email</label><input type="email" value={convertForm.email} onChange={e => setConvertForm({ ...convertForm, email: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Gender</label><select value={convertForm.gender} onChange={e => setConvertForm({ ...convertForm, gender: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Date of Birth</label><input type="date" value={convertForm.dob} onChange={e => setConvertForm({ ...convertForm, dob: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
@@ -530,7 +538,7 @@ export default function CenterCounselorLeads() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700 mb-2">Family Details</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Mother&#39;s Name</label><input type="text" value={convertForm.mother_name} onChange={e => setConvertForm({ ...convertForm, mother_name: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Guardian Name</label><input type="text" value={convertForm.guardian_name} onChange={e => setConvertForm({ ...convertForm, guardian_name: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Guardian Phone</label><input type="text" value={convertForm.guardian_phone} onChange={e => setConvertForm({ ...convertForm, guardian_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
@@ -538,7 +546,7 @@ export default function CenterCounselorLeads() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700 mb-2">Address</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="col-span-2"><input type="text" value={convertForm.address} onChange={e => setConvertForm({ ...convertForm, address: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Full address" /></div>
                   <div><input type="text" value={convertForm.city} onChange={e => setConvertForm({ ...convertForm, city: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="City" /></div>
                   <div><select value={convertForm.state} onChange={e => setConvertForm({ ...convertForm, state: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"><option value="">Select State</option>{INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
@@ -547,7 +555,7 @@ export default function CenterCounselorLeads() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700 mb-2">Education Details</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">10th Board</label><input type="text" value={convertForm.tenth_board} onChange={e => setConvertForm({ ...convertForm, tenth_board: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="CBSE/RBSE" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">10th Year</label><input type="text" value={convertForm.tenth_year} onChange={e => setConvertForm({ ...convertForm, tenth_year: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="2020" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">10th %</label><input type="text" value={convertForm.tenth_percentage} onChange={e => setConvertForm({ ...convertForm, tenth_percentage: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="85%" /></div>
@@ -567,7 +575,7 @@ export default function CenterCounselorLeads() {
 
       {/* Leads Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="px-3 py-3 w-10"><input type="checkbox" checked={selectedIds.length === leads.length && leads.length > 0} onChange={toggleAll} /></th>
@@ -601,7 +609,7 @@ export default function CenterCounselorLeads() {
                     <button onClick={() => openFollowUps(l)} className="p-1.5 text-purple-600 hover:bg-purple-50 rounded" title="Follow-ups"><MessageSquare className="h-4 w-4" /></button>
                     <button onClick={() => openHistory(l)} className="p-1.5 text-amber-600 hover:bg-amber-50 rounded" title="History"><History className="h-4 w-4" /></button>
                     <button onClick={() => edit(l)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Pencil className="h-4 w-4" /></button>
-                    {l.status !== "converted" && (
+                    {l.current_status !== "converted" && l.current_status !== "admitted" && (
                       <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation(); openConvertModal(l, e); }}
                         onMouseDown={(e) => e.stopPropagation()}
@@ -610,7 +618,7 @@ export default function CenterCounselorLeads() {
                         title="Convert to Admission" type="button"
                       ><UserCheck className="h-3.5 w-3.5" /> Convert</button>
                     )}
-                    {l.status === "converted" && (<span className="text-xs text-emerald-600 font-medium px-2 py-1 bg-emerald-50 rounded">Admitted</span>)}
+                    {l.current_status === "admitted" && (<span className="text-xs text-emerald-600 font-medium px-2 py-1 bg-emerald-50 rounded">Admitted</span>)}
                     <button onClick={() => del(l.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </td>

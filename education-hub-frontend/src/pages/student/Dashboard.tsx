@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api, { getUser } from "../../lib/api";
 import { GraduationCap, FileText, LifeBuoy, Wallet, Loader2, Clock, CheckCircle, User, MapPin, BookOpen, Heart, Upload, Eye, IndianRupee } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface StudentInfo {
   id: number;
@@ -169,7 +169,7 @@ export default function StudentDashboard() {
       {/* Info Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-blue-600" />
             </div>
@@ -180,7 +180,7 @@ export default function StudentDashboard() {
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
               <FileText className="h-5 w-5 text-green-600" />
             </div>
@@ -191,7 +191,7 @@ export default function StudentDashboard() {
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
               <LifeBuoy className="h-5 w-5 text-purple-600" />
             </div>
@@ -202,7 +202,7 @@ export default function StudentDashboard() {
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
               <Wallet className="h-5 w-5 text-orange-600" />
             </div>
@@ -396,14 +396,14 @@ export default function StudentDashboard() {
           <div className="space-y-2">
             {documents.map(d => (
               <div key={d.id} className="flex items-center justify-between py-2 px-3 border border-gray-100 rounded-lg">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <FileText className="h-4 w-4 text-orange-500" />
                   <div>
                     <p className="text-sm font-medium capitalize">{d.doc_type?.replace(/_/g, " ")}</p>
                     <p className="text-xs text-gray-400">{d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : ""}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className={"text-xs px-2 py-0.5 rounded-full " + (
                     d.status === "approved" ? "bg-green-100 text-green-700" :
                     d.status === "rejected" ? "bg-red-100 text-red-700" :
@@ -456,7 +456,7 @@ export default function StudentDashboard() {
             <div className="space-y-3">
               {transactions.map((t) => (
                 <div key={t.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {t.transaction_type === "payment" ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     ) : (

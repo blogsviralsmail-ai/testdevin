@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import api, { setAuth } from "../lib/api";
 import { Camera, ChevronRight, ChevronLeft, CheckCircle, Clock, User, Users, MapPin, GraduationCap, FileCheck } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface University { id: number; name: string; }
 interface Category { id: number; name: string; university_id: number; }

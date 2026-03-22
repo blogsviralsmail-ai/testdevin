@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
 import { FileText, Upload, Loader2, Eye, Lock } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface Document {
   id: number;
@@ -146,7 +146,7 @@ export default function StudentDocuments() {
         </div>
         {/* Desktop Table View */}
         <div className="hidden sm:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-[640px] w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>

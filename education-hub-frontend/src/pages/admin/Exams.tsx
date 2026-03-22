@@ -46,7 +46,7 @@ export default function AdminExams() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Exams</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Exams</h1>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
           <Plus className="h-4 w-4" /> Add Exam
         </button>
@@ -58,8 +58,8 @@ export default function AdminExams() {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Exam</th>
@@ -78,7 +78,7 @@ export default function AdminExams() {
             }).map((e) => (
               <tr key={e.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-9 w-9 bg-indigo-100 rounded-lg flex items-center justify-center"><ClipboardList className="h-4 w-4 text-indigo-600" /></div>
                     <p className="font-medium text-sm">{e.name}</p>
                   </div>

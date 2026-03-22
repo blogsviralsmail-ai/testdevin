@@ -107,14 +107,14 @@ export default function CenterSupport() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Student Support Tickets</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Student Support Tickets</h1>
         <span className="text-sm text-gray-500">{stats.total} tickets from your students</span>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</p>
           <p className="text-xs text-gray-500">Total</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
@@ -151,7 +151,7 @@ export default function CenterSupport() {
       </div>
 
       {/* Tickets List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
         {filteredTickets.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <MessageSquare className="h-10 w-10 mx-auto mb-3 text-gray-300" />

@@ -88,7 +88,7 @@ export default function CenterPaymentSettings() {
                     alt="QR Code" className="w-48 h-48 object-contain" />
                 </div>
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="cursor-pointer px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 flex items-center gap-2">
                   <Upload className="h-4 w-4" /> {uploading ? "Uploading..." : "Upload QR"}
                   <input type="file" accept="image/*" onChange={handleQrUpload} className="hidden" disabled={uploading} />

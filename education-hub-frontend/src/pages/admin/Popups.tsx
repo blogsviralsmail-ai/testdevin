@@ -106,7 +106,7 @@ export default function AdminPopups() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <MessageSquare className="h-6 w-6 text-purple-600" />
           <h1 className="text-2xl font-bold">Pop-up Notifications</h1>
           <span className="text-sm text-gray-500">({popups.length})</span>
@@ -173,7 +173,7 @@ export default function AdminPopups() {
                 <label className="block text-sm font-medium mb-1">Content *</label>
                 <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} rows={4} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Pop-up message content" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Type</label>
                   <select value={form.popup_type} onChange={e => setForm({...form, popup_type: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm">
@@ -203,7 +203,7 @@ export default function AdminPopups() {
                 <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
                 <input value={form.image_url} onChange={e => setForm({...form, image_url: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..." />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Link URL (optional)</label>
                   <input value={form.link_url} onChange={e => setForm({...form, link_url: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..." />
@@ -213,7 +213,7 @@ export default function AdminPopups() {
                   <input value={form.link_text} onChange={e => setForm({...form, link_text: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Click here" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Start Date (optional)</label>
                   <input type="date" value={form.start_date} onChange={e => setForm({...form, start_date: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
@@ -223,7 +223,7 @@ export default function AdminPopups() {
                   <input type="date" value={form.end_date} onChange={e => setForm({...form, end_date: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm" />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <input type="checkbox" checked={form.is_active === 1} onChange={e => setForm({...form, is_active: e.target.checked ? 1 : 0})} className="h-4 w-4" />
                 <label className="text-sm">Active (show to users)</label>
               </div>

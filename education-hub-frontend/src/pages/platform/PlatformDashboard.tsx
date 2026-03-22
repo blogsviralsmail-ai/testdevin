@@ -44,20 +44,20 @@ export default function PlatformDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Platform Dashboard</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Platform Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(card => {
           const Icon = card.icon;
           return (
             <div key={card.label} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className={`${card.color} p-3 rounded-lg`}>
                   <Icon className="h-5 w-5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">{card.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{card.value}</p>
                 </div>
               </div>
             </div>

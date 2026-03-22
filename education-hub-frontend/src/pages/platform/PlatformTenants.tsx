@@ -100,7 +100,7 @@ export default function PlatformTenants() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Tenant Management</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Tenant Management</h1>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -121,7 +121,7 @@ export default function PlatformTenants() {
         {tenants.map(t => (
           <div key={t.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Building2 className="h-5 w-5 text-blue-600" />
                 </div>
@@ -136,23 +136,23 @@ export default function PlatformTenants() {
             </div>
 
             <div className="space-y-2 text-sm text-gray-600 mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Globe className="h-3.5 w-3.5" />
                 <a href={`https://${t.slug}.${BASE_DOMAIN}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                   {t.slug}.{BASE_DOMAIN}
                 </a>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Users className="h-3.5 w-3.5" />
                 <span>{t.admin_name} ({t.admin_email})</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Calendar className="h-3.5 w-3.5" />
                 <span>{new Date(t.created_at).toLocaleDateString()}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button onClick={() => viewDetails(t.slug)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition">
                 <Eye className="h-3.5 w-3.5" /> View
               </button>
@@ -184,7 +184,7 @@ export default function PlatformTenants() {
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Franchise Name *</label>
                   <input type="text" required value={form.name}
@@ -220,7 +220,7 @@ export default function PlatformTenants() {
                   placeholder="Franchise tagline" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Admin Name *</label>
                   <input type="text" required value={form.admin_name}
@@ -235,7 +235,7 @@ export default function PlatformTenants() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Admin Phone</label>
                   <input type="text" value={form.admin_phone}
@@ -251,10 +251,10 @@ export default function PlatformTenants() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input type="color" value={form.primary_color}
                       onChange={e => setForm({...form, primary_color: e.target.value})}
                       className="h-10 w-14 border rounded cursor-pointer" />
@@ -265,7 +265,7 @@ export default function PlatformTenants() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Color</label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input type="color" value={form.secondary_color}
                       onChange={e => setForm({...form, secondary_color: e.target.value})}
                       className="h-10 w-14 border rounded cursor-pointer" />
@@ -276,7 +276,7 @@ export default function PlatformTenants() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
                   <select value={form.plan} onChange={e => setForm({...form, plan: e.target.value})}
@@ -322,7 +322,7 @@ export default function PlatformTenants() {
               <button onClick={() => setViewTenant(null)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span className="text-gray-500">Slug:</span> <span className="font-medium">{viewTenant.slug}</span></div>
                 <div><span className="text-gray-500">Plan:</span> <span className="font-medium capitalize">{viewTenant.plan}</span></div>
                 <div><span className="text-gray-500">Admin:</span> <span className="font-medium">{viewTenant.admin_name}</span></div>
@@ -338,7 +338,7 @@ export default function PlatformTenants() {
               {viewTenant.stats && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="font-semibold text-sm mb-2">Statistics</h3>
-                  <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-2xl font-bold text-blue-600">{viewTenant.stats.students}</p>
                       <p className="text-xs text-gray-500">Students</p>

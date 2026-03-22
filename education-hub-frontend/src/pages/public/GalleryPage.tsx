@@ -3,7 +3,7 @@ import { Image, X, Building2, Camera, Users, PartyPopper, ChevronDown, Filter, S
 import api from "../../lib/api";
 import SEO from "../../components/SEO";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface University { id: number; name: string; }
 

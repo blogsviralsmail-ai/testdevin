@@ -82,7 +82,7 @@ export default function PlatformInstallations() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Remote Installations</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Remote Installations</h1>
         <button onClick={loadInstallations}
           className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -92,7 +92,7 @@ export default function PlatformInstallations() {
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="bg-indigo-500 p-2.5 rounded-lg">
               <Server className="h-5 w-5 text-white" />
             </div>
@@ -103,7 +103,7 @@ export default function PlatformInstallations() {
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="bg-green-500 p-2.5 rounded-lg">
               <Activity className="h-5 w-5 text-white" />
             </div>
@@ -114,7 +114,7 @@ export default function PlatformInstallations() {
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="bg-purple-500 p-2.5 rounded-lg">
               <Users className="h-5 w-5 text-white" />
             </div>
@@ -131,7 +131,7 @@ export default function PlatformInstallations() {
         {installations.map(inst => (
           <div key={inst.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
                   <Server className="h-5 w-5 text-indigo-600" />
                 </div>
@@ -146,17 +146,17 @@ export default function PlatformInstallations() {
             </div>
 
             <div className="space-y-2 text-sm text-gray-600 mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Globe className="h-3.5 w-3.5" />
                 <a href={`https://${inst.domain}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                   {inst.domain}
                 </a>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Users className="h-3.5 w-3.5" />
                 <span>{inst.total_students} students, {inst.total_users} users</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <RefreshCw className="h-3.5 w-3.5" />
                 <span>Last sync: {timeSince(inst.last_sync_at)}</span>
               </div>
@@ -168,7 +168,7 @@ export default function PlatformInstallations() {
               <span>v{inst.version}</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button onClick={() => viewDetails(inst.instance_id)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition">
                 <Eye className="h-3.5 w-3.5" /> View
               </button>
@@ -199,7 +199,7 @@ export default function PlatformInstallations() {
               <button onClick={() => setViewInst(null)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span className="text-gray-500">Domain:</span> <span className="font-medium">{viewInst.domain}</span></div>
                 <div><span className="text-gray-500">Server IP:</span> <span className="font-medium">{viewInst.server_ip}</span></div>
                 <div><span className="text-gray-500">Admin:</span> <span className="font-medium">{viewInst.admin_name}</span></div>
@@ -216,7 +216,7 @@ export default function PlatformInstallations() {
 
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="font-semibold text-sm mb-2">Statistics</h3>
-                <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-2xl font-bold text-blue-600">{viewInst.total_students}</p>
                     <p className="text-xs text-gray-500">Students</p>
@@ -230,7 +230,7 @@ export default function PlatformInstallations() {
                     <p className="text-xs text-gray-500">Enquiries</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-center mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center mt-3">
                   <div>
                     <p className="text-xl font-bold text-amber-600">{viewInst.total_leads}</p>
                     <p className="text-xs text-gray-500">Leads</p>

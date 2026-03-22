@@ -143,7 +143,7 @@ export default function AdminCommissionSlabs() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         <button onClick={() => setTab("deals")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === "deals" ? "bg-blue-600 text-white" : "bg-white text-gray-600 border hover:bg-gray-50"}`}>Student Deals</button>
         <button onClick={() => setTab("summary")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === "summary" ? "bg-blue-600 text-white" : "bg-white text-gray-600 border hover:bg-gray-50"}`}>Summary & Profits</button>
         <button onClick={() => setTab("payments")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === "payments" ? "bg-blue-600 text-white" : "bg-white text-gray-600 border hover:bg-gray-50"}`}>Payment Tracking</button>
@@ -151,27 +151,27 @@ export default function AdminCommissionSlabs() {
 
       {tab === "deals" && (<>
         {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="bg-blue-100 p-3 rounded-xl"><Users className="h-6 w-6 text-blue-600" /></div>
                 <div><p className="text-sm text-gray-500">Total Students</p><p className="text-2xl font-bold text-gray-800">{summary.total_students || 0}</p></div>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="bg-emerald-100 p-3 rounded-xl"><IndianRupee className="h-6 w-6 text-emerald-600" /></div>
                 <div><p className="text-sm text-gray-500">Total Sub-center Fees</p><p className="text-2xl font-bold text-emerald-600">{fmt(summary.total_sub_center_fee)}</p></div>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="bg-purple-100 p-3 rounded-xl"><Wallet className="h-6 w-6 text-purple-600" /></div>
                 <div><p className="text-sm text-gray-500">Admin Receivable</p><p className="text-2xl font-bold text-purple-600">{fmt(summary.total_admin_deal)}</p></div>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="bg-yellow-100 p-3 rounded-xl"><TrendingUp className="h-6 w-6 text-yellow-600" /></div>
                 <div><p className="text-sm text-gray-500">Admin Pending</p><p className="text-2xl font-bold text-yellow-600">{fmt(summary.admin_pending)}</p></div>
               </div>
@@ -208,7 +208,7 @@ export default function AdminCommissionSlabs() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-blue-600" onClick={() => { setSortBy("student_name"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Student {sortBy === "student_name" && <ArrowUpDown className="inline h-3 w-3" />}</th>
@@ -314,7 +314,7 @@ export default function AdminCommissionSlabs() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
           <div className="px-4 py-3 border-b border-gray-100"><h2 className="font-semibold text-gray-800">Center-wise Breakdown</h2></div>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Center</th>
@@ -372,7 +372,7 @@ export default function AdminCommissionSlabs() {
       {tab === "payments" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
           <div className="px-4 py-3 border-b border-gray-100"><h2 className="font-semibold text-gray-800">Payment Records</h2></div>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Student</th>

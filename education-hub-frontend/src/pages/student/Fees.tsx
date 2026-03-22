@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Wallet, IndianRupee, Clock, CheckCircle, XCircle, Upload, Send, Loader2, FileText, AlertCircle, CreditCard, Banknote, Trash2, Download, Receipt } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface FeePayment {
   id: number;
@@ -592,7 +592,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
               {deletedPayments.map((p: Record<string, unknown>, idx: number) => (
                 <div key={`${p.source || "fp"}-${p.id}-${idx}`} className="px-5 py-4 bg-red-50/30">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-red-100">
                         <Trash2 className="h-5 w-5 text-red-500" />
                       </div>
@@ -856,7 +856,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {form.payment_mode === "cheque" ? "Cheque Image *" : "Payment Proof (Screenshot/PDF)"}
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 text-sm">
                       <Upload className="h-4 w-4" />
                       {uploadingProof ? "Uploading..." : form.payment_mode === "cheque" ? "Upload Cheque Image" : "Upload Proof"}

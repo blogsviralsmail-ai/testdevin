@@ -3,7 +3,7 @@ import { Calendar, User, ArrowRight, Tag } from "lucide-react";
 import api from "../../lib/api";
 import SEO from "../../components/SEO";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "";

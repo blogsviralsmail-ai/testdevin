@@ -174,7 +174,7 @@ export default function CommunicationAdmin() {
           { label: "Messages Sent", val: stats.total_sent || 0, icon: Mail, color: "text-orange-600", bg: "bg-orange-100" },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl shadow-sm border p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className={`${s.bg} p-2.5 rounded-lg`}><s.icon className={`h-5 w-5 ${s.color}`} /></div>
               <div><p className="text-xs text-gray-500">{s.label}</p><p className="text-xl font-bold">{s.val}</p></div>
             </div>
@@ -219,7 +219,7 @@ export default function CommunicationAdmin() {
           </div>
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[640px] text-sm">
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="px-4 py-3 text-left"><input type="checkbox" checked={selectedStudents.length === pendingStudents.length && pendingStudents.length > 0} onChange={selectAll} className="rounded" /></th>
@@ -487,7 +487,7 @@ export default function CommunicationAdmin() {
               className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700"><Plus className="h-4 w-4" /> New Campaign</button>
           </div>
           <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Campaign</th>
@@ -526,7 +526,7 @@ export default function CommunicationAdmin() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-lg p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">{editing ? "Edit Template" : "New Template"}</h2>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -548,13 +548,13 @@ export default function CommunicationAdmin() {
       {showCForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-lg p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">{editingC ? "Edit Campaign" : "New Campaign"}</h2>
               <button onClick={() => setShowCForm(false)}><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3">
               <input value={cForm.name} onChange={e => setCForm({ ...cForm, name: e.target.value })} placeholder="Campaign Name *" className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select value={cForm.channel} onChange={e => setCForm({ ...cForm, channel: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option value="email">Email</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option>
                 </select>

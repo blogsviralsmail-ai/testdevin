@@ -97,7 +97,7 @@ export default function CareersPage() {
       {showApply && selected && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Apply for {selected.title}</h2>
               <button onClick={() => setShowApply(false)}><X className="h-5 w-5" /></button>
             </div>

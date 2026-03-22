@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Plus, Edit2, Trash2, X, Star, MessageSquare, Upload } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface Testimonial {
   id: number; name: string; course: string; university: string;
@@ -75,7 +75,7 @@ export default function AdminTestimonials() {
         {items.map((t) => (
           <div key={t.id} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {t.photo ? (
                   <img src={photoSrc(t.photo)} alt={t.name} className="h-12 w-12 rounded-full object-cover border-2 border-blue-100" />
                 ) : (
@@ -121,7 +121,7 @@ export default function AdminTestimonials() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
                   <input value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm" />
@@ -137,7 +137,7 @@ export default function AdminTestimonials() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {form.photo ? (
                     <img src={photoSrc(form.photo)} alt="Preview" className="h-14 w-14 rounded-full object-cover border-2 border-blue-100" />
                   ) : (
@@ -153,7 +153,7 @@ export default function AdminTestimonials() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
                   <select value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm">

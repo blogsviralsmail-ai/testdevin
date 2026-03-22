@@ -72,7 +72,7 @@ export default function LeadsAdmin() {
     const token = localStorage.getItem("admin_token");
     let url = `/api/leads/download-csv?token=${token}`;
     if (filter) url += `&status=${filter}`;
-    window.open((import.meta.env.VITE_API_URL || "http://localhost:8000") + url);
+    window.open((import.meta.env.VITE_API_URL || "") + url);
   };
   const transferLeads = async () => {
     if (!selectedIds.length || !transferTo) return;
@@ -146,7 +146,7 @@ export default function LeadsAdmin() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3 mb-6">
         {[{ label: "Total", val: stats.total, color: "bg-gray-600" }, { label: "New", val: stats.new, color: "bg-blue-600" }, { label: "Contacted", val: stats.contacted, color: "bg-amber-600" }, { label: "Interested", val: stats.interested, color: "bg-purple-600" }, { label: "Qualified", val: stats.qualified, color: "bg-cyan-600" }, { label: "Negotiation", val: stats.negotiation, color: "bg-orange-600" }, { label: "Converted", val: stats.converted, color: "bg-green-600" }, { label: "Lost", val: stats.lost, color: "bg-red-600" }].map(s => (
           <div key={s.label} className="bg-white rounded-xl shadow-sm border p-4 text-center cursor-pointer hover:shadow-md" onClick={() => setFilter(s.label === "Total" ? "" : s.label.toLowerCase())}>
             <div className={`text-2xl font-bold text-white ${s.color} w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2`}>{s.val || 0}</div>
@@ -177,17 +177,17 @@ export default function LeadsAdmin() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-2xl p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">{editing ? "Edit Lead" : "Add Lead"}</h2>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3">
               <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name *" className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" className="px-3 py-2 border rounded-lg text-sm" />
                 <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Phone" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option value="website">Website</option><option value="referral">Referral</option><option value="walk-in">Walk-in</option><option value="phone">Phone</option><option value="social">Social Media</option>
                 </select>
@@ -199,7 +199,7 @@ export default function LeadsAdmin() {
                   {counselors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input value={form.university_interest} onChange={e => setForm({ ...form, university_interest: e.target.value })} placeholder="University Interest" className="px-3 py-2 border rounded-lg text-sm" />
                 <input value={form.course_interest} onChange={e => setForm({ ...form, course_interest: e.target.value })} placeholder="Course Interest" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
@@ -215,13 +215,13 @@ export default function LeadsAdmin() {
       {showFollowUp && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-lg p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Follow-ups: {showFollowUp.name}</h2>
               <button onClick={() => setShowFollowUp(null)}><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3 mb-4">
               <textarea value={fuForm.note} onChange={e => setFuForm({ ...fuForm, note: e.target.value })} placeholder="Follow-up note..." rows={2} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select value={fuForm.follow_up_type} onChange={e => setFuForm({ ...fuForm, follow_up_type: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option value="call">Call</option><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="meeting">Meeting</option>
                 </select>
@@ -250,7 +250,7 @@ export default function LeadsAdmin() {
       {showTransfer && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Transfer {selectedIds.length} Lead(s)</h2>
               <button onClick={() => setShowTransfer(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -270,7 +270,7 @@ export default function LeadsAdmin() {
       {showHistory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-lg p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Lead History: {showHistory.name}</h2>
               <button onClick={() => setShowHistory(null)}><X className="h-5 w-5" /></button>
             </div>
@@ -301,7 +301,7 @@ export default function LeadsAdmin() {
       {showBulkUpload && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-2xl p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold flex items-center gap-2"><FileSpreadsheet className="h-5 w-5 text-purple-600" /> Bulk Lead Upload</h2>
               <button onClick={() => setShowBulkUpload(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -399,7 +399,7 @@ export default function LeadsAdmin() {
 
       {/* Leads Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="px-3 py-3 w-10"><input type="checkbox" checked={selectedIds.length === leads.length && leads.length > 0} onChange={toggleAll} /></th>

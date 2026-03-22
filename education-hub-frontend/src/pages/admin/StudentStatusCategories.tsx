@@ -90,7 +90,7 @@ export default function StudentStatusCategories() {
 
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <h2 className="text-lg font-semibold">{editing ? "Edit" : "Add"} Status Category</h2>
             <button onClick={() => { setShowForm(false); setEditing(null); }}><X className="h-5 w-5" /></button>
           </div>
@@ -101,7 +101,7 @@ export default function StudentStatusCategories() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <input type="color" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="h-10 w-14 rounded cursor-pointer" />
                 <input type="text" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" />
               </div>
@@ -124,7 +124,7 @@ export default function StudentStatusCategories() {
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-[640px] w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 w-10"><input type="checkbox" checked={selectedIds.length === categories.length && categories.length > 0} onChange={toggleAll} /></th>

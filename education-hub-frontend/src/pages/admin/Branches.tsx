@@ -41,7 +41,7 @@ export default function AdminBranches() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Branches</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Branches</h1>
         <button onClick={() => { setEditing(null); setForm({ name: "", code: "", address: "", contact: "", email: "", share_percentage: "0" }); setShowForm(true); }} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
           <Plus className="h-4 w-4" /> Add Branch
         </button>
@@ -51,7 +51,7 @@ export default function AdminBranches() {
         {branches.map((b) => (
           <div key={b.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center"><GitBranch className="h-6 w-6 text-green-600" /></div>
                 <div>
                   <h3 className="font-semibold text-gray-900">{b.name}</h3>
@@ -87,7 +87,7 @@ export default function AdminBranches() {
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Name *</label><input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Code *</label><input type="text" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Address</label><input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Contact</label><input type="text" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" /></div>
               </div>

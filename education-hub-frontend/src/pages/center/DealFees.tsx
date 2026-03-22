@@ -132,7 +132,7 @@ export default function CenterDealFees() {
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="bg-blue-100 p-3 rounded-xl"><Users className="h-6 w-6 text-blue-600" /></div>
               <div>
                 <p className="text-sm text-gray-500">Total Students</p>
@@ -141,7 +141,7 @@ export default function CenterDealFees() {
             </div>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="bg-emerald-100 p-3 rounded-xl"><IndianRupee className="h-6 w-6 text-emerald-600" /></div>
               <div>
                 <p className="text-sm text-gray-500">Total Student Fees</p>
@@ -152,7 +152,7 @@ export default function CenterDealFees() {
           {!isSubCenter && (
             <>
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="bg-purple-100 p-3 rounded-xl"><Wallet className="h-6 w-6 text-purple-600" /></div>
                   <div>
                     <p className="text-sm text-gray-500">Total Center Deal</p>
@@ -161,7 +161,7 @@ export default function CenterDealFees() {
                 </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="bg-yellow-100 p-3 rounded-xl"><TrendingUp className="h-6 w-6 text-yellow-600" /></div>
                   <div>
                     <p className="text-sm text-gray-500">Pending from Sub-centers</p>
@@ -201,7 +201,7 @@ export default function CenterDealFees() {
 
       {/* Deals Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-4 py-3 font-semibold text-gray-600 cursor-pointer hover:text-emerald-600" onClick={() => toggleSort("student_name")}>Student {sortBy === "student_name" && <ArrowUpDown className="inline h-3 w-3" />}</th>
@@ -285,7 +285,7 @@ export default function CenterDealFees() {
                 <p className="text-xs text-gray-500">{editDeal.student_phone} | {editDeal.center_name}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Student Fee ({"\u20B9"})</label>
                   <input
@@ -310,7 +310,7 @@ export default function CenterDealFees() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Admission Date</label>
                   <input type="date" value={editForm.admission_date} onChange={e => setEditForm({ ...editForm, admission_date: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />

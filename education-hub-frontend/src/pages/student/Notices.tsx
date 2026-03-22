@@ -45,7 +45,7 @@ export default function StudentNotices() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search notices..." className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter className="h-4 w-4 text-gray-400" />
           <select value={category} onChange={e => setCategory(e.target.value)} className="px-3 py-2 border rounded-lg text-sm">
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}

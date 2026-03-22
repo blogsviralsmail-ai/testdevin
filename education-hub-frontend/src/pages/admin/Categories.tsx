@@ -55,7 +55,7 @@ export default function AdminCategories() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Categories / Courses</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Categories / Courses</h1>
         <button onClick={() => { setEditing(null); setForm({ name: "", slug: "", description: "", eligibility: "", duration: "", fee: "", mode: "Online", university_id: "" }); setShowForm(true); }} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
           <Plus className="h-4 w-4" /> Add Category
         </button>
@@ -78,8 +78,8 @@ export default function AdminCategories() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Course</th>
@@ -94,7 +94,7 @@ export default function AdminCategories() {
             {filtered.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-9 w-9 bg-purple-100 rounded-lg flex items-center justify-center"><FolderOpen className="h-4 w-4 text-purple-600" /></div>
                     <div>
                       <p className="font-medium text-sm">{c.name}</p>

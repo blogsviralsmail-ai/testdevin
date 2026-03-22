@@ -100,7 +100,7 @@ export default function AdminEnquiries() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Enquiries</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Enquiries</h1>
         <span className="text-sm text-gray-500">{filtered.length} enquiries</span>
       </div>
 
@@ -136,7 +136,7 @@ export default function AdminEnquiries() {
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 w-10">
@@ -202,7 +202,7 @@ export default function AdminEnquiries() {
                       {e.created_at ? new Date(e.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button onClick={() => setSelected(e)} className="text-blue-600 hover:text-blue-800">
                           <Eye className="h-4 w-4" />
                         </button>
@@ -226,7 +226,7 @@ export default function AdminEnquiries() {
             <div className="p-6">
               <h2 className="text-lg font-bold mb-4">Enquiry Details</h2>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <span className="text-xs text-gray-500">Name</span>
                     <p className="text-sm font-medium">{selected.name}</p>

@@ -91,7 +91,7 @@ export default function CenterSubCenters() {
           {filtered.map(c => (
             <div key={c.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="bg-purple-100 p-2.5 rounded-lg">
                     <Building2 className="h-5 w-5 text-purple-600" />
                   </div>
@@ -129,7 +129,7 @@ export default function CenterSubCenters() {
       {showAdd && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-xl font-bold">{editId ? "Edit Sub-center" : "Add Sub-center"}</h2>
               <button onClick={() => { setShowAdd(false); setEditId(null); }} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>
@@ -185,7 +185,7 @@ export default function CenterSubCenters() {
       {showView && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Sub-center Details</h2>
               <button onClick={() => setShowView(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>
@@ -215,7 +215,7 @@ export default function CenterSubCenters() {
       {pwModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Change Password</h2>
               <button onClick={() => setPwModal(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>

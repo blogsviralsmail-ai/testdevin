@@ -156,7 +156,7 @@ export default function CourseDetail() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-4">
             <h3 className="font-semibold mb-4">Course Details</h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Clock className="h-4 w-4 text-blue-600" />
                 </div>
@@ -165,7 +165,7 @@ export default function CourseDetail() {
                   <p className="text-sm font-medium">{course.duration}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 bg-green-100 rounded-lg flex items-center justify-center">
                   <BookOpen className="h-4 w-4 text-green-600" />
                 </div>
@@ -174,7 +174,7 @@ export default function CourseDetail() {
                   <p className="text-sm font-medium">{course.mode}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 bg-purple-100 rounded-lg flex items-center justify-center">
                   <GraduationCap className="h-4 w-4 text-purple-600" />
                 </div>
@@ -183,7 +183,7 @@ export default function CourseDetail() {
                   <p className="text-sm font-medium">{course.university_name}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 bg-orange-100 rounded-lg flex items-center justify-center">
                   <IndianRupee className="h-4 w-4 text-orange-600" />
                 </div>

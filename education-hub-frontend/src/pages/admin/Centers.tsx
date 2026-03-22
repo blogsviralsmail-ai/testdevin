@@ -134,7 +134,7 @@ export default function AdminCenters() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">ID</th>
@@ -157,7 +157,7 @@ export default function AdminCenters() {
               <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="px-4 py-3 font-mono text-xs">{c.id}</td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Building2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
                     <span className="font-medium">{c.name}</span>
                   </div>
@@ -202,7 +202,7 @@ export default function AdminCenters() {
       {showAdd && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-xl font-bold">{editId ? "Edit Center" : "Add New Center"}</h2>
               <button onClick={() => { setShowAdd(false); setEditId(null); }} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>
@@ -268,7 +268,7 @@ export default function AdminCenters() {
       {showView && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Center Details</h2>
               <button onClick={() => setShowView(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>
@@ -301,7 +301,7 @@ export default function AdminCenters() {
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Change Password</h2>
               <button onClick={() => setShowPasswordModal(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>

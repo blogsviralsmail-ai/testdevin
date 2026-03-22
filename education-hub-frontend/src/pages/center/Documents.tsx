@@ -229,7 +229,7 @@ export default function CenterDocuments() {
               <tr key={d.id} className={`hover:bg-gray-50 ${selectedIds.includes(d.id) ? "bg-blue-50" : ""}`}>
                 <td className="px-3 py-3"><input type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => toggleSelect(d.id)} /></td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-9 w-9 bg-orange-100 rounded-lg flex items-center justify-center"><FileText className="h-4 w-4 text-orange-600" /></div>
                     <div><p className="font-medium text-sm capitalize">{(d.doc_type || d.document_type || "").replace(/_/g, " ")}</p><p className="text-xs text-gray-500">#{d.id}</p></div>
                   </div>
@@ -288,7 +288,7 @@ export default function CenterDocuments() {
       {showDispatch && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Dispatch Document</h2>
               <button onClick={() => setShowDispatch(null)}><X className="h-5 w-5" /></button>
             </div>
@@ -315,7 +315,7 @@ export default function CenterDocuments() {
       {showStatusChange !== null && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Change Document Status</h2>
               <button onClick={() => setShowStatusChange(null)}><X className="h-5 w-5" /></button>
             </div>

@@ -70,9 +70,9 @@ export default function CenterExamTimetable() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Calendar className="h-6 w-6 text-emerald-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Exam Timetable</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Exam Timetable</h1>
         </div>
         <button onClick={openNew} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700">
           <Plus className="h-4 w-4" /> Add Exam
@@ -82,8 +82,8 @@ export default function CenterExamTimetable() {
       {/* My Center Exams */}
       <div>
         <h2 className="text-lg font-semibold text-emerald-800 mb-3">My Center Exams ({myExams.length})</h2>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-emerald-50 border-b">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Exam</th>
@@ -99,7 +99,7 @@ export default function CenterExamTimetable() {
               {myExams.map((e) => (
                 <tr key={e.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="h-9 w-9 bg-emerald-100 rounded-lg flex items-center justify-center"><ClipboardList className="h-4 w-4 text-emerald-600" /></div>
                       <p className="font-medium text-sm">{e.name}</p>
                     </div>
@@ -124,8 +124,8 @@ export default function CenterExamTimetable() {
       {/* Admin Exams (read-only) */}
       <div>
         <h2 className="text-lg font-semibold text-blue-800 mb-3">Admin Exams ({adminExams.length})</h2>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-blue-50 border-b">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Exam</th>
@@ -139,7 +139,7 @@ export default function CenterExamTimetable() {
               {adminExams.map((e) => (
                 <tr key={e.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="h-9 w-9 bg-blue-100 rounded-lg flex items-center justify-center"><ClipboardList className="h-4 w-4 text-blue-600" /></div>
                       <p className="font-medium text-sm">{e.name}</p>
                     </div>
@@ -182,7 +182,7 @@ export default function CenterExamTimetable() {
                   {universityId && categories.filter((c) => c.university_id === parseInt(universityId)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Exam Date</label>
                   <input type="date" value={form.exam_date} onChange={(e) => setForm({ ...form, exam_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" />
                 </div>
@@ -193,7 +193,7 @@ export default function CenterExamTimetable() {
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Venue</label>
                 <input type="text" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" placeholder="e.g. Room 101, Main Building" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <select value={form.exam_type} onChange={(e) => setForm({ ...form, exam_type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none">
                     <option value="regular">Regular</option><option value="mark_back">Mark Back</option><option value="supplementary">Supplementary</option>

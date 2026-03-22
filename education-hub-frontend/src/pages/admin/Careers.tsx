@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Briefcase, Plus, Pencil, Trash2, X, Users, GripVertical, PlusCircle, Eye } from "lucide-react";
 import api from "../../lib/api";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function CareersAdmin() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -52,17 +52,17 @@ export default function CareersAdmin() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl w-full max-w-2xl p-6 my-8">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">{editing ? "Edit Job" : "Add Job"}</h2>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3">
               <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Job Title *" className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} placeholder="Department" className="px-3 py-2 border rounded-lg text-sm" />
                 <input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="Location" className="px-3 py-2 border rounded-lg text-sm" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className="px-3 py-2 border rounded-lg text-sm">
                   <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option>
                 </select>
@@ -84,7 +84,7 @@ export default function CareersAdmin() {
                 {formFields.map((ff, idx) => (
                   <div key={idx} className="flex gap-2 items-start mb-2 p-2 bg-gray-50 rounded-lg">
                     <GripVertical className="h-4 w-4 text-gray-400 mt-2 flex-shrink-0" />
-                    <div className="flex-1 grid grid-cols-2 gap-2">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input value={ff.field_label} onChange={e => updateFormField(idx, "field_label", e.target.value)} placeholder="Field Label" className="px-2 py-1.5 border rounded text-xs" />
                       <select value={ff.field_type} onChange={e => updateFormField(idx, "field_type", e.target.value)} className="px-2 py-1.5 border rounded text-xs">
                         <option value="text">Text</option><option value="email">Email</option><option value="number">Number</option><option value="textarea">Textarea</option><option value="select">Dropdown</option><option value="file">File Upload</option>
@@ -106,7 +106,7 @@ export default function CareersAdmin() {
       {showApps && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-2xl p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Applications ({apps.length})</h2>
               <button onClick={() => setShowApps(false)}><X className="h-5 w-5" /></button>
             </div>

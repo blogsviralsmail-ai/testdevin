@@ -566,7 +566,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
 
       {/* Student Fees Tab */}
       {tab === "students" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -575,7 +575,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[640px]">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Student</th>
@@ -629,9 +629,9 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
 
       {/* Transactions Tab */}
       {tab === "transactions" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-gray-50 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <select value={txnStudentFilter} onChange={e => setTxnStudentFilter(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none min-w-[160px]">
                 <option value="">All Students</option>
                 {students.map(s => <option key={s.id} value={s.phone}>{s.name} ({s.phone})</option>)}
@@ -642,7 +642,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button onClick={downloadTxnCSV} className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 text-xs font-medium border border-green-200">
                 <Download className="h-3 w-3" /> CSV
               </button>
@@ -651,7 +651,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
               </button>
             </div>
           </div>
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 border-b">
               <tr>
                 {isAdmin && <th className="px-4 py-3 w-10"><input type="checkbox" checked={selectedTxns.length === transactions.length && transactions.length > 0} onChange={toggleAllTxns} className="rounded" /></th>}
@@ -670,7 +670,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                 <tr key={t.id} className={`hover:bg-gray-50 ${selectedTxns.includes(t.id) ? "bg-blue-50" : ""}`}>
                   {isAdmin && <td className="px-4 py-3 w-10"><input type="checkbox" checked={selectedTxns.includes(t.id)} onChange={() => toggleTxnSelect(t.id)} className="rounded" /></td>}
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${t.transaction_type === "credit" ? "bg-green-100" : "bg-red-100"}`}>
                         <Wallet className={`h-4 w-4 ${t.transaction_type === "credit" ? "text-green-600" : "text-red-600"}`} />
                       </div>
@@ -722,13 +722,13 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
 
       {/* Online Fees Payment Tab */}
       {tab === "online-fees" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-gray-50 flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
               {isAdmin && <input type="checkbox" checked={selectedFees.length === feePayments.length && feePayments.length > 0} onChange={toggleAllFees} className="rounded" />}
               Online Fee Payments from Students
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <select value={feeStudentFilter} onChange={e => setFeeStudentFilter(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none min-w-[160px]">
                 <option value="">All Students</option>
                 {students.map(s => <option key={s.id} value={s.phone}>{s.name} ({s.phone})</option>)}
@@ -754,7 +754,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
               {feePayments.filter(p => !feeStudentFilter || p.student_phone === feeStudentFilter).map((p) => (
                 <div key={p.id} className={`px-4 py-4 hover:bg-gray-50 ${p.status === "pending" ? "bg-amber-50 border-l-4 border-l-amber-400" : ""} ${selectedFees.includes(p.id) ? "bg-blue-50" : ""}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {isAdmin && <input type="checkbox" checked={selectedFees.includes(p.id)} onChange={() => toggleFeeSelect(p.id)} className="rounded flex-shrink-0" />}
                       <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${p.status === "approved" ? "bg-green-100" : p.status === "rejected" ? "bg-red-100" : "bg-amber-100"}`}>
                         {p.status === "approved" ? <CheckCircle className="h-5 w-5 text-green-600" /> :
@@ -828,7 +828,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
           )}
 
           {statement && statement.student && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
               <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -888,7 +888,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                 <div className="p-8 text-center text-gray-500">No transactions found for this student</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[640px]">
                     <thead className="bg-gray-100 border-b-2 border-gray-300">
                       <tr>
                         <th className="text-left px-4 py-3 text-xs font-bold text-gray-700 uppercase tracking-wider">Date</th>
@@ -984,7 +984,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
                 {form.student_phone.length >= 10 && !lookupLoading && !lookupName && <p className="text-xs text-red-500 mt-1">No student found with this number</p>}
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label><input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <select value={form.transaction_type} onChange={(e) => setForm({ ...form, transaction_type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none">
                     <option value="credit">Credit (Received)</option><option value="debit">Debit (Paid)</option>
@@ -1015,7 +1015,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
       {showPay && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Record Payment</h2>
               <button onClick={() => setShowPay(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>
@@ -1057,7 +1057,7 @@ ${p.utr_number ? `<div class="utr">UTR / Ref No.</div><div class="utr-val">${p.u
       {showHistory && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h2 className="text-lg font-bold">Payment History - {showHistory.name}</h2>
               <button onClick={() => setShowHistory(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
             </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { Save, Loader2, Upload, Database, Download, Trash2, RotateCcw, RefreshCw, Bell, Send } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface SettingsData {
   company_name: string;
@@ -482,7 +482,7 @@ export default function AdminSettings() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h1>
         <button
           onClick={handleSave}
           disabled={saving}
@@ -618,7 +618,7 @@ export default function AdminSettings() {
             {/* Main Logo */}
             <div className="p-4 bg-gray-50 rounded-xl border">
               <label className="block text-sm font-medium text-gray-700 mb-2">Main Logo (used everywhere)</label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {settings.logo_url ? (
                   <img src={settings.logo_url.startsWith("/") ? API + settings.logo_url : settings.logo_url} alt="Logo" className="h-16 w-16 object-contain border rounded-lg p-1 bg-white" />
                 ) : (
@@ -637,7 +637,7 @@ export default function AdminSettings() {
             {/* Navbar Logo */}
             <div className="p-4 bg-gray-50 rounded-xl border">
               <label className="block text-sm font-medium text-gray-700 mb-2">Navbar Logo (header)</label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {settings.navbar_logo_url ? (
                   <img src={settings.navbar_logo_url.startsWith("/") ? API + settings.navbar_logo_url : settings.navbar_logo_url} alt="Navbar Logo" className="h-12 object-contain border rounded-lg p-1 bg-white" />
                 ) : (
@@ -656,7 +656,7 @@ export default function AdminSettings() {
             {/* Favicon */}
             <div className="p-4 bg-gray-50 rounded-xl border">
               <label className="block text-sm font-medium text-gray-700 mb-2">Favicon (browser tab icon)</label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {settings.favicon_url ? (
                   <img src={settings.favicon_url.startsWith("/") ? API + settings.favicon_url : settings.favicon_url} alt="Favicon" className="h-12 w-12 object-contain border rounded-lg p-1 bg-white" />
                 ) : (
@@ -675,7 +675,7 @@ export default function AdminSettings() {
             {/* OG / Social Share Image */}
             <div className="p-4 bg-gray-50 rounded-xl border">
               <label className="block text-sm font-medium text-gray-700 mb-2">Social Share Image (WhatsApp, Facebook, Twitter preview)</label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {settings.og_image_url ? (
                   <img src={settings.og_image_url.startsWith("/") ? API + settings.og_image_url : settings.og_image_url} alt="OG Image" className="h-16 w-28 object-contain border rounded-lg p-1 bg-white" />
                 ) : (
@@ -694,7 +694,7 @@ export default function AdminSettings() {
             {/* Footer Logo */}
             <div className="p-4 bg-gray-50 rounded-xl border">
               <label className="block text-sm font-medium text-gray-700 mb-2">Footer Logo</label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {settings.footer_logo_url ? (
                   <img src={settings.footer_logo_url.startsWith("/") ? API + settings.footer_logo_url : settings.footer_logo_url} alt="Footer Logo" className="h-12 object-contain border rounded-lg p-1 bg-slate-800" />
                 ) : (
@@ -714,14 +714,14 @@ export default function AdminSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <input type="color" value={settings.primary_color} onChange={(e) => updateField("primary_color", e.target.value)} className="h-10 w-16 rounded cursor-pointer" />
                   <input type="text" value={settings.primary_color} onChange={(e) => updateField("primary_color", e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Color</label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <input type="color" value={settings.secondary_color} onChange={(e) => updateField("secondary_color", e.target.value)} className="h-10 w-16 rounded cursor-pointer" />
                   <input type="text" value={settings.secondary_color} onChange={(e) => updateField("secondary_color", e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" />
                 </div>
@@ -780,7 +780,7 @@ export default function AdminSettings() {
               </div>
               <div className="mt-4 p-4 bg-gray-50 rounded-xl border">
                 <h4 className="text-xs font-semibold text-gray-500 mb-2">PREVIEW</h4>
-                <div className="grid grid-cols-4 gap-4 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                   <div><div className="text-2xl font-bold text-blue-600">30+</div><div className="text-xs text-gray-500">{settings.stat_uni_label || 'Partner Universities'}</div></div>
                   <div><div className="text-2xl font-bold text-indigo-600">500+</div><div className="text-xs text-gray-500">{settings.stat_course_label || 'Courses Available'}</div></div>
                   <div><div className="text-2xl font-bold text-green-600">{settings.stat_students_enrolled || '5000'}+</div><div className="text-xs text-gray-500">{settings.stat_student_label || 'Students Enrolled'}</div></div>
@@ -1215,7 +1215,7 @@ export default function AdminSettings() {
             {backupMsg && <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium">{backupMsg}</div>}
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
               <div className="px-5 py-3 bg-gray-50 border-b"><h3 className="font-semibold">Backup History</h3></div>
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[640px] text-sm">
                 <thead className="border-b">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium text-gray-600">Filename</th>
@@ -1280,7 +1280,7 @@ export default function AdminSettings() {
             {/* Telegram Settings */}
             <div className="border rounded-xl p-5 space-y-4">
               <h3 className="font-semibold text-gray-800 flex items-center gap-2"><Send className="h-4 w-4 text-blue-500" /> Telegram Notifications</h3>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <label className="text-sm font-medium text-gray-700">Enable Telegram:</label>
                 <select value={notifSettings.telegram_enabled} onChange={e => setNotifSettings({...notifSettings, telegram_enabled: e.target.value})} className="px-3 py-1.5 border rounded-lg text-sm">
                   <option value="true">Enabled</option>
@@ -1322,7 +1322,7 @@ export default function AdminSettings() {
             {/* Email Settings */}
             <div className="border rounded-xl p-5 space-y-4">
               <h3 className="font-semibold text-gray-800">Email Notifications</h3>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <label className="text-sm font-medium text-gray-700">Enable Email:</label>
                 <select value={notifSettings.email_enabled} onChange={e => setNotifSettings({...notifSettings, email_enabled: e.target.value})} className="px-3 py-1.5 border rounded-lg text-sm">
                   <option value="true">Enabled</option>

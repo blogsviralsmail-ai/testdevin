@@ -5,17 +5,13 @@
   :root {
     --radius: 0.5rem
   }
-  html {
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
-  }
-  body {
+  html, body {
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
     min-width: 0;
     margin: 0;
+    padding: 0;
   }
   * {
     box-sizing: border-box;
@@ -25,6 +21,7 @@
     width: 100%;
     max-width: 100vw;
     min-width: 0;
+    position: relative;
   }
 }
 
@@ -115,6 +112,7 @@
   width: 100%;
   max-width: 100vw;
   position: relative;
+  contain: paint;
 }
 .marquee-container:hover .animate-marquee,
 .marquee-container:hover .animate-marquee-slow,

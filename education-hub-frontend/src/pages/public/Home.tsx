@@ -149,13 +149,13 @@ export default function Home() {
         structuredData={getFAQSchema(homeFAQs)}
       />
       {/* ===== HERO SECTION ===== */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center overflow-hidden w-full">
         <div className="absolute inset-0">
           <img src={settings.hero_bg_image || "https://www.gla.ac.in/images/capgemini-codexperience-center.webp"} alt="" className="w-full h-full object-cover" loading="eager" fetchPriority="high" decoding="async" />
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/80 to-gray-900/40" />
         </div>
-        <div className="absolute top-20 right-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float hidden sm:block" />
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl hidden sm:block" />
+        <div className="absolute top-20 right-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float hidden lg:block" />
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl hidden lg:block" />
         <div className="relative max-w-7xl mx-auto px-4 py-24 sm:py-32 w-full">
           <div className="max-w-2xl animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-400/20 rounded-full mb-6">
@@ -178,7 +178,7 @@ export default function Home() {
             </div>
             <div className="mt-12 flex flex-wrap gap-8">
               {[{ label: settings.stat_uni_label || "Universities", value: `${uniCount || 30}+` }, { label: settings.stat_course_label || "Courses", value: `${courseCount || 500}+` }, { label: settings.stat_student_label || "Students", value: `${settings.stat_students_enrolled || "5000"}+` }].map((s, i) => (
-                <div key={i} className="flex items-center gap-3">
+                <div key={i} className="flex flex-wrap items-center gap-3">
                   <div className="w-px h-8 bg-white/20" />
                   <div>
                     <div className="text-2xl font-bold text-white">{s.value}</div>
@@ -258,18 +258,18 @@ export default function Home() {
       </section>
 
       {/* ===== WHY CHOOSE US ===== */}
-      <section className="bg-gradient-to-br from-gray-50 to-blue-50/50 py-20 overflow-hidden">
+      <section className="bg-gradient-to-br from-gray-50 to-blue-50/50 py-20 overflow-hidden w-full">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <img src="https://adypu.edu.in/wp-content/uploads/2025/12/banner-3.jpeg" alt="Indian students counseling session" className="rounded-2xl w-full h-64 object-cover shadow-lg" loading="lazy" decoding="async" />
                 <img src="https://www.madhavuniversity.edu.in/static/assets/slider/slider_3.jpeg" alt="Indian university campus" className="rounded-2xl w-full h-48 object-cover shadow-lg mt-16" loading="lazy" decoding="async" />
                 <img src="https://www.madhavuniversity.edu.in/static/assets/slider/slider_4.jpeg" alt="Education consultancy office" className="rounded-2xl w-full h-48 object-cover shadow-lg -mt-8" loading="lazy" decoding="async" />
                 <img src="https://www.madhavuniversity.edu.in/static/assets/slider/slider_5.png" alt="Students in classroom" className="rounded-2xl w-full h-64 object-cover shadow-lg -mt-8" loading="lazy" decoding="async" />
               </div>
-              <div className="absolute -bottom-6 right-0 sm:-right-6 bg-white rounded-2xl shadow-xl p-4 border border-gray-100 animate-float">
-                <div className="flex items-center gap-3">
+              <div className="absolute -bottom-6 right-0 bg-white rounded-2xl shadow-xl p-4 border border-gray-100 animate-float">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center"><Award className="h-6 w-6 text-green-600" /></div>
                   <div><div className="text-2xl font-extrabold text-gray-900">10+</div><div className="text-xs text-gray-500">Years Experience</div></div>
                 </div>

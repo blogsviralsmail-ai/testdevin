@@ -148,7 +148,7 @@ export default function Team() {
                       </div>
                       <div className="p-5">
                         <p className="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">{s.bio}</p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {s.email && (
                             <a href={`mailto:${s.email}`} className="btn-3d btn-3d-blue text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg flex items-center gap-1 font-bold">
                               <Mail className="h-3 w-3" /> Email

@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import api, { setAuth } from "../lib/api";
 import { Eye, EyeOff, GraduationCap, Shield, Users } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function Login() {
   const [username, setUsername] = useState("");

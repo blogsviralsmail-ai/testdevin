@@ -4,7 +4,7 @@ import { logout, getUser } from "../lib/api";
 import { LayoutDashboard, User, LifeBuoy, LogOut, GraduationCap, FileText, Menu as MenuIcon, X, ChevronLeft, Calendar, IndianRupee, Bell, MessageCircle, Briefcase } from "lucide-react";
 import api from "../lib/api";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 const menuItems = [
   { path: "/student", label: "Dashboard", icon: LayoutDashboard },
@@ -107,16 +107,16 @@ export default function StudentLayout() {
       {/* Top Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm fixed top-0 left-0 right-0 z-30">
         <div className="px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button onClick={() => setMobileMenu(!mobileMenu)} className="lg:hidden text-gray-600 hover:text-gray-900 p-2">
               {mobileMenu ? <X className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
             </button>
-            <Link to="/student" className="flex items-center gap-2">
+            <Link to="/student" className="flex flex-wrap items-center gap-2">
               <GraduationCap className="h-8 w-8 text-blue-600" />
               <span className="text-lg font-bold text-gray-900">Education Hub</span>
             </Link>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {studentPhoto ? (
               <img src={studentPhoto} alt={user?.name} className="h-8 w-8 rounded-full object-cover border-2 border-blue-200" />
             ) : (

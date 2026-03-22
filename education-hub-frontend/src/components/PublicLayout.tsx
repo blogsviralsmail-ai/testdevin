@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, Youtube, MessageCircle, X, Menu as MenuIcon, Send } from "lucide-react";
 import api from "../lib/api";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function PublicLayout() {
   const location = useLocation();
@@ -73,7 +73,7 @@ export default function PublicLayout() {
             <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> <span className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{siteSettings.company_phone || siteSettings.phone || "+91-9876543210"}</span></span>
             <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> <span className="text-xs truncate max-w-[140px] sm:max-w-none sm:text-sm">{siteSettings.company_email || siteSettings.email || "info@asffeducationhub.com"}</span></span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Link to="/login" className="hover:text-blue-300">Login</Link>
             <span>|</span>
             <Link to="/register" className="hover:text-blue-300">Register</Link>
@@ -108,7 +108,7 @@ export default function PublicLayout() {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link to="/enquiry"
               className="btn-3d btn-3d-yellow btn-flash bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold hidden md:block">
               Apply Now
@@ -209,13 +209,13 @@ export default function PublicLayout() {
             <h3 className="text-white font-semibold mb-4">{siteSettings.footer_col3_title || "Contact Info"}</h3>
             <ul className="space-y-2 text-sm">
               <li className="flex items-start gap-2"><MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" /> {siteSettings.company_address || "Jaipur, Rajasthan, India"}</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4 flex-shrink-0" /> {siteSettings.company_phone || siteSettings.phone || "+91-9876543210"}</li>
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4 flex-shrink-0" /> {siteSettings.company_email || siteSettings.email || "info@asffeducationhub.com"}</li>
+              <li className="flex flex-wrap items-center gap-2"><Phone className="h-4 w-4 flex-shrink-0" /> {siteSettings.company_phone || siteSettings.phone || "+91-9876543210"}</li>
+              <li className="flex flex-wrap items-center gap-2"><Mail className="h-4 w-4 flex-shrink-0" /> {siteSettings.company_email || siteSettings.email || "info@asffeducationhub.com"}</li>
             </ul>
           </div>
           <div>
             <h3 className="text-white font-semibold mb-4">{siteSettings.footer_col4_title || "Follow Us"}</h3>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <a href={siteSettings.facebook_url || siteSettings.facebook || "https://facebook.com/asffeducationhub"} target="_blank" rel="noopener noreferrer" className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-blue-600"><Facebook className="h-5 w-5" /></a>
               <a href={siteSettings.instagram_url || siteSettings.instagram || "https://instagram.com/asffeducationhub"} target="_blank" rel="noopener noreferrer" className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-pink-600"><Instagram className="h-5 w-5" /></a>
               <a href={siteSettings.linkedin_url || siteSettings.linkedin || "https://linkedin.com/company/asffeducationhub"} target="_blank" rel="noopener noreferrer" className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-blue-700"><Linkedin className="h-5 w-5" /></a>

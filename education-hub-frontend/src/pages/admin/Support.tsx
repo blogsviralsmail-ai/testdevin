@@ -133,14 +133,14 @@ export default function AdminSupport() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Ticket Support System</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Ticket Support System</h1>
         <span className="text-sm text-gray-500">{stats.total} total tickets</span>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</p>
           <p className="text-xs text-gray-500">Total</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
@@ -187,8 +187,8 @@ export default function AdminSupport() {
       </div>
 
       {/* Tickets Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="px-4 py-3 w-10">
@@ -214,7 +214,7 @@ export default function AdminSupport() {
                   </button>
                 </td>
                 <td className="px-4 py-3" onClick={() => openTicket(t)}>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-9 w-9 bg-purple-100 rounded-lg flex items-center justify-center">
                       {getStatusIcon(t.status)}
                     </div>

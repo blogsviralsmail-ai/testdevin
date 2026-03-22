@@ -4,7 +4,7 @@ import { Plus, X, Wallet, Upload, FileText, CheckCircle, XCircle, Clock, Eye, Se
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "";
 
 interface Transaction {
   id: number; student_name: string; enrollment_no: string; student_phone: string; amount: number; transaction_type: string;
@@ -601,16 +601,16 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
 
       {/* Transactions Tab */}
       {tab === "transactions" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {isAdmin && selectedTxns.length > 0 && (
                 <button onClick={bulkDeleteTxns} disabled={bulkDeleting} className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 text-xs font-medium disabled:opacity-50">
                   <Trash2 className="h-3 w-3" /> {bulkDeleting ? "Deleting..." : `Delete ${selectedTxns.length}`}
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button onClick={downloadTxnCSV} className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 text-xs font-medium border border-green-200">
                 <Download className="h-3 w-3" /> CSV
               </button>
@@ -619,7 +619,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
               </button>
             </div>
           </div>
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 border-b">
               <tr>
                 {isAdmin && <th className="px-4 py-3 w-10"><input type="checkbox" checked={selectedTxns.length === transactions.length && transactions.length > 0} onChange={toggleAllTxns} className="rounded" /></th>}
@@ -638,7 +638,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                 <tr key={t.id} className={`hover:bg-gray-50 ${selectedTxns.includes(t.id) ? "bg-blue-50" : ""}`}>
                   {isAdmin && <td className="px-4 py-3 w-10"><input type="checkbox" checked={selectedTxns.includes(t.id)} onChange={() => toggleTxnSelect(t.id)} className="rounded" /></td>}
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${t.transaction_type === "credit" ? "bg-green-100" : "bg-red-100"}`}>
                         <Wallet className={`h-4 w-4 ${t.transaction_type === "credit" ? "text-green-600" : "text-red-600"}`} />
                       </div>
@@ -685,7 +685,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
 
       {/* Center Fees Tab - Only center student transactions */}
       {tab === "center-fees" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-gradient-to-r from-green-50 to-emerald-50 flex items-center justify-between">
             <h3 className="font-semibold text-green-800 flex items-center gap-2">
               <Wallet className="h-4 w-4 text-green-600" /> Center Students Fee Collection
@@ -695,7 +695,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
           <div className="p-4 bg-amber-50 border-b border-amber-200 text-sm text-amber-800">
             <strong>Note:</strong> Fees for center students can only be collected by the center or the student themselves. Admin cannot collect fees for center students.
           </div>
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Student</th>
@@ -740,13 +740,13 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
 
       {/* Online Fees Payment Tab - ONLY fee_payments */}
       {tab === "online-fees" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
               {isAdmin && <input type="checkbox" checked={selectedFees.length === feePayments.length && feePayments.length > 0} onChange={toggleAllFees} className="rounded" />}
               Online Fee Payments from Students
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {isAdmin && selectedFees.length > 0 && (
                 <button onClick={bulkDeleteFees} disabled={bulkDeleting} className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 text-xs font-medium disabled:opacity-50">
                   <Trash2 className="h-3 w-3" /> {bulkDeleting ? "Deleting..." : `Delete ${selectedFees.length}`}
@@ -768,7 +768,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
               {feePayments.map((p) => (
                 <div key={p.id} className={`px-4 py-4 hover:bg-gray-50 ${p.status === "pending" ? "bg-amber-50 border-l-4 border-l-amber-400" : ""} ${selectedFees.includes(p.id) ? "bg-blue-50" : ""}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {isAdmin && <input type="checkbox" checked={selectedFees.includes(p.id)} onChange={() => toggleFeeSelect(p.id)} className="rounded flex-shrink-0" />}
                       <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                         p.status === "approved" ? "bg-green-100" : p.status === "rejected" ? "bg-red-100" : "bg-amber-100"
@@ -848,7 +848,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
           {statement && statement.student && (
             <>
               {/* Bank Statement Header */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
                 {/* Statement Header - like bank */}
                 <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -912,7 +912,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                   <div className="p-8 text-center text-gray-500">No transactions found for this student</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[640px]">
                       <thead className="bg-gray-100 border-b-2 border-gray-300">
                         <tr>
                           <th className="text-left px-4 py-3 text-xs font-bold text-gray-700 uppercase tracking-wider">Date</th>
@@ -1011,7 +1011,7 @@ body{font-family:'Inter',sans-serif;background:#e2e8f0;padding:30px;-webkit-prin
                 {form.student_phone.length >= 10 && !lookupLoading && !lookupName && <p className="text-xs text-red-500 mt-1">✗ No student found with this number</p>}
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label><input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none" /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <select value={form.transaction_type} onChange={(e) => setForm({ ...form, transaction_type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none">
                     <option value="credit">Credit (Received)</option><option value="debit">Debit (Paid)</option>
