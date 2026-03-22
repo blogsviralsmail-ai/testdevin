@@ -152,7 +152,7 @@ export default function AdminCounselorLeads() {
       setShowConvertModal(false);
       convertLeadRef.current = null;
       load();
-      alert(`Student created successfully!\n\nLogin: ${leadData.phone}\nStudent ID: ${res.data.student_id}\n\nStudent has been added to the Students list.`);
+      alert(`Student created successfully!\n\nLogin: ${leadData.mobile || leadData.phone}\nStudent ID: ${res.data.student_id}\n\nStudent has been added to the Students list.`);
     } catch (err: any) {
       alert(err.response?.data?.detail || "Error converting lead to admission");
     } finally { setConverting(false); }
@@ -489,7 +489,7 @@ export default function AdminCounselorLeads() {
             <div className="flex justify-between items-center p-5 border-b bg-emerald-50">
               <div>
                 <h2 className="text-lg font-bold text-emerald-800">Convert to Admission</h2>
-                <p className="text-sm text-emerald-600">Converting: {cl.name} ({cl.phone})</p>
+                <p className="text-sm text-emerald-600">Converting: {cl.name} ({cl.mobile || cl.phone || ""})</p>
               </div>
               <button onClick={() => setShowConvertModal(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
@@ -498,14 +498,14 @@ export default function AdminCounselorLeads() {
                 <p className="text-sm font-medium text-blue-800">Lead Information (auto-filled)</p>
                 <div className="grid grid-cols-3 gap-2 mt-2 text-sm text-blue-700">
                   <span>Name: <strong>{cl.name}</strong></span>
-                  <span>Phone: <strong>{cl.phone}</strong></span>
+                  <span>Phone: <strong>{cl.mobile || cl.phone || ""}</strong></span>
                   <span>Email: <strong>{cl.email || "N/A"}</strong></span>
                 </div>
               </div>
               <div className="border border-red-200 rounded-lg p-3 bg-red-50">
                 <p className="text-sm font-bold text-red-800 mb-2">Student Login Credentials *</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-medium text-gray-600 mb-1">Username (Phone)</label><input type="text" value={cl.phone} disabled className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100" /></div>
+                  <div><label className="block text-xs font-medium text-gray-600 mb-1">Username (Phone)</label><input type="text" value={cl.mobile || cl.phone || ""} disabled className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100" /></div>
                   <div><label className="block text-xs font-medium text-gray-600 mb-1">Password *</label><input type="password" value={convertForm.password} onChange={e => setConvertForm({ ...convertForm, password: e.target.value })} className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none" placeholder="Set student password" /></div>
                 </div>
               </div>
