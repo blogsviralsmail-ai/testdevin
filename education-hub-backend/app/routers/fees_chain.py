@@ -7,7 +7,7 @@ from typing import Optional, List
 from app.database import get_db
 from app.utils.auth import get_current_user, require_admin
 from app.routers.centers import get_current_center, get_center_and_subcenter_ids
-import os, uuid, json
+import os, uuid, json, sqlite3
 from datetime import datetime
 
 router = APIRouter(prefix="/api/fees-chain", tags=["Fees Chain"])
@@ -61,27 +61,26 @@ class LevelPaymentUpdate(BaseModel):
 
 # ── Helper: Generate invoice number ──────────────────────────────
 
-def _generate_invoice_number(conn, prefix="INV"):
+def _insert_invoice_with_retry(conn, prefix="INV", from_level="", from_id=0, to_level="", to_id=None, amount=0, items="[]", payment_id=0):
+    """Generate unique invoice number and INSERT in one atomic retry loop."""
     for _attempt in range(5):
-        max_num = conn.execute(
-            "SELECT invoice_number FROM level_invoices ORDER BY id DESC LIMIT 1"
+        row = conn.execute(
+            "SELECT MAX(CAST(CASE WHEN INSTR(invoice_number, '-') > 0 "
+            "THEN SUBSTR(invoice_number, INSTR(invoice_number, '-') + 1) "
+            "ELSE invoice_number END AS INTEGER)) FROM level_invoices"
         ).fetchone()
-        if max_num and max_num["invoice_number"]:
-            try:
-                num = int(max_num["invoice_number"].split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                num = 1001
-        else:
-            num = 1001
-        invoice_num = f"{prefix}-{num:06d}"
-        # Check if already exists to avoid UNIQUE constraint violation
-        exists = conn.execute(
-            "SELECT 1 FROM level_invoices WHERE invoice_number = ?", (invoice_num,)
-        ).fetchone()
-        if not exists:
-            return invoice_num
-        num += 1
-    return f"{prefix}-{num:06d}"
+        max_num = (row[0] if row and row[0] else 1000)
+        invoice_number = f"{prefix}-{str(max_num + 1).zfill(6)}"
+        try:
+            conn.execute(
+                """INSERT INTO level_invoices (invoice_number, from_level, from_id, to_level, to_id, amount, items, payment_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (invoice_number, from_level, from_id, to_level, to_id, amount, items, payment_id)
+            )
+            return invoice_number
+        except sqlite3.IntegrityError:
+            continue
+    raise HTTPException(status_code=500, detail="Could not generate unique invoice number")
 
 
 def _get_entity_name(conn, level: str, entity_id: int) -> str:
@@ -179,9 +178,6 @@ async def create_level_payment(data: LevelPaymentCreate, user: dict = Depends(ge
         conn.close()
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # Generate invoice
-    invoice_number = _generate_invoice_number(conn)
-
     # Auto-lookup student details if student_phone provided
     student_name = data.student_name or ""
     student_university = data.student_university or ""
@@ -200,6 +196,8 @@ async def create_level_payment(data: LevelPaymentCreate, user: dict = Depends(ge
             student_university = stu["uni_name"] or ""
             student_course = stu["course_name"] or ""
 
+    # Generate a temporary invoice number for the payment record
+    invoice_number = "PENDING"
     cursor = conn.execute(
         """INSERT INTO level_payments (from_level, from_id, to_level, to_id, amount, payment_mode, utr_number, notes, invoice_number, student_phone, student_name, student_university, student_course)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
@@ -209,18 +207,18 @@ async def create_level_payment(data: LevelPaymentCreate, user: dict = Depends(ge
     )
     payment_id = cursor.lastrowid
 
-    # Auto-generate invoice
+    # Generate invoice with retry loop (INSERT inside loop catches IntegrityError)
     from_name = _get_entity_name(conn, data.from_level, data.from_id)
     to_name = _get_entity_name(conn, data.to_level, data.to_id) if data.to_id else data.to_level.title()
     items_json = json.dumps([{
         "description": f"Fees payment from {from_name} to {to_name}",
         "amount": data.amount
     }])
-    conn.execute(
-        """INSERT INTO level_invoices (invoice_number, from_level, from_id, to_level, to_id, amount, items, payment_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (invoice_number, data.from_level, data.from_id, data.to_level, data.to_id, data.amount, items_json, payment_id)
+    invoice_number = _insert_invoice_with_retry(
+        conn, "INV", data.from_level, data.from_id, data.to_level, data.to_id, data.amount, items_json, payment_id
     )
+    # Update the payment record with the actual invoice number
+    conn.execute("UPDATE level_payments SET invoice_number = ? WHERE id = ?", (invoice_number, payment_id))
     conn.commit()
     conn.close()
     return {"id": payment_id, "invoice_number": invoice_number, "message": "Payment recorded & invoice generated"}
