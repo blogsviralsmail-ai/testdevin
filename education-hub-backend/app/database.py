@@ -1242,6 +1242,18 @@ def init_db():
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )""")
 
+    # Add student tracking columns to level_payments
+    for col_name, col_type in [
+        ("student_phone", "TEXT DEFAULT ''"),
+        ("student_name", "TEXT DEFAULT ''"),
+        ("student_university", "TEXT DEFAULT ''"),
+        ("student_course", "TEXT DEFAULT ''"),
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE level_payments ADD COLUMN {col_name} {col_type}")
+        except:
+            pass
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS level_invoices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

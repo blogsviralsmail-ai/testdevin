@@ -15,6 +15,29 @@ router = APIRouter(prefix="/api/fees-chain", tags=["Fees Chain"])
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/data/uploads")
 
 
+@router.get("/student-lookup")
+async def lookup_student_for_fees(phone: str = "", user: dict = Depends(get_current_user)):
+    """Lookup student by phone for fees chain entry."""
+    role = user.get("role", "")
+    if role not in ("admin", "super_admin", "branch_admin", "center"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if not phone or len(phone) < 3:
+        return {"students": []}
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT s.id, s.name, s.phone, s.email, u.name as university_name, c.name as course_name,
+                  s.total_fees, s.center_id, ct.name as center_name
+           FROM students s
+           LEFT JOIN universities u ON s.university_id = u.id
+           LEFT JOIN categories c ON s.category_id = c.id
+           LEFT JOIN centers ct ON s.center_id = ct.id
+           WHERE s.phone LIKE ? LIMIT 10""",
+        (f"%{phone}%",)
+    ).fetchall()
+    conn.close()
+    return {"students": [dict(r) for r in rows]}
+
+
 # ── Pydantic Models ──────────────────────────────────────────────
 
 class LevelPaymentCreate(BaseModel):
@@ -26,6 +49,10 @@ class LevelPaymentCreate(BaseModel):
     payment_mode: str = "cash"
     utr_number: Optional[str] = None
     notes: Optional[str] = None
+    student_phone: Optional[str] = None
+    student_name: Optional[str] = None
+    student_university: Optional[str] = None
+    student_course: Optional[str] = None
 
 class LevelPaymentUpdate(BaseModel):
     status: Optional[str] = None
@@ -146,11 +173,30 @@ async def create_level_payment(data: LevelPaymentCreate, user: dict = Depends(ge
     # Generate invoice
     invoice_number = _generate_invoice_number(conn)
 
+    # Auto-lookup student details if student_phone provided
+    student_name = data.student_name or ""
+    student_university = data.student_university or ""
+    student_course = data.student_course or ""
+    if data.student_phone and not student_name:
+        stu = conn.execute(
+            """SELECT s.name, u.name as uni_name, c.name as course_name
+               FROM students s
+               LEFT JOIN universities u ON s.university_id = u.id
+               LEFT JOIN categories c ON s.category_id = c.id
+               WHERE s.phone = ?""",
+            (data.student_phone,)
+        ).fetchone()
+        if stu:
+            student_name = stu["name"] or ""
+            student_university = stu["uni_name"] or ""
+            student_course = stu["course_name"] or ""
+
     cursor = conn.execute(
-        """INSERT INTO level_payments (from_level, from_id, to_level, to_id, amount, payment_mode, utr_number, notes, invoice_number)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO level_payments (from_level, from_id, to_level, to_id, amount, payment_mode, utr_number, notes, invoice_number, student_phone, student_name, student_university, student_course)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (data.from_level, data.from_id, data.to_level, data.to_id, data.amount,
-         data.payment_mode, data.utr_number, data.notes, invoice_number)
+         data.payment_mode, data.utr_number, data.notes, invoice_number,
+         data.student_phone or "", student_name, student_university, student_course)
     )
     payment_id = cursor.lastrowid
 

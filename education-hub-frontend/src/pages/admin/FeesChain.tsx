@@ -11,6 +11,7 @@ interface Payment {
   amount: number; payment_mode: string; utr_number: string; notes: string; status: string;
   invoice_number: string; from_name: string; to_name: string; created_at: string;
   approved_at: string; receipt_files: string | null;
+  student_phone?: string; student_name?: string; student_university?: string; student_course?: string;
 }
 interface Invoice {
   id: number; invoice_number: string; from_level: string; from_name: string;
@@ -142,6 +143,7 @@ export default function AdminFeesChain() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Invoice</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Student</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">From</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">To</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">Amount</th>
@@ -152,10 +154,20 @@ export default function AdminFeesChain() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {payments.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-gray-400">No payments yet</td></tr>}
+              {payments.length === 0 && <tr><td colSpan={9} className="text-center py-8 text-gray-400">No payments yet</td></tr>}
               {payments.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-mono text-xs text-blue-600">{p.invoice_number}</td>
+                  <td className="px-4 py-3">
+                    {p.student_phone ? (
+                      <div>
+                        <div className="font-medium">{p.student_name || '—'}</div>
+                        <div className="text-xs text-gray-500">{p.student_phone}</div>
+                        {p.student_university && <div className="text-xs text-blue-500">{p.student_university}</div>}
+                        {p.student_course && <div className="text-xs text-purple-500">{p.student_course}</div>}
+                      </div>
+                    ) : <span className="text-gray-400">—</span>}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{p.from_name}</div>
                     <div className="text-xs text-gray-500">{p.from_level}</div>
@@ -280,8 +292,12 @@ export default function AdminFeesChain() {
   );
 }
 
-/* ── Pay University sub-component ── */
+/* ── Pay University sub-component with student mobile number lookup ── */
 function PayUniversityForm({ onDone, api }: { onDone: () => void; api: any }) {
+  const [studentPhone, setStudentPhone] = useState("");
+  const [studentInfo, setStudentInfo] = useState<any>(null);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
   const [amount, setAmount] = useState("");
   const [mode, setMode] = useState("bank_transfer");
   const [utr, setUtr] = useState("");
@@ -289,13 +305,44 @@ function PayUniversityForm({ onDone, api }: { onDone: () => void; api: any }) {
   const [files, setFiles] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Student phone lookup with debounce
+  useEffect(() => {
+    if (studentPhone.length < 3) { setSearchResults([]); return; }
+    if (studentInfo) return; // already selected
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await api.get(`/api/fees-chain/student-lookup?phone=${studentPhone}`);
+        setSearchResults(res.data.students || []);
+      } catch { setSearchResults([]); }
+      setSearching(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [studentPhone, studentInfo]);
+
+  const selectStudent = (s: any) => {
+    setStudentInfo(s);
+    setStudentPhone(s.phone);
+    setSearchResults([]);
+  };
+  const clearStudent = () => {
+    setStudentInfo(null);
+    setStudentPhone("");
+    setSearchResults([]);
+  };
+
   const submit = async () => {
     if (!amount || parseFloat(amount) <= 0) { alert("Enter valid amount"); return; }
+    if (!studentPhone) { alert("Please enter student mobile number"); return; }
     setSaving(true);
     try {
       const res = await api.post("/api/fees-chain/payments", {
         from_level: "admin", from_id: 0, to_level: "university", to_id: null,
         amount: parseFloat(amount), payment_mode: mode, utr_number: utr, notes,
+        student_phone: studentPhone,
+        student_name: studentInfo?.name || "",
+        student_university: studentInfo?.university_name || "",
+        student_course: studentInfo?.course_name || "",
       });
       // Upload receipts if any
       if (files?.length && res.data.id) {
@@ -305,28 +352,78 @@ function PayUniversityForm({ onDone, api }: { onDone: () => void; api: any }) {
       }
       alert(`Payment recorded! Invoice: ${res.data.invoice_number}`);
       setAmount(""); setUtr(""); setNotes(""); setFiles(null);
+      clearStudent();
       onDone();
     } catch (e: any) { alert(e?.response?.data?.detail || "Error"); }
     setSaving(false);
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-6 max-w-lg">
-      <h3 className="text-lg font-bold mb-4">Record University Payment</h3>
+    <div className="bg-white rounded-xl shadow p-6 max-w-2xl">
+      <h3 className="text-lg font-bold mb-4">Record University Payment (Student-wise)</h3>
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Amount (₹) *</label>
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full border rounded-lg p-2" placeholder="Enter amount" />
+        {/* Student Mobile Number Lookup */}
+        <div className="relative">
+          <label className="block text-sm font-medium mb-1">Student Mobile Number *</label>
+          <div className="flex gap-2">
+            <input type="text" value={studentPhone}
+              onChange={(e) => { setStudentPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); if (studentInfo) setStudentInfo(null); }}
+              className="flex-1 border rounded-lg p-2" placeholder="Enter student mobile number..." maxLength={10} />
+            {studentInfo && (
+              <button onClick={clearStudent} className="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200">Clear</button>
+            )}
+          </div>
+          {searching && <p className="text-xs text-gray-400 mt-1">Searching...</p>}
+          {/* Search results dropdown */}
+          {searchResults.length > 0 && !studentInfo && (
+            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {searchResults.map((s: any) => (
+                <button key={s.id} onClick={() => selectStudent(s)}
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b last:border-b-0">
+                  <div className="font-medium">{s.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {s.phone} | {s.university_name || 'No University'} | {s.course_name || 'No Course'}
+                    {s.center_name && <span className="ml-1 text-purple-600">({s.center_name})</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Payment Mode *</label>
-          <select value={mode} onChange={(e) => setMode(e.target.value)} className="w-full border rounded-lg p-2">
-            <option value="bank_transfer">Bank Transfer</option>
-            <option value="upi">UPI</option>
-            <option value="cheque">Cheque</option>
-            <option value="cash">Cash</option>
-            <option value="dd">Demand Draft</option>
-          </select>
+
+        {/* Student Info Card */}
+        {studentInfo && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-green-600 text-lg">&#10003;</span>
+              <span className="font-bold text-green-800">{studentInfo.name}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-xs text-gray-600">
+              <div>Mobile: <span className="font-medium">{studentInfo.phone}</span></div>
+              <div>Email: <span className="font-medium">{studentInfo.email || '—'}</span></div>
+              <div>University: <span className="font-medium text-blue-600">{studentInfo.university_name || '—'}</span></div>
+              <div>Course: <span className="font-medium text-blue-600">{studentInfo.course_name || '—'}</span></div>
+              {studentInfo.center_name && <div>Center: <span className="font-medium text-purple-600">{studentInfo.center_name}</span></div>}
+              {studentInfo.total_fees > 0 && <div>Total Fees: <span className="font-medium text-green-700">{fmt(studentInfo.total_fees)}</span></div>}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Amount (Rs) *</label>
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full border rounded-lg p-2" placeholder="Enter amount" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Payment Mode *</label>
+            <select value={mode} onChange={(e) => setMode(e.target.value)} className="w-full border rounded-lg p-2">
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="upi">UPI</option>
+              <option value="cheque">Cheque</option>
+              <option value="cash">Cash</option>
+              <option value="dd">Demand Draft</option>
+            </select>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">UTR / Reference Number</label>
