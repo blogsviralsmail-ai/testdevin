@@ -400,14 +400,27 @@ async def list_university_receipts(user: dict = Depends(get_current_user)):
 async def upload_university_receipt(
     payment_id: int,
     files: List[UploadFile] = File(...),
-    user: dict = Depends(require_admin),
+    user: dict = Depends(get_current_user),
 ):
-    """Upload university receipt screenshots (multiple allowed)."""
+    """Upload receipt/proof screenshots (multiple allowed). Admin, center, sub-center can upload."""
+    role = user.get("role", "")
+    if role == "student":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     conn = get_db()
     payment = conn.execute("SELECT * FROM level_payments WHERE id = ?", (payment_id,)).fetchone()
     if not payment:
         conn.close()
         raise HTTPException(status_code=404, detail="Payment not found")
+
+    # Centers can only upload proof for their own payments
+    if role == "center":
+        center = get_current_center(user)
+        cid = center["id"]
+        all_ids = get_center_and_subcenter_ids(conn, cid)
+        if payment["from_id"] not in all_ids:
+            conn.close()
+            raise HTTPException(status_code=403, detail="You can only upload proof for your own payments")
 
     receipts_dir = os.path.join(UPLOAD_DIR, "university_receipts")
     os.makedirs(receipts_dir, exist_ok=True)

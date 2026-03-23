@@ -209,14 +209,39 @@ function PaymentTable({ payments, onApprove, onReject, showActions }: { payments
 }
 
 function PayParentForm({ level, centerId, parentLabel, api, onDone }: { level: string; centerId: number; parentLabel: string; api: any; onDone: () => void }) {
+  const [studentPhone, setStudentPhone] = useState("");
+  const [studentInfo, setStudentInfo] = useState<any>(null);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
   const [amount, setAmount] = useState("");
   const [mode, setMode] = useState("bank_transfer");
   const [utr, setUtr] = useState("");
   const [notes, setNotes] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Student phone lookup with debounce
+  useEffect(() => {
+    if (studentPhone.length < 3) { setSearchResults([]); return; }
+    if (studentInfo) return;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await api.get(`/api/fees-chain/student-lookup?phone=${studentPhone}`);
+        setSearchResults(res.data.students || []);
+      } catch { setSearchResults([]); }
+      setSearching(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [studentPhone, studentInfo]);
+
+  const selectStudent = (s: any) => { setStudentInfo(s); setStudentPhone(s.phone); setSearchResults([]); };
+  const clearStudent = () => { setStudentInfo(null); setStudentPhone(""); setSearchResults([]); };
 
   const submit = async () => {
     if (!amount || parseFloat(amount) <= 0) { alert("Enter valid amount"); return; }
+    if (!studentPhone) { alert("Please enter student mobile number"); return; }
+    if (!proofFile) { alert("Please upload payment proof (screenshot/PDF)"); return; }
     setSaving(true);
     const toLevel = level === "center" ? "admin" : "center";
     try {
@@ -224,42 +249,95 @@ function PayParentForm({ level, centerId, parentLabel, api, onDone }: { level: s
         from_level: level, from_id: centerId,
         to_level: toLevel, to_id: level === "sub_center" ? null : null,
         amount: parseFloat(amount), payment_mode: mode, utr_number: utr, notes,
+        student_phone: studentPhone,
+        student_name: studentInfo?.name || "",
+        student_university: studentInfo?.university_name || "",
+        student_course: studentInfo?.course_name || "",
       });
+      // Upload proof
+      if (proofFile && res.data.id) {
+        const fd = new FormData();
+        fd.append("files", proofFile);
+        await api.post(`/api/fees-chain/receipts/${res.data.id}/upload`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      }
       alert(`Payment submitted! Invoice: ${res.data.invoice_number}\nWaiting for ${parentLabel} approval.`);
-      setAmount(""); setUtr(""); setNotes("");
+      setAmount(""); setUtr(""); setNotes(""); setProofFile(null); clearStudent();
       onDone();
     } catch (e: any) { alert(e?.response?.data?.detail || "Error"); }
     setSaving(false);
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-6 max-w-lg">
+    <div className="bg-white rounded-xl shadow p-6 max-w-2xl">
       <h3 className="text-lg font-bold mb-4">Submit Fees to {parentLabel}</h3>
-      <p className="text-sm text-gray-500 mb-4">Submit your collected fees to {parentLabel}. An invoice will be auto-generated.</p>
+      <p className="text-sm text-gray-500 mb-4">Submit your collected fees to {parentLabel} with proof. {parentLabel} will approve after verification.</p>
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Amount (₹) *</label>
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full border rounded-lg p-2" />
+        {/* Student Mobile Number Lookup */}
+        <div className="relative">
+          <label className="block text-sm font-medium mb-1">Student Mobile Number *</label>
+          <div className="flex gap-2">
+            <input type="text" value={studentPhone}
+              onChange={(e) => { setStudentPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); if (studentInfo) setStudentInfo(null); }}
+              className="flex-1 border rounded-lg p-2" placeholder="Enter student mobile number..." maxLength={10} />
+            {studentInfo && <button onClick={clearStudent} className="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200">Clear</button>}
+          </div>
+          {searching && <p className="text-xs text-gray-400 mt-1">Searching...</p>}
+          {searchResults.length > 0 && !studentInfo && (
+            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {searchResults.map((s: any) => (
+                <button key={s.id} onClick={() => selectStudent(s)} className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b last:border-b-0">
+                  <div className="font-medium">{s.name}</div>
+                  <div className="text-xs text-gray-500">{s.phone} | {s.university_name || 'No University'} | {s.course_name || 'No Course'}</div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Payment Mode</label>
-          <select value={mode} onChange={(e) => setMode(e.target.value)} className="w-full border rounded-lg p-2">
-            <option value="bank_transfer">Bank Transfer</option>
-            <option value="upi">UPI</option>
-            <option value="cash">Cash</option>
-            <option value="cheque">Cheque</option>
-          </select>
+        {/* Student Info Card */}
+        {studentInfo && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-green-600 text-lg">&#10003;</span>
+              <span className="font-bold text-green-800">{studentInfo.name}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-xs text-gray-600">
+              <div>Mobile: <span className="font-medium">{studentInfo.phone}</span></div>
+              <div>University: <span className="font-medium text-blue-600">{studentInfo.university_name || '—'}</span></div>
+              <div>Course: <span className="font-medium text-blue-600">{studentInfo.course_name || '—'}</span></div>
+              {studentInfo.total_fees > 0 && <div>Total Fees: <span className="font-medium text-green-700">{fmt(studentInfo.total_fees)}</span></div>}
+            </div>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Amount (₹) *</label>
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full border rounded-lg p-2" placeholder="Enter amount" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Payment Mode</label>
+            <select value={mode} onChange={(e) => setMode(e.target.value)} className="w-full border rounded-lg p-2">
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="upi">UPI</option>
+              <option value="cash">Cash</option>
+              <option value="cheque">Cheque</option>
+            </select>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">UTR / Reference</label>
-          <input type="text" value={utr} onChange={(e) => setUtr(e.target.value)} className="w-full border rounded-lg p-2" />
+          <input type="text" value={utr} onChange={(e) => setUtr(e.target.value)} className="w-full border rounded-lg p-2" placeholder="UTR or transaction ID" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Payment Proof (Screenshot/PDF) *</label>
+          <input type="file" accept=".png,.jpg,.jpeg,.pdf,.webp" onChange={(e) => setProofFile(e.target.files?.[0] || null)} className="w-full border rounded-lg p-2" />
+          {proofFile && <p className="text-xs text-green-600 mt-1">Selected: {proofFile.name}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Notes</label>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full border rounded-lg p-2" rows={2} />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full border rounded-lg p-2" rows={2} placeholder="Any notes..." />
         </div>
         <button onClick={submit} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
-          {saving ? "Submitting..." : `Submit to ${parentLabel}`}
+          {saving ? "Submitting..." : `Submit Payment to ${parentLabel} (Pending Approval)`}
         </button>
       </div>
     </div>
