@@ -21,6 +21,44 @@ class RegisterRequest(BaseModel):
     role: str = "student"
     university_id: Optional[int] = None
     category_id: Optional[int] = None
+    # Extended profile fields (steps 2-5 of registration)
+    photo: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    category_type: Optional[str] = None
+    nationality: Optional[str] = None
+    aadhar_no: Optional[str] = None
+    marital_status: Optional[str] = None
+    blood_group: Optional[str] = None
+    father_name: Optional[str] = None
+    mother_name: Optional[str] = None
+    guardian_name: Optional[str] = None
+    father_occupation: Optional[str] = None
+    parent_phone: Optional[str] = None
+    parent_email: Optional[str] = None
+    current_address: Optional[str] = None
+    current_city: Optional[str] = None
+    current_state: Optional[str] = None
+    current_pincode: Optional[str] = None
+    permanent_address: Optional[str] = None
+    permanent_city: Optional[str] = None
+    permanent_state: Optional[str] = None
+    permanent_pincode: Optional[str] = None
+    tenth_board: Optional[str] = None
+    tenth_year: Optional[str] = None
+    tenth_percentage: Optional[str] = None
+    tenth_school: Optional[str] = None
+    twelfth_board: Optional[str] = None
+    twelfth_year: Optional[str] = None
+    twelfth_percentage: Optional[str] = None
+    twelfth_school: Optional[str] = None
+    graduation_university: Optional[str] = None
+    graduation_year: Optional[str] = None
+    graduation_percentage: Optional[str] = None
+    graduation_degree: Optional[str] = None
+    disability: Optional[str] = None
+    hostel_required: Optional[str] = None
+    transport_required: Optional[str] = None
 
 class ForgotPasswordRequest(BaseModel):
     email: str
@@ -106,8 +144,33 @@ async def register(req: RegisterRequest):
         enrollment_no = f"EDU{str(next_num).zfill(6)}"
         try:
             conn.execute(
-                "INSERT INTO students (user_id, enrollment_no, name, email, phone, university_id, category_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (user_id, enrollment_no, req.name, req.email, req.phone, req.university_id, req.category_id, "pending")
+                """INSERT INTO students (user_id, enrollment_no, name, email, phone, university_id, category_id, status,
+                   photo, date_of_birth, gender, category_type, nationality, aadhar_no, marital_status, blood_group,
+                   father_name, mother_name, guardian_name, father_occupation, parent_phone, parent_email,
+                   current_address, current_city, current_state, current_pincode,
+                   permanent_address, permanent_city, permanent_state, permanent_pincode,
+                   tenth_board, tenth_year, tenth_percentage, tenth_school,
+                   twelfth_board, twelfth_year, twelfth_percentage, twelfth_school,
+                   graduation_university, graduation_year, graduation_percentage, graduation_degree,
+                   disability, hostel_required, transport_required)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?)""",
+                (user_id, enrollment_no, req.name, req.email, req.phone, req.university_id, req.category_id, "pending",
+                 req.photo, req.date_of_birth, req.gender, req.category_type, req.nationality, req.aadhar_no, req.marital_status, req.blood_group,
+                 req.father_name, req.mother_name, req.guardian_name, req.father_occupation, req.parent_phone, req.parent_email,
+                 req.current_address, req.current_city, req.current_state, req.current_pincode,
+                 req.permanent_address, req.permanent_city, req.permanent_state, req.permanent_pincode,
+                 req.tenth_board, req.tenth_year, req.tenth_percentage, req.tenth_school,
+                 req.twelfth_board, req.twelfth_year, req.twelfth_percentage, req.twelfth_school,
+                 req.graduation_university, req.graduation_year, req.graduation_percentage, req.graduation_degree,
+                 req.disability, req.hostel_required, req.transport_required)
             )
             conn.commit()
             break

@@ -78,19 +78,15 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const res = await api.post("/api/auth/register", {
-        name: form.name, email: form.email, phone: form.phone,
-        username: form.phone, password: form.password,
-        university_id: form.university_id ? parseInt(form.university_id) : null,
-        category_id: form.category_id ? parseInt(form.category_id) : null,
-      });
-      setAuth(res.data.token, res.data.user);
+      // Upload photo first if provided (public endpoint, no auth needed)
       let photoUrl = "";
       if (form.photo && form.photo.startsWith("data:")) {
         try { const pr = await api.post("/api/students/upload-photo-base64", { image: form.photo, ext: "jpg" }); photoUrl = pr.data.url; } catch { /* skip */ }
       }
-      await api.post("/api/students", {
+      // Send ALL profile data in a single register call (backend saves everything atomically)
+      const res = await api.post("/api/auth/register", {
         name: form.name, email: form.email, phone: form.phone,
+        username: form.phone, password: form.password,
         university_id: form.university_id ? parseInt(form.university_id) : null,
         category_id: form.category_id ? parseInt(form.category_id) : null,
         photo: photoUrl, date_of_birth: form.date_of_birth, gender: form.gender,
@@ -112,6 +108,7 @@ export default function Register() {
         disability: form.disability, hostel_required: form.hostel_required,
         transport_required: form.transport_required,
       });
+      setAuth(res.data.token, res.data.user);
       navigate("/student");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
