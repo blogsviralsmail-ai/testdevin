@@ -369,7 +369,8 @@ async def register_remote_installation(req: RemoteRegistrationRequest):
              req.admin_phone, req.company_name, datetime.utcnow().isoformat(), req.instance_id),
         )
         conn.commit()
-    conn.close()
+    finally:
+        conn.close()
 
     return {"status": "registered", "instance_id": req.instance_id}
 

@@ -28,7 +28,7 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
-    email: str = ""  # Required to scope token lookup to user
+    email: str  # Required to scope token lookup to user
 
 @router.post("/login")
 async def login(req: LoginRequest):
@@ -169,14 +169,28 @@ async def forgot_password(req: ForgotPasswordRequest):
     
     return {"message": "If an account exists with this email, a password reset code has been sent."}
 
-# Simple in-memory rate limiter for reset-password endpoint
-_reset_attempts: dict = {}  # ip -> (count, first_attempt_time)
+# Simple in-memory rate limiter for reset-password endpoint with auto-cleanup
 _RATE_LIMIT_WINDOW = 300  # 5 minutes
 _RATE_LIMIT_MAX = 10  # max 10 attempts per window
+_reset_attempts: dict = {}  # ip -> (count, first_attempt_time)
+_cleanup_counter = 0
+
+def _cleanup_expired_entries():
+    """Remove expired rate-limit entries to prevent unbounded memory growth."""
+    global _cleanup_counter
+    _cleanup_counter += 1
+    if _cleanup_counter < 50:  # Only cleanup every 50 requests
+        return
+    _cleanup_counter = 0
+    now = time.time()
+    expired = [ip for ip, (_, first_time) in _reset_attempts.items() if now - first_time > _RATE_LIMIT_WINDOW]
+    for ip in expired:
+        del _reset_attempts[ip]
 
 @router.post("/reset-password")
 async def reset_password(req: ResetPasswordRequest, request: Request):
     # Rate limiting: max 10 attempts per IP per 5 minutes
+    _cleanup_expired_entries()
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     if client_ip in _reset_attempts:
@@ -191,17 +205,14 @@ async def reset_password(req: ResetPasswordRequest, request: Request):
         _reset_attempts[client_ip] = (1, now)
 
     conn = get_db()
-    # Scope token lookup to user's email to prevent cross-user token collisions
-    if req.email:
-        token_row = conn.execute(
-            "SELECT prt.* FROM password_reset_tokens prt JOIN users u ON prt.user_id = u.id WHERE prt.token = ? AND u.email = ? AND prt.used = 0",
-            (req.token, req.email)
-        ).fetchone()
-    else:
-        token_row = conn.execute(
-            "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0",
-            (req.token,)
-        ).fetchone()
+    # Token lookup always scoped to user's email to prevent cross-user collisions
+    if not req.email:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Email is required for password reset")
+    token_row = conn.execute(
+        "SELECT prt.* FROM password_reset_tokens prt JOIN users u ON prt.user_id = u.id WHERE prt.token = ? AND u.email = ? AND prt.used = 0",
+        (req.token, req.email)
+    ).fetchone()
     if not token_row:
         conn.close()
         raise HTTPException(status_code=400, detail="Invalid or expired reset code")
