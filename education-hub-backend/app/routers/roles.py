@@ -59,6 +59,8 @@ async def create_role(data: RoleCreate, user: dict = Depends(require_admin)):
 
 @router.put("/{rid}")
 async def update_role(rid: int, data: RoleCreate, user: dict = Depends(require_admin)):
+    if data.name.lower().strip() in RESERVED_ROLE_NAMES:
+        raise HTTPException(status_code=400, detail=f"Cannot rename role to reserved name '{data.name}'.")
     conn = get_db()
     perms = data.permissions if data.permissions else "{}"
     conn.execute(
@@ -106,7 +108,7 @@ async def create_role_user(data: UserWithRole, user: dict = Depends(require_admi
             role_name = role_row["name"]
     # Prevent privilege escalation: only super_admin and admin can create admin-level users
     caller_role = user.get("role", "")
-    if caller_role not in ("super_admin", "admin") and role_name in ("super_admin", "admin", "branch_admin"):
+    if caller_role not in ("super_admin", "admin") and role_name in ("super_admin", "admin", "branch_admin", "platform_admin", "center"):
         conn.close()
         raise HTTPException(status_code=403, detail="Only admin or super_admin can create users with admin-level roles")
     cursor = conn.execute(
@@ -130,7 +132,7 @@ async def update_role_user(uid: int, data: dict, user: dict = Depends(require_ad
             role_name = role_row["name"]
     # Prevent privilege escalation: only super_admin and admin can assign admin-level roles
     caller_role = user.get("role", "")
-    if caller_role not in ("super_admin", "admin") and role_name in ("super_admin", "admin", "branch_admin"):
+    if caller_role not in ("super_admin", "admin") and role_name in ("super_admin", "admin", "branch_admin", "platform_admin", "center"):
         conn.close()
         raise HTTPException(status_code=403, detail="Only admin or super_admin can assign admin-level roles")
     if data.get("name"):
