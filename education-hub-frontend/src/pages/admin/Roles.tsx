@@ -19,7 +19,11 @@ interface RoleUser {
 const MODULES = [
   "dashboard", "universities", "categories", "students", "form_builder",
   "exams", "accounts", "support", "documents", "branches",
-  "enquiries", "team", "testimonials", "settings", "roles", "delete_entries"
+  "enquiries", "team", "testimonials", "settings", "roles", "delete_entries",
+  "counselor_leads", "fees", "payment_settings", "sub_centers", "commission",
+  "deal_fees", "announcements", "exam_timetable", "leads", "communication",
+  "notices", "analytics", "placements", "blog", "gallery", "careers", "popups",
+  "fees_chain"
 ];
 
 export default function AdminRoles() {
