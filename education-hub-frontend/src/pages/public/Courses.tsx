@@ -235,7 +235,7 @@ export default function Courses() {
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-900" />
         <div className="relative max-w-7xl mx-auto px-4 text-center">
-          <span className="inline-block px-4 py-1.5 bg-white/10 text-white text-sm font-semibold rounded-full mb-4 border border-white/20">{categories.length}+ COURSES</span>
+          <span className="inline-block px-4 py-1.5 bg-white/10 text-white text-sm font-semibold rounded-full mb-4 border border-white/20">{courseGroups.length}+ COURSES</span>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-white mb-4">Explore Our Courses</h1>
           <p className="text-blue-200 max-w-2xl mx-auto text-lg">Choose from {filtered.length} course categories offered by {new Set(categories.map(c => c.university_name)).size}+ top universities</p>
         </div>

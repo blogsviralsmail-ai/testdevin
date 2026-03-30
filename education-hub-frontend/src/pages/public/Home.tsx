@@ -119,8 +119,11 @@ export default function Home() {
         setUniCount(uniRes.value.data?.length || 15);
       }
       if (catRes.status === "fulfilled") {
-        setCategories(catRes.value.data || []);
-        setCourseCount(catRes.value.data?.length || 46);
+        const cats = catRes.value.data || [];
+        setCategories(cats);
+        // Count unique course names (not duplicates across universities)
+        const uniqueNames = new Set(cats.map((c: Category) => c.name.replace(/\s*-\s*\d+$/, '').replace(/\s+\d+$/, '').trim()));
+        setCourseCount(uniqueNames.size || 46);
       }
       if (testRes.status === "fulfilled") {
         setTestimonials(testRes.value.data || []);
@@ -236,12 +239,12 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { step: "01", icon: Search, title: "Explore Courses", desc: "Browse 500+ courses from 30+ universities. Filter by stream, mode, and fees.", color: "blue" },
-              { step: "02", icon: Compass, title: "Expert Counseling", desc: "Get personalized guidance from our experienced education counselors.", color: "indigo" },
-              { step: "03", icon: FileCheck, title: "Apply & Enroll", desc: "Complete your application with our support. We handle the paperwork.", color: "green" },
-              { step: "04", icon: Rocket, title: "Start Learning", desc: "Begin your academic journey at your dream university.", color: "orange" },
+              { step: "01", icon: Search, title: "Explore Courses", desc: "Browse 500+ courses from 30+ universities. Filter by stream, mode, and fees.", color: "blue", link: "/courses" },
+              { step: "02", icon: Compass, title: "Expert Counseling", desc: "Get personalized guidance from our experienced education counselors.", color: "indigo", link: "/contact" },
+              { step: "03", icon: FileCheck, title: "Apply & Enroll", desc: "Complete your application with our support. We handle the paperwork.", color: "green", link: "/enquiry" },
+              { step: "04", icon: Rocket, title: "Start Learning", desc: "Begin your academic journey at your dream university.", color: "orange", link: "/universities" },
             ].map((item, i) => (
-              <div key={i} className="relative group">
+              <Link key={i} to={item.link} className="relative group">
                 {i < 3 && <div className="hidden lg:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-gray-200 to-transparent z-0" />}
                 <div className="relative bg-white rounded-2xl p-8 border border-gray-100 hover:border-blue-200 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                   <div className={`absolute -top-5 left-6 h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-extrabold shadow-lg ${item.color === "blue" ? "bg-blue-600" : item.color === "indigo" ? "bg-indigo-600" : item.color === "green" ? "bg-green-600" : "bg-orange-600"}`}>{item.step}</div>
@@ -251,7 +254,7 @@ export default function Home() {
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -427,7 +430,7 @@ export default function Home() {
         })()}
         <div className="text-center mt-12">
           <Link to="/courses" className="btn-3d btn-3d-blue inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl text-lg">
-            View All {categories.length} Courses <ArrowRight className="h-5 w-5" />
+            View All {courseCount} Courses <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </section>

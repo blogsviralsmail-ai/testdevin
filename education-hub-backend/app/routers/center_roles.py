@@ -15,7 +15,10 @@ router = APIRouter(prefix="/api/center-roles", tags=["Center Roles"])
 CENTER_MODULES = [
     "dashboard", "students", "documents", "fees", "payment_settings",
     "sub_centers", "commission", "deal_fees", "counselor_leads",
-    "announcements", "exam_timetable", "support", "settings", "roles"
+    "announcements", "exam_timetable", "support", "settings", "roles",
+    "enquiries", "leads", "communication", "notices", "accounts",
+    "analytics", "placements", "blog", "gallery", "team",
+    "universities", "categories", "testimonials", "careers", "popups"
 ]
 
 
