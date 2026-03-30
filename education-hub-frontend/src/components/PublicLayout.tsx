@@ -85,7 +85,7 @@ export default function PublicLayout() {
       <header className="bg-slate-800 shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="h-14 w-14 rounded-xl overflow-hidden flex-shrink-0 p-0.5">
+            <div className="h-20 w-20 rounded-xl overflow-hidden flex-shrink-0 p-0.5">
               <img src={siteSettings.navbar_logo_url ? (siteSettings.navbar_logo_url.startsWith("/") ? API + siteSettings.navbar_logo_url : siteSettings.navbar_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-full w-full object-contain" />
             </div>
             <div className="flex flex-col whitespace-nowrap">
@@ -182,7 +182,7 @@ export default function PublicLayout() {
         <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-                <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 p-1">
+                <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 bg-white p-1.5">
                   <img src={siteSettings.footer_logo_url ? (siteSettings.footer_logo_url.startsWith("/") ? API + siteSettings.footer_logo_url : siteSettings.footer_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-full w-full object-contain" />
               </div>
               <div>
