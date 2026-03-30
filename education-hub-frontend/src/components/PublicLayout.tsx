@@ -82,15 +82,15 @@ export default function PublicLayout() {
       </div>
 
       {/* Main Nav */}
-      <header className="bg-white shadow-md sticky top-0 z-50">
+      <header className="bg-slate-800 shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="h-14 w-14 rounded-xl overflow-hidden flex-shrink-0 bg-white p-0.5">
+            <div className="h-14 w-14 rounded-xl overflow-hidden flex-shrink-0 p-0.5">
               <img src={siteSettings.navbar_logo_url ? (siteSettings.navbar_logo_url.startsWith("/") ? API + siteSettings.navbar_logo_url : siteSettings.navbar_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-full w-full object-contain" />
             </div>
             <div className="flex flex-col whitespace-nowrap">
-              <span className="text-xs sm:text-sm lg:text-base font-extrabold text-gray-900 leading-tight">{(siteSettings.site_name || "A Step For Future").split(" - ")[0]}</span>
-              <span className="text-blue-600 text-[10px] sm:text-[11px] lg:text-xs font-semibold">{(siteSettings.site_name || "Education Hub").split(" - ")[1] || "Education Hub"}</span>
+              <span className="text-xs sm:text-sm lg:text-base font-extrabold text-white leading-tight">{(siteSettings.site_name || "A Step For Future").split(" - ")[0]}</span>
+              <span className="text-blue-300 text-[10px] sm:text-[11px] lg:text-xs font-semibold">{(siteSettings.site_name || "Education Hub").split(" - ")[1] || "Education Hub"}</span>
             </div>
           </Link>
           <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1">
@@ -101,7 +101,7 @@ export default function PublicLayout() {
                 className={`nav-3d px-2.5 xl:px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                   location.pathname === item.path
                     ? "bg-blue-600 text-white nav-3d-active"
-                    : "text-gray-700 hover:bg-blue-50 hover:text-blue-700 nav-3d-inactive"
+                    : "text-gray-200 hover:bg-slate-700 hover:text-white nav-3d-inactive"
                 }`}
               >
                 {item.label}
@@ -113,16 +113,16 @@ export default function PublicLayout() {
               className="btn-3d btn-3d-yellow btn-flash bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold hidden md:block">
               Apply Now
             </Link>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="lg:hidden text-gray-600 hover:text-gray-900 p-2">
+            <button onClick={() => setMobileMenu(!mobileMenu)} className="lg:hidden text-white hover:text-gray-200 p-2">
               {mobileMenu ? <X className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
             </button>
           </div>
         </div>
         {mobileMenu && (
-          <div className="lg:hidden bg-white border-t border-gray-100 px-4 py-3 space-y-1 shadow-lg">
+          <div className="lg:hidden bg-slate-700 border-t border-slate-600 px-4 py-3 space-y-1 shadow-lg">
             {navItems.map((item) => (
               <Link key={item.path} to={item.path}
-                className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname === item.path ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-blue-50"}`}>
+                className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname === item.path ? "bg-blue-600 text-white" : "text-gray-200 hover:bg-slate-600"}`}>
                 {item.label}
               </Link>
             ))}
@@ -182,7 +182,7 @@ export default function PublicLayout() {
         <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-                <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 bg-white p-1">
+                <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 p-1">
                   <img src={siteSettings.footer_logo_url ? (siteSettings.footer_logo_url.startsWith("/") ? API + siteSettings.footer_logo_url : siteSettings.footer_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-full w-full object-contain" />
               </div>
               <div>
