@@ -182,8 +182,8 @@ export default function PublicLayout() {
         <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-                <div className="h-20 w-20 rounded-xl overflow-hidden flex-shrink-0 bg-white p-1.5">
-                  <img src={siteSettings.footer_logo_url ? (siteSettings.footer_logo_url.startsWith("/") ? API + siteSettings.footer_logo_url : siteSettings.footer_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-full w-full object-contain" />
+                <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-600 p-1">
+                  <img src={siteSettings.footer_logo_url ? (siteSettings.footer_logo_url.startsWith("/") ? API + siteSettings.footer_logo_url : siteSettings.footer_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-full w-full object-contain rounded-full" />
               </div>
               <div>
                 <span className="text-lg font-bold text-white block">{siteSettings.site_name || "A Step For Future - Education Hub"}</span>
