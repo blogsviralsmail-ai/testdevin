@@ -15,7 +15,7 @@ export default function ClientsPartners() {
     api.get("/api/categories").then(r => setCategories(r.data || [])).catch(() => {});
   }, []);
 
-  const imgSrc = (p: string) => { if (!p) return ""; if (p.startsWith("http")) return p; return API + p + "?v=" + Date.now(); };
+  const imgSrc = (p: string) => { if (!p) return ""; if (p.startsWith("http")) return p; return API + p; };
 
   // Count courses per university
   const coursesByUni = new Map<number, number>();
