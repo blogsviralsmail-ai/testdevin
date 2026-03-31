@@ -87,7 +87,8 @@ export default function AdminRoles() {
   };
 
   const saveUser = async () => {
-    const payload = { ...userForm, role_id: parseInt(userForm.role_id) };
+    const rid = parseInt(userForm.role_id);
+    const payload = { ...userForm, role_id: isNaN(rid) ? null : rid };
     if (editUserId) await api.put("/api/roles/users/" + editUserId, payload);
     else await api.post("/api/roles/users", payload);
     setShowUserForm(false);
