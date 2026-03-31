@@ -104,7 +104,7 @@ export default function Universities() {
                   <div className="absolute inset-0 bg-black/10" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     {uni.logo ? (
-                      <img src={uni.logo.startsWith("http") ? uni.logo : `https://asffeducationhub.com${uni.logo}`} alt={uni.name} className="h-20 w-20 object-contain bg-white rounded-xl p-2 shadow-lg" loading="lazy" decoding="async" />
+                      <img src={uni.logo.startsWith("http") ? uni.logo : `https://asffeducationhub.com${uni.logo}?v=2`} alt={uni.name} className="h-20 w-20 object-contain bg-white rounded-xl p-2 shadow-lg" loading="lazy" decoding="async" />
                     ) : (
                       <div className="h-20 w-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30">
                         <span className="text-2xl font-extrabold text-white">{uni.code}</span>
