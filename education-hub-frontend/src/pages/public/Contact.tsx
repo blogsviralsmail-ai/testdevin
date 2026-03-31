@@ -61,8 +61,8 @@ export default function Contact() {
       <section className="max-w-7xl mx-auto px-4 -mt-10 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { icon: MapPin, title: "Visit Us", text: settings.company_address || "Jaipur, Rajasthan", sub: "India", color: "blue" },
-            { icon: Phone, title: "Call Us", text: settings.company_phone || "+91-9876543210", sub: "Mon-Sat, 9AM-7PM", color: "green" },
+            { icon: MapPin, title: "Visit Us", text: settings.company_address || "OASIS COMPLEX, 46 SHASHTRINAGAR ROAD, NEAR PNB BANK AJMER", sub: "India", color: "blue" },
+            { icon: Phone, title: "Call Us", text: settings.company_phone || "+919251295969", sub: "Mon-Sat, 9AM-7PM", color: "green" },
             { icon: Mail, title: "Email Us", text: settings.company_email || "info@asffeducationhub.com", sub: "We reply within 24 hours", color: "purple" },
             { icon: Clock, title: "Working Hours", text: settings.contact_working_hours || "Mon - Sat: 9AM - 7PM", sub: settings.contact_working_hours_off || "Sunday: Closed", color: "orange" },
           ].map((item, i) => (

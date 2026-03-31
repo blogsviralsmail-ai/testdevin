@@ -88,7 +88,7 @@ export function getOrganizationSchema() {
     },
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+91-9876543210",
+      "telephone": "+919251295969",
       "contactType": "customer service",
       "email": "info@asffeducationhub.com",
       "availableLanguage": ["English", "Hindi"]

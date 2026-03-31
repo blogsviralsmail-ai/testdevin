@@ -503,11 +503,11 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 flex items-center gap-4 hover:-translate-y-1">
               <div className="h-14 w-14 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0"><Phone className="h-7 w-7 text-blue-600" /></div>
-              <div><h3 className="font-bold text-gray-900">Call Us</h3><p className="text-sm text-gray-500 mt-0.5">{settings.company_phone || "+91-9876543210"}</p><p className="text-xs text-gray-400">Mon-Sat, 9AM-7PM</p></div>
+              <div><h3 className="font-bold text-gray-900">Call Us</h3><p className="text-sm text-gray-500 mt-0.5">{settings.company_phone || "+919251295969"}</p><p className="text-xs text-gray-400">Mon-Sat, 9AM-7PM</p></div>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 flex items-center gap-4 hover:-translate-y-1">
               <div className="h-14 w-14 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0"><MapPin className="h-7 w-7 text-green-600" /></div>
-              <div><h3 className="font-bold text-gray-900">Visit Us</h3><p className="text-sm text-gray-500 mt-0.5">{settings.company_address || "Jaipur, Rajasthan, India"}</p></div>
+              <div><h3 className="font-bold text-gray-900">Visit Us</h3><p className="text-sm text-gray-500 mt-0.5">{settings.company_address || "OASIS COMPLEX, 46 SHASHTRINAGAR ROAD, NEAR PNB BANK AJMER"}</p></div>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 flex items-center gap-4 hover:-translate-y-1">
               <div className="h-14 w-14 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0"><Headphones className="h-7 w-7 text-purple-600" /></div>

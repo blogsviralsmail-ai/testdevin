@@ -110,8 +110,8 @@ export default function TermsConditions() {
             <div className="mt-2 text-gray-600">
                             <p><strong>A Step For Future - Education Hub</strong></p>
                             <p>Email: legal@asffeducationhub.com</p>
-              <p>Phone: +91-9999999999</p>
-              <p>Address: Jaipur, Rajasthan, India</p>
+              <p>Phone: +919251295969</p>
+              <p>Address: OASIS COMPLEX, 46 SHASHTRINAGAR ROAD, NEAR PNB BANK AJMER</p>
             </div>
           </section>
         </div>
