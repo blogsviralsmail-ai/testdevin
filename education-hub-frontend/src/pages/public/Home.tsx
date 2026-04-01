@@ -99,10 +99,10 @@ export default function Home() {
   const [uniCount, setUniCount] = useState(0);
   const [courseCount, setCourseCount] = useState(0);
 
-  const c1 = useCounter(uniCount || 15);
-  const c2 = useCounter(courseCount || 46);
+  const c1 = useCounter(uniCount || 33);
+  const c2 = useCounter(courseCount || 47);
   const c3 = useCounter(parseInt(settings.stat_students_enrolled || "5000") || 5000);
-  const c4 = useCounter(parseInt(settings.stat_success_rate || "95") || 95);
+  const c4 = useCounter(parseInt(settings.stat_success_rate || "99") || 99);
 
   useEffect(() => { loadData(); }, []);
 
@@ -116,14 +116,14 @@ export default function Home() {
       ]);
       if (uniRes.status === "fulfilled") {
         setUniversities(uniRes.value.data || []);
-        setUniCount(uniRes.value.data?.length || 15);
+        setUniCount(uniRes.value.data?.length || 33);
       }
       if (catRes.status === "fulfilled") {
         const cats = catRes.value.data || [];
         setCategories(cats);
         // Count unique course names (not duplicates across universities)
         const uniqueNames = new Set(cats.map((c: Category) => c.name.replace(/\s*-\s*\d+$/, '').replace(/\s+\d+$/, '').trim()));
-        setCourseCount(uniqueNames.size || 46);
+        setCourseCount(uniqueNames.size || 47);
       }
       if (testRes.status === "fulfilled") {
         setTestimonials(testRes.value.data || []);
