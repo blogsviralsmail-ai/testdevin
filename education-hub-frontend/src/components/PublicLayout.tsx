@@ -3,8 +3,6 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, X, Menu as MenuIcon, Send } from "lucide-react";
 import api from "../lib/api";
 
-const API = import.meta.env.VITE_API_URL || "";
-
 export default function PublicLayout() {
   const location = useLocation();
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -85,7 +83,7 @@ export default function PublicLayout() {
       <header className="bg-slate-800 shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-4 flex-shrink-0">
-              <img src={siteSettings.navbar_logo_url ? (siteSettings.navbar_logo_url.startsWith("/") ? API + siteSettings.navbar_logo_url : siteSettings.navbar_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-[72px] lg:h-[80px] w-auto object-contain flex-shrink-0" />
+              <img src="/logo-v4.png" alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-[72px] lg:h-[80px] w-auto object-contain flex-shrink-0" />
             <div className="flex flex-col whitespace-nowrap">
               <span className="text-sm sm:text-lg lg:text-xl font-extrabold text-white leading-tight">{(siteSettings.site_name || "A Step For Future").split(" - ")[0]}</span>
               <span className="text-blue-300 text-xs sm:text-sm lg:text-base font-semibold">{(siteSettings.site_name || "Education Hub").split(" - ")[1] || "Education Hub"}</span>
@@ -147,7 +145,7 @@ export default function PublicLayout() {
             ) : (
               <>
                 <div className="text-center mb-5">
-                  <img src={siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png"} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-10 w-auto mx-auto mb-2" />
+                  <img src="/logo-v4.png" alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-10 w-auto mx-auto mb-2" />
                   <h3 className="text-lg font-bold text-gray-900">Get Free Counseling!</h3>
                   <p className="text-sm text-gray-500">Fill in your details and our team will reach out to you</p>
                 </div>
@@ -180,7 +178,7 @@ export default function PublicLayout() {
         <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-                  <img src={siteSettings.footer_logo_url ? (siteSettings.footer_logo_url.startsWith("/") ? API + siteSettings.footer_logo_url : siteSettings.footer_logo_url) : (siteSettings.logo_url ? (siteSettings.logo_url.startsWith("/") ? API + siteSettings.logo_url : siteSettings.logo_url) : "/logo.png")} alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-[72px] w-auto object-contain flex-shrink-0" />
+                  <img src="/logo-v4.png" alt={siteSettings.site_name || "A Step For Future - Education Hub"} className="h-[72px] w-auto object-contain flex-shrink-0" />
               <div>
                 <span className="text-lg font-bold text-white block">{siteSettings.site_name || "A Step For Future - Education Hub"}</span>
                 <span className="text-xs text-gray-400">{siteSettings.site_tagline || "India's Trusted Education Partner"}</span>
