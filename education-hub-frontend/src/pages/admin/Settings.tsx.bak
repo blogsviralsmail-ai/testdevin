@@ -1,0 +1,310 @@
+import { useState, useEffect } from "react";
+import api from "../../lib/api";
+import { Save, Loader2 } from "lucide-react";
+
+interface SettingsData {
+  company_name: string;
+  company_email: string;
+  company_phone: string;
+  company_address: string;
+  company_website: string;
+  whatsapp_number: string;
+  facebook_url: string;
+  instagram_url: string;
+  linkedin_url: string;
+  youtube_url: string;
+  twitter_url: string;
+  primary_color: string;
+  secondary_color: string;
+  about_text: string;
+  director_name: string;
+  director_message: string;
+  counselor_name: string;
+  counselor_phone: string;
+  monthly_target: string;
+  terms_conditions: string;
+  privacy_policy: string;
+  popup_enabled: string;
+  popup_delay: string;
+}
+
+const defaultSettings: SettingsData = {
+  company_name: "Education Hub",
+  company_email: "",
+  company_phone: "",
+  company_address: "",
+  company_website: "",
+  whatsapp_number: "",
+  facebook_url: "",
+  instagram_url: "",
+  linkedin_url: "",
+  youtube_url: "",
+  twitter_url: "",
+  primary_color: "#1e40af",
+  secondary_color: "#3b82f6",
+  about_text: "",
+  director_name: "",
+  director_message: "",
+  counselor_name: "",
+  counselor_phone: "",
+  monthly_target: "50",
+  terms_conditions: "",
+  privacy_policy: "",
+  popup_enabled: "true",
+  popup_delay: "30",
+};
+
+export default function AdminSettings() {
+  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    try {
+      const res = await api.get("/api/settings");
+      if (res.data && typeof res.data === "object") {
+        setSettings({ ...defaultSettings, ...res.data });
+      }
+    } catch {
+      // use defaults
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setMessage("");
+    try {
+      await api.put("/api/settings", settings);
+      setMessage("Settings saved successfully!");
+      setTimeout(() => setMessage(""), 3000);
+    } catch {
+      setMessage("Error saving settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function updateField(field: keyof SettingsData, value: string) {
+    setSettings((prev) => ({ ...prev, [field]: value }));
+  }
+
+  const tabs = [
+    { id: "general", label: "General" },
+    { id: "social", label: "Social Media" },
+    { id: "branding", label: "Branding" },
+    { id: "team", label: "Team" },
+    { id: "legal", label: "Legal" },
+    { id: "popup", label: "Enquiry Popup" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Save Settings
+        </button>
+      </div>
+
+      {message && (
+        <div className={`mb-4 p-3 rounded-lg text-sm ${message.includes("Error") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+          {message}
+        </div>
+      )}
+
+      <div className="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+              activeTab === tab.id
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        {activeTab === "general" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">General Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                <input type="text" value={settings.company_name} onChange={(e) => updateField("company_name", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" value={settings.company_email} onChange={(e) => updateField("company_email", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input type="text" value={settings.company_phone} onChange={(e) => updateField("company_phone", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <input type="text" value={settings.company_website} onChange={(e) => updateField("company_website", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+                <input type="text" value={settings.whatsapp_number} onChange={(e) => updateField("whatsapp_number", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Admission Target</label>
+                <input type="number" value={settings.monthly_target} onChange={(e) => updateField("monthly_target", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <textarea value={settings.company_address} onChange={(e) => updateField("company_address", e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">About Text</label>
+              <textarea value={settings.about_text} onChange={(e) => updateField("about_text", e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "social" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">Social Media Links</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Facebook URL</label>
+                <input type="url" value={settings.facebook_url} onChange={(e) => updateField("facebook_url", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://facebook.com/..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Instagram URL</label>
+                <input type="url" value={settings.instagram_url} onChange={(e) => updateField("instagram_url", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://instagram.com/..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+                <input type="url" value={settings.linkedin_url} onChange={(e) => updateField("linkedin_url", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://linkedin.com/..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">YouTube URL</label>
+                <input type="url" value={settings.youtube_url} onChange={(e) => updateField("youtube_url", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://youtube.com/..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Twitter URL</label>
+                <input type="url" value={settings.twitter_url} onChange={(e) => updateField("twitter_url", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://twitter.com/..." />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "branding" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">Branding & Theme</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+                <div className="flex items-center gap-3">
+                  <input type="color" value={settings.primary_color} onChange={(e) => updateField("primary_color", e.target.value)} className="h-10 w-16 rounded cursor-pointer" />
+                  <input type="text" value={settings.primary_color} onChange={(e) => updateField("primary_color", e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Color</label>
+                <div className="flex items-center gap-3">
+                  <input type="color" value={settings.secondary_color} onChange={(e) => updateField("secondary_color", e.target.value)} className="h-10 w-16 rounded cursor-pointer" />
+                  <input type="text" value={settings.secondary_color} onChange={(e) => updateField("secondary_color", e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" />
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Preview</h3>
+              <div className="flex gap-4">
+                <div className="h-20 w-20 rounded-lg shadow" style={{ backgroundColor: settings.primary_color }} />
+                <div className="h-20 w-20 rounded-lg shadow" style={{ backgroundColor: settings.secondary_color }} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "team" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">Team Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Director Name</label>
+                <input type="text" value={settings.director_name} onChange={(e) => updateField("director_name", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Counselor Name</label>
+                <input type="text" value={settings.counselor_name} onChange={(e) => updateField("counselor_name", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Counselor Phone</label>
+                <input type="text" value={settings.counselor_phone} onChange={(e) => updateField("counselor_phone", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Director's Message</label>
+              <textarea value={settings.director_message} onChange={(e) => updateField("director_message", e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "legal" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">Legal Information</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
+              <textarea value={settings.terms_conditions} onChange={(e) => updateField("terms_conditions", e.target.value)} rows={8} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your terms and conditions..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Privacy Policy</label>
+              <textarea value={settings.privacy_policy} onChange={(e) => updateField("privacy_policy", e.target.value)} rows={8} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your privacy policy..." />
+            </div>
+          </div>
+        )}
+        {activeTab === "popup" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">Enquiry Popup Settings</h2>
+            <p className="text-sm text-gray-500 mb-4">Configure the enquiry popup that appears on the public website after a set delay.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Popup Enabled</label>
+                <select value={settings.popup_enabled} onChange={(e) => updateField("popup_enabled", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option value="true">Enabled (On)</option>
+                  <option value="false">Disabled (Off)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Popup Delay (seconds)</label>
+                <input type="number" min="5" max="300" value={settings.popup_delay} onChange={(e) => updateField("popup_delay", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <p className="text-xs text-gray-400 mt-1">How many seconds before the popup appears (5-300)</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
