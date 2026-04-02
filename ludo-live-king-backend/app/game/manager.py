@@ -117,7 +117,7 @@ async def create_room(sid, data):
     active_games[room_code] = game
 
     session["room_code"] = room_code
-    sio.enter_room(sid, room_code)
+    await sio.enter_room(sid, room_code)
 
     await sio.emit("room_created", {
         "room_code": room_code,
@@ -151,7 +151,7 @@ async def join_room(sid, data):
         return
 
     session["room_code"] = room_code
-    sio.enter_room(sid, room_code)
+    await sio.enter_room(sid, room_code)
 
     await sio.emit("player_joined", {
         "user_id": session["user_id"],
@@ -332,7 +332,7 @@ async def try_match(game_mode: str, max_players: int = 4):
             player_sid = player_data["sid"]
             if player_sid in user_sessions:
                 user_sessions[player_sid]["room_code"] = room_code
-            sio.enter_room(player_sid, room_code)
+            await sio.enter_room(player_sid, room_code)
 
             # Remove from queue
             queue[:] = [q for q in queue if q.get("user_id") != player_data["user_id"]]
@@ -447,7 +447,7 @@ async def play_vs_computer(sid, data):
 
     active_games[room_code] = game
     session["room_code"] = room_code
-    sio.enter_room(sid, room_code)
+    await sio.enter_room(sid, room_code)
 
     game.start_game()
 

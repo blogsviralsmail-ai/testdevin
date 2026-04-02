@@ -32,10 +32,10 @@ export default function GamePage() {
     }
   }, [diceResult, user?.id]);
 
-  // Clear movable pieces after moving
+  // Clear movable pieces when turn advances (not on dice roll which also changes turn_count)
   useEffect(() => {
     setMovablePieces([]);
-  }, [gameState?.turn_count]);
+  }, [gameState?.current_turn_index]);
 
   // Auto-trigger bot turns
   useEffect(() => {

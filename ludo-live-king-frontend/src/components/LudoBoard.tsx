@@ -69,9 +69,20 @@ function getMainTrackPosition(pos: number): [number, number, number] {
   return [0, 0.3, 0];
 }
 
-// Home column positions (52-57) for each color
+// Home column position offsets per color (must match backend HOME_COLUMN_OFFSET)
+const HOME_COLUMN_OFFSET: Record<string, number> = {
+  red: 100,
+  green: 200,
+  yellow: 300,
+  blue: 400,
+};
+
+const PIECE_FINISHED = 999;
+
+// Home column positions for each color
 function getHomeColumnPosition(pos: number, color: string): [number, number, number] {
-  const homeIdx = pos - 52;
+  const offset = HOME_COLUMN_OFFSET[color] || 100;
+  const homeIdx = pos - offset;
   const homePositions: Record<string, [number, number][]> = {
     red: Array.from({ length: 6 }, (_, i) => [7, 13 - i] as [number, number]),
     green: Array.from({ length: 6 }, (_, i) => [1 + i, 7] as [number, number]),
@@ -307,14 +318,17 @@ function BoardScene({ players, movablePieces, currentTurnColor, onMovePiece, myC
       {players.map((player) =>
         player.pieces.map((piece, pieceIdx) => {
           let position: [number, number, number];
+          const colorOffset = HOME_COLUMN_OFFSET[player.color] || 100;
           if (piece.position === -1) {
             position = getHomeYardPosition(player.color, pieceIdx);
-          } else if (piece.position === 57) {
+          } else if (piece.position === PIECE_FINISHED) {
             position = [0, 0.5, 0]; // Finished - at center
-          } else if (piece.position >= 52) {
+          } else if (piece.position >= colorOffset && piece.position < colorOffset + 6) {
             position = getHomeColumnPosition(piece.position, player.color);
-          } else {
+          } else if (piece.position >= 1 && piece.position <= 52) {
             position = getMainTrackPosition(piece.position);
+          } else {
+            position = [0, 0.5, 0]; // Fallback
           }
 
           const isMovable =

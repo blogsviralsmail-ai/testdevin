@@ -43,9 +43,17 @@ HOME_ENTRY = {
     "blue": 38,
 }
 
+# Home column position offsets per color (avoids collision with main track 1-52)
+HOME_COLUMN_OFFSET = {
+    "red": 100,
+    "green": 200,
+    "yellow": 300,
+    "blue": 400,
+}
+
 # Piece states
 PIECE_HOME = -1  # In the starting yard
-PIECE_FINISHED = 57  # Reached the center/finished
+PIECE_FINISHED = 999  # Reached the center/finished
 
 
 class LudoPiece:
@@ -54,7 +62,7 @@ class LudoPiece:
     def __init__(self, color: str, index: int):
         self.color = color
         self.index = index
-        self.position = PIECE_HOME  # -1 = home, 0-51 = main track, 52-57 = home column, 57 = finished
+        self.position = PIECE_HOME  # -1 = home, 1-52 = main track, 100-105/200-205/300-305/400-405 = home column, 999 = finished
         self.steps_taken = 0
         self.is_safe = False
 
@@ -287,6 +295,8 @@ class LudoGame:
             if new_steps > BOARD_SIZE + HOME_COLUMN_SIZE:
                 return None  # Can't move beyond finish
 
+            color_offset = HOME_COLUMN_OFFSET[current.color]
+
             if new_steps == BOARD_SIZE + HOME_COLUMN_SIZE:
                 # Piece reaches home (finished)
                 piece.position = PIECE_FINISHED
@@ -311,8 +321,8 @@ class LudoGame:
                         self.winner = current
                         result["game_over"] = True
             elif new_steps > BOARD_SIZE:
-                # In home column
-                home_pos = 52 + (new_steps - BOARD_SIZE - 1)
+                # In home column (use color-specific offset to avoid position collision)
+                home_pos = color_offset + (new_steps - BOARD_SIZE - 1)
                 piece.position = home_pos
                 piece.steps_taken = new_steps
                 piece.is_safe = True  # Home column is always safe
@@ -326,12 +336,12 @@ class LudoGame:
                 home_entry = HOME_ENTRY[current.color]
                 steps_to_entry = self._steps_to_position(current.color, piece.position, home_entry)
 
-                if piece.steps_taken < BOARD_SIZE and new_steps >= BOARD_SIZE:
-                    # Entering home column
+                if piece.steps_taken < BOARD_SIZE and new_steps > BOARD_SIZE:
+                    # Entering home column (use > not >= to avoid step 52 bug)
                     home_progress = new_steps - BOARD_SIZE
                     if home_progress > HOME_COLUMN_SIZE:
                         return None
-                    home_pos = 52 + home_progress - 1
+                    home_pos = color_offset + home_progress - 1
                     piece.position = home_pos
                     piece.steps_taken = new_steps
                     piece.is_safe = True
@@ -392,7 +402,8 @@ class LudoGame:
             if player.color == attacker.color:
                 continue
             for i, piece in enumerate(player.pieces):
-                if piece.position == position and piece.position != PIECE_HOME and piece.position != PIECE_FINISHED:
+                # Only capture pieces on main track (positions 1-52), not in home columns or yard
+                if piece.position == position and 1 <= piece.position <= BOARD_SIZE:
                     # Check for blockade (two pieces of same color on same position)
                     same_color_count = sum(1 for p in player.pieces if p.position == position)
                     if same_color_count >= 2:
