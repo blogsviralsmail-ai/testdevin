@@ -1,6 +1,6 @@
 import { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text, RoundedBox } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
 // Board positions mapping - converts game position to 3D coordinates
@@ -191,9 +191,10 @@ function BoardSquare({ position, color, isSafe }: { position: [number, number, n
 
 function HomeYard({ color, center }: { color: string; center: [number, number, number] }) {
   return (
-    <RoundedBox args={[CELL_SIZE * 5.5, 0.15, CELL_SIZE * 5.5]} position={center} radius={0.2} receiveShadow>
+    <mesh position={center} receiveShadow>
+      <boxGeometry args={[CELL_SIZE * 5.5, 0.15, CELL_SIZE * 5.5]} />
       <meshStandardMaterial color={LIGHT_COLORS[color]} roughness={0.9} metalness={0.05} />
-    </RoundedBox>
+    </mesh>
   );
 }
 
@@ -333,19 +334,6 @@ function BoardScene({ players, movablePieces, currentTurnColor, onMovePiece, myC
           );
         })
       )}
-
-      {/* Brand text */}
-      <Text
-        position={[0, 0.2, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.3}
-        color="#8B4513"
-        anchorX="center"
-        anchorY="middle"
-        font="/fonts/inter-bold.woff"
-      >
-        LLK
-      </Text>
 
       <OrbitControls
         enablePan={false}
