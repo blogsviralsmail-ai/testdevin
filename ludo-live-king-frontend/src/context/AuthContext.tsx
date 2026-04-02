@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await api.get<{ user: User }>("/api/users/me");
       setUser(data.user);
+      localStorage.setItem("userId", String(data.user.id));
     } catch {
       localStorage.removeItem("token");
       setToken(null);
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
     localStorage.setItem("token", data.token);
+    localStorage.setItem("userId", String(data.user.id));
     setToken(data.token);
     setUser(data.user);
     reconnectSocket();
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       display_name: displayName,
     });
     localStorage.setItem("token", data.token);
+    localStorage.setItem("userId", String(data.user.id));
     setToken(data.token);
     setUser(data.user);
     reconnectSocket();
@@ -90,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       device_id: `web_${Date.now()}`,
     });
     localStorage.setItem("token", data.token);
+    localStorage.setItem("userId", String(data.user.id));
     setToken(data.token);
     setUser(data.user);
     reconnectSocket();
@@ -97,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function logout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("userId");
     setToken(null);
     setUser(null);
   }

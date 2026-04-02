@@ -170,6 +170,8 @@ class LudoGame:
         if current.has_won:
             self._advance_turn()
             return None
+        if self.dice_value is not None:
+            return None  # Already rolled, must move first
 
         # Roll dice
         self.dice_value = random.randint(1, 6)
@@ -189,6 +191,7 @@ class LudoGame:
                     "three_sixes": True,
                     "movable_pieces": [],
                 }
+                self.dice_value = None
                 self._advance_turn()
                 self.last_action = result
                 return result
@@ -207,9 +210,11 @@ class LudoGame:
             "movable_pieces": movable,
         }
 
-        # If no movable pieces, advance turn
+        # If no movable pieces, reset dice and advance turn
         if not movable:
-            if self.dice_value != 6:
+            rolled_value = self.dice_value
+            self.dice_value = None
+            if rolled_value != 6:
                 self._advance_turn()
 
         self.last_action = result
@@ -271,7 +276,7 @@ class LudoGame:
             # Check for capture at start position
             captured = self._check_capture(current, start_pos)
             piece.position = start_pos
-            piece.steps_taken = 0
+            piece.steps_taken = 1
             piece.is_safe = start_pos in SAFE_POSITIONS
             result["to_position"] = start_pos
             result["captured"] = captured
