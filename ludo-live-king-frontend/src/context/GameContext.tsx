@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { getSocket } from "../utils/socket";
+import { getSocket, onSocketChange } from "../utils/socket";
 
 interface Piece {
   color: string;
@@ -106,69 +106,70 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [winner, setWinner] = useState<Player | null>(null);
   const [gameOver, setGameOver] = useState(false);
 
+  // Subscribe to socket events, and re-subscribe when socket is reconnected (e.g. after login)
   useEffect(() => {
-    const socket = getSocket();
+    function setupListeners() {
+      const socket = getSocket();
 
-    socket.on("room_created", (data: { room_code: string; game_state: GameState }) => {
-      setRoomCode(data.room_code);
-      setGameState(data.game_state);
-    });
+      socket.on("room_created", (data: { room_code: string; game_state: GameState }) => {
+        setRoomCode(data.room_code);
+        setGameState(data.game_state);
+      });
 
-    socket.on("player_joined", (data: { game_state: GameState }) => {
-      setGameState(data.game_state);
-    });
+      socket.on("player_joined", (data: { game_state: GameState }) => {
+        setGameState(data.game_state);
+      });
 
-    socket.on("player_left", (data: { game_state: GameState }) => {
-      setGameState(data.game_state);
-    });
+      socket.on("player_left", (data: { game_state: GameState }) => {
+        setGameState(data.game_state);
+      });
 
-    socket.on("game_started", (data: { room_code?: string; game_state: GameState }) => {
-      if (data.room_code) setRoomCode(data.room_code);
-      setGameState(data.game_state);
-      setGameOver(false);
-      setWinner(null);
-    });
+      socket.on("game_started", (data: { room_code?: string; game_state: GameState }) => {
+        if (data.room_code) setRoomCode(data.room_code);
+        setGameState(data.game_state);
+        setGameOver(false);
+        setWinner(null);
+      });
 
-    socket.on("dice_rolled", (data: { result: DiceResult; game_state: GameState }) => {
-      setDiceResult(data.result);
-      setGameState(data.game_state);
-    });
+      socket.on("dice_rolled", (data: { result: DiceResult; game_state: GameState }) => {
+        setDiceResult(data.result);
+        setGameState(data.game_state);
+      });
 
-    socket.on("piece_moved", (data: { result: MoveResult; game_state: GameState }) => {
-      setMoveResult(data.result);
-      setGameState(data.game_state);
-    });
+      socket.on("piece_moved", (data: { result: MoveResult; game_state: GameState }) => {
+        setMoveResult(data.result);
+        setGameState(data.game_state);
+      });
 
-    socket.on("game_over", (data: { winner: Player; game_state: GameState }) => {
-      setWinner(data.winner);
-      setGameOver(true);
-      setGameState(data.game_state);
-    });
+      socket.on("game_over", (data: { winner: Player; game_state: GameState }) => {
+        setWinner(data.winner);
+        setGameOver(true);
+        setGameState(data.game_state);
+      });
 
-    socket.on("match_found", (data: { room_code: string; game_state: GameState }) => {
-      setRoomCode(data.room_code);
-      setGameState(data.game_state);
-    });
+      socket.on("match_found", (data: { room_code: string; game_state: GameState }) => {
+        setRoomCode(data.room_code);
+        setGameState(data.game_state);
+      });
 
-    socket.on("chat_message", (data: ChatMessage) => {
-      setChatMessages((prev) => [...prev.slice(-50), { ...data, timestamp: Date.now() }]);
-    });
+      socket.on("chat_message", (data: ChatMessage) => {
+        setChatMessages((prev) => [...prev.slice(-50), { ...data, timestamp: Date.now() }]);
+      });
 
-    socket.on("error", (data: { message: string }) => {
-      console.error("Socket error:", data.message);
+      socket.on("error", (data: { message: string }) => {
+        console.error("Socket error:", data.message);
+      });
+    }
+
+    setupListeners();
+
+    // Re-subscribe when socket is reconnected (after login/guest login)
+    const unsubscribe = onSocketChange(() => {
+      setupListeners();
     });
 
     return () => {
-      socket.off("room_created");
-      socket.off("player_joined");
-      socket.off("player_left");
-      socket.off("game_started");
-      socket.off("dice_rolled");
-      socket.off("piece_moved");
-      socket.off("game_over");
-      socket.off("match_found");
-      socket.off("chat_message");
-      socket.off("error");
+      unsubscribe();
     };
   }, []);
 
