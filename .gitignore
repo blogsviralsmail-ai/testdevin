@@ -26,3 +26,5 @@ poetry.lock
 
 # Logs
 *.log
+android/
+.vite/
