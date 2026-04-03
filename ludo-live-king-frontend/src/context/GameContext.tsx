@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { getSocket, onSocketChange } from "../utils/socket";
+import { playDiceRollSound, playPieceMoveSound, playCaptureSound, playWinSound, playSixRolledSound, playPieceOutSound, playFinishSound } from "../utils/sounds";
 
 interface Piece {
   color: string;
@@ -134,17 +135,38 @@ export function GameProvider({ children }: { children: ReactNode }) {
       socket.on("dice_rolled", (data: { result: DiceResult; game_state: GameState }) => {
         setDiceResult(data.result);
         setGameState(data.game_state);
+        // Sound effects
+        try {
+          playDiceRollSound();
+          if (data.result.value === 6) {
+            setTimeout(() => playSixRolledSound(), 400);
+          }
+        } catch (e) { /* ignore audio errors */ }
       });
 
       socket.on("piece_moved", (data: { result: MoveResult; game_state: GameState }) => {
         setMoveResult(data.result);
         setGameState(data.game_state);
+        // Sound effects
+        try {
+          if (data.result.captured) {
+            playCaptureSound();
+          } else if (data.result.finished) {
+            playFinishSound();
+          } else if (data.result.from_position === -1) {
+            playPieceOutSound();
+          } else {
+            playPieceMoveSound();
+          }
+        } catch (e) { /* ignore audio errors */ }
       });
 
       socket.on("game_over", (data: { winner: Player; game_state: GameState }) => {
         setWinner(data.winner);
         setGameOver(true);
         setGameState(data.game_state);
+        // Victory sound
+        try { playWinSound(); } catch (e) { /* ignore */ }
       });
 
       socket.on("match_found", (data: { room_code: string; game_state: GameState }) => {

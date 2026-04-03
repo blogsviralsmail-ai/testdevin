@@ -7,12 +7,13 @@ import Dice from "../components/Dice";
 import PlayerPanel from "../components/PlayerPanel";
 import ChatBox from "../components/ChatBox";
 import GameOverModal from "../components/GameOverModal";
+import { playTurnSound } from "../utils/sounds";
 
 export default function GamePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const {
-    gameState, roomCode, diceResult, isMyTurn, myColor,
+    gameState, roomCode, diceResult, moveResult, isMyTurn, myColor,
     rollDice, movePiece, addBot, startGame, sendChat, sendEmoji,
     chatMessages, leaveGame, requestBotTurn, gameOver,
     playVsComputer,
@@ -22,6 +23,7 @@ export default function GamePage() {
   const [movablePieces, setMovablePieces] = useState<number[]>([]);
   const [waitingForMatch, setWaitingForMatch] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [opponentDice, setOpponentDice] = useState<{ name: string; value: number; color: string } | null>(null);
 
   useEffect(() => {
     if (diceResult && diceResult.user_id === user?.id) {
@@ -29,11 +31,30 @@ export default function GamePage() {
     } else {
       setMovablePieces([]);
     }
-  }, [diceResult, user?.id]);
+    // Show opponent dice roll prominently
+    if (diceResult && diceResult.user_id !== user?.id && gameState) {
+      const opponent = gameState.players.find(p => p.user_id === diceResult.user_id);
+      if (opponent) {
+        setOpponentDice({
+          name: opponent.display_name,
+          value: diceResult.value,
+          color: opponent.color,
+        });
+        setTimeout(() => setOpponentDice(null), 2500);
+      }
+    }
+  }, [diceResult, user?.id, gameState]);
 
   useEffect(() => {
     setMovablePieces([]);
   }, [gameState?.current_turn_index]);
+
+  // Play sound when it becomes my turn
+  useEffect(() => {
+    if (isMyTurn && gameState?.status === "playing") {
+      try { playTurnSound(); } catch (_e) { /* ignore */ }
+    }
+  }, [isMyTurn, gameState?.current_turn_index]);
 
   useEffect(() => {
     if (gameState?.status === "playing") {
@@ -224,6 +245,12 @@ export default function GamePage() {
               currentTurnColor={gameState.current_turn_color}
               onMovePiece={handleMovePiece}
               myColor={myColor}
+              lastMoveResult={moveResult ? {
+                player: moveResult.player,
+                piece_index: moveResult.piece_index,
+                from_position: moveResult.from_position,
+                to_position: moveResult.to_position,
+              } : null}
             />
           )}
         </div>
@@ -244,6 +271,26 @@ export default function GamePage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Opponent dice roll display */}
+        {opponentDice && (
+          <div className="flex justify-center mb-2 animate-bounce">
+            <div className="px-4 py-2 rounded-xl border-2 flex items-center gap-3 shadow-lg" style={{
+              backgroundColor: opponentDice.color === 'red' ? '#E53E3E' : opponentDice.color === 'green' ? '#38A169' : opponentDice.color === 'yellow' ? '#D69E2E' : '#3182CE',
+              borderColor: '#FFD700',
+            }}>
+              <span className="text-white font-bold text-sm" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+                {opponentDice.name}
+              </span>
+              <span className="text-yellow-300 font-bold text-xl" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.5)'}}>
+                rolled {opponentDice.value}
+              </span>
+              <span className="text-3xl">
+                {opponentDice.value === 6 ? '🎯' : '🎲'}
+              </span>
+            </div>
           </div>
         )}
 

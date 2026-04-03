@@ -1,4 +1,6 @@
-// Classic 2D SVG Ludo Board - Ludo King style
+// Classic 2D SVG Ludo Board - Ludo King style with piece animation
+import { useState, useEffect, useRef, useCallback } from "react";
+import { playPieceMoveSound } from "../utils/sounds";
 
 // Home column position offsets per color (must match backend HOME_COLUMN_OFFSET)
 const HOME_COLUMN_OFFSET: Record<string, number> = {
@@ -161,6 +163,61 @@ const SAFE_POSITIONS = new Set([1, 9, 14, 22, 27, 35, 40, 48]);
 // Color start positions
 const COLOR_START: Record<string, number> = { red: 1, green: 14, yellow: 27, blue: 40 };
 
+// Entry positions on track when leaving home
+const COLOR_ENTRY: Record<string, number> = { red: 1, green: 14, yellow: 27, blue: 40 };
+
+// Build path of intermediate positions for step-by-step animation
+function getPathPositions(fromPos: number, toPos: number, color: string): number[] {
+  const path: number[] = [];
+  if (fromPos === -1) {
+    path.push(COLOR_ENTRY[color] || 1);
+    return path;
+  }
+  const colorOffset = HOME_COLUMN_OFFSET[color] || 100;
+  // Already in home column
+  if (fromPos >= colorOffset && fromPos < colorOffset + 6) {
+    for (let h = fromPos + 1; h <= Math.min(toPos, colorOffset + 5); h++) path.push(h);
+    if (toPos === PIECE_FINISHED) path.push(PIECE_FINISHED);
+    return path;
+  }
+  // Moving on main track
+  if (fromPos >= 1 && fromPos <= 52) {
+    if (toPos >= colorOffset && toPos < colorOffset + 6) {
+      const homeEntryPos: Record<string, number> = { red: 52, green: 13, yellow: 26, blue: 39 };
+      const entry = homeEntryPos[color] || 52;
+      let current = fromPos;
+      let steps = 0;
+      while (current !== entry && steps < 10) {
+        current = current >= 52 ? 1 : current + 1;
+        path.push(current);
+        steps++;
+      }
+      for (let h = colorOffset; h <= toPos; h++) path.push(h);
+      return path;
+    }
+    if (toPos === PIECE_FINISHED) { path.push(PIECE_FINISHED); return path; }
+    if (toPos >= 1 && toPos <= 52) {
+      let current = fromPos;
+      let steps = 0;
+      while (current !== toPos && steps < 8) {
+        current = current >= 52 ? 1 : current + 1;
+        path.push(current);
+        steps++;
+      }
+      return path;
+    }
+  }
+  path.push(toPos);
+  return path;
+}
+
+interface AnimatingPiece {
+  color: string;
+  pieceIdx: number;
+  pathPositions: number[];
+  currentStep: number;
+}
+
 interface LudoBoardProps {
   players: Array<{
     color: string;
@@ -170,16 +227,25 @@ interface LudoBoardProps {
   currentTurnColor: string | null;
   onMovePiece: (pieceIndex: number) => void;
   myColor: string | null;
+  lastMoveResult?: {
+    player: string;
+    piece_index: number;
+    from_position: number;
+    to_position: number | null;
+  } | null;
 }
 
-export default function LudoBoard({ players, movablePieces, currentTurnColor, onMovePiece, myColor }: LudoBoardProps) {
-  const S = 400; // SVG size
-  const C = S / 15; // Cell size
+export default function LudoBoard({ players, movablePieces, currentTurnColor, onMovePiece, myColor, lastMoveResult }: LudoBoardProps) {
+  const S = 400;
+  const C = S / 15;
+  const [animatingPiece, setAnimatingPiece] = useState<AnimatingPiece | null>(null);
+  const [animDisplayPos, setAnimDisplayPos] = useState<number | null>(null);
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastProcessedMove = useRef<string>("");
   
-  const toSvg = (col: number, row: number): [number, number] => [col * C, row * C];
+  const toSvg = useCallback((col: number, row: number): [number, number] => [col * C, row * C], [C]);
 
-  // Get pixel position for a game position
-  const getPiecePos = (position: number, color: string, pieceIdx: number): [number, number] => {
+  const getPiecePos = useCallback((position: number, color: string, pieceIdx: number): [number, number] => {
     if (position === -1) {
       // Home yard
       const yard = HOME_YARD_PIECES[color];
@@ -207,6 +273,57 @@ export default function LudoBoard({ players, movablePieces, currentTurnColor, on
       }
     }
     return toSvg(7.5, 7.5);
+  }, [toSvg]);
+
+  // Start animation when a move result comes in
+  useEffect(() => {
+    if (!lastMoveResult) return;
+    const moveKey = `${lastMoveResult.player}-${lastMoveResult.piece_index}-${lastMoveResult.from_position}-${lastMoveResult.to_position}`;
+    if (moveKey === lastProcessedMove.current) return;
+    lastProcessedMove.current = moveKey;
+    const fromPos = lastMoveResult.from_position;
+    const toPos = lastMoveResult.to_position;
+    if (toPos === null || toPos === undefined) return;
+    if (fromPos === toPos) return;
+    const pathPositions = getPathPositions(fromPos, toPos, lastMoveResult.player);
+    if (pathPositions.length <= 1) return;
+    setAnimatingPiece({
+      color: lastMoveResult.player,
+      pieceIdx: lastMoveResult.piece_index,
+      pathPositions,
+      currentStep: 0,
+    });
+    setAnimDisplayPos(pathPositions[0]);
+  }, [lastMoveResult]);
+
+  // Step through animation one square at a time
+  useEffect(() => {
+    if (!animatingPiece) return;
+    if (animatingPiece.currentStep >= animatingPiece.pathPositions.length) {
+      setAnimatingPiece(null);
+      setAnimDisplayPos(null);
+      return;
+    }
+    animTimerRef.current = setTimeout(() => {
+      const nextStep = animatingPiece.currentStep + 1;
+      if (nextStep < animatingPiece.pathPositions.length) {
+        setAnimDisplayPos(animatingPiece.pathPositions[nextStep]);
+        setAnimatingPiece(prev => prev ? { ...prev, currentStep: nextStep } : null);
+        try { playPieceMoveSound(); } catch (_e) { /* ignore */ }
+      } else {
+        setAnimatingPiece(null);
+        setAnimDisplayPos(null);
+      }
+    }, 220);
+    return () => { if (animTimerRef.current) clearTimeout(animTimerRef.current); };
+  }, [animatingPiece]);
+
+  // Get display position (animated or real)
+  const getDisplayPosition = (color: string, pieceIdx: number, realPosition: number): number => {
+    if (animatingPiece && animatingPiece.color === color && animatingPiece.pieceIdx === pieceIdx && animDisplayPos !== null) {
+      return animDisplayPos;
+    }
+    return realPosition;
   };
 
   return (
@@ -358,11 +475,13 @@ export default function LudoBoard({ players, movablePieces, currentTurnColor, on
         {/* Game pieces */}
         {players.map((player) =>
           player.pieces.map((piece, pieceIdx) => {
-            const [px, py] = getPiecePos(piece.position, player.color, pieceIdx);
+            const displayPos = getDisplayPosition(player.color, pieceIdx, piece.position);
+            const [px, py] = getPiecePos(displayPos, player.color, pieceIdx);
             const isMovable =
               player.color === myColor &&
               player.color === currentTurnColor &&
               movablePieces.includes(pieceIdx);
+            const isAnimating = animatingPiece?.color === player.color && animatingPiece?.pieceIdx === pieceIdx;
 
             return (
               <g
@@ -383,6 +502,19 @@ export default function LudoBoard({ players, movablePieces, currentTurnColor, on
                   >
                     <animate attributeName="r" values={`${C*0.45};${C*0.6};${C*0.45}`} dur="1s" repeatCount="indefinite"/>
                     <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1s" repeatCount="indefinite"/>
+                  </circle>
+                )}
+                {/* Animation trail effect */}
+                {isAnimating && (
+                  <circle
+                    cx={px}
+                    cy={py}
+                    r={C * 0.5}
+                    fill={BRIGHT_COLORS[player.color] || COLORS[player.color]}
+                    opacity="0.3"
+                  >
+                    <animate attributeName="r" values={`${C*0.38};${C*0.65}`} dur="0.22s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.4;0" dur="0.22s" repeatCount="indefinite"/>
                   </circle>
                 )}
                 {/* Piece shadow */}
