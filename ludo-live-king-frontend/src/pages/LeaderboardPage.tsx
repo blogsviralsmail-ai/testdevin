@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../utils/api";
-import { ArrowLeft, Trophy, Swords, TrendingUp, Crown } from "lucide-react";
 
 interface LeaderboardEntry {
   rank: number;
@@ -34,38 +33,36 @@ export default function LeaderboardPage() {
   }, [sortBy]);
 
   const tabs = [
-    { key: "rating", label: "Rating", icon: <Crown size={16} /> },
-    { key: "wins", label: "Wins", icon: <Trophy size={16} /> },
-    { key: "kills", label: "Kills", icon: <Swords size={16} /> },
-    { key: "streak", label: "Streak", icon: <TrendingUp size={16} /> },
+    { key: "rating", label: "Rating", emoji: "👑" },
+    { key: "wins", label: "Wins", emoji: "🏆" },
+    { key: "kills", label: "Kills", emoji: "⚔️" },
+    { key: "streak", label: "Streak", emoji: "🔥" },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 p-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen ludo-bg p-4">
+      <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate("/")} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
-            <ArrowLeft size={20} />
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => navigate("/")} className="w-8 h-8 rounded-lg bg-blue-800 border border-blue-400/30 flex items-center justify-center text-white hover:bg-blue-700">
+            ←
           </button>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <Trophy className="text-amber-400" size={24} />
-            Leaderboard
+          <h1 className="text-lg font-bold text-white" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+            🏆 LEADERBOARD
           </h1>
         </div>
 
         {/* Sort Tabs */}
-        <div className="flex gap-1 bg-gray-800/50 rounded-xl p-1 mb-6">
+        <div className="flex gap-1 bg-blue-900/50 rounded-xl p-1 mb-4 border border-blue-400/20">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setSortBy(t.key)}
-              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                sortBy === t.key ? "bg-amber-500 text-white" : "text-gray-400 hover:text-white"
+              className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                sortBy === t.key ? "btn-golden" : "text-blue-200/50 hover:text-white"
               }`}
             >
-              {t.icon}
-              {t.label}
+              {t.emoji} {t.label}
             </button>
           ))}
         </div>
@@ -73,10 +70,10 @@ export default function LeaderboardPage() {
         {/* Leaderboard */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : leaderboard.length === 0 ? (
-          <p className="text-gray-500 text-center py-20">No players yet. Be the first!</p>
+          <p className="text-blue-200/30 text-center py-20 font-bold">No players yet. Be the first!</p>
         ) : (
           <div className="space-y-2">
             {leaderboard.map((entry) => (
@@ -84,45 +81,45 @@ export default function LeaderboardPage() {
                 key={entry.id}
                 className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
                   entry.rank <= 3
-                    ? "bg-gray-900/80 border border-amber-500/30"
-                    : "bg-gray-900/40 border border-gray-700/30"
+                    ? "game-card border-yellow-400/40"
+                    : "game-card"
                 }`}
               >
                 {/* Rank */}
                 <div className="w-8 text-center">
                   {entry.rank === 1 ? (
-                    <span className="text-2xl">🥇</span>
+                    <span className="text-xl">🥇</span>
                   ) : entry.rank === 2 ? (
-                    <span className="text-2xl">🥈</span>
+                    <span className="text-xl">🥈</span>
                   ) : entry.rank === 3 ? (
-                    <span className="text-2xl">🥉</span>
+                    <span className="text-xl">🥉</span>
                   ) : (
-                    <span className="text-gray-500 font-bold text-sm">#{entry.rank}</span>
+                    <span className="text-blue-200/40 font-bold text-sm">#{entry.rank}</span>
                   )}
                 </div>
 
                 {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xl relative">
+                <div className="w-9 h-9 rounded-full bg-blue-800 border-2 border-blue-400/30 flex items-center justify-center text-lg relative">
                   {AVATARS[((entry.avatar_id || 1) - 1) % AVATARS.length]}
                   {entry.is_online && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-blue-900" />
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-semibold truncate">{entry.display_name}</p>
-                  <p className="text-gray-400 text-xs">
-                    Level {entry.level} · {entry.games_won} wins / {entry.total_games} games
+                  <p className="text-white text-sm font-bold truncate" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{entry.display_name}</p>
+                  <p className="text-blue-200/40 text-xs font-bold">
+                    Lv.{entry.level} · {entry.games_won}W/{entry.total_games}G
                   </p>
                 </div>
 
                 {/* Value */}
                 <div className="text-right">
-                  <p className="text-amber-400 font-bold text-lg">
+                  <p className="text-yellow-300 font-bold text-lg" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
                     {sortBy === "rating" ? Math.round(entry.rating) : entry.games_won}
                   </p>
-                  <p className="text-gray-500 text-xs capitalize">{sortBy}</p>
+                  <p className="text-blue-200/30 text-[10px] font-bold uppercase">{sortBy}</p>
                 </div>
               </div>
             ))}

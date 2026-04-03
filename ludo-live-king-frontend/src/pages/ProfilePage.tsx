@@ -2,10 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../utils/api";
-import {
-  ArrowLeft, Coins, Gem, Trophy, Star, Swords,
-  Target, TrendingUp, Crown, Edit2, Save
-} from "lucide-react";
 
 interface GameHistory {
   game: {
@@ -65,20 +61,20 @@ export default function ProfilePage() {
   const winRate = user ? Math.round((user.games_won / Math.max(user.total_games, 1)) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 p-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen ludo-bg p-4">
+      <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate("/")} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
-            <ArrowLeft size={20} />
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => navigate("/")} className="w-8 h-8 rounded-lg bg-blue-800 border border-blue-400/30 flex items-center justify-center text-white hover:bg-blue-700">
+            ←
           </button>
-          <h1 className="text-xl font-bold text-white">Profile</h1>
+          <h1 className="text-lg font-bold text-white" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>👤 PROFILE</h1>
         </div>
 
         {/* Profile Card */}
-        <div className="bg-gray-900/60 backdrop-blur rounded-2xl border border-gray-700/50 p-6 mb-6">
+        <div className="game-card p-5 mb-4">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-4xl shadow-lg">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-3xl shadow-lg border-yellow-300" style={{borderWidth: '3px', borderStyle: 'solid', borderColor: '#fcd34d'}}>
               {avatars[((user?.avatar_id || 1) - 1) % avatars.length]}
             </div>
             <div className="flex-1">
@@ -87,41 +83,35 @@ export default function ProfilePage() {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1 text-white w-full mb-1"
+                  className="bg-blue-900/50 border border-blue-400/30 rounded-lg px-3 py-1 text-white w-full mb-1"
                 />
               ) : (
-                <h2 className="text-2xl font-bold text-white">{user?.display_name}</h2>
+                <h2 className="text-xl font-bold text-white" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>{user?.display_name}</h2>
               )}
-              <p className="text-gray-400 text-sm">@{user?.username}</p>
-              <div className="flex items-center gap-3 mt-2">
-                <span className="flex items-center gap-1 text-sm">
-                  <Star size={14} className="text-amber-400" />
-                  <span className="text-white font-semibold">Level {user?.level}</span>
-                </span>
-                <span className="flex items-center gap-1 text-sm">
-                  <Crown size={14} className="text-purple-400" />
-                  <span className="text-white font-semibold">{Math.round(user?.rating || 1000)}</span>
-                </span>
+              <p className="text-blue-200/50 text-sm font-bold">@{user?.username}</p>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-xs font-bold text-yellow-300">⭐ Level {user?.level}</span>
+                <span className="text-xs font-bold text-blue-200/60">👑 {Math.round(user?.rating || 1000)}</span>
               </div>
             </div>
             <button
               onClick={editing ? handleSaveProfile : () => setEditing(true)}
-              className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-amber-400"
+              className="w-8 h-8 rounded-lg bg-yellow-500 border-2 border-yellow-300 flex items-center justify-center text-blue-900 font-bold hover:bg-yellow-400"
             >
-              {editing ? <Save size={18} /> : <Edit2 size={18} />}
+              {editing ? "💾" : "✏️"}
             </button>
           </div>
 
           {editing && (
             <div className="mt-4">
-              <p className="text-gray-400 text-sm mb-2">Choose Avatar</p>
+              <p className="text-blue-200/50 text-xs font-bold mb-2">CHOOSE AVATAR</p>
               <div className="flex flex-wrap gap-2">
                 {avatars.map((a, i) => (
                   <button
                     key={i}
                     onClick={() => setAvatarId(i + 1)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all ${
-                      avatarId === i + 1 ? "bg-amber-500 scale-110 ring-2 ring-amber-400" : "bg-gray-800 hover:bg-gray-700"
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-lg transition-all ${
+                      avatarId === i + 1 ? "bg-yellow-500 scale-110 ring-2 ring-yellow-400" : "bg-blue-800 hover:bg-blue-700"
                     }`}
                   >
                     {a}
@@ -132,28 +122,28 @@ export default function ProfilePage() {
           )}
 
           {/* Balance */}
-          <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-700/50">
-            <div className="flex items-center gap-2">
-              <Coins size={20} className="text-amber-400" />
-              <span className="text-white font-bold text-lg">{(user?.coins || 0).toLocaleString()}</span>
-              <span className="text-gray-400 text-sm">coins</span>
+          <div className="flex items-center gap-6 mt-4 pt-4 border-t border-blue-400/20">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg">🪙</span>
+              <span className="text-white font-bold text-lg" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{(user?.coins || 0).toLocaleString()}</span>
+              <span className="text-blue-200/40 text-xs font-bold">coins</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Gem size={18} className="text-purple-400" />
-              <span className="text-white font-bold text-lg">{user?.gems || 0}</span>
-              <span className="text-gray-400 text-sm">gems</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg">💎</span>
+              <span className="text-white font-bold text-lg" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{user?.gems || 0}</span>
+              <span className="text-blue-200/40 text-xs font-bold">gems</span>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-800/50 rounded-xl p-1 mb-6">
+        <div className="flex gap-1 bg-blue-900/50 rounded-xl p-1 mb-4 border border-blue-400/20">
           {(["stats", "history", "wallet"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold capitalize transition-all ${
-                tab === t ? "bg-amber-500 text-white" : "text-gray-400 hover:text-white"
+              className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${
+                tab === t ? "btn-golden" : "text-blue-200/50 hover:text-white"
               }`}
             >
               {t}
@@ -164,36 +154,36 @@ export default function ProfilePage() {
         {/* Stats Tab */}
         {tab === "stats" && (
           <div className="grid grid-cols-2 gap-3">
-            <StatCard icon={<Target size={20} />} label="Total Games" value={user?.total_games || 0} color="text-blue-400" />
-            <StatCard icon={<Trophy size={20} />} label="Games Won" value={user?.games_won || 0} color="text-green-400" />
-            <StatCard icon={<TrendingUp size={20} />} label="Win Rate" value={`${winRate}%`} color="text-amber-400" />
-            <StatCard icon={<Swords size={20} />} label="Total Kills" value={user?.total_kills || 0} color="text-red-400" />
-            <StatCard icon={<Star size={20} />} label="Win Streak" value={user?.win_streak || 0} color="text-purple-400" />
-            <StatCard icon={<Crown size={20} />} label="Best Streak" value={user?.best_win_streak || 0} color="text-orange-400" />
+            <StatCard emoji="🎯" label="Total Games" value={user?.total_games || 0} />
+            <StatCard emoji="🏆" label="Games Won" value={user?.games_won || 0} />
+            <StatCard emoji="📈" label="Win Rate" value={`${winRate}%`} />
+            <StatCard emoji="⚔️" label="Total Kills" value={user?.total_kills || 0} />
+            <StatCard emoji="🔥" label="Win Streak" value={user?.win_streak || 0} />
+            <StatCard emoji="👑" label="Best Streak" value={user?.best_win_streak || 0} />
           </div>
         )}
 
         {/* History Tab */}
         {tab === "history" && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {games.length === 0 && (
-              <p className="text-gray-500 text-center py-10">No games played yet</p>
+              <p className="text-blue-200/30 text-center py-10 font-bold">No games played yet</p>
             )}
             {games.map((g, i) => (
-              <div key={i} className="bg-gray-900/60 rounded-xl border border-gray-700/50 p-4 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  g.player_data.is_winner ? "bg-green-500/20 text-green-400" : "bg-gray-800 text-gray-400"
+              <div key={i} className="game-card p-3 flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm ${
+                  g.player_data.is_winner ? "bg-green-500/20" : "bg-blue-900/50"
                 }`}>
                   {g.player_data.is_winner ? "🏆" : `#${g.player_data.rank || "-"}`}
                 </div>
                 <div className="flex-1">
-                  <p className="text-white text-sm font-semibold capitalize">{g.game.game_mode} Mode</p>
-                  <p className="text-gray-400 text-xs">
+                  <p className="text-white text-sm font-bold capitalize" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{g.game.game_mode} Mode</p>
+                  <p className="text-blue-200/40 text-xs font-bold">
                     {new Date(g.game.created_at).toLocaleDateString()} · {g.player_data.kills} kills · {g.player_data.pieces_finished}/4 home
                   </p>
                 </div>
-                <div className={`px-2 py-1 rounded text-xs font-semibold ${
-                  g.player_data.is_winner ? "bg-green-500/20 text-green-400" : "bg-gray-800 text-gray-400"
+                <div className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                  g.player_data.is_winner ? "bg-green-500/20 text-green-300" : "bg-blue-900/50 text-blue-200/50"
                 }`}>
                   {g.player_data.is_winner ? "WON" : "LOST"}
                 </div>
@@ -204,24 +194,24 @@ export default function ProfilePage() {
 
         {/* Wallet Tab */}
         {tab === "wallet" && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {transactions.length === 0 && (
-              <p className="text-gray-500 text-center py-10">No transactions yet</p>
+              <p className="text-blue-200/30 text-center py-10 font-bold">No transactions yet</p>
             )}
             {transactions.map((t) => (
-              <div key={t.id} className="bg-gray-900/60 rounded-xl border border-gray-700/50 p-4 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  t.type === "credit" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+              <div key={t.id} className="game-card p-3 flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg ${
+                  t.type === "credit" ? "bg-green-500/20" : "bg-red-500/20"
                 }`}>
-                  {t.type === "credit" ? "+" : "-"}
+                  {t.type === "credit" ? "📥" : "📤"}
                 </div>
                 <div className="flex-1">
-                  <p className="text-white text-sm font-semibold">{t.description || t.category}</p>
-                  <p className="text-gray-400 text-xs">
+                  <p className="text-white text-sm font-bold" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{t.description || t.category}</p>
+                  <p className="text-blue-200/40 text-xs font-bold">
                     {new Date(t.created_at).toLocaleDateString()} · Balance: {t.balance_after}
                   </p>
                 </div>
-                <span className={`font-bold ${t.type === "credit" ? "text-green-400" : "text-red-400"}`}>
+                <span className={`font-bold text-sm ${t.type === "credit" ? "text-green-300" : "text-red-400"}`} style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>
                   {t.type === "credit" ? "+" : "-"}{t.amount} {t.currency === "gems" ? "💎" : "🪙"}
                 </span>
               </div>
@@ -233,12 +223,12 @@ export default function ProfilePage() {
   );
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number | string; color: string }) {
+function StatCard({ emoji, label, value }: { emoji: string; label: string; value: number | string }) {
   return (
-    <div className="bg-gray-900/60 rounded-xl border border-gray-700/50 p-4">
-      <div className={`${color} mb-2`}>{icon}</div>
-      <p className="text-white text-2xl font-bold">{value}</p>
-      <p className="text-gray-400 text-xs mt-1">{label}</p>
+    <div className="game-card p-4 text-center">
+      <div className="text-2xl mb-1">{emoji}</div>
+      <p className="text-white text-xl font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>{value}</p>
+      <p className="text-blue-200/40 text-xs font-bold mt-1">{label}</p>
     </div>
   );
 }

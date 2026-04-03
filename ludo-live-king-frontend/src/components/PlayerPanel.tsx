@@ -13,21 +13,12 @@ interface PlayerPanelProps {
   currentTurnColor: string | null;
 }
 
-const COLORS: Record<string, string> = {
-  red: "bg-red-500",
-  green: "bg-green-500",
-  yellow: "bg-yellow-500",
-  blue: "bg-blue-500",
+const COLOR_HEX: Record<string, string> = {
+  red: "#E53E3E",
+  green: "#38A169",
+  yellow: "#D69E2E",
+  blue: "#3182CE",
 };
-
-const BORDER_COLORS: Record<string, string> = {
-  red: "border-red-500",
-  green: "border-green-500",
-  yellow: "border-yellow-500",
-  blue: "border-blue-500",
-};
-
-const AVATARS = ["🦁", "🐯", "🦊", "🐻", "🐼", "🐨", "🐸", "🐵", "🐰", "🐶"];
 
 export default function PlayerPanel({ players, currentTurnColor }: PlayerPanelProps) {
   return (
@@ -36,45 +27,53 @@ export default function PlayerPanel({ players, currentTurnColor }: PlayerPanelPr
         <div
           key={player.color}
           className={`
-            flex items-center gap-3 p-3 rounded-xl transition-all duration-300
+            flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-300
             ${player.color === currentTurnColor
-              ? `bg-gray-800/80 border-2 ${BORDER_COLORS[player.color]} shadow-lg`
-              : "bg-gray-800/40 border border-gray-700/50"
+              ? "bg-blue-800/60 border-2 border-yellow-400/70"
+              : "bg-blue-900/40 border border-blue-400/20"
             }
-            ${player.has_won ? "opacity-70" : ""}
+            ${player.has_won ? "opacity-60" : ""}
           `}
         >
           {/* Avatar */}
-          <div className={`w-10 h-10 rounded-full ${COLORS[player.color]} flex items-center justify-center text-xl shadow-md`}>
-            {player.is_bot ? "🤖" : AVATARS[player.display_name.length % AVATARS.length]}
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 ${
+              player.color === currentTurnColor ? 'border-yellow-400' : 'border-white/30'
+            }`}
+            style={{ backgroundColor: COLOR_HEX[player.color] || '#888' }}
+          >
+            {player.is_bot ? "🤖" : player.display_name[0]?.toUpperCase()}
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-white text-sm font-semibold truncate">
+            <div className="flex items-center gap-1.5">
+              <span className="text-white text-sm font-bold truncate" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>
                 {player.display_name}
               </span>
               {player.color === currentTurnColor && !player.has_won && (
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full animate-pulse">
-                  Playing
+                <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded-full animate-pulse font-bold">
+                  PLAYING
                 </span>
               )}
               {player.has_won && (
-                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-bold">
                   #{player.rank} 🏆
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-blue-200/50 font-bold">
               <span>🏠 {player.pieces_finished}/4</span>
               <span>⚔️ {player.kills}</span>
             </div>
           </div>
 
-          {/* Turn indicator */}
+          {/* Turn dot */}
           {player.color === currentTurnColor && !player.has_won && (
-            <div className={`w-3 h-3 rounded-full ${COLORS[player.color]} animate-pulse shadow-lg`} />
+            <div
+              className="w-2.5 h-2.5 rounded-full animate-pulse"
+              style={{ backgroundColor: COLOR_HEX[player.color], boxShadow: `0 0 8px ${COLOR_HEX[player.color]}` }}
+            />
           )}
         </div>
       ))}

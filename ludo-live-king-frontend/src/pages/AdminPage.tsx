@@ -2,11 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../utils/api";
-import {
-  ArrowLeft, Shield, Users, Gamepad2, Coins, Ban,
-  Search, ChevronLeft, ChevronRight, UserX, UserCheck,
-  Plus, Minus, BarChart3
-} from "lucide-react";
 
 interface DashboardData {
   total_users: number;
@@ -118,33 +113,31 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen ludo-bg p-4">
+      <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate("/")} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
-            <ArrowLeft size={20} />
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => navigate("/")} className="w-8 h-8 rounded-lg bg-blue-800 border border-blue-400/30 flex items-center justify-center text-white hover:bg-blue-700">
+            ←
           </button>
-          <Shield className="text-red-400" size={24} />
-          <h1 className="text-xl font-bold text-white">Admin Panel</h1>
+          <h1 className="text-lg font-bold text-white" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>🛡️ ADMIN PANEL</h1>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-800/50 rounded-xl p-1 mb-6">
+        <div className="flex gap-1 bg-blue-900/50 rounded-xl p-1 mb-4 border border-blue-400/20">
           {([
-            { key: "dashboard", label: "Dashboard", icon: <BarChart3 size={16} /> },
-            { key: "users", label: "Users", icon: <Users size={16} /> },
-            { key: "games", label: "Games", icon: <Gamepad2 size={16} /> },
+            { key: "dashboard", label: "Dashboard", emoji: "📊" },
+            { key: "users", label: "Users", emoji: "👥" },
+            { key: "games", label: "Games", emoji: "🎮" },
           ] as const).map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                tab === t.key ? "bg-red-500 text-white" : "text-gray-400 hover:text-white"
+              className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                tab === t.key ? "btn-golden" : "text-blue-200/50 hover:text-white"
               }`}
             >
-              {t.icon}
-              {t.label}
+              {t.emoji} {t.label}
             </button>
           ))}
         </div>
@@ -152,19 +145,19 @@ export default function AdminPage() {
         {/* Loading */}
         {loading && tab !== "dashboard" && (
           <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
         {/* Dashboard Tab */}
         {tab === "dashboard" && dashboard && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <DashCard label="Total Users" value={dashboard.total_users} icon={<Users size={24} />} color="text-blue-400" />
-            <DashCard label="Online Users" value={dashboard.online_users} icon={<Users size={24} />} color="text-green-400" />
-            <DashCard label="Total Games" value={dashboard.total_games} icon={<Gamepad2 size={24} />} color="text-purple-400" />
-            <DashCard label="Active Games" value={dashboard.active_games} icon={<Gamepad2 size={24} />} color="text-amber-400" />
-            <DashCard label="Coins in Circulation" value={dashboard.total_coins_in_circulation.toLocaleString()} icon={<Coins size={24} />} color="text-yellow-400" />
-            <DashCard label="Banned Users" value={dashboard.banned_users} icon={<Ban size={24} />} color="text-red-400" />
+          <div className="grid grid-cols-2 gap-3">
+            <DashCard label="Total Users" value={dashboard.total_users} emoji="👥" />
+            <DashCard label="Online Users" value={dashboard.online_users} emoji="🟢" />
+            <DashCard label="Total Games" value={dashboard.total_games} emoji="🎮" />
+            <DashCard label="Active Games" value={dashboard.active_games} emoji="🔴" />
+            <DashCard label="Coins in Circulation" value={dashboard.total_coins_in_circulation.toLocaleString()} emoji="🪙" />
+            <DashCard label="Banned Users" value={dashboard.banned_users} emoji="🚫" />
           </div>
         )}
 
@@ -173,67 +166,62 @@ export default function AdminPage() {
           <div>
             {/* Search */}
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-500" />
+              <span className="absolute left-3 top-2.5 text-blue-200/30">🔍</span>
               <input
                 type="text"
                 placeholder="Search users..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                className="w-full bg-gray-800/50 border border-gray-700 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                className="w-full bg-blue-900/50 border border-blue-400/20 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-blue-200/30 focus:outline-none focus:border-yellow-400/50"
               />
             </div>
 
             {/* User List */}
             <div className="space-y-2">
               {users.map((u) => (
-                <div key={u.id} className="bg-gray-900/60 rounded-xl border border-gray-700/50 p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${
-                    u.is_banned ? "bg-red-500/20" : u.is_online ? "bg-green-500/20" : "bg-gray-800"
+                <div key={u.id} className="game-card p-3 flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg ${
+                    u.is_banned ? "bg-red-500/20" : u.is_online ? "bg-green-500/20" : "bg-blue-800"
                   }`}>
                     {u.is_banned ? "🚫" : u.is_admin ? "👑" : "👤"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white text-sm font-semibold truncate">{u.display_name}</span>
-                      <span className="text-gray-500 text-xs">@{u.username}</span>
-                      {u.is_banned && <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">Banned</span>}
-                      {u.is_admin && <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Admin</span>}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-white text-sm font-bold truncate" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{u.display_name}</span>
+                      <span className="text-blue-200/30 text-[10px] font-bold">@{u.username}</span>
+                      {u.is_banned && <span className="text-[10px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded font-bold">Banned</span>}
+                      {u.is_admin && <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1 py-0.5 rounded font-bold">Admin</span>}
                     </div>
-                    <p className="text-gray-400 text-xs mt-0.5">
-                      🪙 {u.coins} · 🎮 {u.total_games} games · 🏆 {u.games_won} wins · ⭐ {Math.round(u.rating)}
+                    <p className="text-blue-200/40 text-[10px] mt-0.5 font-bold">
+                      🪙{u.coins} · 🎮{u.total_games} · 🏆{u.games_won} · ⭐{Math.round(u.rating)}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    {/* Adjust Coins */}
                     <button
                       onClick={() => { setSelectedUser(u); setShowCoinModal(true); }}
-                      className="p-1.5 rounded-lg bg-gray-800 text-amber-400 hover:bg-gray-700 text-xs"
+                      className="w-7 h-7 rounded-lg bg-yellow-500/20 flex items-center justify-center text-sm hover:bg-yellow-500/30"
                       title="Adjust Coins"
                     >
-                      <Coins size={14} />
+                      🪙
                     </button>
-                    {/* Ban/Unban */}
                     {!u.is_admin && (
                       <button
                         onClick={() => u.is_banned ? handleUnban(u.id) : handleBan(u.id, "Violation of terms")}
-                        className={`p-1.5 rounded-lg text-xs ${
-                          u.is_banned
-                            ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                            : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${
+                          u.is_banned ? "bg-green-500/20 hover:bg-green-500/30" : "bg-red-500/20 hover:bg-red-500/30"
                         }`}
                         title={u.is_banned ? "Unban" : "Ban"}
                       >
-                        {u.is_banned ? <UserCheck size={14} /> : <UserX size={14} />}
+                        {u.is_banned ? "✅" : "🚫"}
                       </button>
                     )}
-                    {/* Make Admin */}
                     {!u.is_admin && (
                       <button
                         onClick={() => handleMakeAdmin(u.id)}
-                        className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 text-xs"
+                        className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center text-sm hover:bg-blue-500/30"
                         title="Make Admin"
                       >
-                        <Shield size={14} />
+                        🛡️
                       </button>
                     )}
                   </div>
@@ -243,22 +231,22 @@ export default function AdminPage() {
 
             {/* Pagination */}
             <div className="flex items-center justify-between mt-4">
-              <span className="text-gray-400 text-sm">{totalUsers} total users</span>
+              <span className="text-blue-200/40 text-xs font-bold">{totalUsers} total users</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
-                  className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white disabled:opacity-50"
+                  className="w-7 h-7 rounded-lg bg-blue-800 border border-blue-400/20 text-white font-bold disabled:opacity-30 text-sm"
                 >
-                  <ChevronLeft size={16} />
+                  ◀
                 </button>
-                <span className="text-white text-sm">Page {page}</span>
+                <span className="text-white text-xs font-bold">Page {page}</span>
                 <button
                   onClick={() => setPage(page + 1)}
                   disabled={users.length < 20}
-                  className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white disabled:opacity-50"
+                  className="w-7 h-7 rounded-lg bg-blue-800 border border-blue-400/20 text-white font-bold disabled:opacity-30 text-sm"
                 >
-                  <ChevronRight size={16} />
+                  ▶
                 </button>
               </div>
             </div>
@@ -268,40 +256,40 @@ export default function AdminPage() {
         {/* Games Tab */}
         {tab === "games" && (
           <div className="text-center py-20">
-            <Gamepad2 size={48} className="text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">Game monitoring coming soon</p>
-            <p className="text-gray-500 text-sm mt-1">View active and past games from the dashboard</p>
+            <div className="text-5xl mb-4">🎮</div>
+            <p className="text-blue-200/50 font-bold" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>Game monitoring coming soon</p>
+            <p className="text-blue-200/30 text-sm mt-1 font-bold">View active and past games from the dashboard</p>
           </div>
         )}
       </div>
 
       {/* Coin Adjustment Modal */}
       {showCoinModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-sm w-full">
-            <h2 className="text-xl font-bold text-white mb-2">Adjust Coins</h2>
-            <p className="text-gray-400 text-sm mb-4">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="game-card p-6 max-w-sm w-full">
+            <h2 className="text-lg font-bold text-white mb-2" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>🪙 ADJUST COINS</h2>
+            <p className="text-blue-200/50 text-sm mb-4 font-bold">
               {selectedUser.display_name} · Current: {selectedUser.coins} 🪙
             </p>
 
             <div className="flex items-center gap-3 mb-4">
               <button
                 onClick={() => setCoinAmount(coinAmount - 100)}
-                className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold text-lg flex items-center justify-center"
               >
-                <Minus size={18} />
+                -
               </button>
               <input
                 type="number"
                 value={coinAmount}
                 onChange={(e) => setCoinAmount(parseInt(e.target.value) || 0)}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-xl py-2 px-4 text-white text-center text-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                className="flex-1 bg-blue-900/50 border border-blue-400/20 rounded-xl py-2 px-4 text-white text-center text-lg focus:outline-none focus:border-yellow-400/50"
               />
               <button
                 onClick={() => setCoinAmount(coinAmount + 100)}
-                className="p-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                className="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold text-lg flex items-center justify-center"
               >
-                <Plus size={18} />
+                +
               </button>
             </div>
 
@@ -310,21 +298,22 @@ export default function AdminPage() {
               placeholder="Reason (optional)"
               value={coinReason}
               onChange={(e) => setCoinReason(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl py-2 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 mb-4"
+              className="w-full bg-blue-900/50 border border-blue-400/20 rounded-xl py-2 px-4 text-white placeholder-blue-200/30 focus:outline-none focus:border-yellow-400/50 mb-4"
             />
 
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowCoinModal(false); setCoinAmount(0); setCoinReason(""); }}
-                className="flex-1 py-3 rounded-xl bg-gray-700 text-white font-semibold hover:bg-gray-600"
+                className="flex-1 py-3 rounded-xl bg-blue-800 border-2 border-blue-400/50 text-white font-bold hover:bg-blue-700"
+                style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}
               >
-                Cancel
+                CANCEL
               </button>
               <button
                 onClick={handleAdjustCoins}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold"
+                className="flex-1 py-3 btn-golden"
               >
-                Apply
+                APPLY
               </button>
             </div>
           </div>
@@ -334,12 +323,12 @@ export default function AdminPage() {
   );
 }
 
-function DashCard({ label, value, icon, color }: { label: string; value: number | string; icon: React.ReactNode; color: string }) {
+function DashCard({ label, value, emoji }: { label: string; value: number | string; emoji: string }) {
   return (
-    <div className="bg-gray-900/60 rounded-2xl border border-gray-700/50 p-6">
-      <div className={`${color} mb-3`}>{icon}</div>
-      <p className="text-white text-3xl font-bold">{value}</p>
-      <p className="text-gray-400 text-sm mt-1">{label}</p>
+    <div className="game-card p-4 text-center">
+      <div className="text-2xl mb-1">{emoji}</div>
+      <p className="text-white text-2xl font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>{value}</p>
+      <p className="text-blue-200/40 text-xs font-bold mt-1">{label}</p>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Smile } from "lucide-react";
 
 interface ChatMessage {
   user_id: number;
@@ -32,26 +31,26 @@ export default function ChatBox({ messages, onSend, onEmoji }: ChatBoxProps) {
   };
 
   return (
-    <div className="bg-gray-800/60 rounded-xl border border-gray-700/50 flex flex-col h-64">
-      <div className="px-3 py-2 border-b border-gray-700/50">
-        <h3 className="text-white text-sm font-semibold">Chat</h3>
+    <div className="bg-blue-950/90 border-t-2 border-blue-400/30 flex flex-col h-64">
+      <div className="px-3 py-2 border-b border-blue-400/20">
+        <h3 className="text-white text-sm font-bold" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>💬 CHAT</h3>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {messages.length === 0 && (
-          <p className="text-gray-500 text-xs text-center">No messages yet</p>
+          <p className="text-blue-300/30 text-xs text-center">No messages yet</p>
         )}
         {messages.map((msg, i) => (
           <div key={i} className="text-xs">
-            <span className="text-amber-400 font-semibold">{msg.display_name}: </span>
-            <span className="text-gray-300">{msg.message}</span>
+            <span className="text-yellow-400 font-bold">{msg.display_name}: </span>
+            <span className="text-blue-100/80">{msg.message}</span>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
       {showEmojis && (
-        <div className="flex gap-1 px-3 py-2 border-t border-gray-700/50 flex-wrap">
+        <div className="flex gap-1 px-3 py-2 border-t border-blue-400/20 flex-wrap">
           {QUICK_EMOJIS.map((emoji) => (
             <button
               key={emoji}
@@ -64,12 +63,12 @@ export default function ChatBox({ messages, onSend, onEmoji }: ChatBoxProps) {
         </div>
       )}
 
-      <div className="flex items-center gap-2 p-2 border-t border-gray-700/50">
+      <div className="flex items-center gap-2 p-2 border-t border-blue-400/20">
         <button
           onClick={() => setShowEmojis(!showEmojis)}
-          className="text-gray-400 hover:text-amber-400 transition-colors"
+          className="text-blue-300/50 hover:text-yellow-400 transition-colors text-lg"
         >
-          <Smile size={18} />
+          😊
         </button>
         <input
           type="text"
@@ -77,14 +76,14 @@ export default function ChatBox({ messages, onSend, onEmoji }: ChatBoxProps) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="Type a message..."
-          className="flex-1 bg-gray-700/50 text-white text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-amber-500"
+          className="flex-1 bg-blue-900/50 text-white text-sm rounded-lg px-3 py-1.5 outline-none focus:border-yellow-400/50 border border-blue-400/20"
           maxLength={200}
         />
         <button
           onClick={handleSend}
-          className="text-amber-400 hover:text-amber-300 transition-colors"
+          className="text-yellow-400 hover:text-yellow-300 transition-colors font-bold"
         >
-          <Send size={18} />
+          ➤
         </button>
       </div>
     </div>

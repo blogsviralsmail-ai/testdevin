@@ -7,7 +7,6 @@ import Dice from "../components/Dice";
 import PlayerPanel from "../components/PlayerPanel";
 import ChatBox from "../components/ChatBox";
 import GameOverModal from "../components/GameOverModal";
-import { ArrowLeft, Copy, Check, Users, Bot, Clock } from "lucide-react";
 
 export default function GamePage() {
   const { user } = useAuth();
@@ -22,8 +21,8 @@ export default function GamePage() {
   const [copied, setCopied] = useState(false);
   const [movablePieces, setMovablePieces] = useState<number[]>([]);
   const [waitingForMatch, setWaitingForMatch] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
-  // Update movable pieces when dice is rolled
   useEffect(() => {
     if (diceResult && diceResult.user_id === user?.id) {
       setMovablePieces(diceResult.movable_pieces);
@@ -32,12 +31,10 @@ export default function GamePage() {
     }
   }, [diceResult, user?.id]);
 
-  // Clear movable pieces when turn advances (not on dice roll which also changes turn_count)
   useEffect(() => {
     setMovablePieces([]);
   }, [gameState?.current_turn_index]);
 
-  // Auto-trigger bot turns
   useEffect(() => {
     if (gameState?.status === "playing") {
       const currentPlayer = gameState.players[gameState.current_turn_index];
@@ -50,7 +47,6 @@ export default function GamePage() {
     }
   }, [gameState?.current_turn_index, gameState?.status, gameState?.turn_count, gameOver]);
 
-  // Detect if waiting for matchmaking
   useEffect(() => {
     if (!gameState) {
       setWaitingForMatch(true);
@@ -87,60 +83,57 @@ export default function GamePage() {
   // Waiting for matchmaking
   if (waitingForMatch && !gameState) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen ludo-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <h2 className="text-white text-xl font-bold mb-2">Finding Players...</h2>
-          <p className="text-gray-400 text-sm mb-6">Looking for opponents to match you with</p>
+          <div className="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <h2 className="text-white text-xl font-bold mb-2" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>Finding Players...</h2>
+          <p className="text-blue-200/70 text-sm mb-6">Looking for opponents</p>
           <button
             onClick={handleGoHome}
-            className="px-6 py-2 rounded-xl bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-colors"
+            className="px-6 py-2.5 btn-golden"
           >
-            Cancel
+            CANCEL
           </button>
         </div>
       </div>
     );
   }
 
-  // Waiting room (game not started)
+  // Waiting room
   if (gameState && gameState.status === "waiting") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 p-4">
-        <div className="max-w-lg mx-auto">
+      <div className="min-h-screen ludo-bg p-4">
+        <div className="max-w-md mx-auto">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <button onClick={handleGoHome} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
-              <ArrowLeft size={20} />
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={handleGoHome} className="w-8 h-8 rounded-lg bg-blue-800 border border-blue-400/30 flex items-center justify-center text-white hover:bg-blue-700">
+              ←
             </button>
-            <h1 className="text-xl font-bold text-white">Waiting Room</h1>
+            <h1 className="text-lg font-bold text-white" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>WAITING ROOM</h1>
           </div>
 
           {/* Room Code */}
           {roomCode && (
-            <div className="bg-gray-900/60 rounded-2xl border border-gray-700/50 p-6 mb-6 text-center">
-              <p className="text-gray-400 text-sm mb-2">Room Code</p>
+            <div className="game-card p-5 mb-4 text-center">
+              <p className="text-blue-200/70 text-sm mb-1 font-bold">ROOM CODE</p>
               <div className="flex items-center justify-center gap-3">
-                <span className="text-4xl font-bold text-amber-400 tracking-widest">{roomCode}</span>
+                <span className="text-3xl font-bold text-yellow-400 tracking-widest" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.5)'}}>{roomCode}</span>
                 <button
                   onClick={handleCopyCode}
-                  className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                  className="w-8 h-8 rounded-lg bg-yellow-500 border-2 border-yellow-300 flex items-center justify-center text-blue-900 font-bold hover:bg-yellow-400"
                 >
-                  {copied ? <Check size={18} className="text-green-400" /> : <Copy size={18} />}
+                  {copied ? "✓" : "📋"}
                 </button>
               </div>
-              <p className="text-gray-500 text-xs mt-2">Share this code with friends to join</p>
+              <p className="text-blue-200/40 text-xs mt-1">Share with friends to join</p>
             </div>
           )}
 
           {/* Players */}
-          <div className="bg-gray-900/60 rounded-2xl border border-gray-700/50 p-4 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Users size={18} className="text-gray-400" />
-              <h2 className="text-white font-semibold">
-                Players ({gameState.players.length}/{gameState.max_players})
-              </h2>
-            </div>
+          <div className="game-card p-4 mb-4">
+            <p className="text-white font-bold mb-3" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+              👥 PLAYERS ({gameState.players.length}/{gameState.max_players})
+            </p>
             <PlayerPanel players={gameState.players} currentTurnColor={null} />
           </div>
 
@@ -149,18 +142,18 @@ export default function GamePage() {
             {gameState.players.length < gameState.max_players && (
               <button
                 onClick={addBot}
-                className="w-full py-3 rounded-xl bg-gray-800 border border-gray-700 text-white font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-blue-800 border-2 border-blue-400/50 text-white font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}
               >
-                <Bot size={18} />
-                Add Bot
+                🤖 ADD BOT
               </button>
             )}
             {gameState.players.length >= 2 && (
               <button
                 onClick={startGame}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-lg shadow-lg shadow-orange-500/30 hover:from-amber-400 hover:to-orange-400 transition-all"
+                className="w-full py-3.5 btn-golden text-lg"
               >
-                Start Game 🎮
+                🎮 START GAME
               </button>
             )}
           </div>
@@ -169,9 +162,9 @@ export default function GamePage() {
     );
   }
 
-  // Game playing
+  // Game playing - mobile-first portrait layout like Ludo King
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900">
+    <div className="min-h-screen ludo-bg">
       {/* Game Over Modal */}
       {gameOver && gameState && (
         <GameOverModal
@@ -181,80 +174,113 @@ export default function GamePage() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto p-4">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={handleGoHome} className="p-2 rounded-lg bg-gray-800/50 text-gray-400 hover:text-white">
-            <ArrowLeft size={20} />
+      <div className="max-w-md mx-auto px-2 py-2 relative">
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-2">
+          <button onClick={handleGoHome} className="w-8 h-8 rounded-lg bg-blue-800/80 border border-blue-400/30 flex items-center justify-center text-white text-sm hover:bg-blue-700">
+            ←
           </button>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <Clock size={14} />
-            Turn {gameState?.turn_count || 0}
+          <div className="flex items-center gap-2">
+            <span className="text-blue-200/60 text-xs font-bold">Turn {gameState?.turn_count || 0}</span>
             {roomCode && (
-              <span className="ml-2 bg-gray-800 px-2 py-0.5 rounded text-xs">
+              <span className="bg-blue-900/60 px-2 py-0.5 rounded text-xs text-yellow-400 font-bold border border-yellow-500/30">
                 {roomCode}
               </span>
             )}
           </div>
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className="w-8 h-8 rounded-lg bg-blue-800/80 border border-blue-400/30 flex items-center justify-center text-sm"
+          >
+            💬
+          </button>
         </div>
 
-        {/* Game Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Left Panel - Players */}
-          <div className="lg:col-span-1 order-2 lg:order-1">
-            <div className="bg-gray-900/60 backdrop-blur rounded-2xl border border-gray-700/50 p-4 mb-4">
-              <h3 className="text-white font-semibold mb-3">Players</h3>
-              {gameState && (
-                <PlayerPanel
-                  players={gameState.players}
-                  currentTurnColor={gameState.current_turn_color}
-                />
-              )}
-            </div>
-
-            {/* Dice */}
-            <div className="bg-gray-900/60 backdrop-blur rounded-2xl border border-gray-700/50 p-4 flex justify-center">
-              <Dice
-                value={diceResult?.value || null}
-                isMyTurn={isMyTurn}
-                onRoll={rollDice}
-                rolling={false}
-              />
-            </div>
-          </div>
-
-          {/* Center - Board */}
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            <div className="aspect-square max-h-[70vh]">
-              {gameState && (
-                <LudoBoard
-                  players={gameState.players}
-                  movablePieces={movablePieces}
-                  currentTurnColor={gameState.current_turn_color}
-                  onMovePiece={handleMovePiece}
-                  myColor={myColor}
-                />
-              )}
-            </div>
-
-            {/* Turn indicator */}
-            {gameState && (
-              <div className="text-center mt-3">
-                {isMyTurn ? (
-                  <p className="text-amber-400 font-bold animate-pulse">
-                    Your Turn! {movablePieces.length > 0 ? "Select a piece to move" : "Roll the dice!"}
-                  </p>
-                ) : (
-                  <p className="text-gray-400">
-                    {gameState.players[gameState.current_turn_index]?.display_name}'s turn
-                  </p>
-                )}
+        {/* Player avatars - top row (Green & Yellow) */}
+        {gameState && (
+          <div className="flex justify-between mb-1 px-1">
+            {gameState.players.filter(p => p.color === "green" || p.color === "red").map(player => (
+              <div key={player.color} className="flex items-center gap-1.5">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 ${
+                  player.color === gameState.current_turn_color ? 'border-yellow-400 glow-pulse' : 'border-white/30'
+                }`} style={{ backgroundColor: player.color === "red" ? "#E53E3E" : "#38A169" }}>
+                  {player.is_bot ? "🤖" : player.display_name[0].toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-white text-xs font-bold truncate max-w-[60px]" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{player.display_name}</p>
+                  <p className="text-blue-200/50 text-[10px]">🏠{player.pieces_finished}/4</p>
+                </div>
               </div>
-            )}
+            ))}
           </div>
+        )}
 
-          {/* Right Panel - Chat */}
-          <div className="lg:col-span-1 order-3">
+        {/* Board */}
+        <div className="relative">
+          {gameState && (
+            <LudoBoard
+              players={gameState.players}
+              movablePieces={movablePieces}
+              currentTurnColor={gameState.current_turn_color}
+              onMovePiece={handleMovePiece}
+              myColor={myColor}
+            />
+          )}
+        </div>
+
+        {/* Player avatars - bottom row (Blue & Yellow) */}
+        {gameState && (
+          <div className="flex justify-between mt-1 px-1">
+            {gameState.players.filter(p => p.color === "blue" || p.color === "yellow").map(player => (
+              <div key={player.color} className="flex items-center gap-1.5">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 ${
+                  player.color === gameState.current_turn_color ? 'border-yellow-400 glow-pulse' : 'border-white/30'
+                }`} style={{ backgroundColor: player.color === "blue" ? "#3182CE" : "#D69E2E" }}>
+                  {player.is_bot ? "🤖" : player.display_name[0].toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-white text-xs font-bold truncate max-w-[60px]" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{player.display_name}</p>
+                  <p className="text-blue-200/50 text-[10px]">🏠{player.pieces_finished}/4</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Dice + Turn indicator */}
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <Dice
+            value={diceResult?.value || null}
+            isMyTurn={isMyTurn}
+            onRoll={rollDice}
+            rolling={false}
+          />
+          {gameState && (
+            <div className="text-center">
+              {isMyTurn ? (
+                <p className="text-yellow-300 font-bold text-sm animate-pulse" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+                  {movablePieces.length > 0 ? "SELECT A PIECE!" : "YOUR TURN!"}
+                </p>
+              ) : (
+                <p className="text-blue-200/60 text-sm font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+                  {gameState.players[gameState.current_turn_index]?.display_name}'s turn
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chat overlay */}
+      {showChat && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+          <div className="w-full max-w-md">
+            <button
+              onClick={() => setShowChat(false)}
+              className="w-full py-2 text-center text-white bg-blue-900/80 rounded-t-xl font-bold text-sm"
+            >
+              ✕ Close Chat
+            </button>
             <ChatBox
               messages={chatMessages}
               onSend={(msg) => sendChat(msg, user?.display_name || "Player")}
@@ -262,7 +288,7 @@ export default function GamePage() {
             />
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

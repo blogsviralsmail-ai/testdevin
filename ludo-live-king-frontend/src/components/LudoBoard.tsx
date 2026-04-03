@@ -1,73 +1,4 @@
-import { useRef, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
-import * as THREE from "three";
-
-// Board positions mapping - converts game position to 3D coordinates
-const BOARD_SIZE = 15;
-const CELL_SIZE = 0.65;
-const HALF = (BOARD_SIZE - 1) / 2;
-
-// Color definitions
-const COLORS: Record<string, string> = {
-  red: "#E53E3E",
-  green: "#38A169",
-  yellow: "#D69E2E",
-  blue: "#3182CE",
-};
-
-const LIGHT_COLORS: Record<string, string> = {
-  red: "#FED7D7",
-  green: "#C6F6D5",
-  yellow: "#FEFCBF",
-  blue: "#BEE3F8",
-};
-
-// Path coordinates for each position on the main track (0-51)
-function getMainTrackPosition(pos: number): [number, number, number] {
-  // Map positions to grid coordinates based on standard Ludo board
-  const positions: [number, number][] = [];
-
-  // Bottom arm going up (positions 0-5) - Red's path
-  for (let i = 0; i < 6; i++) positions.push([6, 14 - i]);
-  // Left turn (6)
-  positions.push([6, 8]);
-  // Left arm going left (7-12)
-  for (let i = 0; i < 6; i++) positions.push([5 - i, 8]);
-  // Top-left corner (13)
-  positions.push([0, 7]);
-  // Top arm going right (14-18) - Green's path
-  for (let i = 0; i < 5; i++) positions.push([0 + i, 6]);
-  positions.push([5, 6]);
-  // Turn down (19)
-  positions.push([6, 6]);
-  // Top going up (20-25)
-  for (let i = 0; i < 6; i++) positions.push([6, 5 - i]);
-  // Top-right corner (26)
-  positions.push([7, 0]);
-  // Right arm going down (27-31) - Yellow's path
-  for (let i = 0; i < 5; i++) positions.push([8, 0 + i]);
-  positions.push([8, 5]);
-  // Turn right (32)
-  positions.push([8, 6]);
-  // Right arm going right (33-38)
-  for (let i = 0; i < 6; i++) positions.push([9 + i, 6]);
-  // Bottom-right corner (39)
-  positions.push([14, 7]);
-  // Bottom arm going left (40-44) - Blue's path
-  for (let i = 0; i < 5; i++) positions.push([14 - i, 8]);
-  positions.push([9, 8]);
-  // Turn up (45)
-  positions.push([8, 8]);
-  // Bottom going down (46-51)
-  for (let i = 0; i < 6; i++) positions.push([8, 9 + i]);
-
-  if (pos >= 0 && pos < positions.length) {
-    const [row, col] = positions[pos];
-    return [(col - HALF) * CELL_SIZE, 0.3, (row - HALF) * CELL_SIZE];
-  }
-  return [0, 0.3, 0];
-}
+// Classic 2D SVG Ludo Board - Ludo King style
 
 // Home column position offsets per color (must match backend HOME_COLUMN_OFFSET)
 const HOME_COLUMN_OFFSET: Record<string, number> = {
@@ -79,154 +10,156 @@ const HOME_COLUMN_OFFSET: Record<string, number> = {
 
 const PIECE_FINISHED = 999;
 
-// Home column positions for each color
-function getHomeColumnPosition(pos: number, color: string): [number, number, number] {
-  const offset = HOME_COLUMN_OFFSET[color] || 100;
-  const homeIdx = pos - offset;
-  const homePositions: Record<string, [number, number][]> = {
-    red: Array.from({ length: 6 }, (_, i) => [7, 13 - i] as [number, number]),
-    green: Array.from({ length: 6 }, (_, i) => [1 + i, 7] as [number, number]),
-    yellow: Array.from({ length: 6 }, (_, i) => [7, 1 + i] as [number, number]),
-    blue: Array.from({ length: 6 }, (_, i) => [13 - i, 7] as [number, number]),
-  };
-  const positions = homePositions[color];
-  if (positions && homeIdx >= 0 && homeIdx < positions.length) {
-    const [row, col] = positions[homeIdx];
-    return [(col - HALF) * CELL_SIZE, 0.3, (row - HALF) * CELL_SIZE];
+const COLORS: Record<string, string> = {
+  red: "#E53E3E",
+  green: "#38A169",
+  yellow: "#D69E2E",
+  blue: "#3182CE",
+};
+
+const BRIGHT_COLORS: Record<string, string> = {
+  red: "#ff4444",
+  green: "#44bb44",
+  yellow: "#ffcc00",
+  blue: "#4488ff",
+};
+
+const LIGHT_COLORS: Record<string, string> = {
+  red: "#ffcccc",
+  green: "#ccffcc",
+  yellow: "#ffffcc",
+  blue: "#ccddff",
+};
+
+// Lookup table for track positions
+const CELL_POSITIONS: Record<number, [number, number]> = {};
+// Bottom arm (Red start area) - column 6, going up
+(() => {
+  // Pos 0-4: col=6, row=14..10 (but row 9-14 visible)
+  // Standard ludo: 52 positions around the outer track
+  // Using standard layout:
+  // Red starts bottom-left, goes up
+  const positions: [number, number][] = [];
+  // Bottom vertical strip (col 6, going up from row 14 to row 9)
+  for (let i = 0; i < 6; i++) positions.push([6, 14 - i]); // 0-5: (6,14)..(6,9)
+  // Left horizontal strip (row 8, going left from col 6 to col 0) 
+  for (let i = 0; i < 6; i++) positions.push([5 - i, 8]); // 6-11: (5,8)..(0,8)
+  // Top-left turn
+  positions.push([0, 7]); // 12
+  // Top vertical strip going up (col 0..5, row 6)  
+  // Actually let me think about this more carefully
+  // Standard Ludo 15x15 grid:
+  //   Columns 0-5: left arm
+  //   Column 6: left center
+  //   Column 7: center
+  //   Column 8: right center
+  //   Columns 9-14: right arm
+  //   Rows 0-5: top arm
+  //   Row 6: top center
+  //   Row 7: center
+  //   Row 8: bottom center
+  //   Rows 9-14: bottom arm
+
+  // Track goes: Start at (6,13) [Red start], go UP to (6,9), 
+  // turn LEFT (5,8)..(0,8), turn UP (0,7), go DOWN on top (0,6)..(5,6),
+  // turn RIGHT (6,5)..(6,0), turn DOWN (7,0), go RIGHT (8,0)..(8,5),
+  // turn DOWN (9,6)..(14,6), turn DOWN (14,7), go LEFT (14,8)..(9,8),
+  // turn UP (8,9)..(8,14)
+
+  // Let me just hardcode the standard 52 positions
+  positions.length = 0;
+  
+  // Segment 1: Bottom-left arm going UP (col 6)
+  positions.push([6, 13]); // 0 - not start square, just first track pos
+  positions.push([6, 12]); // 1 - RED START
+  positions.push([6, 11]); // 2
+  positions.push([6, 10]); // 3
+  positions.push([6, 9]);  // 4
+  // Segment 2: Turn left at row 8
+  positions.push([5, 8]);  // 5
+  positions.push([4, 8]);  // 6
+  positions.push([3, 8]);  // 7
+  positions.push([2, 8]);  // 8
+  positions.push([1, 8]);  // 9 - SAFE
+  positions.push([0, 8]);  // 10
+  // Segment 3: Turn up at col 0
+  positions.push([0, 7]);  // 11
+  positions.push([0, 6]);  // 12
+  // Segment 4: Top-left arm going RIGHT (row 6)
+  positions.push([1, 6]);  // 13
+  positions.push([2, 6]);  // 14 - GREEN START
+  positions.push([3, 6]);  // 15
+  positions.push([4, 6]);  // 16
+  positions.push([5, 6]);  // 17
+  // Segment 5: Turn up at col 6
+  positions.push([6, 5]);  // 18
+  positions.push([6, 4]);  // 19
+  positions.push([6, 3]);  // 20
+  positions.push([6, 2]);  // 21
+  positions.push([6, 1]);  // 22 - SAFE
+  positions.push([6, 0]);  // 23
+  // Segment 6: Turn right at row 0
+  positions.push([7, 0]);  // 24
+  positions.push([8, 0]);  // 25
+  // Segment 7: Top-right arm going DOWN (col 8)
+  positions.push([8, 1]);  // 26
+  positions.push([8, 2]);  // 27 - YELLOW START
+  positions.push([8, 3]);  // 28
+  positions.push([8, 4]);  // 29
+  positions.push([8, 5]);  // 30
+  // Segment 8: Turn right at row 6
+  positions.push([9, 6]);  // 31
+  positions.push([10, 6]); // 32
+  positions.push([11, 6]); // 33
+  positions.push([12, 6]); // 34
+  positions.push([13, 6]); // 35 - SAFE
+  positions.push([14, 6]); // 36
+  // Segment 9: Turn down at col 14
+  positions.push([14, 7]); // 37
+  positions.push([14, 8]); // 38
+  // Segment 10: Bottom-right arm going LEFT (row 8)
+  positions.push([13, 8]); // 39
+  positions.push([12, 8]); // 40 - BLUE START
+  positions.push([11, 8]); // 41
+  positions.push([10, 8]); // 42
+  positions.push([9, 8]);  // 43
+  // Segment 11: Turn down at col 8
+  positions.push([8, 9]);  // 44
+  positions.push([8, 10]); // 45
+  positions.push([8, 11]); // 46
+  positions.push([8, 12]); // 47
+  positions.push([8, 13]); // 48 - SAFE
+  positions.push([8, 14]); // 49
+  // Segment 12: Turn left at row 14
+  positions.push([7, 14]); // 50
+  positions.push([6, 14]); // 51
+
+  for (let i = 0; i < positions.length; i++) {
+    CELL_POSITIONS[i + 1] = positions[i]; // positions are 1-indexed in game
   }
-  return [0, 0.5, 0];
-}
+})();
 
-// Home yard positions for pieces not yet on the board
-function getHomeYardPosition(color: string, pieceIndex: number): [number, number, number] {
-  const offsets: [number, number][] = [
-    [-0.4, -0.4],
-    [0.4, -0.4],
-    [-0.4, 0.4],
-    [0.4, 0.4],
-  ];
-  const centers: Record<string, [number, number]> = {
-    red: [2.5, 11.5],
-    green: [2.5, 2.5],
-    yellow: [11.5, 2.5],
-    blue: [11.5, 11.5],
-  };
-  const center = centers[color] || [7, 7];
-  const offset = offsets[pieceIndex] || [0, 0];
-  return [
-    (center[1] + offset[0] * 2 - HALF) * CELL_SIZE,
-    0.4,
-    (center[0] + offset[1] * 2 - HALF) * CELL_SIZE,
-  ];
-}
+// Home column positions for each color (6 cells leading to center)
+const HOME_COLUMNS: Record<string, [number, number][]> = {
+  red: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9], [7, 8]],
+  green: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7]],
+  yellow: [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6]],
+  blue: [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7], [8, 7]],
+};
 
-interface PieceProps {
-  color: string;
-  position: [number, number, number];
-  isMovable: boolean;
-  onClick: () => void;
-  pieceIndex: number;
-}
+// Home yard piece positions (4 pieces in each corner)
+const HOME_YARD_PIECES: Record<string, [number, number][]> = {
+  red: [[1.8, 10.8], [4.2, 10.8], [1.8, 13.2], [4.2, 13.2]],
+  green: [[1.8, 1.8], [4.2, 1.8], [1.8, 4.2], [4.2, 4.2]],
+  yellow: [[10.8, 1.8], [13.2, 1.8], [10.8, 4.2], [13.2, 4.2]],
+  blue: [[10.8, 10.8], [13.2, 10.8], [10.8, 13.2], [13.2, 13.2]],
+};
 
-function GamePiece({ color, position, isMovable, onClick, pieceIndex }: PieceProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const baseColor = COLORS[color] || "#888";
+// Safe positions (star squares)
+const SAFE_POSITIONS = new Set([1, 9, 14, 22, 27, 35, 40, 48]);
 
-  useFrame((state) => {
-    if (meshRef.current) {
-      if (isMovable) {
-        meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 3 + pieceIndex) * 0.1;
-        meshRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 4) * 0.05);
-      } else {
-        meshRef.current.position.y = position[1];
-        meshRef.current.scale.setScalar(1);
-      }
-    }
-  });
-
-  return (
-    <group position={position}>
-      <mesh
-        ref={meshRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (isMovable) onClick();
-        }}
-        castShadow
-        receiveShadow
-      >
-        {/* Piece body - cone shape like classic Ludo */}
-        <coneGeometry args={[0.18, 0.5, 16]} />
-        <meshStandardMaterial
-          color={baseColor}
-          roughness={0.3}
-          metalness={0.6}
-          emissive={isMovable ? baseColor : "#000"}
-          emissiveIntensity={isMovable ? 0.3 : 0}
-        />
-      </mesh>
-      {/* Piece top sphere */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <sphereGeometry args={[0.1, 16, 16]} />
-        <meshStandardMaterial color={baseColor} roughness={0.2} metalness={0.8} />
-      </mesh>
-      {/* Glow ring for movable pieces */}
-      {isMovable && (
-        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.2, 0.28, 32]} />
-          <meshBasicMaterial color="#FFD700" transparent opacity={0.7} />
-        </mesh>
-      )}
-    </group>
-  );
-}
-
-function BoardSquare({ position, color, isSafe }: { position: [number, number, number]; color?: string; isSafe?: boolean }) {
-  return (
-    <mesh position={position} receiveShadow>
-      <boxGeometry args={[CELL_SIZE * 0.9, 0.08, CELL_SIZE * 0.9]} />
-      <meshStandardMaterial
-        color={color || "#F7FAFC"}
-        roughness={0.8}
-        metalness={0.1}
-      />
-      {isSafe && (
-        <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[CELL_SIZE * 0.25, 6]} />
-          <meshBasicMaterial color="#FFD700" transparent opacity={0.5} />
-        </mesh>
-      )}
-    </mesh>
-  );
-}
-
-function HomeYard({ color, center }: { color: string; center: [number, number, number] }) {
-  return (
-    <mesh position={center} receiveShadow>
-      <boxGeometry args={[CELL_SIZE * 5.5, 0.15, CELL_SIZE * 5.5]} />
-      <meshStandardMaterial color={LIGHT_COLORS[color]} roughness={0.9} metalness={0.05} />
-    </mesh>
-  );
-}
-
-function CenterTriangle({ color, rotation }: { color: string; rotation: number }) {
-  const shape = useMemo(() => {
-    const s = new THREE.Shape();
-    const size = CELL_SIZE * 2;
-    s.moveTo(0, 0);
-    s.lineTo(size, 0);
-    s.lineTo(size / 2, size);
-    s.closePath();
-    return s;
-  }, []);
-
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, rotation]} position={[0, 0.12, 0]}>
-      <shapeGeometry args={[shape]} />
-      <meshStandardMaterial color={COLORS[color]} roughness={0.5} metalness={0.3} side={THREE.DoubleSide} />
-    </mesh>
-  );
-}
+// Color start positions
+const COLOR_START: Record<string, number> = { red: 1, green: 14, yellow: 27, blue: 40 };
 
 interface LudoBoardProps {
   players: Array<{
@@ -239,140 +172,247 @@ interface LudoBoardProps {
   myColor: string | null;
 }
 
-function BoardScene({ players, movablePieces, currentTurnColor, onMovePiece, myColor }: LudoBoardProps) {
-  const safePositions = new Set([1, 9, 14, 22, 27, 35, 40, 48]);
+export default function LudoBoard({ players, movablePieces, currentTurnColor, onMovePiece, myColor }: LudoBoardProps) {
+  const S = 400; // SVG size
+  const C = S / 15; // Cell size
+  
+  const toSvg = (col: number, row: number): [number, number] => [col * C, row * C];
+
+  // Get pixel position for a game position
+  const getPiecePos = (position: number, color: string, pieceIdx: number): [number, number] => {
+    if (position === -1) {
+      // Home yard
+      const yard = HOME_YARD_PIECES[color];
+      if (yard && yard[pieceIdx]) {
+        return toSvg(yard[pieceIdx][0], yard[pieceIdx][1]);
+      }
+      return toSvg(7, 7);
+    }
+    if (position === PIECE_FINISHED) {
+      return toSvg(7.5, 7.5);
+    }
+    const colorOffset = HOME_COLUMN_OFFSET[color] || 100;
+    if (position >= colorOffset && position < colorOffset + 6) {
+      const homeIdx = position - colorOffset;
+      const homeCol = HOME_COLUMNS[color];
+      if (homeCol && homeCol[homeIdx]) {
+        return toSvg(homeCol[homeIdx][0] + 0.5, homeCol[homeIdx][1] + 0.5);
+      }
+      return toSvg(7.5, 7.5);
+    }
+    if (position >= 1 && position <= 52) {
+      const cellPos = CELL_POSITIONS[position];
+      if (cellPos) {
+        return toSvg(cellPos[0] + 0.5, cellPos[1] + 0.5);
+      }
+    }
+    return toSvg(7.5, 7.5);
+  };
 
   return (
-    <>
-      {/* Lighting */}
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 15, 10]} intensity={1} castShadow shadow-mapSize={2048} />
-      <directionalLight position={[-5, 10, -5]} intensity={0.3} />
-      <pointLight position={[0, 8, 0]} intensity={0.5} color="#FFF5E6" />
+    <div className="w-full aspect-square max-w-lg mx-auto">
+      <svg viewBox={`0 0 ${S} ${S}`} className="w-full h-full drop-shadow-2xl rounded-lg">
+        {/* Board background */}
+        <rect x="0" y="0" width={S} height={S} rx="8" fill="#f5f0e1" stroke="#8B4513" strokeWidth="4"/>
+        
+        {/* Home yards (colored corners) */}
+        <rect x={C * 0} y={C * 0} width={C * 6} height={C * 6} rx="6" fill={COLORS.red}/>
+        <rect x={C * 9} y={C * 0} width={C * 6} height={C * 6} rx="6" fill={COLORS.green}/>
+        <rect x={C * 0} y={C * 9} width={C * 6} height={C * 6} rx="6" fill={COLORS.blue}/>
+        <rect x={C * 9} y={C * 9} width={C * 6} height={C * 6} rx="6" fill={COLORS.yellow}/>
+        
+        {/* Inner white boxes in home yards */}
+        <rect x={C * 0.7} y={C * 0.7} width={C * 4.6} height={C * 4.6} rx="4" fill="white"/>
+        <rect x={C * 9.7} y={C * 0.7} width={C * 4.6} height={C * 4.6} rx="4" fill="white"/>
+        <rect x={C * 0.7} y={C * 9.7} width={C * 4.6} height={C * 4.6} rx="4" fill="white"/>
+        <rect x={C * 9.7} y={C * 9.7} width={C * 4.6} height={C * 4.6} rx="4" fill="white"/>
 
-      {/* Board base */}
-      <mesh position={[0, -0.05, 0]} receiveShadow>
-        <boxGeometry args={[CELL_SIZE * 16, 0.2, CELL_SIZE * 16]} />
-        <meshStandardMaterial color="#F0E6D3" roughness={0.9} />
-      </mesh>
+        {/* Track cells - draw grid lines for the cross-shaped path */}
+        {/* Vertical strips */}
+        {[6, 7, 8].map(col => 
+          Array.from({ length: 15 }, (_, row) => {
+            if (row >= 6 && row <= 8 && col >= 6 && col <= 8) return null; // center
+            if (col === 6 && row < 6) return null; // top-left yard area
+            if (col === 8 && row < 6) return null;
+            if (col === 6 && row > 8) return null;
+            if (col === 8 && row > 8) return null;
+            return (
+              <rect
+                key={`v-${col}-${row}`}
+                x={col * C}
+                y={row * C}
+                width={C}
+                height={C}
+                fill="white"
+                stroke="#ddd"
+                strokeWidth="0.5"
+              />
+            );
+          })
+        )}
+        {/* Horizontal strips */}
+        {[6, 7, 8].map(row =>
+          Array.from({ length: 15 }, (_, col) => {
+            if (row >= 6 && row <= 8 && col >= 6 && col <= 8) return null; // center
+            if (col < 6 && row === 6) return null;
+            if (col < 6 && row === 8) return null;
+            if (col > 8 && row === 6) return null;
+            if (col > 8 && row === 8) return null;
+            return (
+              <rect
+                key={`h-${col}-${row}`}
+                x={col * C}
+                y={row * C}
+                width={C}
+                height={C}
+                fill="white"
+                stroke="#ddd"
+                strokeWidth="0.5"
+              />
+            );
+          })
+        )}
 
-      {/* Board border */}
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[CELL_SIZE * 16.2, 0.15, CELL_SIZE * 16.2]} />
-        <meshStandardMaterial color="#8B4513" roughness={0.7} metalness={0.2} />
-      </mesh>
-      <mesh position={[0, 0.06, 0]}>
-        <boxGeometry args={[CELL_SIZE * 15.8, 0.16, CELL_SIZE * 15.8]} />
-        <meshStandardMaterial color="#F0E6D3" roughness={0.9} />
-      </mesh>
+        {/* Home columns (colored paths to center) */}
+        {(["red", "green", "yellow", "blue"] as const).map(color =>
+          HOME_COLUMNS[color].map((pos, i) => (
+            <rect
+              key={`hc-${color}-${i}`}
+              x={pos[0] * C}
+              y={pos[1] * C}
+              width={C}
+              height={C}
+              fill={LIGHT_COLORS[color]}
+              stroke={COLORS[color]}
+              strokeWidth="0.5"
+            />
+          ))
+        )}
 
-      {/* Home yards */}
-      <HomeYard color="red" center={[(2.5 - HALF) * CELL_SIZE, 0.08, (11.5 - HALF) * CELL_SIZE]} />
-      <HomeYard color="green" center={[(2.5 - HALF) * CELL_SIZE, 0.08, (2.5 - HALF) * CELL_SIZE]} />
-      <HomeYard color="yellow" center={[(11.5 - HALF) * CELL_SIZE, 0.08, (2.5 - HALF) * CELL_SIZE]} />
-      <HomeYard color="blue" center={[(11.5 - HALF) * CELL_SIZE, 0.08, (11.5 - HALF) * CELL_SIZE]} />
-
-      {/* Center home triangle */}
-      <mesh position={[0, 0.1, 0]} receiveShadow>
-        <boxGeometry args={[CELL_SIZE * 3, 0.12, CELL_SIZE * 3]} />
-        <meshStandardMaterial color="#F7FAFC" roughness={0.8} />
-      </mesh>
-      <CenterTriangle color="red" rotation={0} />
-      <CenterTriangle color="green" rotation={Math.PI / 2} />
-      <CenterTriangle color="yellow" rotation={Math.PI} />
-      <CenterTriangle color="blue" rotation={-Math.PI / 2} />
-
-      {/* Main track squares */}
-      {Array.from({ length: 52 }, (_, i) => {
-        const pos = getMainTrackPosition(i);
-        let color: string | undefined;
-        if (i === 1) color = LIGHT_COLORS.red;
-        else if (i === 14) color = LIGHT_COLORS.green;
-        else if (i === 27) color = LIGHT_COLORS.yellow;
-        else if (i === 40) color = LIGHT_COLORS.blue;
-        return (
-          <BoardSquare
-            key={`track-${i}`}
-            position={pos}
-            color={color}
-            isSafe={safePositions.has(i)}
-          />
-        );
-      })}
-
-      {/* Home column squares */}
-      {(["red", "green", "yellow", "blue"] as const).map((color) =>
-        Array.from({ length: 6 }, (_, i) => {
-          const pos = getHomeColumnPosition(52 + i, color);
+        {/* Color start squares */}
+        {Object.entries(COLOR_START).map(([color, pos]) => {
+          const cellPos = CELL_POSITIONS[pos];
+          if (!cellPos) return null;
           return (
-            <BoardSquare
-              key={`home-${color}-${i}`}
-              position={pos}
-              color={COLORS[color]}
+            <rect
+              key={`start-${color}`}
+              x={cellPos[0] * C}
+              y={cellPos[1] * C}
+              width={C}
+              height={C}
+              fill={LIGHT_COLORS[color]}
+              stroke={COLORS[color]}
+              strokeWidth="1"
             />
           );
-        })
-      )}
+        })}
 
-      {/* Game pieces */}
-      {players.map((player) =>
-        player.pieces.map((piece, pieceIdx) => {
-          let position: [number, number, number];
-          const colorOffset = HOME_COLUMN_OFFSET[player.color] || 100;
-          if (piece.position === -1) {
-            position = getHomeYardPosition(player.color, pieceIdx);
-          } else if (piece.position === PIECE_FINISHED) {
-            position = [0, 0.5, 0]; // Finished - at center
-          } else if (piece.position >= colorOffset && piece.position < colorOffset + 6) {
-            position = getHomeColumnPosition(piece.position, player.color);
-          } else if (piece.position >= 1 && piece.position <= 52) {
-            position = getMainTrackPosition(piece.position);
-          } else {
-            position = [0, 0.5, 0]; // Fallback
-          }
-
-          const isMovable =
-            player.color === myColor &&
-            player.color === currentTurnColor &&
-            movablePieces.includes(pieceIdx);
-
+        {/* Safe position stars */}
+        {Array.from(SAFE_POSITIONS).map(pos => {
+          const cellPos = CELL_POSITIONS[pos];
+          if (!cellPos) return null;
+          const cx = cellPos[0] * C + C / 2;
+          const cy = cellPos[1] * C + C / 2;
           return (
-            <GamePiece
-              key={`piece-${player.color}-${pieceIdx}`}
-              color={player.color}
-              position={position}
-              isMovable={isMovable}
-              onClick={() => onMovePiece(pieceIdx)}
-              pieceIndex={pieceIdx}
-            />
+            <text
+              key={`safe-${pos}`}
+              x={cx}
+              y={cy}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={C * 0.6}
+              opacity="0.4"
+            >
+              ★
+            </text>
           );
-        })
-      )}
+        })}
 
-      <OrbitControls
-        enablePan={false}
-        minDistance={5}
-        maxDistance={15}
-        minPolarAngle={Math.PI / 6}
-        maxPolarAngle={Math.PI / 2.5}
-        target={[0, 0, 0]}
-      />
-    </>
-  );
-}
+        {/* Center home (4 colored triangles) */}
+        <polygon points={`${7*C},${6*C} ${8*C},${6*C} ${7.5*C},${7.5*C}`} fill={COLORS.green} stroke="white" strokeWidth="1"/>
+        <polygon points={`${8*C},${7*C} ${8*C},${8*C} ${7.5*C},${7.5*C}`} fill={COLORS.yellow} stroke="white" strokeWidth="1"/>
+        <polygon points={`${7*C},${9*C} ${8*C},${9*C} ${7.5*C},${7.5*C}`} fill={COLORS.blue} stroke="white" strokeWidth="1"/>
+        <polygon points={`${7*C},${7*C} ${7*C},${8*C} ${7.5*C},${7.5*C}`} fill={COLORS.red} stroke="white" strokeWidth="1"/>
+        {/* Fix triangles to fill center */}
+        <polygon points={`${6*C},${6*C} ${9*C},${6*C} ${7.5*C},${7.5*C}`} fill={COLORS.green} stroke="white" strokeWidth="1"/>
+        <polygon points={`${9*C},${6*C} ${9*C},${9*C} ${7.5*C},${7.5*C}`} fill={COLORS.yellow} stroke="white" strokeWidth="1"/>
+        <polygon points={`${6*C},${9*C} ${9*C},${9*C} ${7.5*C},${7.5*C}`} fill={COLORS.blue} stroke="white" strokeWidth="1"/>
+        <polygon points={`${6*C},${6*C} ${6*C},${9*C} ${7.5*C},${7.5*C}`} fill={COLORS.red} stroke="white" strokeWidth="1"/>
 
-export default function LudoBoard(props: LudoBoardProps) {
-  return (
-    <div className="w-full h-full min-h-96 rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #1a1a2e, #16213e)" }}>
-      <Canvas
-        shadows
-        camera={{ position: [0, 12, 8], fov: 45 }}
-        gl={{ antialias: true, alpha: false }}
-      >
-        <color attach="background" args={["#1a1a2e"]} />
-        <fog attach="fog" args={["#1a1a2e", 15, 30]} />
-        <BoardScene {...props} />
-      </Canvas>
+        {/* Home yard piece circles (background) */}
+        {(["red", "green", "yellow", "blue"] as const).map(color =>
+          HOME_YARD_PIECES[color].map((pos, i) => (
+            <circle
+              key={`yard-bg-${color}-${i}`}
+              cx={pos[0] * C}
+              cy={pos[1] * C}
+              r={C * 0.45}
+              fill="white"
+              stroke={COLORS[color]}
+              strokeWidth="2"
+              opacity="0.3"
+            />
+          ))
+        )}
+
+        {/* Game pieces */}
+        {players.map((player) =>
+          player.pieces.map((piece, pieceIdx) => {
+            const [px, py] = getPiecePos(piece.position, player.color, pieceIdx);
+            const isMovable =
+              player.color === myColor &&
+              player.color === currentTurnColor &&
+              movablePieces.includes(pieceIdx);
+
+            return (
+              <g
+                key={`piece-${player.color}-${pieceIdx}`}
+                onClick={() => isMovable && onMovePiece(pieceIdx)}
+                style={{ cursor: isMovable ? "pointer" : "default" }}
+              >
+                {/* Glow ring for movable */}
+                {isMovable && (
+                  <circle
+                    cx={px}
+                    cy={py}
+                    r={C * 0.55}
+                    fill="none"
+                    stroke="#FFD700"
+                    strokeWidth="3"
+                    opacity="0.8"
+                  >
+                    <animate attributeName="r" values={`${C*0.45};${C*0.6};${C*0.45}`} dur="1s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1s" repeatCount="indefinite"/>
+                  </circle>
+                )}
+                {/* Piece shadow */}
+                <circle
+                  cx={px + 1}
+                  cy={py + 2}
+                  r={C * 0.38}
+                  fill="rgba(0,0,0,0.2)"
+                />
+                {/* Piece body */}
+                <circle
+                  cx={px}
+                  cy={py}
+                  r={C * 0.38}
+                  fill={BRIGHT_COLORS[player.color] || COLORS[player.color]}
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                {/* Piece highlight */}
+                <circle
+                  cx={px - 2}
+                  cy={py - 3}
+                  r={C * 0.15}
+                  fill="rgba(255,255,255,0.4)"
+                />
+              </g>
+            );
+          })
+        )}
+      </svg>
     </div>
   );
 }

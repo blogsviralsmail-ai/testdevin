@@ -1,5 +1,3 @@
-import { Trophy, Home, RotateCcw } from "lucide-react";
-
 interface PlayerResult {
   color: string;
   display_name: string;
@@ -15,11 +13,11 @@ interface GameOverModalProps {
   onGoHome: () => void;
 }
 
-const COLOR_BG: Record<string, string> = {
-  red: "from-red-600 to-red-800",
-  green: "from-green-600 to-green-800",
-  yellow: "from-yellow-500 to-yellow-700",
-  blue: "from-blue-600 to-blue-800",
+const COLOR_HEX: Record<string, string> = {
+  red: "#E53E3E",
+  green: "#38A169",
+  yellow: "#D69E2E",
+  blue: "#3182CE",
 };
 
 export default function GameOverModal({ players, onPlayAgain, onGoHome }: GameOverModalProps) {
@@ -27,13 +25,13 @@ export default function GameOverModal({ players, onPlayAgain, onGoHome }: GameOv
   const winner = sorted[0];
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-2xl border border-gray-700 max-w-md w-full overflow-hidden">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div className="game-card max-w-sm w-full overflow-hidden">
         {/* Header */}
-        <div className={`bg-gradient-to-r ${COLOR_BG[winner?.color || "red"]} p-6 text-center`}>
-          <Trophy className="w-16 h-16 text-amber-400 mx-auto mb-3 drop-shadow-lg" />
-          <h2 className="text-2xl font-bold text-white">Game Over!</h2>
-          <p className="text-white/80 mt-1">
+        <div className="p-6 text-center" style={{ background: `linear-gradient(135deg, ${COLOR_HEX[winner?.color || "red"]}cc, ${COLOR_HEX[winner?.color || "red"]}99)` }}>
+          <div className="text-5xl mb-2">🏆</div>
+          <h2 className="text-2xl font-bold text-white" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.5)'}}>GAME OVER!</h2>
+          <p className="text-white/90 mt-1 font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
             {winner?.display_name} wins! 🎉
           </p>
         </div>
@@ -43,22 +41,25 @@ export default function GameOverModal({ players, onPlayAgain, onGoHome }: GameOv
           {sorted.map((player, index) => (
             <div
               key={player.color}
-              className={`flex items-center gap-3 p-3 rounded-xl ${
+              className={`flex items-center gap-3 p-2.5 rounded-xl ${
                 index === 0
-                  ? "bg-amber-500/10 border border-amber-500/30"
-                  : "bg-gray-800/50"
+                  ? "bg-yellow-500/10 border-2 border-yellow-400/40"
+                  : "bg-blue-900/30 border border-blue-400/10"
               }`}
             >
-              <span className="text-2xl font-bold text-gray-400 w-8 text-center">
+              <span className="text-xl font-bold w-8 text-center">
                 {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`}
               </span>
-              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${COLOR_BG[player.color]} flex items-center justify-center`}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white/30"
+                style={{ backgroundColor: COLOR_HEX[player.color] }}
+              >
                 <span className="text-white text-xs font-bold">{player.color[0].toUpperCase()}</span>
               </div>
               <div className="flex-1">
-                <p className="text-white text-sm font-semibold">{player.display_name}</p>
-                <p className="text-gray-400 text-xs">
-                  {player.pieces_finished}/4 home · {player.kills} kills
+                <p className="text-white text-sm font-bold" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.5)'}}>{player.display_name}</p>
+                <p className="text-blue-200/50 text-xs font-bold">
+                  🏠 {player.pieces_finished}/4 · ⚔️ {player.kills}
                 </p>
               </div>
             </div>
@@ -69,17 +70,16 @@ export default function GameOverModal({ players, onPlayAgain, onGoHome }: GameOv
         <div className="p-4 flex gap-3">
           <button
             onClick={onGoHome}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold transition-colors"
+            className="flex-1 py-3 rounded-xl bg-blue-800 border-2 border-blue-400/50 text-white font-bold hover:bg-blue-700 transition-colors"
+            style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}
           >
-            <Home size={18} />
-            Home
+            🏠 HOME
           </button>
           <button
             onClick={onPlayAgain}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold transition-colors"
+            className="flex-1 py-3 btn-golden"
           >
-            <RotateCcw size={18} />
-            Play Again
+            🔄 PLAY AGAIN
           </button>
         </div>
       </div>

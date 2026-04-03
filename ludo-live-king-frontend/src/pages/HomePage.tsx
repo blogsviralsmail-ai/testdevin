@@ -3,11 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useGame } from "../context/GameContext";
 import { api } from "../utils/api";
-import {
-  Gamepad2, Users, Bot, Globe, Trophy, User, LogOut,
-  Coins, Gem, Star, Shield, Zap, Gift,
-  Settings, BarChart3
-} from "lucide-react";
 
 export default function HomePage() {
   const { user, logout, refreshUser } = useAuth();
@@ -75,249 +70,267 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900">
-      {/* Background effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 right-10 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative max-w-6xl mx-auto p-4 pb-20">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
-              <Gamepad2 className="w-7 h-7 text-white" />
+    <div className="min-h-screen ludo-bg">
+      <div className="relative max-w-md mx-auto px-4 py-3 pb-24">
+        {/* Top Bar - User info */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-lg border-2 border-yellow-400 bg-blue-800 flex items-center justify-center overflow-hidden">
+              <span className="text-lg">👤</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Ludo Live King</h1>
-              <p className="text-gray-400 text-xs">by KKHS Media</p>
+              <p className="text-white font-bold text-sm" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+                {user?.display_name}
+              </p>
+              <p className="text-blue-200/60 text-xs">Level {user?.level || 1}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-blue-900/60 rounded-full px-3 py-1 border border-yellow-500/30">
+              <span className="text-yellow-400">🪙</span>
+              <span className="text-white font-bold text-sm">{(user?.coins || 0).toLocaleString()}</span>
+            </div>
             {user?.is_admin && (
               <button
                 onClick={() => navigate("/admin")}
-                className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                className="w-8 h-8 rounded-lg bg-red-600/80 border border-red-400 flex items-center justify-center text-sm"
               >
-                <Shield size={18} />
+                ⚙️
               </button>
             )}
             <button
-              onClick={() => navigate("/profile")}
-              className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors"
-            >
-              <User size={18} />
-            </button>
-            <button
-              onClick={() => navigate("/leaderboard")}
-              className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors"
-            >
-              <Trophy size={18} />
-            </button>
-            <button
               onClick={logout}
-              className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-red-400 transition-colors"
+              className="w-8 h-8 rounded-lg bg-blue-800 border border-blue-400/30 flex items-center justify-center text-sm hover:bg-red-700 transition-colors"
             >
-              <LogOut size={18} />
+              🚪
             </button>
           </div>
         </div>
 
-        {/* User Stats Bar */}
-        <div className="bg-gray-900/60 backdrop-blur rounded-2xl border border-gray-700/50 p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-2xl shadow-lg">
-                {["🦁", "🐯", "🦊", "🐻", "🐼"][((user?.avatar_id || 1) - 1) % 5]}
-              </div>
-              <div>
-                <h2 className="text-white font-bold text-lg">{user?.display_name}</h2>
-                <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <Star size={12} className="text-amber-400" />
-                  Level {user?.level || 1} · Rating {Math.round(user?.rating || 1000)}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <Coins size={18} className="text-amber-400" />
-                <span className="text-white font-bold">{(user?.coins || 0).toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Gem size={16} className="text-purple-400" />
-                <span className="text-white font-bold">{user?.gems || 0}</span>
-              </div>
-            </div>
-          </div>
+        {/* MORE COINS button */}
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={handleClaimDaily}
+            disabled={claimingReward}
+            className="px-4 py-1.5 bg-gradient-to-r from-green-500 to-green-600 rounded-lg border-2 border-green-400 text-white font-bold text-xs uppercase"
+            style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)', boxShadow: '0 3px 8px rgba(0,0,0,0.3)'}}
+          >
+            + FREE COINS
+          </button>
+        </div>
 
-          {/* Quick stats */}
-          <div className="grid grid-cols-4 gap-3 mt-4">
-            <div className="bg-gray-800/50 rounded-xl p-2.5 text-center">
-              <p className="text-gray-400 text-xs">Games</p>
-              <p className="text-white font-bold">{user?.total_games || 0}</p>
-            </div>
-            <div className="bg-gray-800/50 rounded-xl p-2.5 text-center">
-              <p className="text-gray-400 text-xs">Wins</p>
-              <p className="text-green-400 font-bold">{user?.games_won || 0}</p>
-            </div>
-            <div className="bg-gray-800/50 rounded-xl p-2.5 text-center">
-              <p className="text-gray-400 text-xs">Streak</p>
-              <p className="text-amber-400 font-bold">{user?.win_streak || 0}</p>
-            </div>
-            <div className="bg-gray-800/50 rounded-xl p-2.5 text-center">
-              <p className="text-gray-400 text-xs">Kills</p>
-              <p className="text-red-400 font-bold">{user?.total_kills || 0}</p>
-            </div>
+        {/* Logo */}
+        <div className="text-center mb-5">
+          <div className="text-4xl mb-0">👑</div>
+          <div className="flex items-center justify-center gap-1">
+            <span className="text-3xl font-bold text-red-500" style={{textShadow: '2px 2px 0 #000'}}>L</span>
+            <span className="text-3xl font-bold text-white bg-red-500 rounded-full w-9 h-9 flex items-center justify-center">U</span>
+            <span className="text-3xl font-bold text-green-500" style={{textShadow: '2px 2px 0 #000'}}>D</span>
+            <span className="text-3xl font-bold text-yellow-400" style={{textShadow: '2px 2px 0 #000'}}>O</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 -mt-1">
+            <span className="text-sm font-bold text-white tracking-widest" style={{textShadow: '1px 1px 0 #000'}}>LIVE</span>
+            <span className="text-sm font-bold crown-text tracking-widest">KING</span>
           </div>
         </div>
 
-        {/* Online stats */}
-        <div className="flex items-center justify-center gap-6 mb-6 text-sm">
-          <div className="flex items-center gap-2 text-green-400">
+        {/* Mini Ludo Board Preview */}
+        <div className="flex justify-center mb-5">
+          <div className="w-40 h-40 relative">
+            <svg viewBox="0 0 150 150" className="w-full h-full drop-shadow-2xl">
+              {/* Board background */}
+              <rect x="0" y="0" width="150" height="150" rx="4" fill="#f5f0e1" stroke="#8B4513" strokeWidth="2"/>
+              {/* Home yards */}
+              <rect x="5" y="5" width="55" height="55" rx="3" fill="#e53e3e"/>
+              <rect x="90" y="5" width="55" height="55" rx="3" fill="#38a169"/>
+              <rect x="5" y="90" width="55" height="55" rx="3" fill="#3182ce"/>
+              <rect x="90" y="90" width="55" height="55" rx="3" fill="#d69e2e"/>
+              {/* Inner home white boxes */}
+              <rect x="12" y="12" width="41" height="41" rx="2" fill="white"/>
+              <rect x="97" y="12" width="41" height="41" rx="2" fill="white"/>
+              <rect x="12" y="97" width="41" height="41" rx="2" fill="white"/>
+              <rect x="97" y="97" width="41" height="41" rx="2" fill="white"/>
+              {/* Center home */}
+              <polygon points="75,60 90,75 75,90 60,75" fill="#e53e3e" stroke="white" strokeWidth="0.5"/>
+              <polygon points="75,60 90,75 75,75" fill="#38a169"/>
+              <polygon points="90,75 75,90 75,75" fill="#d69e2e"/>
+              <polygon points="75,90 60,75 75,75" fill="#3182ce"/>
+              {/* Pieces in home yards */}
+              <circle cx="22" cy="22" r="5" fill="#ff6b6b" stroke="white" strokeWidth="1"/>
+              <circle cx="37" cy="22" r="5" fill="#ff6b6b" stroke="white" strokeWidth="1"/>
+              <circle cx="22" cy="37" r="5" fill="#ff6b6b" stroke="white" strokeWidth="1"/>
+              <circle cx="37" cy="37" r="5" fill="#ff6b6b" stroke="white" strokeWidth="1"/>
+              <circle cx="107" cy="22" r="5" fill="#48bb78" stroke="white" strokeWidth="1"/>
+              <circle cx="122" cy="22" r="5" fill="#48bb78" stroke="white" strokeWidth="1"/>
+              <circle cx="107" cy="37" r="5" fill="#48bb78" stroke="white" strokeWidth="1"/>
+              <circle cx="122" cy="37" r="5" fill="#48bb78" stroke="white" strokeWidth="1"/>
+              <circle cx="22" cy="107" r="5" fill="#4299e1" stroke="white" strokeWidth="1"/>
+              <circle cx="37" cy="107" r="5" fill="#4299e1" stroke="white" strokeWidth="1"/>
+              <circle cx="22" cy="122" r="5" fill="#4299e1" stroke="white" strokeWidth="1"/>
+              <circle cx="37" cy="122" r="5" fill="#4299e1" stroke="white" strokeWidth="1"/>
+              <circle cx="107" cy="107" r="5" fill="#ecc94b" stroke="white" strokeWidth="1"/>
+              <circle cx="122" cy="107" r="5" fill="#ecc94b" stroke="white" strokeWidth="1"/>
+              <circle cx="107" cy="122" r="5" fill="#ecc94b" stroke="white" strokeWidth="1"/>
+              <circle cx="122" cy="122" r="5" fill="#ecc94b" stroke="white" strokeWidth="1"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* Online counter */}
+        <div className="flex items-center justify-center gap-4 mb-4 text-xs">
+          <div className="flex items-center gap-1.5 bg-blue-900/40 rounded-full px-3 py-1 border border-green-500/30">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            {onlineCount.online_players} Players Online
+            <span className="text-green-300 font-bold">{onlineCount.online_players} Online</span>
           </div>
-          <div className="flex items-center gap-2 text-blue-400">
-            <Gamepad2 size={14} />
-            {onlineCount.active_games} Active Games
+          <div className="flex items-center gap-1.5 bg-blue-900/40 rounded-full px-3 py-1 border border-blue-400/30">
+            <span className="text-blue-300">🎮</span>
+            <span className="text-blue-300 font-bold">{onlineCount.active_games} Games</span>
           </div>
         </div>
 
-        {/* Game Mode Buttons */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        {/* Game Mode Buttons - Ludo King style golden cards */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <button
             onClick={handlePlayOnline}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-left transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/20"
+            className="game-card p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform active:scale-95"
           >
-            <Globe className="w-10 h-10 text-blue-200 mb-3" />
-            <h3 className="text-white font-bold text-lg">Play Online</h3>
-            <p className="text-blue-200/70 text-xs mt-1">Match with random players worldwide</p>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-2xl border-2 border-blue-300 shadow-lg">
+              🌐
+            </div>
+            <span className="text-white font-bold text-sm uppercase" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+              Play Online
+            </span>
           </button>
 
           <button
             onClick={handlePlayVsComputer}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-600 to-green-800 p-5 text-left transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-green-500/20"
+            className="game-card p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform active:scale-95"
           >
-            <Bot className="w-10 h-10 text-green-200 mb-3" />
-            <h3 className="text-white font-bold text-lg">vs Computer</h3>
-            <p className="text-green-200/70 text-xs mt-1">Practice against AI bots</p>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center text-2xl border-2 border-green-300 shadow-lg">
+              🤖
+            </div>
+            <span className="text-white font-bold text-sm uppercase" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+              Computer
+            </span>
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 p-5 text-left transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20"
+            className="game-card p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform active:scale-95"
           >
-            <Users className="w-10 h-10 text-purple-200 mb-3" />
-            <h3 className="text-white font-bold text-lg">Create Room</h3>
-            <p className="text-purple-200/70 text-xs mt-1">Create private game & invite friends</p>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-2xl border-2 border-purple-300 shadow-lg">
+              🏠
+            </div>
+            <span className="text-white font-bold text-sm uppercase" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+              Create Room
+            </span>
           </button>
 
           <button
             onClick={() => setShowJoinModal(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600 to-orange-700 p-5 text-left transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/20"
+            className="game-card p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform active:scale-95"
           >
-            <Zap className="w-10 h-10 text-amber-200 mb-3" />
-            <h3 className="text-white font-bold text-lg">Join Room</h3>
-            <p className="text-amber-200/70 text-xs mt-1">Join a friend's game with code</p>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-2xl border-2 border-orange-300 shadow-lg">
+              🤝
+            </div>
+            <span className="text-white font-bold text-sm uppercase" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+              Join Room
+            </span>
           </button>
         </div>
 
-        {/* Daily Reward */}
-        <button
-          onClick={handleClaimDaily}
-          disabled={claimingReward}
-          className="w-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center gap-4 hover:from-amber-500/20 hover:to-orange-500/20 transition-all mb-6"
-        >
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-            <Gift className="w-6 h-6 text-white" />
+        {/* Bottom Nav - Ludo King style */}
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-blue-950 to-blue-900 border-t-2 border-yellow-500/30 px-4 py-2">
+          <div className="max-w-md mx-auto flex justify-around">
+            <button
+              onClick={() => navigate("/leaderboard")}
+              className="flex flex-col items-center gap-0.5 text-yellow-400 hover:text-yellow-300 transition-colors"
+            >
+              <span className="text-xl">🏆</span>
+              <span className="text-xs font-bold">Rankings</span>
+            </button>
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex flex-col items-center gap-0.5 text-blue-300 hover:text-blue-200 transition-colors"
+            >
+              <span className="text-xl">📊</span>
+              <span className="text-xs font-bold">My Stats</span>
+            </button>
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex flex-col items-center gap-0.5 text-blue-300 hover:text-blue-200 transition-colors"
+            >
+              <span className="text-xl">👤</span>
+              <span className="text-xs font-bold">Profile</span>
+            </button>
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex flex-col items-center gap-0.5 text-blue-300 hover:text-blue-200 transition-colors"
+            >
+              <span className="text-xl">⚙️</span>
+              <span className="text-xs font-bold">Settings</span>
+            </button>
           </div>
-          <div className="flex-1 text-left">
-            <h3 className="text-white font-bold">Daily Reward</h3>
-            <p className="text-gray-400 text-xs">Claim 100 free coins every day!</p>
-          </div>
-          <div className="text-amber-400 font-bold text-lg">+100 🪙</div>
-        </button>
-
-        {/* Quick Links */}
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            onClick={() => navigate("/leaderboard")}
-            className="bg-gray-800/50 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-gray-800 transition-colors"
-          >
-            <Trophy size={24} className="text-amber-400" />
-            <span className="text-white text-xs font-semibold">Leaderboard</span>
-          </button>
-          <button
-            onClick={() => navigate("/profile")}
-            className="bg-gray-800/50 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-gray-800 transition-colors"
-          >
-            <BarChart3 size={24} className="text-blue-400" />
-            <span className="text-white text-xs font-semibold">My Stats</span>
-          </button>
-          <button
-            onClick={() => navigate("/profile")}
-            className="bg-gray-800/50 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-gray-800 transition-colors"
-          >
-            <Settings size={24} className="text-gray-400" />
-            <span className="text-white text-xs font-semibold">Settings</span>
-          </button>
         </div>
       </div>
 
       {/* Join Room Modal */}
       {showJoinModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-sm w-full">
-            <h2 className="text-xl font-bold text-white mb-4">Join Room</h2>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="game-card p-6 max-w-sm w-full relative">
+            <button
+              onClick={() => setShowJoinModal(false)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-yellow-500 border-2 border-yellow-300 flex items-center justify-center text-blue-900 font-bold text-lg hover:bg-yellow-400"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold text-white text-center mb-4" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+              JOIN ROOM
+            </h2>
             <input
               type="text"
               placeholder="Enter room code"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 text-white text-center text-2xl tracking-widest placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 mb-4"
+              className="w-full bg-blue-950/50 border-2 border-blue-400/30 rounded-xl py-3 px-4 text-white text-center text-2xl tracking-widest placeholder-blue-300/40 focus:outline-none focus:border-yellow-400/70 mb-4"
               maxLength={6}
             />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowJoinModal(false)}
-                className="flex-1 py-3 rounded-xl bg-gray-700 text-white font-semibold hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleJoinRoom}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-400 hover:to-orange-400"
-              >
-                Join
-              </button>
-            </div>
+            <button
+              onClick={handleJoinRoom}
+              className="w-full py-3 btn-golden text-lg"
+            >
+              JOIN GAME
+            </button>
           </div>
         </div>
       )}
 
       {/* Create Room Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-2xl border border-gray-700 p-6 max-w-sm w-full">
-            <h2 className="text-xl font-bold text-white mb-4">Create Room</h2>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="game-card p-6 max-w-sm w-full relative">
+            <button
+              onClick={() => setShowCreateModal(false)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-yellow-500 border-2 border-yellow-300 flex items-center justify-center text-blue-900 font-bold text-lg hover:bg-yellow-400"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold text-white text-center mb-4" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+              CREATE ROOM
+            </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-gray-400 text-sm mb-2 block">Game Mode</label>
+                <label className="text-blue-200 text-sm mb-2 block font-bold">GAME MODE</label>
                 <div className="grid grid-cols-2 gap-2">
                   {["classic", "quick", "master", "rush"].map((mode) => (
                     <button
                       key={mode}
                       onClick={() => setGameMode(mode)}
-                      className={`py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
+                      className={`py-2 rounded-lg text-sm font-bold capitalize transition-all ${
                         gameMode === mode
-                          ? "bg-amber-500 text-white"
-                          : "bg-gray-800 text-gray-400 hover:text-white"
+                          ? "btn-golden"
+                          : "bg-blue-900/50 text-blue-200 border-2 border-blue-400/30 hover:bg-blue-800/50"
                       }`}
                     >
                       {mode}
@@ -327,39 +340,31 @@ export default function HomePage() {
               </div>
 
               <div>
-                <label className="text-gray-400 text-sm mb-2 block">Players</label>
+                <label className="text-blue-200 text-sm mb-2 block font-bold">PLAYERS</label>
                 <div className="flex gap-2">
                   {[2, 3, 4].map((n) => (
                     <button
                       key={n}
                       onClick={() => setMaxPlayers(n)}
-                      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
                         maxPlayers === n
-                          ? "bg-amber-500 text-white"
-                          : "bg-gray-800 text-gray-400 hover:text-white"
+                          ? "btn-golden"
+                          : "bg-blue-900/50 text-blue-200 border-2 border-blue-400/30 hover:bg-blue-800/50"
                       }`}
                     >
-                      {n} Players
+                      {n}P
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 py-3 rounded-xl bg-gray-700 text-white font-semibold hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateRoom}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-400 hover:to-orange-400"
-              >
-                Create
-              </button>
-            </div>
+            <button
+              onClick={handleCreateRoom}
+              className="w-full py-3 btn-golden text-lg mt-5"
+            >
+              CREATE GAME
+            </button>
           </div>
         </div>
       )}

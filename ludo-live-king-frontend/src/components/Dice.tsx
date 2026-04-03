@@ -7,14 +7,26 @@ interface DiceProps {
   rolling?: boolean;
 }
 
-const diceFaces: Record<number, string> = {
-  1: "⚀",
-  2: "⚁",
-  3: "⚂",
-  4: "⚃",
-  5: "⚄",
-  6: "⚅",
-};
+// Classic dice dots layout
+function DiceDots({ val }: { val: number }) {
+  const dotSize = 6;
+  const positions: Record<number, [number, number][]> = {
+    1: [[25, 25]],
+    2: [[12, 12], [38, 38]],
+    3: [[12, 12], [25, 25], [38, 38]],
+    4: [[12, 12], [38, 12], [12, 38], [38, 38]],
+    5: [[12, 12], [38, 12], [25, 25], [12, 38], [38, 38]],
+    6: [[12, 12], [38, 12], [12, 25], [38, 25], [12, 38], [38, 38]],
+  };
+  const dots = positions[val] || positions[1];
+  return (
+    <svg viewBox="0 0 50 50" className="w-full h-full">
+      {dots.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={dotSize} fill="#333" />
+      ))}
+    </svg>
+  );
+}
 
 export default function Dice({ value, isMyTurn, onRoll, rolling: externalRolling }: DiceProps) {
   const [isRolling, setIsRolling] = useState(false);
@@ -55,32 +67,33 @@ export default function Dice({ value, isMyTurn, onRoll, rolling: externalRolling
   };
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-2">
       <button
         onClick={handleRoll}
         disabled={!isMyTurn || isRolling}
         className={`
-          w-20 h-20 rounded-xl flex items-center justify-center text-5xl
+          w-16 h-16 rounded-xl flex items-center justify-center p-2
           transition-all duration-200 transform
           ${isRolling ? "animate-bounce scale-110" : ""}
           ${isMyTurn && !isRolling
-            ? "bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/50 hover:scale-110 cursor-pointer active:scale-95"
-            : "bg-gray-700 cursor-not-allowed opacity-60"
+            ? "bg-white shadow-lg shadow-yellow-500/50 hover:scale-110 cursor-pointer active:scale-95 border-3 border-yellow-400 glow-pulse"
+            : "bg-gray-300 cursor-not-allowed opacity-60 border-2 border-gray-400"
           }
         `}
+        style={{ borderWidth: '3px' }}
       >
-        <span className={`${isRolling ? "animate-spin" : ""} drop-shadow-lg`}>
-          {diceFaces[displayValue] || "⚀"}
-        </span>
+        <div className={isRolling ? "animate-spin" : ""}>
+          <DiceDots val={displayValue} />
+        </div>
       </button>
       {isMyTurn && !isRolling && !value && (
-        <p className="text-amber-400 text-sm font-semibold animate-pulse">
+        <p className="text-yellow-300 text-xs font-bold animate-pulse uppercase" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
           Tap to Roll!
         </p>
       )}
       {value && !isRolling && (
-        <p className="text-white text-sm font-medium">
-          Rolled: <span className="text-amber-400 font-bold text-lg">{value}</span>
+        <p className="text-white text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
+          Rolled: <span className="text-yellow-300 text-lg">{value}</span>
         </p>
       )}
     </div>
