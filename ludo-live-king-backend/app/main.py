@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(
+fastapi_app = FastAPI(
     title="Ludo Live King",
     description="Real-time multiplayer Ludo game backend",
     version="1.0.0",
@@ -45,7 +45,7 @@ app = FastAPI(
 )
 
 # Disable CORS. Do not remove this for full-stack development.
-app.add_middleware(
+fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
@@ -54,18 +54,18 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(games.router)
-app.include_router(admin.router)
+fastapi_app.include_router(auth.router)
+fastapi_app.include_router(users.router)
+fastapi_app.include_router(games.router)
+fastapi_app.include_router(admin.router)
 
 
-@app.get("/healthz")
+@fastapi_app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
 
 
-@app.get("/api/info")
+@fastapi_app.get("/api/info")
 async def app_info():
     return {
         "name": "Ludo Live King",
@@ -75,5 +75,6 @@ async def app_info():
     }
 
 
-# Wrap FastAPI with Socket.IO
-socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
+# Wrap FastAPI with Socket.IO - this is the ASGI entry point
+# Named 'app' so the deployment server picks it up
+app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)
