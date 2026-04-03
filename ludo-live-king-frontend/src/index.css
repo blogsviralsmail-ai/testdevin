@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --radius: 0.5rem
+  }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Fredoka', 'Nunito', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    background: #0a1628;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 3px;
+  }
+}
+
+/* Ludo King style backgrounds */
+.ludo-bg {
+  background: linear-gradient(180deg, #0d47a1 0%, #1565c0 30%, #1976d2 60%, #0d47a1 100%);
+  position: relative;
+}
+.ludo-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Golden button style */
+.btn-golden {
+  background: linear-gradient(180deg, #ffd54f 0%, #ff8f00 50%, #e65100 100%);
+  border: 3px solid #ffb300;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.btn-golden:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.btn-golden:active {
+  transform: scale(0.97);
+}
+
+/* Game card style */
+.game-card {
+  background: linear-gradient(180deg, #1565c0 0%, #0d47a1 100%);
+  border: 3px solid #ffd54f;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Crown text style */
+.crown-text {
+  background: linear-gradient(180deg, #ffd54f, #ff8f00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+/* Pulse glow animation */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,213,79,0.3); }
+  50% { box-shadow: 0 0 25px rgba(255,213,79,0.6); }
+}
+.glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
