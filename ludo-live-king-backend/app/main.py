@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-fastapi_app = FastAPI(
+app = FastAPI(
     title="Ludo Live King",
     description="Real-time multiplayer Ludo game backend",
     version="1.0.0",
@@ -45,7 +45,7 @@ fastapi_app = FastAPI(
 )
 
 # Disable CORS. Do not remove this for full-stack development.
-fastapi_app.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
@@ -54,18 +54,18 @@ fastapi_app.add_middleware(
 )
 
 # Include routers
-fastapi_app.include_router(auth.router)
-fastapi_app.include_router(users.router)
-fastapi_app.include_router(games.router)
-fastapi_app.include_router(admin.router)
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(games.router)
+app.include_router(admin.router)
 
 
-@fastapi_app.get("/healthz")
+@app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
 
 
-@fastapi_app.get("/api/info")
+@app.get("/api/info")
 async def app_info():
     return {
         "name": "Ludo Live King",
@@ -75,6 +75,8 @@ async def app_info():
     }
 
 
-# Wrap FastAPI with Socket.IO - this is the ASGI entry point
-# Named 'app' so the deployment server picks it up
-app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)
+# Mount Socket.IO within FastAPI so both work with same entry point
+# When mounted at /socket.io, Starlette strips the prefix before forwarding,
+# so we set socketio_path="" to match on the stripped path "/"
+sio_asgi_app = socketio.ASGIApp(sio, socketio_path="")
+app.mount("/socket.io", sio_asgi_app)
