@@ -17,7 +17,7 @@ export default function AdminOrders() {
 
   const loadOrders = async () => {
     setLoading(true);
-    try { const res = await adminAPI.getOrders(); setOrders(res.data); } catch { /* ignore */ }
+    try { const res = await adminAPI.getOrders(); setOrders(res.data.orders || res.data); } catch { /* ignore */ }
     setLoading(false);
   };
 

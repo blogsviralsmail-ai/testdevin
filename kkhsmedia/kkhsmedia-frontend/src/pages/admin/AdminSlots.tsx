@@ -14,7 +14,7 @@ export default function AdminSlots() {
   const [search, setSearch] = useState('');
   const loadSlots = async () => {
     setLoading(true);
-    try { const res = await adminAPI.getSlots(); setSlots(res.data); } catch { /* ignore */ }
+    try { const res = await adminAPI.getSlots(); setSlots(res.data.slots || res.data); } catch { /* ignore */ }
     setLoading(false);
   };
 

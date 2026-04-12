@@ -17,7 +17,7 @@ export default function AdminVideos() {
 
   const loadVideos = async () => {
     setLoading(true);
-    try { const res = await adminAPI.getVideos(); setVideos(res.data); } catch { /* ignore */ }
+    try { const res = await adminAPI.getVideos(); setVideos(res.data.videos || res.data); } catch { /* ignore */ }
     setLoading(false);
   };
 

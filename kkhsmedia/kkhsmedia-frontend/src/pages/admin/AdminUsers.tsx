@@ -20,7 +20,7 @@ export default function AdminUsers() {
     setLoading(true);
     try {
       const res = await adminAPI.getUsers();
-      setUsers(res.data);
+      setUsers(res.data.users || res.data);
     } catch { /* ignore */ }
     setLoading(false);
   };

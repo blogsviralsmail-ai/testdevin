@@ -15,7 +15,7 @@ export default function AdminContacts() {
 
   const loadContacts = async () => {
     setLoading(true);
-    try { const res = await adminAPI.getContacts(); setContacts(res.data); } catch { /* ignore */ }
+    try { const res = await adminAPI.getContacts(); setContacts(res.data.contacts || res.data); } catch { /* ignore */ }
     setLoading(false);
   };
 
