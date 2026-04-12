@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { videosAPI } from '../../services/api';
-import { Video, Upload, Trash2, Edit2, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { Video, Upload, Trash2, Edit2, Check, X, RefreshCw, AlertCircle, Play, Clock } from 'lucide-react';
 
 interface VideoItem {
   id: string; name: string; originalName: string; fileSize: number;
-  mimeType: string; createdAt: string; url?: string;
+  duration: number; thumbnailUrl: string; createdAt: string;
 }
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function VideosPage() {
   const { settings } = useAuth();
@@ -17,6 +19,7 @@ export default function VideosPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [playingVideo, setPlayingVideo] = useState<VideoItem | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const primary = settings?.primaryColor || '#6366f1';
 
@@ -65,9 +68,30 @@ export default function VideosPage() {
   };
 
   const formatSize = (bytes: number) => {
+    if (!bytes || bytes <= 0) return '—';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (!seconds || seconds <= 0) return '—';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const getThumbUrl = (video: VideoItem) => {
+    if (!video.thumbnailUrl) return '';
+    const token = localStorage.getItem('token') || '';
+    return `${API_URL}${video.thumbnailUrl}${video.thumbnailUrl.includes('?') ? '&' : '?'}token=${token}`;
+  };
+
+  const getStreamUrl = (video: VideoItem) => {
+    const token = localStorage.getItem('token') || '';
+    return `${API_URL}/api/videos/${video.id}/stream?token=${token}`;
   };
 
   return (
@@ -116,48 +140,94 @@ export default function VideosPage() {
           <button onClick={() => fileRef.current?.click()} className="px-4 py-2 rounded-lg text-white" style={{ backgroundColor: primary }}>Upload Video</button>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Name</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-gray-500 hidden sm:table-cell">Size</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-gray-500 hidden md:table-cell">Uploaded</th>
-                <th className="text-right px-5 py-3 text-sm font-medium text-gray-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {videos.map(video => (
-                <tr key={video.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                  <td className="px-5 py-3">
-                    {editingId === video.id ? (
-                      <div className="flex items-center gap-2">
-                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
-                          className="px-2 py-1 border rounded text-sm flex-1" autoFocus />
-                        <button onClick={() => handleRename(video.id)} className="text-green-600"><Check size={16} /></button>
-                        <button onClick={() => setEditingId(null)} className="text-gray-400"><X size={16} /></button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {videos.map(video => (
+            <div key={video.id} className="bg-white rounded-xl border overflow-hidden group hover:shadow-md transition-shadow">
+              {/* Thumbnail / Play area */}
+              <div
+                className="relative aspect-video bg-gray-900 cursor-pointer flex items-center justify-center"
+                onClick={() => setPlayingVideo(video)}
+              >
+                {video.thumbnailUrl ? (
+                  <img
+                    src={getThumbUrl(video)}
+                    alt={video.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ) : (
+                  <Video size={40} className="text-gray-600" />
+                )}
+                {/* Play overlay */}
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center">
+                    <Play size={24} className="text-gray-800 ml-1" />
+                  </div>
+                </div>
+                {/* Duration badge */}
+                {video.duration > 0 && (
+                  <div className="absolute bottom-2 right-2 bg-black/75 text-white text-xs px-2 py-0.5 rounded flex items-center gap-1">
+                    <Clock size={10} />
+                    {formatDuration(video.duration)}
+                  </div>
+                )}
+              </div>
+
+              {/* Info area */}
+              <div className="p-3">
+                {editingId === video.id ? (
+                  <div className="flex items-center gap-2">
+                    <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+                      className="px-2 py-1 border rounded text-sm flex-1" autoFocus />
+                    <button onClick={() => handleRename(video.id)} className="text-green-600"><Check size={16} /></button>
+                    <button onClick={() => setEditingId(null)} className="text-gray-400"><X size={16} /></button>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-sm font-medium truncate" title={video.name}>{video.name}</h3>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-gray-500">
+                        {formatSize(video.fileSize)} &middot; {new Date(video.createdAt).toLocaleDateString()}
+                      </span>
+                      <div className="flex items-center gap-0.5">
+                        <button onClick={() => { setEditingId(video.id); setEditName(video.name); }}
+                          className="p-1 rounded hover:bg-gray-100 text-gray-400" title="Rename"><Edit2 size={13} /></button>
+                        <button onClick={() => handleDelete(video.id)}
+                          className="p-1 rounded hover:bg-red-50 text-red-400" title="Delete"><Trash2 size={13} /></button>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Video size={16} style={{ color: primary }} />
-                        <span className="text-sm font-medium">{video.name}</span>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-500 hidden sm:table-cell">{formatSize(video.fileSize || 0)}</td>
-                  <td className="px-5 py-3 text-sm text-gray-500 hidden md:table-cell">{new Date(video.createdAt).toLocaleDateString()}</td>
-                  <td className="px-5 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => { setEditingId(video.id); setEditName(video.name); }}
-                        className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><Edit2 size={14} /></button>
-                      <button onClick={() => handleDelete(video.id)}
-                        className="p-1.5 rounded hover:bg-red-50 text-red-500"><Trash2 size={14} /></button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Video Player Modal */}
+      {playingVideo && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setPlayingVideo(null)}>
+          <div className="bg-white rounded-xl overflow-hidden max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-3 border-b">
+              <h3 className="font-semibold text-sm truncate flex-1">{playingVideo.name}</h3>
+              <button onClick={() => setPlayingVideo(null)} className="p-1 rounded hover:bg-gray-100 text-gray-500 ml-2"><X size={18} /></button>
+            </div>
+            <div className="bg-black flex-1">
+              <video
+                src={getStreamUrl(playingVideo)}
+                controls
+                autoPlay
+                className="w-full max-h-[75vh]"
+                style={{ objectFit: 'contain' }}
+              >
+                Your browser does not support video playback.
+              </video>
+            </div>
+            <div className="p-3 border-t flex items-center justify-between text-xs text-gray-500">
+              <span>{formatSize(playingVideo.fileSize)} &middot; {formatDuration(playingVideo.duration)}</span>
+              <span>Uploaded {new Date(playingVideo.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
         </div>
       )}
     </div>

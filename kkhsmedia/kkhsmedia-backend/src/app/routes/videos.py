@@ -1,15 +1,75 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi.responses import FileResponse
 from datetime import datetime
 from bson import ObjectId
 import uuid
 import os
+import subprocess
+import shutil
+import logging
 
 from app.database import get_db
 from app.models.schemas import ConfirmUploadRequest, UpdateVideoRequest
-from app.utils.auth import get_current_user, serialize_doc, serialize_docs
+from app.utils.auth import get_current_user, get_current_user_from_token_param, serialize_doc, serialize_docs
 from app.config import AWS_BUCKET_NAME, AWS_REGION
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/videos", tags=["Videos"])
+
+
+def _get_ffmpeg_path() -> str:
+    """Get FFmpeg binary path - try system first, then imageio-ffmpeg bundle."""
+    if shutil.which("ffmpeg"):
+        return "ffmpeg"
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"  # fallback
+
+
+def _get_ffprobe_path() -> str:
+    """Get FFprobe binary path."""
+    if shutil.which("ffprobe"):
+        return "ffprobe"
+    # imageio-ffmpeg bundles ffmpeg but not ffprobe, use ffmpeg -i as fallback
+    return "ffprobe"
+
+
+def generate_thumbnail(video_path: str, thumbnail_path: str) -> bool:
+    """Generate a thumbnail from a video file using FFmpeg."""
+    try:
+        ffmpeg = _get_ffmpeg_path()
+        cmd = [
+            ffmpeg, "-i", video_path,
+            "-ss", "00:00:01",
+            "-vframes", "1",
+            "-vf", "scale=320:-1",
+            "-y", thumbnail_path
+        ]
+        result = subprocess.run(cmd, capture_output=True, timeout=30)
+        return result.returncode == 0 and os.path.exists(thumbnail_path)
+    except Exception as e:
+        logger.warning(f"Thumbnail generation failed: {e}")
+        return False
+
+
+def get_video_duration(video_path: str) -> float:
+    """Get video duration in seconds using FFmpeg."""
+    try:
+        ffmpeg = _get_ffmpeg_path()
+        # Use ffmpeg -i to get duration (works even without ffprobe)
+        cmd = [ffmpeg, "-i", video_path, "-f", "null", "-"]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        # Parse duration from stderr: Duration: HH:MM:SS.ms
+        import re
+        match = re.search(r"Duration:\s+(\d+):(\d+):(\d+\.\d+)", result.stderr)
+        if match:
+            h, m, s = float(match.group(1)), float(match.group(2)), float(match.group(3))
+            return h * 3600 + m * 60 + s
+    except Exception as e:
+        logger.warning(f"Duration detection failed: {e}")
+    return 0
 
 
 @router.get("")
@@ -78,6 +138,17 @@ async def upload_local(file: UploadFile = File(...), user=Depends(get_current_us
 
     s3_key = f"local/{user['id']}/{file_id}.{ext}"
 
+    # Generate thumbnail using FFmpeg
+    thumb_dir = f"{upload_dir}/thumbnails"
+    os.makedirs(thumb_dir, exist_ok=True)
+    thumb_path = f"{thumb_dir}/{file_id}.jpg"
+    thumbnail_url = ""
+    if generate_thumbnail(file_path, thumb_path):
+        thumbnail_url = f"/api/videos/file/thumbnails/{file_id}.jpg"
+
+    # Get video duration
+    duration = get_video_duration(file_path)
+
     db = get_db()
     video = {
         "userId": user["id"],
@@ -86,8 +157,8 @@ async def upload_local(file: UploadFile = File(...), user=Depends(get_current_us
         "s3Key": s3_key,
         "fileUrl": file_path,
         "fileSize": file_size,
-        "duration": 0,
-        "thumbnailUrl": "",
+        "duration": duration,
+        "thumbnailUrl": thumbnail_url,
         "status": "ready",
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow(),
@@ -176,6 +247,29 @@ async def delete_video(video_id: str, user=Depends(get_current_user)):
     return {"message": "Video deleted successfully"}
 
 
+@router.get("/file/{filename:path}")
+async def serve_file(filename: str, user=Depends(get_current_user_from_token_param)):
+    """Serve uploaded video or thumbnail files."""
+    upload_dir = "/tmp/kkhsmedia_uploads"
+    file_path = os.path.join(upload_dir, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    # Determine media type
+    if filename.endswith(".jpg") or filename.endswith(".jpeg"):
+        media_type = "image/jpeg"
+    elif filename.endswith(".png"):
+        media_type = "image/png"
+    elif filename.endswith(".mp4"):
+        media_type = "video/mp4"
+    elif filename.endswith(".mkv"):
+        media_type = "video/x-matroska"
+    elif filename.endswith(".webm"):
+        media_type = "video/webm"
+    else:
+        media_type = "application/octet-stream"
+    return FileResponse(file_path, media_type=media_type)
+
+
 @router.get("/{video_id}")
 async def get_video(video_id: str, user=Depends(get_current_user)):
     db = get_db()
@@ -183,3 +277,18 @@ async def get_video(video_id: str, user=Depends(get_current_user)):
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
     return serialize_doc(video)
+
+
+@router.get("/{video_id}/stream")
+async def stream_video(video_id: str, user=Depends(get_current_user_from_token_param)):
+    """Stream/serve the video file for playback."""
+    db = get_db()
+    video = await db.videos.find_one({"_id": ObjectId(video_id), "userId": user["id"]})
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    file_path = video.get("fileUrl", "")
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Video file not found on disk")
+    ext = file_path.rsplit(".", 1)[-1].lower() if "." in file_path else "mp4"
+    media_types = {"mp4": "video/mp4", "mkv": "video/x-matroska", "webm": "video/webm", "avi": "video/x-msvideo"}
+    return FileResponse(file_path, media_type=media_types.get(ext, "video/mp4"))

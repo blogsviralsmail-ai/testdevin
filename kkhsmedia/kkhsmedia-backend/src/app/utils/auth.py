@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 import bcrypt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.database import get_db
@@ -36,6 +36,22 @@ def decode_token(token: str) -> dict:
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
+    payload = decode_token(token)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db = get_db()
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    if user.get("status") == "banned":
+        raise HTTPException(status_code=403, detail="Account suspended")
+    user["id"] = str(user["_id"])
+    return user
+
+
+async def get_current_user_from_token_param(token: str = Query(..., alias="token")):
+    """Auth via query param token - used for <img>/<video> tags that can't set headers."""
     payload = decode_token(token)
     user_id = payload.get("sub")
     if not user_id:
