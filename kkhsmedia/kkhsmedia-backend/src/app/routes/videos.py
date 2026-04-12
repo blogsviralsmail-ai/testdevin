@@ -65,9 +65,16 @@ async def upload_local(file: UploadFile = File(...), user=Depends(get_current_us
     file_id = uuid.uuid4().hex
     file_path = f"{upload_dir}/{file_id}.{ext}"
 
-    content = await file.read()
+    # Stream to disk in chunks to avoid OOM on limited memory servers
+    file_size = 0
+    chunk_size = 1024 * 256  # 256KB chunks
     with open(file_path, "wb") as f:
-        f.write(content)
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            f.write(chunk)
+            file_size += len(chunk)
 
     s3_key = f"local/{user['id']}/{file_id}.{ext}"
 
@@ -78,7 +85,7 @@ async def upload_local(file: UploadFile = File(...), user=Depends(get_current_us
         "originalName": file.filename,
         "s3Key": s3_key,
         "fileUrl": file_path,
-        "fileSize": len(content),
+        "fileSize": file_size,
         "duration": 0,
         "thumbnailUrl": "",
         "status": "ready",
