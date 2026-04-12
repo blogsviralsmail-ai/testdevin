@@ -122,6 +122,12 @@ async def start_stream(slot_id: str, user=Depends(get_current_user)):
         platform=slot["platform"],
     )
 
+    if process_id is None:
+        raise HTTPException(
+            status_code=500,
+            detail="FFmpeg streaming failed to start. The server may not support RTMP streaming. Please contact support."
+        )
+
     await db.slots.update_one(
         {"_id": ObjectId(slot_id)},
         {"$set": {"isStreaming": True, "streamProcessId": process_id, "updatedAt": datetime.utcnow()}}

@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { slotsAPI, videosAPI } from '../../services/api';
-import { Radio, Play, Square, Trash2, Plus, RefreshCw, Youtube, Facebook, Twitch, Instagram, Globe } from 'lucide-react';
+import { Radio, Play, Square, Trash2, Plus, RefreshCw, Youtube, Facebook, Twitch, Instagram, Globe, AlertCircle, Film } from 'lucide-react';
 
 interface Slot {
   id: string; name: string; platform: string; streamKey: string; streamUrl?: string;
-  status: string; videoId?: string; videoName?: string; isStreaming: boolean;
-  expiresAt?: string; createdAt: string;
+  rtmpUrl?: string; status: string; videoId?: string; videoName?: string; isStreaming: boolean;
+  expiryDate?: string; expiresAt?: string; createdAt: string;
 }
 interface VideoItem { id: string; name: string; }
 
 export default function LiveSlotsPage() {
-  const { settings } = useAuth();
+  const { settings, user } = useAuth();
   const [slots, setSlots] = useState<Slot[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,9 @@ export default function LiveSlotsPage() {
   const [form, setForm] = useState({ name: '', platform: 'youtube', streamKey: '', streamUrl: '', videoId: '' });
   const [saving, setSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const primary = settings?.primaryColor || '#6366f1';
+  const isAdmin = user?.role === 'admin';
 
   const platformIcons: Record<string, React.ReactNode> = {
     youtube: <Youtube size={18} className="text-red-500" />,
@@ -31,11 +33,14 @@ export default function LiveSlotsPage() {
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [sRes, vRes] = await Promise.all([slotsAPI.getAll(), videosAPI.getAll()]);
-      setSlots(sRes.data);
-      setVideos(vRes.data);
-    } catch { /* ignore */ }
+      const slotsData = Array.isArray(sRes.data) ? sRes.data : sRes.data?.slots || [];
+      const videosData = Array.isArray(vRes.data) ? vRes.data : vRes.data?.videos || [];
+      setSlots(slotsData);
+      setVideos(videosData);
+    } catch { setError('Failed to load data'); }
     setLoading(false);
   };
 
@@ -44,24 +49,49 @@ export default function LiveSlotsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     try {
       await slotsAPI.create(form);
       setShowAdd(false);
       setForm({ name: '', platform: 'youtube', streamKey: '', streamUrl: '', videoId: '' });
       loadData();
-    } catch { /* ignore */ }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to create slot';
+      setError(msg);
+    }
     setSaving(false);
+  };
+
+  const handleAssignVideo = async (slotId: string, videoId: string) => {
+    setActionLoading(slotId);
+    setError(null);
+    try {
+      await slotsAPI.update(slotId, { videoId: videoId || null });
+      loadData();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to assign video';
+      setError(msg);
+    }
+    setActionLoading(null);
   };
 
   const handleStartStream = async (slotId: string) => {
     setActionLoading(slotId);
-    try { await slotsAPI.startStream(slotId); loadData(); } catch { /* ignore */ }
+    setError(null);
+    try { await slotsAPI.startStream(slotId); loadData(); } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to start stream';
+      setError(msg);
+    }
     setActionLoading(null);
   };
 
   const handleStopStream = async (slotId: string) => {
     setActionLoading(slotId);
-    try { await slotsAPI.stopStream(slotId); loadData(); } catch { /* ignore */ }
+    setError(null);
+    try { await slotsAPI.stopStream(slotId); loadData(); } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to stop stream';
+      setError(msg);
+    }
     setActionLoading(null);
   };
 
@@ -72,6 +102,15 @@ export default function LiveSlotsPage() {
 
   const getStatusColor = (s: string) => {
     switch (s) { case 'active': return 'bg-green-100 text-green-700'; case 'expired': return 'bg-red-100 text-red-700'; default: return 'bg-gray-100 text-gray-700'; }
+  };
+
+  const getVideoName = (slot: Slot) => {
+    if (slot.videoName) return slot.videoName;
+    if (slot.videoId) {
+      const v = videos.find(vid => vid.id === slot.videoId);
+      return v ? v.name : 'Unknown video';
+    }
+    return null;
   };
 
   return (
@@ -85,6 +124,14 @@ export default function LiveSlotsPage() {
           </button>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-sm text-red-700">
+          <AlertCircle size={16} /> {error}
+          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-600">&times;</button>
+        </div>
+      )}
 
       {/* Add Slot Modal */}
       {showAdd && (
@@ -151,7 +198,9 @@ export default function LiveSlotsPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {slots.map(slot => (
+          {slots.map(slot => {
+            const videoName = getVideoName(slot);
+            return (
             <div key={slot.id} className="bg-white rounded-xl border p-5">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -169,12 +218,49 @@ export default function LiveSlotsPage() {
 
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
                 <div>Stream Key: <span className="font-mono text-xs">••••{slot.streamKey?.slice(-4)}</span></div>
-                <div>Video: {slot.videoName || 'Not set'}</div>
-                {slot.expiresAt && <div>Expires: {new Date(slot.expiresAt).toLocaleDateString()}</div>}
+                <div className="flex items-center gap-1">
+                  <Film size={14} />
+                  {videoName ? (
+                    <span className="text-green-700 font-medium truncate max-w-48">{videoName}</span>
+                  ) : (
+                    <span className="text-orange-500">No video assigned</span>
+                  )}
+                </div>
+                {(slot.expiryDate || slot.expiresAt) && (
+                  <div>Expires: {new Date(slot.expiryDate || slot.expiresAt || '').toLocaleDateString()}</div>
+                )}
               </div>
 
-              <div className="mt-4 flex gap-2">
-                {slot.status === 'active' && !slot.isStreaming && (
+              {/* Video Assignment Dropdown */}
+              <div className="mt-3">
+                <label className="text-xs text-gray-500 mb-1 block">Assign Video:</label>
+                <select
+                  value={slot.videoId || ''}
+                  onChange={e => handleAssignVideo(slot.id, e.target.value)}
+                  disabled={actionLoading === slot.id}
+                  className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 disabled:opacity-50"
+                >
+                  <option value="">-- No video --</option>
+                  {videos.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                </select>
+              </div>
+
+              {/* Status Messages */}
+              {slot.status === 'inactive' && (
+                <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700 flex items-center gap-2">
+                  <AlertCircle size={14} />
+                  Slot is inactive. {isAdmin ? 'Use Admin Panel to activate.' : 'Please purchase a plan to activate this slot.'}
+                </div>
+              )}
+              {slot.status === 'active' && !slot.videoId && (
+                <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex items-center gap-2">
+                  <Film size={14} />
+                  Assign a video above to start streaming.
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-2 flex-wrap">
+                {slot.status === 'active' && !slot.isStreaming && slot.videoId && (
                   <button onClick={() => handleStartStream(slot.id)} disabled={actionLoading === slot.id}
                     className="px-3 py-1.5 rounded-lg text-white text-sm flex items-center gap-1.5 disabled:opacity-50" style={{ backgroundColor: '#22c55e' }}>
                     <Play size={14} /> {actionLoading === slot.id ? 'Starting...' : 'Start Stream'}
@@ -191,7 +277,8 @@ export default function LiveSlotsPage() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

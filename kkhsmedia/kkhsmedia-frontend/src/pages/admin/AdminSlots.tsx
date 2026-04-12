@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../../services/api';
-import { Search, Trash2, RefreshCw } from 'lucide-react';
+import { Search, Trash2, RefreshCw, CheckCircle, Square } from 'lucide-react';
 
 interface SlotItem {
   id: string; name: string; platform: string; status: string; isStreaming: boolean;
@@ -23,6 +23,14 @@ export default function AdminSlots() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this slot?')) return;
     try { await adminAPI.deleteSlot(id); loadSlots(); } catch { /* ignore */ }
+  };
+
+  const handleActivate = async (id: string) => {
+    try { await adminAPI.extendSlot(id, 30); loadSlots(); } catch { /* ignore */ }
+  };
+
+  const handleForceStop = async (id: string) => {
+    try { await adminAPI.forceStopSlot(id); loadSlots(); } catch { /* ignore */ }
   };
 
   const filtered = slots.filter(s =>
@@ -80,9 +88,21 @@ export default function AdminSlots() {
                     ) : <span className="text-xs text-gray-400">Offline</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleDelete(slot.id)} className="p-1.5 rounded hover:bg-red-50">
-                      <Trash2 size={14} className="text-red-500" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      {slot.status !== 'active' && (
+                        <button onClick={() => handleActivate(slot.id)} className="p-1.5 rounded hover:bg-green-50" title="Activate (30 days)">
+                          <CheckCircle size={14} className="text-green-500" />
+                        </button>
+                      )}
+                      {slot.isStreaming && (
+                        <button onClick={() => handleForceStop(slot.id)} className="p-1.5 rounded hover:bg-orange-50" title="Force Stop Stream">
+                          <Square size={14} className="text-orange-500" />
+                        </button>
+                      )}
+                      <button onClick={() => handleDelete(slot.id)} className="p-1.5 rounded hover:bg-red-50" title="Delete">
+                        <Trash2 size={14} className="text-red-500" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

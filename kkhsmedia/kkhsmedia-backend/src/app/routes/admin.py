@@ -249,8 +249,8 @@ async def admin_extend_slot(slot_id: str, days: int = 30, admin=Depends(get_admi
     if not slot:
         raise HTTPException(status_code=404, detail="Slot not found")
 
-    current_expiry = slot.get("expiryDate", datetime.utcnow())
-    if current_expiry < datetime.utcnow():
+    current_expiry = slot.get("expiryDate") or datetime.utcnow()
+    if not isinstance(current_expiry, datetime) or current_expiry < datetime.utcnow():
         current_expiry = datetime.utcnow()
     new_expiry = current_expiry + timedelta(days=days)
 
