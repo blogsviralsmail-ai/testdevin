@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import signal
+import subprocess
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,26 @@ async def _check_ffmpeg_rtmp() -> bool:
         return False
 
 
+async def _kill_existing_stream_by_destination(destination: str) -> None:
+    """Kill any existing FFmpeg process streaming to the same destination."""
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", f"ffmpeg.*{destination}"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.stdout.strip():
+            pids = result.stdout.strip().split("\n")
+            for pid in pids:
+                try:
+                    os.kill(int(pid), signal.SIGKILL)
+                    logger.info(f"Killed existing FFmpeg process {pid} for destination {destination}")
+                except (ProcessLookupError, ValueError):
+                    pass
+            await asyncio.sleep(1)
+    except Exception as e:
+        logger.warning(f"Error killing existing streams: {e}")
+
+
 async def start_ffmpeg_stream(
     slot_id: str,
     video_url: str,
@@ -83,9 +104,10 @@ async def start_ffmpeg_stream(
 
     logger.info(f"Streaming video: {video_url} -> {destination}")
 
+    # Kill any existing FFmpeg streaming to the same destination
+    await _kill_existing_stream_by_destination(destination)
+
     # FFmpeg command for 24/7 loop streaming
-    # Use copy codec first (no re-encoding = low memory). Fall back to
-    # lightweight re-encode only if the input isn't already h264/aac.
     cmd = [
         ffmpeg,
         "-re",                          # Read at native frame rate
@@ -113,6 +135,7 @@ async def start_ffmpeg_stream(
             "pid": process.pid,
             "platform": platform,
             "video_url": video_url,
+            "destination": destination,
         }
 
         # Monitor FFmpeg process in background for early failures
@@ -129,6 +152,7 @@ async def start_ffmpeg_stream(
                         {"_id": __import__('bson').ObjectId(slot_id)},
                         {"$set": {"isStreaming": False, "streamProcessId": None}}
                     )
+                    active_streams.pop(slot_id, None)
             except asyncio.TimeoutError:
                 # Still running after 10s = good, it's streaming
                 logger.info(f"FFmpeg still running for slot {slot_id} after 10s - stream is active")
@@ -141,29 +165,58 @@ async def start_ffmpeg_stream(
 
 
 async def stop_ffmpeg_stream(process_id: Optional[int]) -> bool:
-    """Stop an FFmpeg process."""
+    """Stop an FFmpeg process. Uses multiple strategies to ensure it's killed."""
     if not process_id:
         return False
 
-    # Find and kill by PID
+    killed = False
+
+    # Strategy 1: Kill by stored asyncio Process object
+    for slot_id, info in list(active_streams.items()):
+        if info.get("pid") == process_id:
+            proc = info.get("process")
+            if proc and proc.returncode is None:
+                try:
+                    proc.kill()  # SIGKILL via asyncio
+                    logger.info(f"Killed FFmpeg via asyncio process for slot {slot_id}")
+                    killed = True
+                except Exception:
+                    pass
+            del active_streams[slot_id]
+            break
+
+    # Strategy 2: Kill by PID with SIGTERM then SIGKILL
     try:
         os.kill(process_id, signal.SIGTERM)
-        # Remove from active streams
-        for slot_id, info in list(active_streams.items()):
-            if info.get("pid") == process_id:
-                del active_streams[slot_id]
-                break
-        return True
+        logger.info(f"Sent SIGTERM to FFmpeg PID {process_id}")
+        killed = True
+        # Give it 2 seconds to terminate gracefully
+        await asyncio.sleep(2)
+        # Check if still alive, force kill
+        try:
+            os.kill(process_id, 0)
+            os.kill(process_id, signal.SIGKILL)
+            logger.info(f"Sent SIGKILL to FFmpeg PID {process_id}")
+        except ProcessLookupError:
+            pass  # Already dead
     except ProcessLookupError:
-        # Process already dead
-        for slot_id, info in list(active_streams.items()):
-            if info.get("pid") == process_id:
-                del active_streams[slot_id]
-                break
-        return True
+        killed = True  # Already dead
     except Exception as e:
-        print(f"FFmpeg stop error for PID {process_id}: {e}")
-        return False
+        logger.warning(f"FFmpeg stop error for PID {process_id}: {e}")
+
+    # Strategy 3: Use pkill as last resort for orphaned processes
+    if not killed:
+        try:
+            subprocess.run(
+                ["pkill", "-9", "-f", f"ffmpeg.*-re.*stream_loop"],
+                capture_output=True, timeout=5
+            )
+            logger.info("Used pkill to kill orphaned FFmpeg streaming processes")
+            killed = True
+        except Exception:
+            pass
+
+    return killed
 
 
 async def check_stream_status(process_id: Optional[int]) -> bool:

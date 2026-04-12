@@ -44,6 +44,7 @@ class CreateSlotRequest(BaseModel):
     platform: str  # youtube, facebook, twitch, instagram, custom
     streamKey: str
     rtmpUrl: Optional[str] = None  # for custom RTMP
+    videoId: Optional[str] = None  # assign video at creation time
 
 class UpdateSlotRequest(BaseModel):
     name: Optional[str] = None

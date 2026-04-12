@@ -61,6 +61,9 @@ export const slotsAPI = {
   startStream: (id: string) => api.post(`/api/slots/${id}/stream`),
   stopStream: (id: string) => api.post(`/api/slots/${id}/stop`),
   getStatus: (id: string) => api.get(`/api/slots/${id}/status`),
+  uploadThumbnail: (id: string, formData: FormData) => api.post(`/api/slots/${id}/thumbnail`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 };
 
 // Videos

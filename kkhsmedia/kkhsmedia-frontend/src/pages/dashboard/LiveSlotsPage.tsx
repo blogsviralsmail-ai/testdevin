@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { slotsAPI, videosAPI } from '../../services/api';
-import { Radio, Play, Square, Trash2, Plus, RefreshCw, Youtube, Facebook, Twitch, Instagram, Globe, AlertCircle, Film } from 'lucide-react';
+import { Radio, Play, Square, Trash2, Plus, RefreshCw, Youtube, Facebook, Twitch, Instagram, Globe, AlertCircle, Film, Image, Upload } from 'lucide-react';
 
 interface Slot {
   id: string; name: string; platform: string; streamKey: string; streamUrl?: string;
@@ -20,6 +20,9 @@ export default function LiveSlotsPage() {
   const [saving, setSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showStreamModal, setShowStreamModal] = useState<string | null>(null);
+  const [streamThumb, setStreamThumb] = useState<File | null>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
   const primary = settings?.primaryColor || '#6366f1';
 
   const platformIcons: Record<string, React.ReactNode> = {
@@ -74,14 +77,31 @@ export default function LiveSlotsPage() {
     setActionLoading(null);
   };
 
+  const openStreamModal = (slotId: string) => {
+    setShowStreamModal(slotId);
+    setStreamThumb(null);
+  };
+
   const handleStartStream = async (slotId: string) => {
+    setShowStreamModal(null);
     setActionLoading(slotId);
     setError(null);
-    try { await slotsAPI.startStream(slotId); loadData(); } catch (err: unknown) {
+    try {
+      if (streamThumb) {
+        // Upload thumbnail first
+        const formData = new FormData();
+        formData.append('thumbnail', streamThumb);
+        formData.append('slotId', slotId);
+        await slotsAPI.uploadThumbnail(slotId, formData);
+      }
+      await slotsAPI.startStream(slotId);
+      loadData();
+    } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to start stream';
       setError(msg);
     }
     setActionLoading(null);
+    setStreamThumb(null);
   };
 
   const handleStopStream = async (slotId: string) => {
@@ -167,7 +187,7 @@ export default function LiveSlotsPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium mb-1">Video</label>
+                <label className="block text-sm font-medium mb-1">Video (optional, can assign later)</label>
                 <select value={form.videoId} onChange={e => setForm({...form, videoId: e.target.value})}
                   className="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2">
                   <option value="">Select a video</option>
@@ -260,7 +280,7 @@ export default function LiveSlotsPage() {
 
               <div className="mt-4 flex gap-2 flex-wrap">
                 {slot.status === 'active' && !slot.isStreaming && slot.videoId && (
-                  <button onClick={() => handleStartStream(slot.id)} disabled={actionLoading === slot.id}
+                  <button onClick={() => openStreamModal(slot.id)} disabled={actionLoading === slot.id}
                     className="px-3 py-1.5 rounded-lg text-white text-sm flex items-center gap-1.5 disabled:opacity-50" style={{ backgroundColor: '#22c55e' }}>
                     <Play size={14} /> {actionLoading === slot.id ? 'Starting...' : 'Start Stream'}
                   </button>
@@ -278,6 +298,48 @@ export default function LiveSlotsPage() {
             </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Stream Start Modal - Thumbnail Option */}
+      {showStreamModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Play size={20} /> Start Stream</h2>
+            <p className="text-sm text-gray-600 mb-4">Video is already assigned. You can optionally add a custom thumbnail for the stream.</p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2 flex items-center gap-1.5"><Image size={14} /> Custom Thumbnail (optional)</label>
+              <div 
+                onClick={() => thumbInputRef.current?.click()}
+                className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50 transition"
+              >
+                {streamThumb ? (
+                  <div className="flex items-center gap-2 justify-center">
+                    <img src={URL.createObjectURL(streamThumb)} alt="thumb" className="w-20 h-14 object-cover rounded" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium truncate max-w-48">{streamThumb.name}</p>
+                      <p className="text-xs text-gray-500">{(streamThumb.size / 1024).toFixed(0)} KB</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Upload size={24} className="mx-auto mb-1 text-gray-400" />
+                    <p className="text-sm text-gray-500">Click to upload thumbnail</p>
+                    <p className="text-xs text-gray-400">If not provided, auto-generated from video</p>
+                  </div>
+                )}
+              </div>
+              <input ref={thumbInputRef} type="file" accept="image/*" className="hidden" onChange={e => setStreamThumb(e.target.files?.[0] || null)} />
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => { setShowStreamModal(null); setStreamThumb(null); }} className="flex-1 py-2.5 rounded-xl border">Cancel</button>
+              <button onClick={() => handleStartStream(showStreamModal)} className="flex-1 py-2.5 rounded-xl text-white" style={{ backgroundColor: '#22c55e' }}>
+                Start Stream
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
