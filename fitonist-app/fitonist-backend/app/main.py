@@ -46,7 +46,7 @@ class CORSMiddlewareCustom(BaseHTTPMiddleware):
 app.add_middleware(CORSMiddlewareCustom)
 
 # --- Auth Setup ---
-SECRET_KEY = os.getenv("JWT_SECRET", "fitonist-secret-key-change-in-production-2026")
+SECRET_KEY = os.getenv("JWT_SECRET", "change-me-in-production")
 ALGORITHM = "HS256"
 security = HTTPBearer()
 
@@ -161,6 +161,34 @@ def init_db():
                 mood TEXT, created_at TEXT DEFAULT (datetime('now')),
                 UNIQUE(user_id, date)
             );
+            CREATE TABLE IF NOT EXISTS achievements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                badge_key TEXT NOT NULL,
+                badge_name TEXT NOT NULL,
+                badge_desc TEXT,
+                badge_icon TEXT DEFAULT 'trophy',
+                unlocked_at TEXT DEFAULT (datetime('now')),
+                UNIQUE(user_id, badge_key)
+            );
+            CREATE TABLE IF NOT EXISTS custom_splits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                name TEXT NOT NULL,
+                split_type TEXT DEFAULT 'custom',
+                days_json TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                title TEXT NOT NULL,
+                body TEXT,
+                notif_type TEXT DEFAULT 'reminder',
+                read INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
         """)
 
 
@@ -237,6 +265,27 @@ class DailyCheckinCreate(BaseModel):
     workout_completed: Optional[int] = 0
     diet_followed: Optional[int] = 0
     mood: Optional[str] = None
+
+
+class CustomSplitCreate(BaseModel):
+    name: str
+    split_type: str = "custom"
+    days: list
+
+
+class AdminExerciseCreate(BaseModel):
+    group: str
+    name: str
+    sets: int = 3
+    reps: str = "10-12"
+    rest: int = 60
+    muscles: List[str] = []
+    primary: str = ""
+    type: str = "compound"
+    equip: str = "full"
+    video: str = ""
+    instructions: str = ""
+    difficulty: str = "intermediate"
 
 
 # --- Auth Helpers ---
@@ -328,6 +377,16 @@ EXERCISE_DB = {
         {"name": "Cable Fly (Low to High)", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Upper Chest"], "primary": "Chest", "type": "isolation", "equip": "full", "video": "Iwe6AmxVf7o", "instructions": "Cables from low, fly upward.", "difficulty": "intermediate"},
         {"name": "Pec Deck Machine", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Chest"], "primary": "Chest", "type": "isolation", "equip": "full", "video": "Iwe6AmxVf7o", "instructions": "Squeeze chest at peak, slow negative.", "difficulty": "beginner"},
         {"name": "Smith Machine Bench Press", "sets": 3, "reps": "10-12", "rest": 75, "muscles": ["Chest", "Triceps"], "primary": "Chest", "type": "compound", "equip": "full", "video": "rT7DgCr-3pg", "instructions": "Guided bar path, focus on contraction.", "difficulty": "beginner"},
+        {"name": "Incline Dumbbell Fly", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Upper Chest"], "primary": "Chest", "type": "isolation", "equip": "basic", "video": "eozdVDA78K0", "instructions": "Incline bench, fly with squeeze at top.", "difficulty": "intermediate"},
+        {"name": "Close-Grip Bench Press", "sets": 3, "reps": "10-12", "rest": 75, "muscles": ["Inner Chest", "Triceps"], "primary": "Chest", "type": "compound", "equip": "full", "video": "rT7DgCr-3pg", "instructions": "Narrow grip, elbows tucked.", "difficulty": "intermediate"},
+        {"name": "Floor Press", "sets": 3, "reps": "10-12", "rest": 75, "muscles": ["Chest", "Triceps"], "primary": "Chest", "type": "compound", "equip": "basic", "video": "rT7DgCr-3pg", "instructions": "Lie on floor, press dumbbells up.", "difficulty": "beginner"},
+        {"name": "Chest Dips", "sets": 3, "reps": "8-12", "rest": 75, "muscles": ["Lower Chest", "Triceps"], "primary": "Chest", "type": "compound", "equip": "basic", "video": "dX_nSOOJIsE", "instructions": "Lean forward, deep stretch at bottom.", "difficulty": "intermediate"},
+        {"name": "Svend Press", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Inner Chest"], "primary": "Chest", "type": "isolation", "equip": "basic", "video": "eozdVDA78K0", "instructions": "Squeeze plates together, press forward.", "difficulty": "beginner"},
+        {"name": "Machine Chest Press", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Chest", "Triceps"], "primary": "Chest", "type": "compound", "equip": "full", "video": "rT7DgCr-3pg", "instructions": "Controlled press, squeeze at peak.", "difficulty": "beginner"},
+        {"name": "Landmine Press", "sets": 3, "reps": "10-12 each", "rest": 60, "muscles": ["Upper Chest", "Shoulders"], "primary": "Chest", "type": "compound", "equip": "full", "video": "rT7DgCr-3pg", "instructions": "Press barbell at angle.", "difficulty": "intermediate"},
+        {"name": "Hex Press", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Inner Chest", "Triceps"], "primary": "Chest", "type": "compound", "equip": "basic", "video": "VmB1G1K7v94", "instructions": "Press DBs together throughout movement.", "difficulty": "beginner"},
+        {"name": "Incline Cable Fly", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Upper Chest"], "primary": "Chest", "type": "isolation", "equip": "full", "video": "Iwe6AmxVf7o", "instructions": "Incline bench between cables.", "difficulty": "intermediate"},
+        {"name": "Dip Machine", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Lower Chest", "Triceps"], "primary": "Chest", "type": "compound", "equip": "full", "video": "dX_nSOOJIsE", "instructions": "Assisted dips on machine.", "difficulty": "beginner"},
     ],
     "back": [
         {"name": "Superman Hold", "sets": 3, "reps": "30 sec", "rest": 30, "muscles": ["Lower Back", "Glutes"], "primary": "Back", "type": "isolation", "equip": "home", "video": "z6PJMT2y8GQ", "instructions": "Lift chest and legs off ground.", "difficulty": "beginner"},
@@ -346,6 +405,16 @@ EXERCISE_DB = {
         {"name": "Barbell Row", "sets": 4, "reps": "8-10", "rest": 90, "muscles": ["Mid Back", "Lats", "Biceps"], "primary": "Back", "type": "compound", "equip": "full", "video": "FWJR5Ve8bnQ", "instructions": "Hinge at hips, pull to lower chest.", "difficulty": "intermediate"},
         {"name": "T-Bar Row", "sets": 3, "reps": "10-12", "rest": 75, "muscles": ["Mid Back", "Lats"], "primary": "Back", "type": "compound", "equip": "full", "video": "FWJR5Ve8bnQ", "instructions": "Keep back straight, pull to chest.", "difficulty": "intermediate"},
         {"name": "Face Pulls", "sets": 3, "reps": "15-20", "rest": 60, "muscles": ["Rear Delts", "Traps", "Rotator Cuff"], "primary": "Back", "type": "isolation", "equip": "full", "video": "rep-qVOkqgk", "instructions": "Pull rope to face, external rotate.", "difficulty": "beginner"},
+        {"name": "Meadows Row", "sets": 3, "reps": "10-12 each", "rest": 60, "muscles": ["Lats", "Upper Back"], "primary": "Back", "type": "compound", "equip": "full", "video": "FWJR5Ve8bnQ", "instructions": "Staggered stance, pull landmine to hip.", "difficulty": "intermediate"},
+        {"name": "Inverted Row", "sets": 3, "reps": "10-15", "rest": 60, "muscles": ["Mid Back", "Biceps"], "primary": "Back", "type": "compound", "equip": "basic", "video": "OYUxXMGVuuU", "instructions": "Under bar, pull chest to bar.", "difficulty": "beginner"},
+        {"name": "Straight-Arm Pulldown", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Lats"], "primary": "Back", "type": "isolation", "equip": "full", "video": "CAwf7n6Luuc", "instructions": "Arms straight, pull bar to thighs.", "difficulty": "beginner"},
+        {"name": "Rack Pull", "sets": 3, "reps": "6-8", "rest": 120, "muscles": ["Upper Back", "Traps", "Glutes"], "primary": "Back", "type": "compound", "equip": "full", "video": "op9kVnSso6Q", "instructions": "Barbell at knee height, lockout.", "difficulty": "intermediate"},
+        {"name": "Pendlay Row", "sets": 3, "reps": "8-10", "rest": 90, "muscles": ["Mid Back", "Lats"], "primary": "Back", "type": "compound", "equip": "full", "video": "FWJR5Ve8bnQ", "instructions": "Dead stop each rep, explosive pull.", "difficulty": "advanced"},
+        {"name": "Chest-Supported Row", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Mid Back", "Rear Delts"], "primary": "Back", "type": "compound", "equip": "basic", "video": "pYcpY20QaE8", "instructions": "Chest on incline bench, row DBs.", "difficulty": "beginner"},
+        {"name": "Seal Row", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Mid Back", "Lats"], "primary": "Back", "type": "compound", "equip": "full", "video": "FWJR5Ve8bnQ", "instructions": "Lie face down on elevated bench, row.", "difficulty": "intermediate"},
+        {"name": "Kroc Row", "sets": 3, "reps": "15-20 each", "rest": 60, "muscles": ["Lats", "Grip"], "primary": "Back", "type": "compound", "equip": "basic", "video": "pYcpY20QaE8", "instructions": "Heavy single-arm row, controlled cheat.", "difficulty": "advanced"},
+        {"name": "Cable Row (Wide)", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Upper Back", "Rear Delts"], "primary": "Back", "type": "compound", "equip": "full", "video": "GZbfZ033f74", "instructions": "Wide grip, pull to chest.", "difficulty": "beginner"},
+        {"name": "Hyperextension", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Lower Back", "Glutes"], "primary": "Back", "type": "isolation", "equip": "full", "video": "z6PJMT2y8GQ", "instructions": "Controlled extension, squeeze at top.", "difficulty": "beginner"},
     ],
     "legs": [
         {"name": "Bodyweight Squats", "sets": 3, "reps": "20-25", "rest": 45, "muscles": ["Quads", "Glutes"], "primary": "Legs", "type": "compound", "equip": "home", "video": "aclHkVaku9U", "instructions": "Below parallel, drive through heels.", "difficulty": "beginner"},
@@ -367,6 +436,19 @@ EXERCISE_DB = {
         {"name": "Hack Squat", "sets": 3, "reps": "10-12", "rest": 90, "muscles": ["Quads", "Glutes"], "primary": "Legs", "type": "compound", "equip": "full", "video": "ultWZbUMPL8", "instructions": "Deep range of motion.", "difficulty": "intermediate"},
         {"name": "Calf Raises (Machine)", "sets": 4, "reps": "15-20", "rest": 45, "muscles": ["Calves"], "primary": "Legs", "type": "isolation", "equip": "full", "video": "gwLzBJYoWlI", "instructions": "Full range, pause at top.", "difficulty": "beginner"},
         {"name": "Barbell RDL", "sets": 3, "reps": "10-12", "rest": 90, "muscles": ["Hamstrings", "Glutes", "Lower Back"], "primary": "Legs", "type": "compound", "equip": "full", "video": "7j-2w4-P14I", "instructions": "Hinge at hips, bar close to legs.", "difficulty": "intermediate"},
+        {"name": "Sumo Squat", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Inner Thighs", "Glutes", "Quads"], "primary": "Legs", "type": "compound", "equip": "basic", "video": "aclHkVaku9U", "instructions": "Wide stance, toes out, squat deep.", "difficulty": "beginner"},
+        {"name": "Pistol Squat", "sets": 3, "reps": "5-8 each", "rest": 90, "muscles": ["Quads", "Glutes", "Balance"], "primary": "Legs", "type": "compound", "equip": "home", "video": "aclHkVaku9U", "instructions": "Single leg squat, other leg extended.", "difficulty": "advanced"},
+        {"name": "Hip Thrust", "sets": 4, "reps": "12-15", "rest": 75, "muscles": ["Glutes", "Hamstrings"], "primary": "Legs", "type": "compound", "equip": "basic", "video": "OUgsJ8-Vi0E", "instructions": "Back on bench, thrust hips up.", "difficulty": "beginner"},
+        {"name": "Nordic Curl", "sets": 3, "reps": "5-8", "rest": 90, "muscles": ["Hamstrings"], "primary": "Legs", "type": "isolation", "equip": "home", "video": "1Tq3QdYUuHs", "instructions": "Kneel, lower body forward slowly.", "difficulty": "advanced"},
+        {"name": "Sissy Squat", "sets": 3, "reps": "10-15", "rest": 60, "muscles": ["Quads"], "primary": "Legs", "type": "isolation", "equip": "home", "video": "aclHkVaku9U", "instructions": "Lean back, bend knees forward.", "difficulty": "intermediate"},
+        {"name": "Goblet Squat", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Quads", "Glutes", "Core"], "primary": "Legs", "type": "compound", "equip": "basic", "video": "LcGo1I-2E6k", "instructions": "Hold DB at chest, squat deep.", "difficulty": "beginner"},
+        {"name": "Single-Leg RDL", "sets": 3, "reps": "10 each", "rest": 60, "muscles": ["Hamstrings", "Glutes", "Balance"], "primary": "Legs", "type": "compound", "equip": "basic", "video": "7j-2w4-P14I", "instructions": "One leg, hinge at hip.", "difficulty": "intermediate"},
+        {"name": "Reverse Lunge", "sets": 3, "reps": "10 each", "rest": 60, "muscles": ["Quads", "Glutes"], "primary": "Legs", "type": "compound", "equip": "home", "video": "D7KaRcUTQeE", "instructions": "Step back into lunge position.", "difficulty": "beginner"},
+        {"name": "Box Squat", "sets": 3, "reps": "8-10", "rest": 90, "muscles": ["Quads", "Glutes", "Hamstrings"], "primary": "Legs", "type": "compound", "equip": "full", "video": "ultWZbUMPL8", "instructions": "Squat to box, pause, stand up.", "difficulty": "intermediate"},
+        {"name": "Leg Press (Narrow)", "sets": 3, "reps": "12-15", "rest": 75, "muscles": ["Quads"], "primary": "Legs", "type": "compound", "equip": "full", "video": "IZxyjW7MPJQ", "instructions": "Narrow stance, focus quads.", "difficulty": "beginner"},
+        {"name": "Seated Calf Raise", "sets": 3, "reps": "15-20", "rest": 30, "muscles": ["Calves"], "primary": "Legs", "type": "isolation", "equip": "full", "video": "gwLzBJYoWlI", "instructions": "Seated, raise heels up.", "difficulty": "beginner"},
+        {"name": "Good Mornings", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Hamstrings", "Lower Back", "Glutes"], "primary": "Legs", "type": "compound", "equip": "full", "video": "7j-2w4-P14I", "instructions": "Bar on back, hinge at hips.", "difficulty": "intermediate"},
+        {"name": "Zercher Squat", "sets": 3, "reps": "8-10", "rest": 90, "muscles": ["Quads", "Core", "Glutes"], "primary": "Legs", "type": "compound", "equip": "full", "video": "ultWZbUMPL8", "instructions": "Bar in elbow crease, squat.", "difficulty": "advanced"},
     ],
     "shoulders": [
         {"name": "Pike Push-Ups", "sets": 3, "reps": "10-15", "rest": 45, "muscles": ["Shoulders", "Triceps"], "primary": "Shoulders", "type": "compound", "equip": "home", "video": "sposDXWEB0A", "instructions": "Hips high, head towards ground.", "difficulty": "intermediate"},
@@ -377,6 +459,13 @@ EXERCISE_DB = {
         {"name": "Dumbbell Lateral Raise", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Side Delts"], "primary": "Shoulders", "type": "isolation", "equip": "basic", "video": "3VcKaXpzqRo", "instructions": "Slight bend in elbows.", "difficulty": "beginner"},
         {"name": "Dumbbell Front Raise", "sets": 3, "reps": "12", "rest": 60, "muscles": ["Front Delts"], "primary": "Shoulders", "type": "isolation", "equip": "basic", "video": "-t7fuZ0KhDA", "instructions": "Alternate arms, controlled.", "difficulty": "beginner"},
         {"name": "Dumbbell Rear Delt Fly", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Rear Delts"], "primary": "Shoulders", "type": "isolation", "equip": "basic", "video": "EA7u4Q_8HQ0", "instructions": "Bend forward, squeeze at top.", "difficulty": "beginner"},
+        {"name": "Arnold Press", "sets": 3, "reps": "10-12", "rest": 75, "muscles": ["Shoulders", "Front Delts"], "primary": "Shoulders", "type": "compound", "equip": "basic", "video": "qEwKCR5JCog", "instructions": "Rotate palms during press.", "difficulty": "intermediate"},
+        {"name": "Upright Row", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Shoulders", "Traps"], "primary": "Shoulders", "type": "compound", "equip": "basic", "video": "qEwKCR5JCog", "instructions": "Pull weight to chin, elbows high.", "difficulty": "intermediate"},
+        {"name": "Z-Press", "sets": 3, "reps": "8-10", "rest": 75, "muscles": ["Shoulders", "Core"], "primary": "Shoulders", "type": "compound", "equip": "basic", "video": "qEwKCR5JCog", "instructions": "Seated on floor, press overhead.", "difficulty": "advanced"},
+        {"name": "Reverse Pec Deck", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Rear Delts", "Upper Back"], "primary": "Shoulders", "type": "isolation", "equip": "full", "video": "rep-qVOkqgk", "instructions": "Face machine, squeeze rear delts.", "difficulty": "beginner"},
+        {"name": "Plate Front Raise", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Front Delts"], "primary": "Shoulders", "type": "isolation", "equip": "basic", "video": "-t7fuZ0KhDA", "instructions": "Hold plate, raise to eye level.", "difficulty": "beginner"},
+        {"name": "Band Pull-Apart", "sets": 3, "reps": "15-20", "rest": 30, "muscles": ["Rear Delts", "Rotator Cuff"], "primary": "Shoulders", "type": "isolation", "equip": "home", "video": "rep-qVOkqgk", "instructions": "Pull band apart at chest height.", "difficulty": "beginner"},
+        {"name": "Seated DB Shoulder Press", "sets": 3, "reps": "10-12", "rest": 75, "muscles": ["Shoulders", "Triceps"], "primary": "Shoulders", "type": "compound", "equip": "basic", "video": "qEwKCR5JCog", "instructions": "Seated, press DBs overhead.", "difficulty": "beginner"},
         {"name": "Arnold Press", "sets": 3, "reps": "10-12", "rest": 75, "muscles": ["Shoulders", "Triceps"], "primary": "Shoulders", "type": "compound", "equip": "basic", "video": "qEwKCR5JCog", "instructions": "Rotate palms as you press up.", "difficulty": "intermediate"},
         {"name": "Overhead Barbell Press", "sets": 4, "reps": "8-10", "rest": 90, "muscles": ["Shoulders", "Triceps"], "primary": "Shoulders", "type": "compound", "equip": "full", "video": "_RlRDWO2jfg", "instructions": "Brace core, press straight up.", "difficulty": "intermediate"},
         {"name": "Cable Lateral Raise", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Side Delts"], "primary": "Shoulders", "type": "isolation", "equip": "full", "video": "PPrzBWZDS_g", "instructions": "Constant cable tension.", "difficulty": "beginner"},
@@ -403,10 +492,32 @@ EXERCISE_DB = {
         {"name": "Close-Grip Bench Press", "sets": 3, "reps": "8-10", "rest": 75, "muscles": ["Triceps", "Chest"], "primary": "Arms", "type": "compound", "equip": "full", "video": "nEF0bv2FW94", "instructions": "Hands shoulder-width apart.", "difficulty": "intermediate"},
         {"name": "Skull Crushers (EZ Bar)", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Triceps"], "primary": "Arms", "type": "isolation", "equip": "full", "video": "d_KZxkY_0cM", "instructions": "Lower to forehead, elbows fixed.", "difficulty": "intermediate"},
         {"name": "Overhead Cable Extension", "sets": 3, "reps": "12-15", "rest": 60, "muscles": ["Triceps"], "primary": "Arms", "type": "isolation", "equip": "full", "video": "2-LAMcpzODU", "instructions": "Face away from cable, extend.", "difficulty": "beginner"},
+        {"name": "Skull Crushers", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Triceps"], "primary": "Arms", "type": "isolation", "equip": "full", "video": "d_KZxkY_0cM", "instructions": "Lower bar to forehead, extend.", "difficulty": "intermediate"},
+        {"name": "Tricep Dips (Bench)", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Triceps", "Chest"], "primary": "Arms", "type": "compound", "equip": "home", "video": "dX_nSOOJIsE", "instructions": "Hands on bench behind, dip down.", "difficulty": "beginner"},
+        {"name": "Reverse Curls", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Forearms", "Biceps"], "primary": "Arms", "type": "isolation", "equip": "basic", "video": "zC3nLlEvin4", "instructions": "Overhand grip curl.", "difficulty": "beginner"},
+        {"name": "Wrist Curls", "sets": 3, "reps": "15-20", "rest": 30, "muscles": ["Forearms"], "primary": "Arms", "type": "isolation", "equip": "basic", "video": "zC3nLlEvin4", "instructions": "Seated, curl wrists up.", "difficulty": "beginner"},
+        {"name": "Spider Curls", "sets": 3, "reps": "10-12", "rest": 45, "muscles": ["Biceps"], "primary": "Arms", "type": "isolation", "equip": "basic", "video": "zC3nLlEvin4", "instructions": "Chest on incline bench, curl.", "difficulty": "intermediate"},
+        {"name": "Close-Grip Push-Ups", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Triceps", "Chest"], "primary": "Arms", "type": "compound", "equip": "home", "video": "J0DnG1_S3li8", "instructions": "Hands close together, push up.", "difficulty": "beginner"},
+        {"name": "21s Bicep Curls", "sets": 3, "reps": "21", "rest": 60, "muscles": ["Biceps"], "primary": "Arms", "type": "isolation", "equip": "basic", "video": "zC3nLlEvin4", "instructions": "7 bottom half, 7 top half, 7 full.", "difficulty": "intermediate"},
+        {"name": "Cable Tricep Kickback", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Triceps"], "primary": "Arms", "type": "isolation", "equip": "full", "video": "d_KZxkY_0cM", "instructions": "Hinge forward, extend arm back.", "difficulty": "beginner"},
+        {"name": "Barbell Curl", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Biceps"], "primary": "Arms", "type": "isolation", "equip": "full", "video": "zC3nLlEvin4", "instructions": "Straight bar, controlled curl.", "difficulty": "beginner"},
+        {"name": "Diamond Push-Up (Triceps)", "sets": 3, "reps": "10-15", "rest": 45, "muscles": ["Triceps", "Chest"], "primary": "Arms", "type": "compound", "equip": "home", "video": "J0DnG1_S3li8", "instructions": "Diamond hand position, focus triceps.", "difficulty": "intermediate"},
     ],
     "core": [
         {"name": "Plank Hold", "sets": 3, "reps": "45-60 sec", "rest": 30, "muscles": ["Core", "Shoulders"], "primary": "Core", "type": "isolation", "equip": "home", "video": "ASdvN_XEl_c", "instructions": "Keep body straight, engage abs.", "difficulty": "beginner"},
         {"name": "Bicycle Crunches", "sets": 3, "reps": "20 each", "rest": 30, "muscles": ["Obliques", "Abs"], "primary": "Core", "type": "isolation", "equip": "home", "video": "9FGilxCbdz8", "instructions": "Touch elbow to opposite knee.", "difficulty": "beginner"},
+        {"name": "Hanging Leg Raise", "sets": 3, "reps": "10-15", "rest": 60, "muscles": ["Lower Abs", "Hip Flexors"], "primary": "Core", "type": "isolation", "equip": "basic", "video": "hdng3Nm1x_E", "instructions": "Hang from bar, raise legs to 90.", "difficulty": "intermediate"},
+        {"name": "Ab Wheel Rollout", "sets": 3, "reps": "8-12", "rest": 60, "muscles": ["Abs", "Core"], "primary": "Core", "type": "compound", "equip": "basic", "video": "hdng3Nm1x_E", "instructions": "Roll out slowly, pull back.", "difficulty": "intermediate"},
+        {"name": "Cable Woodchop", "sets": 3, "reps": "12 each", "rest": 45, "muscles": ["Obliques", "Core"], "primary": "Core", "type": "compound", "equip": "full", "video": "hdng3Nm1x_E", "instructions": "Rotate torso, pull cable across.", "difficulty": "intermediate"},
+        {"name": "Side Plank", "sets": 3, "reps": "30-45 sec each", "rest": 30, "muscles": ["Obliques", "Core"], "primary": "Core", "type": "isolation", "equip": "home", "video": "hdng3Nm1x_E", "instructions": "Stack feet, hold body straight.", "difficulty": "beginner"},
+        {"name": "Dead Bug", "sets": 3, "reps": "10 each", "rest": 30, "muscles": ["Core", "Deep Stabilizers"], "primary": "Core", "type": "isolation", "equip": "home", "video": "hdng3Nm1x_E", "instructions": "Back flat, extend opposite arm/leg.", "difficulty": "beginner"},
+        {"name": "V-Ups", "sets": 3, "reps": "12-15", "rest": 45, "muscles": ["Abs", "Hip Flexors"], "primary": "Core", "type": "isolation", "equip": "home", "video": "hdng3Nm1x_E", "instructions": "Touch toes at top of V.", "difficulty": "intermediate"},
+        {"name": "Toe Touches", "sets": 3, "reps": "15-20", "rest": 30, "muscles": ["Upper Abs"], "primary": "Core", "type": "isolation", "equip": "home", "video": "hdng3Nm1x_E", "instructions": "Legs up, reach for toes.", "difficulty": "beginner"},
+        {"name": "Dragon Flag", "sets": 3, "reps": "5-8", "rest": 90, "muscles": ["Abs", "Core", "Lats"], "primary": "Core", "type": "compound", "equip": "basic", "video": "hdng3Nm1x_E", "instructions": "Grip bench, lower body slowly.", "difficulty": "advanced"},
+        {"name": "Decline Sit-Ups", "sets": 3, "reps": "15-20", "rest": 45, "muscles": ["Abs"], "primary": "Core", "type": "isolation", "equip": "full", "video": "hdng3Nm1x_E", "instructions": "On decline bench, sit up.", "difficulty": "beginner"},
+        {"name": "Weighted Plank", "sets": 3, "reps": "30-60 sec", "rest": 45, "muscles": ["Core", "Shoulders"], "primary": "Core", "type": "isolation", "equip": "basic", "video": "hdng3Nm1x_E", "instructions": "Plank with plate on back.", "difficulty": "intermediate"},
+        {"name": "Pallof Press", "sets": 3, "reps": "10-12 each", "rest": 45, "muscles": ["Core", "Obliques"], "primary": "Core", "type": "isolation", "equip": "full", "video": "hdng3Nm1x_E", "instructions": "Resist rotation, press cable out.", "difficulty": "beginner"},
+        {"name": "Hollow Body Hold", "sets": 3, "reps": "30-45 sec", "rest": 45, "muscles": ["Abs", "Core"], "primary": "Core", "type": "isolation", "equip": "home", "video": "hdng3Nm1x_E", "instructions": "Arms overhead, legs extended, hold.", "difficulty": "intermediate"},
         {"name": "Leg Raises", "sets": 3, "reps": "15", "rest": 30, "muscles": ["Lower Abs"], "primary": "Core", "type": "isolation", "equip": "home", "video": "JB2oyawG9KI", "instructions": "Keep lower back pressed down.", "difficulty": "beginner"},
         {"name": "Mountain Climbers", "sets": 3, "reps": "30 sec", "rest": 30, "muscles": ["Core", "Cardio"], "primary": "Core", "type": "compound", "equip": "home", "video": "nmwgirgXLYM", "instructions": "Fast pace, keep hips level.", "difficulty": "beginner"},
         {"name": "Russian Twists", "sets": 3, "reps": "20 each", "rest": 30, "muscles": ["Obliques"], "primary": "Core", "type": "isolation", "equip": "home", "video": "wkD8rjkodUI", "instructions": "Use weight for resistance.", "difficulty": "beginner"},
@@ -417,6 +528,34 @@ EXERCISE_DB = {
         {"name": "Cable Woodchops", "sets": 3, "reps": "12 each", "rest": 45, "muscles": ["Obliques", "Core"], "primary": "Core", "type": "compound", "equip": "full", "video": "AV5PmSFfUkQ", "instructions": "Rotate torso, pivot on feet.", "difficulty": "intermediate"},
         {"name": "Cable Crunches", "sets": 3, "reps": "15-20", "rest": 45, "muscles": ["Upper Abs"], "primary": "Core", "type": "isolation", "equip": "full", "video": "AV5PmSFfUkQ", "instructions": "Kneel, crunch against cable.", "difficulty": "beginner"},
         {"name": "Hanging Leg Raises", "sets": 3, "reps": "10-15", "rest": 45, "muscles": ["Lower Abs"], "primary": "Core", "type": "isolation", "equip": "full", "video": "hdng3Nm1x_E", "instructions": "Hang from bar, raise legs.", "difficulty": "intermediate"},
+    ],
+    "stretching": [
+        {"name": "Standing Hamstring Stretch", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Hamstrings"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Straight leg on elevated surface, lean forward.", "difficulty": "beginner"},
+        {"name": "Hip Flexor Stretch", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Hip Flexors", "Quads"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Lunge position, push hips forward.", "difficulty": "beginner"},
+        {"name": "Pigeon Pose", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Glutes", "Hip Flexors"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Front knee bent, back leg extended.", "difficulty": "beginner"},
+        {"name": "Cat-Cow Stretch", "sets": 2, "reps": "10 reps", "rest": 15, "muscles": ["Spine", "Core"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Alternate arching and rounding back.", "difficulty": "beginner"},
+        {"name": "Child's Pose", "sets": 2, "reps": "30 sec", "rest": 15, "muscles": ["Lower Back", "Shoulders"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Kneel, sit back, arms extended.", "difficulty": "beginner"},
+        {"name": "Chest Doorway Stretch", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Chest", "Shoulders"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Arm on doorframe, lean through.", "difficulty": "beginner"},
+        {"name": "Shoulder Cross-Body Stretch", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Rear Delts", "Shoulders"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Pull arm across body.", "difficulty": "beginner"},
+        {"name": "Tricep Overhead Stretch", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Triceps"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Arm behind head, pull elbow.", "difficulty": "beginner"},
+        {"name": "Quad Stretch (Standing)", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Quads"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Grab ankle, pull heel to glute.", "difficulty": "beginner"},
+        {"name": "Seated Forward Fold", "sets": 2, "reps": "30 sec", "rest": 15, "muscles": ["Hamstrings", "Lower Back"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Legs straight, reach for toes.", "difficulty": "beginner"},
+        {"name": "Lat Side Stretch", "sets": 2, "reps": "30 sec each", "rest": 15, "muscles": ["Lats", "Obliques"], "primary": "Stretching", "type": "isolation", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Arm overhead, lean to side.", "difficulty": "beginner"},
+        {"name": "World's Greatest Stretch", "sets": 2, "reps": "5 each", "rest": 15, "muscles": ["Full Body"], "primary": "Stretching", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Lunge, rotate, reach up.", "difficulty": "beginner"},
+    ],
+    "cardio": [
+        {"name": "Burpees", "sets": 3, "reps": "10-15", "rest": 45, "muscles": ["Full Body"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Squat, jump back, push-up, jump up.", "difficulty": "intermediate"},
+        {"name": "Mountain Climbers", "sets": 3, "reps": "30 sec", "rest": 30, "muscles": ["Core", "Shoulders"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Plank position, alternate knees to chest.", "difficulty": "beginner"},
+        {"name": "Jumping Jacks", "sets": 3, "reps": "30-45 sec", "rest": 30, "muscles": ["Full Body"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Jump feet out, arms up, repeat.", "difficulty": "beginner"},
+        {"name": "Box Jumps", "sets": 3, "reps": "10-12", "rest": 60, "muscles": ["Quads", "Glutes", "Calves"], "primary": "Cardio", "type": "compound", "equip": "basic", "video": "CVaEhXotL7M", "instructions": "Jump onto box, stand fully, step down.", "difficulty": "intermediate"},
+        {"name": "Battle Ropes", "sets": 3, "reps": "30 sec", "rest": 45, "muscles": ["Shoulders", "Core", "Arms"], "primary": "Cardio", "type": "compound", "equip": "full", "video": "dZgVxmf6jkA", "instructions": "Alternate waves with heavy ropes.", "difficulty": "intermediate"},
+        {"name": "Jump Rope", "sets": 3, "reps": "60 sec", "rest": 30, "muscles": ["Calves", "Shoulders"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Light bounces, wrists rotate rope.", "difficulty": "beginner"},
+        {"name": "Kettlebell Swings", "sets": 3, "reps": "15-20", "rest": 60, "muscles": ["Glutes", "Hamstrings", "Core"], "primary": "Cardio", "type": "compound", "equip": "basic", "video": "dZgVxmf6jkA", "instructions": "Hip hinge, explosive swing to chest.", "difficulty": "intermediate"},
+        {"name": "Sprint Intervals", "sets": 5, "reps": "30 sec", "rest": 60, "muscles": ["Quads", "Hamstrings", "Calves"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Sprint 30s, rest 60s, repeat.", "difficulty": "intermediate"},
+        {"name": "High Knees", "sets": 3, "reps": "30 sec", "rest": 30, "muscles": ["Core", "Hip Flexors"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Run in place, knees to waist.", "difficulty": "beginner"},
+        {"name": "Bear Crawl", "sets": 3, "reps": "30 sec", "rest": 45, "muscles": ["Core", "Shoulders", "Quads"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Crawl forward on hands and toes.", "difficulty": "intermediate"},
+        {"name": "Skater Jumps", "sets": 3, "reps": "12 each", "rest": 30, "muscles": ["Glutes", "Quads", "Balance"], "primary": "Cardio", "type": "compound", "equip": "home", "video": "dZgVxmf6jkA", "instructions": "Lateral jumps side to side.", "difficulty": "intermediate"},
+        {"name": "Rowing Machine", "sets": 3, "reps": "500m", "rest": 90, "muscles": ["Back", "Legs", "Arms"], "primary": "Cardio", "type": "compound", "equip": "full", "video": "dZgVxmf6jkA", "instructions": "Drive legs first, then pull.", "difficulty": "beginner"},
     ],
 }
 
@@ -895,6 +1034,189 @@ def get_exercise_history(exercise_name: str = Query(...), user: dict = Depends(g
         return [dict(l) for l in logs]
 
 
+
+# --- Achievement Definitions ---
+ACHIEVEMENT_DEFS = [
+    {"key": "first_workout", "name": "First Step", "desc": "Complete your first workout", "icon": "footprints", "check": lambda stats: stats.get("total_sessions", 0) >= 1},
+    {"key": "five_workouts", "name": "Getting Started", "desc": "Complete 5 workouts", "icon": "flame", "check": lambda stats: stats.get("total_sessions", 0) >= 5},
+    {"key": "ten_workouts", "name": "Consistent", "desc": "Complete 10 workouts", "icon": "zap", "check": lambda stats: stats.get("total_sessions", 0) >= 10},
+    {"key": "twenty_five_workouts", "name": "Dedicated", "desc": "Complete 25 workouts", "icon": "star", "check": lambda stats: stats.get("total_sessions", 0) >= 25},
+    {"key": "fifty_workouts", "name": "Iron Will", "desc": "Complete 50 workouts", "icon": "trophy", "check": lambda stats: stats.get("total_sessions", 0) >= 50},
+    {"key": "hundred_workouts", "name": "Century Club", "desc": "Complete 100 workouts", "icon": "crown", "check": lambda stats: stats.get("total_sessions", 0) >= 100},
+    {"key": "streak_3", "name": "3-Day Streak", "desc": "Work out 3 days in a row", "icon": "flame", "check": lambda stats: stats.get("streak", 0) >= 3},
+    {"key": "streak_7", "name": "Week Warrior", "desc": "Work out 7 days in a row", "icon": "flame", "check": lambda stats: stats.get("streak", 0) >= 7},
+    {"key": "streak_14", "name": "Two Week Terror", "desc": "14-day workout streak", "icon": "flame", "check": lambda stats: stats.get("streak", 0) >= 14},
+    {"key": "streak_30", "name": "Monthly Monster", "desc": "30-day workout streak", "icon": "flame", "check": lambda stats: stats.get("streak", 0) >= 30},
+    {"key": "cal_1000", "name": "Calorie Crusher", "desc": "Burn 1,000 total calories", "icon": "flame", "check": lambda stats: stats.get("total_calories", 0) >= 1000},
+    {"key": "cal_5000", "name": "Furnace", "desc": "Burn 5,000 total calories", "icon": "flame", "check": lambda stats: stats.get("total_calories", 0) >= 5000},
+    {"key": "cal_10000", "name": "Inferno", "desc": "Burn 10,000 total calories", "icon": "flame", "check": lambda stats: stats.get("total_calories", 0) >= 10000},
+    {"key": "vol_10000", "name": "Heavy Lifter", "desc": "Lift 10,000 kg total volume", "icon": "dumbbell", "check": lambda stats: stats.get("total_volume", 0) >= 10000},
+    {"key": "vol_50000", "name": "Iron Giant", "desc": "Lift 50,000 kg total volume", "icon": "dumbbell", "check": lambda stats: stats.get("total_volume", 0) >= 50000},
+    {"key": "vol_100000", "name": "Titan", "desc": "Lift 100,000 kg total volume", "icon": "dumbbell", "check": lambda stats: stats.get("total_volume", 0) >= 100000},
+    {"key": "pr_5", "name": "PR Hunter", "desc": "Set 5 personal records", "icon": "medal", "check": lambda stats: stats.get("total_prs", 0) >= 5},
+    {"key": "pr_20", "name": "Record Breaker", "desc": "Set 20 personal records", "icon": "medal", "check": lambda stats: stats.get("total_prs", 0) >= 20},
+    {"key": "pr_50", "name": "Legendary", "desc": "Set 50 personal records", "icon": "medal", "check": lambda stats: stats.get("total_prs", 0) >= 50},
+    {"key": "profile_done", "name": "All Set", "desc": "Complete your profile setup", "icon": "user-check", "check": lambda stats: stats.get("profile_done", False)},
+]
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change-me-in-production")
+
+
+# --- Achievements ---
+def check_achievements(user_id: int):
+    with get_db() as conn:
+        total_sessions = conn.execute("SELECT COUNT(*) as cnt FROM workout_sessions WHERE user_id = ? AND completed = 1", (user_id,)).fetchone()["cnt"]
+        total_vol = conn.execute("SELECT COALESCE(SUM(total_volume), 0) as vol FROM workout_sessions WHERE user_id = ? AND completed = 1", (user_id,)).fetchone()["vol"]
+        total_cal = conn.execute("SELECT COALESCE(SUM(calories_burned), 0) as cal FROM workout_sessions WHERE user_id = ? AND completed = 1", (user_id,)).fetchone()["cal"]
+        total_prs = conn.execute("SELECT COUNT(*) as cnt FROM personal_records WHERE user_id = ?", (user_id,)).fetchone()["cnt"]
+        profile = conn.execute("SELECT onboarding_done FROM profiles WHERE user_id = ?", (user_id,)).fetchone()
+        profile_done = bool(profile and profile["onboarding_done"])
+        streak = 0
+        sessions = conn.execute("SELECT DISTINCT date FROM workout_sessions WHERE user_id = ? AND completed = 1 ORDER BY date DESC", (user_id,)).fetchall()
+        if sessions:
+            from datetime import date as dt_date
+            check_date = datetime.utcnow().date()
+            session_dates = {s["date"] for s in sessions}
+            for i in range(365):
+                d = (check_date - timedelta(days=i)).strftime("%Y-%m-%d")
+                if d in session_dates:
+                    streak += 1
+                elif i > 0:
+                    break
+        stats = {"total_sessions": total_sessions, "total_volume": total_vol, "total_calories": total_cal, "total_prs": total_prs, "streak": streak, "profile_done": profile_done}
+        newly_unlocked = []
+        for ach in ACHIEVEMENT_DEFS:
+            existing = conn.execute("SELECT id FROM achievements WHERE user_id = ? AND badge_key = ?", (user_id, ach["key"])).fetchone()
+            if not existing and ach["check"](stats):
+                conn.execute("INSERT INTO achievements (user_id, badge_key, badge_name, badge_desc, badge_icon) VALUES (?, ?, ?, ?, ?)",
+                    (user_id, ach["key"], ach["name"], ach["desc"], ach["icon"]))
+                newly_unlocked.append({"key": ach["key"], "name": ach["name"], "desc": ach["desc"], "icon": ach["icon"]})
+        return newly_unlocked
+
+
+@app.get("/api/achievements")
+def get_achievements(user: dict = Depends(get_current_user)):
+    newly = check_achievements(user["id"])
+    with get_db() as conn:
+        all_badges = conn.execute("SELECT * FROM achievements WHERE user_id = ? ORDER BY unlocked_at DESC", (user["id"],)).fetchall()
+    unlocked = [dict(b) for b in all_badges]
+    all_possible = [{"key": a["key"], "name": a["name"], "desc": a["desc"], "icon": a["icon"]} for a in ACHIEVEMENT_DEFS]
+    unlocked_keys = {b["badge_key"] for b in unlocked}
+    locked = [a for a in all_possible if a["key"] not in unlocked_keys]
+    return {"unlocked": unlocked, "locked": locked, "newly_unlocked": newly, "total": len(ACHIEVEMENT_DEFS), "earned": len(unlocked)}
+
+
+# --- Custom Splits ---
+@app.post("/api/custom-splits")
+def create_custom_split(data: CustomSplitCreate, user: dict = Depends(get_current_user)):
+    import json
+    with get_db() as conn:
+        cursor = conn.execute("INSERT INTO custom_splits (user_id, name, split_type, days_json) VALUES (?, ?, ?, ?)",
+            (user["id"], data.name, data.split_type, json.dumps(data.days)))
+        return {"id": cursor.lastrowid, "name": data.name, "split_type": data.split_type}
+
+
+@app.get("/api/custom-splits")
+def get_custom_splits(user: dict = Depends(get_current_user)):
+    import json
+    with get_db() as conn:
+        splits = conn.execute("SELECT * FROM custom_splits WHERE user_id = ? ORDER BY updated_at DESC", (user["id"],)).fetchall()
+        result = []
+        for s in splits:
+            d = dict(s)
+            d["days"] = json.loads(d["days_json"])
+            del d["days_json"]
+            result.append(d)
+        return result
+
+
+@app.delete("/api/custom-splits/{split_id}")
+def delete_custom_split(split_id: int, user: dict = Depends(get_current_user)):
+    with get_db() as conn:
+        conn.execute("DELETE FROM custom_splits WHERE id = ? AND user_id = ?", (split_id, user["id"]))
+        return {"status": "deleted"}
+
+
+# --- Notifications ---
+@app.get("/api/notifications")
+def get_notifications(user: dict = Depends(get_current_user)):
+    with get_db() as conn:
+        notifs = conn.execute("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50", (user["id"],)).fetchall()
+        unread = conn.execute("SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND read = 0", (user["id"],)).fetchone()["cnt"]
+        return {"notifications": [dict(n) for n in notifs], "unread_count": unread}
+
+
+@app.post("/api/notifications/read-all")
+def mark_notifications_read(user: dict = Depends(get_current_user)):
+    with get_db() as conn:
+        conn.execute("UPDATE notifications SET read = 1 WHERE user_id = ?", (user["id"],))
+        return {"status": "ok"}
+
+
+# --- Admin Panel ---
+def verify_admin(password: str):
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=403, detail="Invalid admin password")
+
+
+@app.get("/api/admin/stats")
+def admin_stats(admin_key: str = Query(...)):
+    verify_admin(admin_key)
+    with get_db() as conn:
+        total_users = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()["cnt"]
+        total_sessions = conn.execute("SELECT COUNT(*) as cnt FROM workout_sessions WHERE completed = 1").fetchone()["cnt"]
+        total_exercises = sum(len(v) for v in EXERCISE_DB.values())
+        active_today = conn.execute("SELECT COUNT(DISTINCT user_id) as cnt FROM workout_sessions WHERE date = date('now')").fetchone()["cnt"]
+        return {"total_users": total_users, "total_sessions": total_sessions, "total_exercises": total_exercises, "active_today": active_today}
+
+
+@app.get("/api/admin/users")
+def admin_users(admin_key: str = Query(...)):
+    verify_admin(admin_key)
+    with get_db() as conn:
+        users = conn.execute("SELECT u.id, u.email, u.name, u.created_at, p.goal, p.fitness_level, p.equipment, p.onboarding_done FROM users u LEFT JOIN profiles p ON u.id = p.user_id ORDER BY u.created_at DESC").fetchall()
+        result = []
+        for u in users:
+            ud = dict(u)
+            sessions = conn.execute("SELECT COUNT(*) as cnt FROM workout_sessions WHERE user_id = ? AND completed = 1", (u["id"],)).fetchone()["cnt"]
+            ud["total_sessions"] = sessions
+            result.append(ud)
+        return result
+
+
+@app.post("/api/admin/exercises")
+def admin_add_exercise(data: AdminExerciseCreate, admin_key: str = Query(...)):
+    verify_admin(admin_key)
+    group = data.group.lower()
+    if group not in EXERCISE_DB:
+        EXERCISE_DB[group] = []
+    ex = {"name": data.name, "sets": data.sets, "reps": data.reps, "rest": data.rest,
+        "muscles": data.muscles, "primary": data.primary or data.group.title(),
+        "type": data.type, "equip": data.equip, "video": data.video,
+        "instructions": data.instructions, "difficulty": data.difficulty}
+    EXERCISE_DB[group].append(ex)
+    return {"status": "added", "exercise": ex, "total": sum(len(v) for v in EXERCISE_DB.values())}
+
+
+@app.delete("/api/admin/exercises/{exercise_name}")
+def admin_delete_exercise(exercise_name: str, admin_key: str = Query(...)):
+    verify_admin(admin_key)
+    for group in EXERCISE_DB:
+        EXERCISE_DB[group] = [e for e in EXERCISE_DB[group] if e["name"] != exercise_name]
+    return {"status": "deleted", "total": sum(len(v) for v in EXERCISE_DB.values())}
+
+
+@app.get("/api/muscle-groups")
+def get_muscle_groups(user: dict = Depends(get_current_user)):
+    groups = {}
+    for group, exs in EXERCISE_DB.items():
+        groups[group] = {"count": len(exs), "exercises": [e["name"] for e in exs]}
+    with get_db() as conn:
+        recent = conn.execute("SELECT muscle_group, COUNT(*) as cnt FROM exercise_logs WHERE user_id = ? AND created_at >= datetime('now', '-7 days') GROUP BY muscle_group", (user["id"],)).fetchall()
+        trained_this_week = {r["muscle_group"]: r["cnt"] for r in recent}
+    return {"groups": groups, "trained_this_week": trained_this_week, "total_exercises": sum(len(v) for v in EXERCISE_DB.values())}
+
+
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "2.0.0", "exercises": sum(len(v) for v in EXERCISE_DB.values())}
+    return {"status": "ok", "version": "3.0.0", "exercises": sum(len(v) for v in EXERCISE_DB.values())}

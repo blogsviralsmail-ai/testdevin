@@ -3,7 +3,8 @@ import {
   Dumbbell, Home, User, Search, ChevronRight, ChevronLeft, Play, Pause,
   RotateCcw, Check, X, Heart, Timer, TrendingUp, Utensils, Award,
   Target, ArrowLeft, Plus, Minus, Star, Flame, Zap,
-  Calendar, BarChart3, Weight, Activity, LogOut, Trophy
+  Calendar, BarChart3, Weight, Activity, LogOut, Trophy, History,
+  Medal, Shield, RefreshCw, Trash2, Users, Lock
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -37,6 +38,15 @@ interface Stats {
   recent_prs: { exercise_name: string; best_weight: number; best_reps: number; date_achieved: string }[];
   weight_history: { date: string; weight: number }[];
 }
+interface SessionHistory {
+  id: number; date: string; day_title: string; duration_min: number;
+  calories_burned: number; exercises_done: number; total_volume: number;
+  completed: number;
+}
+interface Achievement {
+  badge_key: string; badge_name: string; badge_desc: string; badge_icon: string;
+  unlocked_at?: string;
+}
 
 // API helpers
 const api = {
@@ -63,6 +73,13 @@ const api = {
   put: async (path: string, body?: unknown) => {
     const r = await fetch(`${API}${path}`, {
       method: "PUT", headers: api.headers(), body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  del: async (path: string) => {
+    const r = await fetch(`${API}${path}`, {
+      method: "DELETE", headers: api.headers(),
     });
     if (!r.ok) throw new Error(await r.text());
     return r.json();
@@ -160,6 +177,59 @@ function RestTimer({ seconds, onDone }: { seconds: number; onDone: () => void })
             <RotateCcw size={24} />
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Muscle Body SVG Visualization
+function MuscleBodyMap({ trained }: { trained: Record<string, number> }) {
+  const maxVal = Math.max(...Object.values(trained), 1);
+  const getColor = (group: string) => {
+    const val = trained[group] || 0;
+    if (val === 0) return "#1a1a2e";
+    const intensity = Math.min(val / maxVal, 1);
+    const r = Math.round(147 * intensity);
+    const g = Math.round(51 * intensity);
+    const b = Math.round(234 * intensity);
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+
+  return (
+    <div className="flex justify-center gap-8">
+      <svg viewBox="0 0 200 400" className="w-40 h-80">
+        {/* Head */}
+        <ellipse cx="100" cy="30" rx="22" ry="26" fill="#2a2a3e" stroke="#444" strokeWidth="1" />
+        {/* Neck */}
+        <rect x="90" y="54" width="20" height="16" fill="#2a2a3e" />
+        {/* Chest */}
+        <path d="M60 70 Q100 65 140 70 L145 120 Q100 130 55 120 Z" fill={getColor("Chest")} stroke="#444" strokeWidth="1" />
+        {/* Shoulders */}
+        <ellipse cx="50" cy="80" rx="18" ry="14" fill={getColor("Shoulders")} stroke="#444" strokeWidth="1" />
+        <ellipse cx="150" cy="80" rx="18" ry="14" fill={getColor("Shoulders")} stroke="#444" strokeWidth="1" />
+        {/* Arms */}
+        <rect x="28" y="90" width="18" height="60" rx="8" fill={getColor("Arms")} stroke="#444" strokeWidth="1" />
+        <rect x="154" y="90" width="18" height="60" rx="8" fill={getColor("Arms")} stroke="#444" strokeWidth="1" />
+        {/* Forearms */}
+        <rect x="28" y="148" width="16" height="50" rx="6" fill={getColor("Arms")} stroke="#444" strokeWidth="1" />
+        <rect x="156" y="148" width="16" height="50" rx="6" fill={getColor("Arms")} stroke="#444" strokeWidth="1" />
+        {/* Core */}
+        <rect x="65" y="120" width="70" height="70" rx="8" fill={getColor("Core")} stroke="#444" strokeWidth="1" />
+        {/* Quads */}
+        <rect x="60" y="195" width="34" height="80" rx="10" fill={getColor("Legs")} stroke="#444" strokeWidth="1" />
+        <rect x="106" y="195" width="34" height="80" rx="10" fill={getColor("Legs")} stroke="#444" strokeWidth="1" />
+        {/* Calves */}
+        <rect x="62" y="280" width="28" height="70" rx="8" fill={getColor("Legs")} stroke="#444" strokeWidth="1" />
+        <rect x="110" y="280" width="28" height="70" rx="8" fill={getColor("Legs")} stroke="#444" strokeWidth="1" />
+      </svg>
+      <div className="flex flex-col justify-center gap-2">
+        {["Chest", "Back", "Shoulders", "Arms", "Core", "Legs"].map((g) => (
+          <div key={g} className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getColor(g) || "#1a1a2e" }} />
+            <span className="text-xs text-white/60">{g}</span>
+            <span className="text-xs text-white/40 ml-auto">{trained[g] || 0}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -338,10 +408,11 @@ function Onboarding({ onDone }: { onDone: () => void }) {
 }
 
 // ============================================================
-// ACTIVE WORKOUT SCREEN
+// ACTIVE WORKOUT SCREEN (with swap, calorie counter)
 // ============================================================
 function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => void }) {
   const [sessionId, setSessionId] = useState<number | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>(day.exercises);
   const [exIdx, setExIdx] = useState(0);
   const [setsDone, setSetsDone] = useState<Record<string, boolean[]>>({});
   const [weights, setWeights] = useState<Record<string, number>>({});
@@ -349,20 +420,25 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
   const [showTimer, setShowTimer] = useState(false);
   const [timerSecs, setTimerSecs] = useState(60);
   const [elapsed, setElapsed] = useState(0);
+  const [caloriesBurned, setCaloriesBurned] = useState(0);
+  const [showSwap, setShowSwap] = useState(false);
+  const [swapOptions, setSwapOptions] = useState<Exercise[]>([]);
+  const [showDropset, setShowDropset] = useState(false);
   const startTime = useRef(Date.now());
 
   useEffect(() => {
-    const t = setInterval(
-      () => setElapsed(Math.floor((Date.now() - startTime.current) / 1000)),
-      1000,
-    );
+    const t = setInterval(() => {
+      const secs = Math.floor((Date.now() - startTime.current) / 1000);
+      setElapsed(secs);
+      setCaloriesBurned(Math.floor((secs / 60) * 8.5));
+    }, 1000);
     api.post("/api/sessions/start", { day_title: day.title })
       .then((r) => setSessionId(r.session_id))
       .catch(() => { /* ignore */ });
     return () => clearInterval(t);
   }, [day.title]);
 
-  const ex = day.exercises[exIdx];
+  const ex = exercises[exIdx];
   if (!ex) return null;
 
   const key = `${exIdx}-${ex.name}`;
@@ -390,13 +466,37 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
     setShowTimer(true);
   };
 
+  const handleSwap = async () => {
+    try {
+      const r = await api.get(`/api/exercises/similar?exercise_name=${encodeURIComponent(ex.name)}&limit=5`);
+      setSwapOptions(r.exercises || []);
+      setShowSwap(true);
+    } catch {
+      // ignore
+    }
+  };
+
+  const doSwap = (newEx: Exercise) => {
+    const updated = [...exercises];
+    updated[exIdx] = newEx;
+    setExercises(updated);
+    setShowSwap(false);
+  };
+
+  const addDropset = () => {
+    const dropWeight = Math.max(0, w * 0.7);
+    const dropKey = `${key}-drop`;
+    setWeights((p) => ({ ...p, [dropKey]: Math.round(dropWeight * 2) / 2 }));
+    setShowDropset(true);
+  };
+
   const finishWorkout = async () => {
     if (sessionId) {
       try {
         await api.post("/api/sessions/finish", {
           session_id: sessionId,
           duration_min: Math.floor(elapsed / 60),
-          calories_burned: Math.floor((elapsed / 60) * 8),
+          calories_burned: caloriesBurned,
         });
       } catch {
         // ignore
@@ -408,24 +508,82 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
   const fmt = (s: number) =>
     `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
+  const allSetsComplete = done.every(Boolean);
+
   return (
     <div className="min-h-screen bg-[#0a0a1a]">
       {showTimer && <RestTimer seconds={timerSecs} onDone={() => setShowTimer(false)} />}
-      <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-4 flex items-center gap-3">
-        <button onClick={onFinish} className="p-1"><X size={22} /></button>
-        <div className="flex-1">
-          <p className="font-semibold text-sm">{day.title}</p>
-          <p className="text-xs text-white/50">{exIdx + 1}/{day.exercises.length} exercises</p>
+
+      {/* Swap Modal */}
+      {showSwap && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center">
+          <div className="bg-[#1a1a2e] rounded-t-3xl w-full max-w-lg p-6 max-h-[70vh] overflow-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Swap Exercise</h3>
+              <button onClick={() => setShowSwap(false)}><X size={22} /></button>
+            </div>
+            <p className="text-white/50 text-sm mb-4">Replace "{ex.name}" with:</p>
+            <div className="space-y-2">
+              {swapOptions.map((opt, i) => (
+                <button
+                  key={i}
+                  onClick={() => doSwap(opt)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:border-purple-500 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <Dumbbell size={18} className="text-purple-400" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="font-medium text-sm">{opt.name}</p>
+                    <p className="text-xs text-white/40">{opt.muscles?.join(", ") || opt.primary}</p>
+                  </div>
+                  <RefreshCw size={16} className="text-white/30" />
+                </button>
+              ))}
+              {swapOptions.length === 0 && (
+                <p className="text-center text-white/40 py-4">No similar exercises found</p>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-1 text-purple-300">
-          <Timer size={16} />
-          <span className="text-sm font-mono">{fmt(elapsed)}</span>
+      )}
+
+      {/* Header with calorie counter */}
+      <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-4">
+        <div className="flex items-center gap-3 mb-2">
+          <button onClick={onFinish} className="p-1"><X size={22} /></button>
+          <div className="flex-1">
+            <p className="font-semibold text-sm">{day.title}</p>
+            <p className="text-xs text-white/50">{exIdx + 1}/{exercises.length} exercises</p>
+          </div>
+          <div className="flex items-center gap-1 text-purple-300">
+            <Timer size={16} />
+            <span className="text-sm font-mono">{fmt(elapsed)}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-6 py-2 bg-white/5 rounded-xl">
+          <div className="text-center">
+            <p className="text-lg font-bold text-orange-400">{caloriesBurned}</p>
+            <p className="text-[10px] text-white/40">kcal burned</p>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div className="text-center">
+            <p className="text-lg font-bold text-blue-400">{Math.floor(elapsed / 60)}</p>
+            <p className="text-[10px] text-white/40">minutes</p>
+          </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div className="text-center">
+            <p className="text-lg font-bold text-green-400">{Object.values(setsDone).flat().filter(Boolean).length}</p>
+            <p className="text-[10px] text-white/40">sets done</p>
+          </div>
         </div>
       </div>
+
+      {/* Exercise pills */}
       <div className="flex overflow-x-auto gap-2 p-3 pb-0 scrollbar-hide">
-        {day.exercises.map((e, i) => {
+        {exercises.map((e, i) => {
           const k = `${i}-${e.name}`;
-          const eDone = (setsDone[k] || []).length === day.exercises[i].sets && (setsDone[k] || []).every(Boolean);
+          const eDone = (setsDone[k] || []).length === exercises[i].sets && (setsDone[k] || []).every(Boolean);
           return (
             <button
               key={i}
@@ -443,12 +601,23 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
           );
         })}
       </div>
+
       <div className="p-4">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold">{ex.name}</h2>
-          <p className="text-white/50 text-sm">{ex.muscles?.join(", ") || ex.primary}</p>
-          <p className="text-white/40 text-xs mt-1">{ex.instructions}</p>
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-bold">{ex.name}</h2>
+            <p className="text-white/50 text-sm">{ex.muscles?.join(", ") || ex.primary}</p>
+            <p className="text-white/40 text-xs mt-1">{ex.instructions}</p>
+          </div>
+          <button
+            onClick={handleSwap}
+            className="p-2 rounded-lg bg-white/5 border border-white/10"
+            title="Swap exercise"
+          >
+            <RefreshCw size={18} className="text-purple-400" />
+          </button>
         </div>
+
         {ex.video && (
           <div className="aspect-video rounded-xl overflow-hidden mb-4 bg-white/5">
             <iframe
@@ -459,19 +628,21 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
             />
           </div>
         )}
+
+        {/* Weight & Reps controls */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
             <p className="text-xs text-white/50 mb-2">Weight (kg)</p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setWeights((p) => ({ ...p, [key]: Math.max(0, w - 2.5) }))}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              ><Minus size={14} /></button>
+                className="w-9 h-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center active:scale-90 transition-transform"
+              ><Minus size={16} className="text-purple-400" /></button>
               <span className="text-2xl font-bold w-16 text-center">{w}</span>
               <button
                 onClick={() => setWeights((p) => ({ ...p, [key]: w + 2.5 }))}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              ><Plus size={14} /></button>
+                className="w-9 h-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center active:scale-90 transition-transform"
+              ><Plus size={16} className="text-purple-400" /></button>
             </div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
@@ -479,16 +650,18 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setRepsInput((p) => ({ ...p, [key]: Math.max(1, reps - 1) }))}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              ><Minus size={14} /></button>
+                className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center active:scale-90 transition-transform"
+              ><Minus size={16} className="text-blue-400" /></button>
               <span className="text-2xl font-bold w-16 text-center">{reps}</span>
               <button
                 onClick={() => setRepsInput((p) => ({ ...p, [key]: reps + 1 }))}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              ><Plus size={14} /></button>
+                className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center active:scale-90 transition-transform"
+              ><Plus size={16} className="text-blue-400" /></button>
             </div>
           </div>
         </div>
+
+        {/* Sets */}
         <div className="space-y-2 mb-4">
           {Array.from({ length: ex.sets }, (_, i) => (
             <button
@@ -512,6 +685,31 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
             </button>
           ))}
         </div>
+
+        {/* Dropset button */}
+        {allSetsComplete && !showDropset && (
+          <button
+            onClick={addDropset}
+            className="w-full mb-3 py-2.5 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400 text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <Zap size={16} /> Add Dropset (-30% weight)
+          </button>
+        )}
+
+        {showDropset && (
+          <Card className="mb-3 border-orange-500/30">
+            <p className="text-sm font-semibold text-orange-400 mb-2">Dropset</p>
+            <p className="text-xs text-white/50 mb-2">Reduce weight to {Math.round(w * 0.7 * 2) / 2} kg and rep to failure</p>
+            <button
+              onClick={() => { setShowDropset(false); setShowTimer(true); setTimerSecs(30); }}
+              className="w-full py-2 rounded-lg bg-orange-500/20 text-orange-400 text-sm font-medium"
+            >
+              Complete Dropset
+            </button>
+          </Card>
+        )}
+
+        {/* Navigation */}
         <div className="flex gap-3">
           {exIdx > 0 && (
             <button
@@ -521,7 +719,7 @@ function ActiveWorkout({ day, onFinish }: { day: WorkoutDay; onFinish: () => voi
               <ChevronLeft size={16} className="inline" /> Previous
             </button>
           )}
-          {exIdx < day.exercises.length - 1 ? (
+          {exIdx < exercises.length - 1 ? (
             <GradBtn onClick={() => setExIdx((i) => i + 1)} className="flex-1">
               Next Exercise <ChevronRight size={16} className="inline" />
             </GradBtn>
@@ -543,6 +741,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [screen, setScreen] = useState<"auth" | "onboarding" | "main">("auth");
   const [tab, setTab] = useState<"home" | "exercises" | "diet" | "progress" | "profile">("home");
+  const [subScreen, setSubScreen] = useState<"" | "history" | "achievements" | "records" | "muscle-map" | "admin" | "custom-split">(""); 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [workoutPlan, setWorkoutPlan] = useState<{
     split_name: string; macros: Record<string, number>; days: WorkoutDay[];
@@ -565,6 +764,17 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [authError, setAuthError] = useState("");
+  // Phase 2-3 state
+  const [sessionHistory, setSessionHistory] = useState<SessionHistory[]>([]);
+  const [achievements, setAchievements] = useState<{ unlocked: Achievement[]; locked: Achievement[]; earned: number; total: number }>({ unlocked: [], locked: [], earned: 0, total: 0 });
+  const [personalRecords, setPRs] = useState<{ exercise_name: string; best_weight: number; best_reps: number; best_volume: number; date_achieved: string }[]>([]);
+  const [muscleGroups, setMuscleGroupData] = useState<{ groups: Record<string, { count: number }>; trained_this_week: Record<string, number>; total_exercises: number } | null>(null);
+  const [adminKey, setAdminKey] = useState("");
+  const [adminData, setAdminData] = useState<{ total_users: number; total_sessions: number; total_exercises: number; active_today: number } | null>(null);
+  const [adminUsers, setAdminUsers] = useState<Record<string, unknown>[]>([]);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [customSplits, setCustomSplits] = useState<{ id: number; name: string; split_type: string; days: { day: string; exercises: string[] }[] }[]>([]);
+  const [newSplitName, setNewSplitName] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -632,6 +842,55 @@ export default function App() {
   useEffect(() => {
     if (tab === "exercises") loadExercises(muscleFilter, searchQuery);
   }, [tab, muscleFilter, searchQuery, loadExercises]);
+
+  const loadHistory = async () => {
+    try {
+      const r = await api.get("/api/sessions/history");
+      setSessionHistory(r.sessions || []);
+    } catch { /* ignore */ }
+  };
+
+  const loadAchievements = async () => {
+    try {
+      const r = await api.get("/api/achievements");
+      setAchievements(r);
+    } catch { /* ignore */ }
+  };
+
+  const loadPRs = async () => {
+    try {
+      const r = await api.get("/api/personal-records");
+      setPRs(r.records || []);
+    } catch { /* ignore */ }
+  };
+
+  const loadMuscleGroups = async () => {
+    try {
+      const r = await api.get("/api/muscle-groups");
+      setMuscleGroupData(r);
+    } catch { /* ignore */ }
+  };
+
+  const loadCustomSplits = async () => {
+    try {
+      const r = await api.get("/api/custom-splits");
+      setCustomSplits(r || []);
+    } catch { /* ignore */ }
+  };
+
+  const loadAdminData = async (key: string) => {
+    try {
+      const [stats, users] = await Promise.all([
+        api.get(`/api/admin/stats?admin_key=${key}`),
+        api.get(`/api/admin/users?admin_key=${key}`),
+      ]);
+      setAdminData(stats);
+      setAdminUsers(users);
+      setShowAdminLogin(false);
+    } catch {
+      setAuthError("Invalid admin key");
+    }
+  };
 
   // AUTH SCREEN
   if (screen === "auth") {
@@ -704,10 +963,336 @@ export default function App() {
     );
   }
 
+  // SUB-SCREENS
+  if (subScreen === "history") {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] pb-6">
+        <div className="bg-gradient-to-b from-purple-900/40 to-transparent p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={() => setSubScreen("")} className="p-1"><ArrowLeft size={22} /></button>
+            <h1 className="text-xl font-bold">Workout History</h1>
+          </div>
+        </div>
+        <div className="px-4 space-y-3">
+          {sessionHistory.length === 0 ? (
+            <Card className="text-center py-8">
+              <History size={40} className="mx-auto mb-3 text-white/20" />
+              <p className="text-white/50">No workouts yet. Start your first workout!</p>
+            </Card>
+          ) : (
+            sessionHistory.map((s) => (
+              <Card key={s.id}>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-sm">{s.day_title || "Workout"}</p>
+                    <p className="text-xs text-white/40">{s.date}</p>
+                  </div>
+                  {s.completed ? (
+                    <span className="text-xs bg-green-500/20 text-green-400 rounded-full px-2 py-0.5">Completed</span>
+                  ) : (
+                    <span className="text-xs bg-yellow-500/20 text-yellow-400 rounded-full px-2 py-0.5">Incomplete</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div><p className="text-sm font-bold text-purple-400">{s.duration_min}</p><p className="text-[10px] text-white/40">min</p></div>
+                  <div><p className="text-sm font-bold text-orange-400">{s.calories_burned}</p><p className="text-[10px] text-white/40">kcal</p></div>
+                  <div><p className="text-sm font-bold text-blue-400">{s.exercises_done}</p><p className="text-[10px] text-white/40">exercises</p></div>
+                  <div><p className="text-sm font-bold text-green-400">{s.total_volume ? `${(s.total_volume / 1000).toFixed(1)}k` : "0"}</p><p className="text-[10px] text-white/40">kg vol</p></div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (subScreen === "achievements") {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] pb-6">
+        <div className="bg-gradient-to-b from-purple-900/40 to-transparent p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <button onClick={() => setSubScreen("")} className="p-1"><ArrowLeft size={22} /></button>
+            <h1 className="text-xl font-bold">Achievements</h1>
+          </div>
+          <div className="flex items-center justify-center gap-2 py-3">
+            <Trophy size={24} className="text-yellow-400" />
+            <span className="text-2xl font-bold">{achievements.earned}</span>
+            <span className="text-white/40">/ {achievements.total}</span>
+          </div>
+        </div>
+        <div className="px-4">
+          {achievements.unlocked.length > 0 && (
+            <>
+              <h3 className="font-semibold mb-3 text-green-400 flex items-center gap-2"><Medal size={16} /> Unlocked</h3>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {achievements.unlocked.map((a) => (
+                  <Card key={a.badge_key} className="text-center py-4 border-green-500/20">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-gradient-to-br from-yellow-500/30 to-orange-500/30 flex items-center justify-center">
+                      <Trophy size={24} className="text-yellow-400" />
+                    </div>
+                    <p className="font-semibold text-sm">{a.badge_name}</p>
+                    <p className="text-[10px] text-white/40 mt-1">{a.badge_desc}</p>
+                    {a.unlocked_at && <p className="text-[9px] text-green-400 mt-1">{a.unlocked_at.split("T")[0]}</p>}
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+          {achievements.locked.length > 0 && (
+            <>
+              <h3 className="font-semibold mb-3 text-white/40 flex items-center gap-2"><Lock size={16} /> Locked</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {achievements.locked.map((a) => (
+                  <Card key={a.badge_key} className="text-center py-4 opacity-50">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-white/5 flex items-center justify-center">
+                      <Lock size={24} className="text-white/20" />
+                    </div>
+                    <p className="font-semibold text-sm text-white/50">{a.badge_name}</p>
+                    <p className="text-[10px] text-white/30 mt-1">{a.badge_desc}</p>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (subScreen === "records") {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] pb-6">
+        <div className="bg-gradient-to-b from-purple-900/40 to-transparent p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={() => setSubScreen("")} className="p-1"><ArrowLeft size={22} /></button>
+            <h1 className="text-xl font-bold">Personal Records</h1>
+          </div>
+        </div>
+        <div className="px-4 space-y-2">
+          {personalRecords.length === 0 ? (
+            <Card className="text-center py-8">
+              <Award size={40} className="mx-auto mb-3 text-white/20" />
+              <p className="text-white/50">No records yet. Start logging your workouts!</p>
+            </Card>
+          ) : (
+            personalRecords.map((pr, i) => (
+              <Card key={i} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center">
+                  <Trophy size={20} className="text-yellow-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{pr.exercise_name}</p>
+                  <p className="text-xs text-white/40">{pr.date_achieved}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-yellow-400">{pr.best_weight} kg</p>
+                  <p className="text-xs text-white/40">{pr.best_reps} reps</p>
+                  <p className="text-[10px] text-white/30">{pr.best_volume} vol</p>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (subScreen === "muscle-map") {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] pb-6">
+        <div className="bg-gradient-to-b from-purple-900/40 to-transparent p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={() => setSubScreen("")} className="p-1"><ArrowLeft size={22} /></button>
+            <h1 className="text-xl font-bold">Muscle Map</h1>
+          </div>
+        </div>
+        <div className="px-4">
+          <Card className="mb-4">
+            <h3 className="text-sm font-semibold mb-3 text-center">Muscles Trained This Week</h3>
+            <MuscleBodyMap trained={muscleGroups?.trained_this_week || {}} />
+          </Card>
+          <Card>
+            <h3 className="text-sm font-semibold mb-3">Exercise Library Stats</h3>
+            <p className="text-2xl font-bold text-purple-400 mb-3">{muscleGroups?.total_exercises || 0} exercises</p>
+            <div className="space-y-2">
+              {muscleGroups && Object.entries(muscleGroups.groups).map(([group, data]) => (
+                <div key={group} className="flex items-center justify-between py-1">
+                  <span className="text-sm text-white/60 capitalize">{group}</span>
+                  <span className="text-sm font-medium text-purple-400">{(data as { count: number }).count}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (subScreen === "admin") {
+    if (showAdminLogin || !adminData) {
+      return (
+        <div className="min-h-screen bg-[#0a0a1a] flex flex-col items-center justify-center p-6">
+          <div className="w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <button onClick={() => { setSubScreen(""); setShowAdminLogin(false); }} className="p-1"><ArrowLeft size={22} /></button>
+              <h1 className="text-xl font-bold">Admin Panel</h1>
+            </div>
+            <Card className="text-center py-6">
+              <Shield size={40} className="mx-auto mb-3 text-purple-400" />
+              <p className="text-sm text-white/50 mb-4">Enter admin password to continue</p>
+              <input
+                type="password" placeholder="Admin Password" value={adminKey}
+                onChange={(e) => setAdminKey(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && loadAdminData(adminKey)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-3 placeholder-white/30 focus:border-purple-500 focus:outline-none"
+              />
+              {authError && <p className="text-red-400 text-sm mb-3">{authError}</p>}
+              <GradBtn onClick={() => loadAdminData(adminKey)} className="w-full">
+                Login to Admin
+              </GradBtn>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] pb-6">
+        <div className="bg-gradient-to-b from-purple-900/40 to-transparent p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={() => { setSubScreen(""); setAdminData(null); }} className="p-1"><ArrowLeft size={22} /></button>
+            <h1 className="text-xl font-bold">Admin Panel</h1>
+            <Shield size={20} className="text-purple-400" />
+          </div>
+        </div>
+        <div className="px-4">
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {[
+              { label: "Total Users", val: adminData.total_users, icon: <Users size={18} className="text-purple-400" /> },
+              { label: "Total Workouts", val: adminData.total_sessions, icon: <Activity size={18} className="text-blue-400" /> },
+              { label: "Exercises", val: adminData.total_exercises, icon: <Dumbbell size={18} className="text-green-400" /> },
+              { label: "Active Today", val: adminData.active_today, icon: <Zap size={18} className="text-orange-400" /> },
+            ].map((s) => (
+              <Card key={s.label}>
+                <div className="flex items-center gap-2 mb-2">{s.icon}<span className="text-xs text-white/50">{s.label}</span></div>
+                <p className="text-xl font-bold">{s.val}</p>
+              </Card>
+            ))}
+          </div>
+          <h3 className="font-semibold mb-3 flex items-center gap-2"><Users size={16} className="text-purple-400" /> Users</h3>
+          <div className="space-y-2">
+            {adminUsers.map((u, i) => (
+              <Card key={i} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex items-center justify-center text-sm font-bold">
+                  {(u.name as string)?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{u.name as string}</p>
+                  <p className="text-xs text-white/40">{u.email as string}</p>
+                  <div className="flex gap-2 mt-1">
+                    <span className="text-[10px] bg-purple-500/20 text-purple-300 rounded px-1.5 py-0.5">{u.goal as string || "No goal"}</span>
+                    <span className="text-[10px] bg-blue-500/20 text-blue-300 rounded px-1.5 py-0.5">{u.total_sessions as number || 0} workouts</span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (subScreen === "custom-split") {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] pb-6">
+        <div className="bg-gradient-to-b from-purple-900/40 to-transparent p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={() => setSubScreen("")} className="p-1"><ArrowLeft size={22} /></button>
+            <h1 className="text-xl font-bold">Custom Splits</h1>
+          </div>
+        </div>
+        <div className="px-4">
+          <Card className="mb-4">
+            <h3 className="text-sm font-semibold mb-3">Create New Split</h3>
+            <input
+              type="text" placeholder="Split name (e.g. My PPL)" value={newSplitName}
+              onChange={(e) => setNewSplitName(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-3 placeholder-white/30 focus:border-purple-500 focus:outline-none"
+            />
+            <GradBtn
+              onClick={async () => {
+                if (!newSplitName.trim()) return;
+                try {
+                  await api.post("/api/custom-splits", {
+                    name: newSplitName,
+                    split_type: "custom",
+                    days: [
+                      { day: "Monday", exercises: ["Bench Press", "Incline DB Press", "Chest Fly"] },
+                      { day: "Tuesday", exercises: ["Pull-Ups", "Barbell Row", "Cable Row"] },
+                      { day: "Wednesday", exercises: ["Rest Day"] },
+                      { day: "Thursday", exercises: ["Squat", "Leg Press", "Lunges"] },
+                      { day: "Friday", exercises: ["Shoulder Press", "Lateral Raise", "Face Pulls"] },
+                      { day: "Saturday", exercises: ["Bicep Curls", "Tricep Pushdown", "Hammer Curls"] },
+                      { day: "Sunday", exercises: ["Rest Day"] },
+                    ],
+                  });
+                  setNewSplitName("");
+                  loadCustomSplits();
+                } catch { /* ignore */ }
+              }}
+              className="w-full"
+            >
+              <Plus size={16} className="inline mr-1" /> Create Split
+            </GradBtn>
+          </Card>
+          <h3 className="font-semibold mb-3">Your Splits</h3>
+          <div className="space-y-3">
+            {customSplits.length === 0 ? (
+              <Card className="text-center py-6">
+                <p className="text-white/50 text-sm">No custom splits yet</p>
+              </Card>
+            ) : (
+              customSplits.map((split) => (
+                <Card key={split.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-semibold">{split.name}</p>
+                      <p className="text-xs text-white/40">{split.split_type} split</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.del(`/api/custom-splits/${split.id}`);
+                          loadCustomSplits();
+                        } catch { /* ignore */ }
+                      }}
+                      className="p-2 text-red-400"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    {split.days?.map((d, i) => (
+                      <div key={i} className="flex gap-2 text-xs">
+                        <span className="text-white/50 w-20">{d.day}</span>
+                        <span className="text-white/70">{d.exercises?.join(", ") || "Rest"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // MAIN APP
   const todayPlan = workoutPlan?.days.find((d) => d.day === selectedDay);
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const muscleGroups = ["", "chest", "back", "legs", "shoulders", "arms", "core"];
+  const muscleGroupsList = ["", "chest", "back", "legs", "shoulders", "arms", "core", "stretching", "cardio"];
 
   return (
     <div className="min-h-screen bg-[#0a0a1a] pb-24">
@@ -763,6 +1348,30 @@ export default function App() {
               ))}
             </div>
           </div>
+
+          {/* Quick Actions */}
+          <div className="px-4 mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {[
+                { label: "History", icon: <History size={16} />, action: () => { loadHistory(); setSubScreen("history"); } },
+                { label: "Records", icon: <Trophy size={16} />, action: () => { loadPRs(); setSubScreen("records"); } },
+                { label: "Achievements", icon: <Medal size={16} />, action: () => { loadAchievements(); setSubScreen("achievements"); } },
+                { label: "Muscle Map", icon: <Target size={16} />, action: () => { loadMuscleGroups(); setSubScreen("muscle-map"); } },
+                { label: "Custom Split", icon: <Calendar size={16} />, action: () => { loadCustomSplits(); setSubScreen("custom-split"); } },
+              ].map((a) => (
+                <button
+                  key={a.label}
+                  onClick={a.action}
+                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-white/70 hover:border-purple-500/50 transition-all"
+                >
+                  {a.icon}
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Day selector */}
           <div className="px-4 mb-4">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {days.map((d) => (
@@ -780,6 +1389,7 @@ export default function App() {
               ))}
             </div>
           </div>
+
           <div className="px-4">
             {todayPlan ? (
               todayPlan.is_rest ? (
@@ -870,7 +1480,7 @@ export default function App() {
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-            {muscleGroups.map((m) => (
+            {muscleGroupsList.map((m) => (
               <button
                 key={m || "all"}
                 onClick={() => setMuscleFilter(m)}
@@ -1006,6 +1616,25 @@ export default function App() {
               </Card>
             ))}
           </div>
+
+          {/* Quick nav to sub screens */}
+          <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide">
+            {[
+              { label: "History", icon: <History size={14} />, action: () => { loadHistory(); setSubScreen("history"); } },
+              { label: "Records", icon: <Trophy size={14} />, action: () => { loadPRs(); setSubScreen("records"); } },
+              { label: "Muscle Map", icon: <Target size={14} />, action: () => { loadMuscleGroups(); setSubScreen("muscle-map"); } },
+              { label: "Achievements", icon: <Medal size={14} />, action: () => { loadAchievements(); setSubScreen("achievements"); } },
+            ].map((a) => (
+              <button
+                key={a.label}
+                onClick={a.action}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium"
+              >
+                {a.icon}{a.label}
+              </button>
+            ))}
+          </div>
+
           <Card className="mb-4">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
               <BarChart3 size={16} className="text-purple-400" /> Weekly Activity
@@ -1143,6 +1772,23 @@ export default function App() {
               </div>
             </Card>
           )}
+
+          {/* Profile Quick Actions */}
+          <div className="mt-4 space-y-2">
+            <button
+              onClick={() => { setSubScreen("admin"); setShowAdminLogin(true); }}
+              className="w-full py-3 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 font-medium flex items-center justify-center gap-2"
+            >
+              <Shield size={18} /> Admin Panel
+            </button>
+            <button
+              onClick={() => { loadCustomSplits(); setSubScreen("custom-split"); }}
+              className="w-full py-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 font-medium flex items-center justify-center gap-2"
+            >
+              <Calendar size={18} /> Custom Splits
+            </button>
+          </div>
+
           <button
             onClick={logout}
             className="w-full mt-6 py-3 rounded-xl border border-red-500/30 text-red-400 font-medium flex items-center justify-center gap-2"
@@ -1164,7 +1810,7 @@ export default function App() {
           ]).map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); setSubScreen(""); }}
               className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
                 tab === t.key ? "text-purple-400" : "text-white/30"
               }`}
