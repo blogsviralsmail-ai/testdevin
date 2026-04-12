@@ -4,7 +4,7 @@ import { videosAPI } from '../../services/api';
 import { Video, Upload, Trash2, Edit2, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface VideoItem {
-  id: string; name: string; originalName: string; size: number;
+  id: string; name: string; originalName: string; fileSize: number;
   mimeType: string; createdAt: string; url?: string;
 }
 
@@ -144,7 +144,7 @@ export default function VideosPage() {
                       </div>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-sm text-gray-500 hidden sm:table-cell">{formatSize(video.size)}</td>
+                  <td className="px-5 py-3 text-sm text-gray-500 hidden sm:table-cell">{formatSize(video.fileSize || 0)}</td>
                   <td className="px-5 py-3 text-sm text-gray-500 hidden md:table-cell">{new Date(video.createdAt).toLocaleDateString()}</td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
