@@ -16,6 +16,7 @@ export default function VideosPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadQueue, setUploadQueue] = useState<{name: string; progress: number; status: 'pending' | 'uploading' | 'done' | 'error'}[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -35,21 +36,37 @@ export default function VideosPage() {
   useEffect(() => { loadVideos(); }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const fileList = Array.from(files);
     setUploading(true);
     setUploadError(null);
     setUploadProgress(0);
-    try {
-      // Always use chunked upload - handles any file size reliably
-      await videosAPI.uploadChunked(file, (progress: number) => setUploadProgress(progress));
-      loadVideos();
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'Upload failed. Try a smaller file or check your connection.';
-      setUploadError(errorMsg);
+    const queue = fileList.map(f => ({ name: f.name, progress: 0, status: 'pending' as const }));
+    setUploadQueue(queue);
+
+    for (let idx = 0; idx < fileList.length; idx++) {
+      const file = fileList[idx];
+      setUploadQueue(prev => prev.map((q, i) => i === idx ? { ...q, status: 'uploading' } : q));
+      try {
+        await videosAPI.uploadChunked(file, (progress: number) => {
+          setUploadQueue(prev => prev.map((q, i) => i === idx ? { ...q, progress } : q));
+          // Overall progress across all files
+          const base = (idx / fileList.length) * 100;
+          const filePart = (progress / fileList.length);
+          setUploadProgress(Math.round(base + filePart));
+        });
+        setUploadQueue(prev => prev.map((q, i) => i === idx ? { ...q, status: 'done', progress: 100 } : q));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Upload failed.';
+        setUploadQueue(prev => prev.map((q, i) => i === idx ? { ...q, status: 'error' } : q));
+        setUploadError(errorMsg);
+      }
     }
+    loadVideos();
     setUploading(false);
     setUploadProgress(0);
+    setUploadQueue([]);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -103,19 +120,38 @@ export default function VideosPage() {
             className="px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50" style={{ backgroundColor: primary }}>
             <Upload size={18} /> {uploading ? 'Uploading...' : 'Upload Video'}
           </button>
-          <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={handleUpload} />
+          <input ref={fileRef} type="file" accept="video/*" multiple className="hidden" onChange={handleUpload} />
         </div>
       </div>
 
       {uploading && (
-        <div className="mb-4 bg-white rounded-xl border p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Uploading video...</span>
-            <span className="text-sm text-gray-500">{uploadProgress}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, backgroundColor: primary }} />
-          </div>
+        <div className="mb-4 bg-white rounded-xl border p-4 space-y-3">
+          {uploadQueue.length > 1 && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-gray-700">Overall progress</span>
+                <span className="text-sm text-gray-500">{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, backgroundColor: primary }} />
+              </div>
+            </div>
+          )}
+          {uploadQueue.map((q, i) => (
+            <div key={i}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-gray-600 truncate max-w-[70%]">
+                  {q.status === 'done' ? '\u2714' : q.status === 'error' ? '\u2716' : q.status === 'uploading' ? '\u25B6' : '\u25CB'}{' '}{q.name}
+                </span>
+                <span className="text-xs text-gray-500">{q.status === 'done' ? 'Done' : q.status === 'error' ? 'Failed' : `${q.progress}%`}</span>
+              </div>
+              {q.status === 'uploading' && (
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${q.progress}%`, backgroundColor: primary }} />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

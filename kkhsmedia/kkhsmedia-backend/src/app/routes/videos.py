@@ -8,6 +8,8 @@ import subprocess
 import shutil
 import logging
 import glob as glob_mod
+import asyncio
+import threading
 
 from app.database import get_db
 from app.models.schemas import ConfirmUploadRequest, UpdateVideoRequest
@@ -226,17 +228,7 @@ async def upload_chunk(
 
     s3_key = f"local/{user['id']}/{file_id}.{ext}"
 
-    # Generate thumbnail
-    thumb_dir = f"{upload_dir}/thumbnails"
-    os.makedirs(thumb_dir, exist_ok=True)
-    thumb_path = f"{thumb_dir}/{file_id}.jpg"
-    thumbnail_url = ""
-    if generate_thumbnail(file_path, thumb_path):
-        thumbnail_url = f"/api/videos/file/thumbnails/{file_id}.jpg"
-
-    # Get video duration
-    duration = get_video_duration(file_path)
-
+    # Insert video record immediately (without thumbnail/duration) to avoid Cloudflare timeout
     db = get_db()
     video = {
         "userId": user["id"],
@@ -245,14 +237,51 @@ async def upload_chunk(
         "s3Key": s3_key,
         "fileUrl": file_path,
         "fileSize": total_size,
-        "duration": duration,
-        "thumbnailUrl": thumbnail_url,
-        "status": "ready",
+        "duration": 0,
+        "thumbnailUrl": "",
+        "status": "processing",
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow(),
     }
     result = await db.videos.insert_one(video)
-    video["id"] = str(result.inserted_id)
+    video_id = str(result.inserted_id)
+    video["id"] = video_id
+
+    # Process thumbnail and duration in background thread to not block response
+    def _process_video_bg(vid_id: str, fpath: str, updir: str, fid: str):
+        try:
+            thumb_dir = f"{updir}/thumbnails"
+            os.makedirs(thumb_dir, exist_ok=True)
+            thumb_path = f"{thumb_dir}/{fid}.jpg"
+            thumbnail_url = ""
+            if generate_thumbnail(fpath, thumb_path):
+                thumbnail_url = f"/api/videos/file/thumbnails/{fid}.jpg"
+            duration = get_video_duration(fpath)
+            # Update the video record with thumbnail and duration
+            import asyncio as _aio
+            from motor.motor_asyncio import AsyncIOMotorClient
+            from app.config import MONGODB_URL, DATABASE_NAME
+            loop = _aio.new_event_loop()
+            _aio.set_event_loop(loop)
+            client = AsyncIOMotorClient(MONGODB_URL)
+            _db = client[DATABASE_NAME]
+            loop.run_until_complete(_db.videos.update_one(
+                {"_id": ObjectId(vid_id)},
+                {"$set": {
+                    "duration": duration,
+                    "thumbnailUrl": thumbnail_url,
+                    "status": "ready",
+                    "updatedAt": datetime.utcnow(),
+                }}
+            ))
+            client.close()
+            loop.close()
+            logger.info(f"Background processing done for video {vid_id}: duration={duration}, thumb={thumbnail_url}")
+        except Exception as e:
+            logger.error(f"Background video processing failed for {vid_id}: {e}")
+
+    thread = threading.Thread(target=_process_video_bg, args=(video_id, file_path, upload_dir, file_id), daemon=True)
+    thread.start()
 
     return serialize_doc(video)
 
