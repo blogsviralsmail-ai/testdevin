@@ -67,7 +67,7 @@ export const slotsAPI = {
 };
 
 // Videos
-const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB per chunk (under Cloudflare 100MB limit)
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk (fast upload per chunk, smooth progress)
 
 export const videosAPI = {
   getAll: () => api.get('/api/videos'),
@@ -104,12 +104,15 @@ export const videosAPI = {
 
       lastResponse = await api.post('/api/videos/upload-chunk', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 600000,
+        timeout: 300000, // 5 min per chunk
+        onUploadProgress: (e) => {
+          if (onProgress && e.total) {
+            const chunkProgress = e.loaded / e.total;
+            const overallProgress = ((i + chunkProgress) / totalChunks) * 100;
+            onProgress(Math.round(overallProgress));
+          }
+        },
       });
-
-      if (onProgress) {
-        onProgress(Math.round(((i + 1) * 100) / totalChunks));
-      }
     }
     return lastResponse;
   },
