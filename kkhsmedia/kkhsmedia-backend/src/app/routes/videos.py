@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Query
 from fastapi.responses import FileResponse
 from datetime import datetime
 from bson import ObjectId
@@ -7,6 +7,7 @@ import os
 import subprocess
 import shutil
 import logging
+import glob as glob_mod
 
 from app.database import get_db
 from app.models.schemas import ConfirmUploadRequest, UpdateVideoRequest
@@ -157,6 +158,93 @@ async def upload_local(file: UploadFile = File(...), user=Depends(get_current_us
         "s3Key": s3_key,
         "fileUrl": file_path,
         "fileSize": file_size,
+        "duration": duration,
+        "thumbnailUrl": thumbnail_url,
+        "status": "ready",
+        "createdAt": datetime.utcnow(),
+        "updatedAt": datetime.utcnow(),
+    }
+    result = await db.videos.insert_one(video)
+    video["id"] = str(result.inserted_id)
+
+    return serialize_doc(video)
+
+
+@router.post("/upload-chunk")
+async def upload_chunk(
+    file: UploadFile = File(...),
+    uploadId: str = Form(...),
+    chunkIndex: int = Form(...),
+    totalChunks: int = Form(...),
+    fileName: str = Form(...),
+    user=Depends(get_current_user),
+):
+    """Chunked upload - receives individual chunks and assembles when all received.
+    Bypasses Cloudflare's 100MB per-request limit by splitting into smaller chunks.
+    """
+    upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
+    chunks_dir = f"{upload_dir}/chunks/{uploadId}"
+    os.makedirs(chunks_dir, exist_ok=True)
+
+    # Save this chunk to disk
+    chunk_path = f"{chunks_dir}/{chunkIndex:06d}"
+    chunk_size = 0
+    with open(chunk_path, "wb") as f:
+        while True:
+            data = await file.read(1024 * 256)
+            if not data:
+                break
+            f.write(data)
+            chunk_size += len(data)
+
+    # Check if all chunks have been received
+    received = len(glob_mod.glob(f"{chunks_dir}/*"))
+    if received < totalChunks:
+        return {"status": "chunk_received", "received": received, "total": totalChunks}
+
+    # All chunks received - assemble the file
+    ext = fileName.rsplit(".", 1)[-1] if "." in fileName else "mp4"
+    file_id = uuid.uuid4().hex
+    file_path = f"{upload_dir}/{file_id}.{ext}"
+
+    total_size = 0
+    with open(file_path, "wb") as out_f:
+        for i in range(totalChunks):
+            cp = f"{chunks_dir}/{i:06d}"
+            if not os.path.exists(cp):
+                raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
+            with open(cp, "rb") as cf:
+                while True:
+                    data = cf.read(1024 * 256)
+                    if not data:
+                        break
+                    out_f.write(data)
+                    total_size += len(data)
+
+    # Clean up chunk files
+    shutil.rmtree(chunks_dir, ignore_errors=True)
+
+    s3_key = f"local/{user['id']}/{file_id}.{ext}"
+
+    # Generate thumbnail
+    thumb_dir = f"{upload_dir}/thumbnails"
+    os.makedirs(thumb_dir, exist_ok=True)
+    thumb_path = f"{thumb_dir}/{file_id}.jpg"
+    thumbnail_url = ""
+    if generate_thumbnail(file_path, thumb_path):
+        thumbnail_url = f"/api/videos/file/thumbnails/{file_id}.jpg"
+
+    # Get video duration
+    duration = get_video_duration(file_path)
+
+    db = get_db()
+    video = {
+        "userId": user["id"],
+        "name": fileName,
+        "originalName": fileName,
+        "s3Key": s3_key,
+        "fileUrl": file_path,
+        "fileSize": total_size,
         "duration": duration,
         "thumbnailUrl": thumbnail_url,
         "status": "ready",

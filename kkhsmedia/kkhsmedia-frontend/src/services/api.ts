@@ -67,6 +67,8 @@ export const slotsAPI = {
 };
 
 // Videos
+const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB per chunk (under Cloudflare 100MB limit)
+
 export const videosAPI = {
   getAll: () => api.get('/api/videos'),
   getOne: (id: string) => api.get(`/api/videos/${id}`),
@@ -82,6 +84,34 @@ export const videosAPI = {
         }
       },
     });
+  },
+  uploadChunked: async (file: File, onProgress?: (progress: number) => void) => {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const uploadId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    let lastResponse = null;
+
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      const fd = new FormData();
+      fd.append('file', chunk, `chunk_${i}`);
+      fd.append('uploadId', uploadId);
+      fd.append('chunkIndex', i.toString());
+      fd.append('totalChunks', totalChunks.toString());
+      fd.append('fileName', file.name);
+
+      lastResponse = await api.post('/api/videos/upload-chunk', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 600000,
+      });
+
+      if (onProgress) {
+        onProgress(Math.round(((i + 1) * 100) / totalChunks));
+      }
+    }
+    return lastResponse;
   },
   update: (id: string, data: { name: string }) => api.patch(`/api/videos/${id}`, data),
   rename: (id: string, name: string) => api.patch(`/api/videos/${id}`, { name }),

@@ -41,9 +41,14 @@ export default function VideosPage() {
     setUploadError(null);
     setUploadProgress(0);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      await videosAPI.uploadLocal(fd, (progress: number) => setUploadProgress(progress));
+      // Use chunked upload for files > 50MB to bypass Cloudflare limits
+      if (file.size > 50 * 1024 * 1024) {
+        await videosAPI.uploadChunked(file, (progress: number) => setUploadProgress(progress));
+      } else {
+        const fd = new FormData();
+        fd.append('file', file);
+        await videosAPI.uploadLocal(fd, (progress: number) => setUploadProgress(progress));
+      }
       loadVideos();
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Upload failed. Try a smaller file or check your connection.';
