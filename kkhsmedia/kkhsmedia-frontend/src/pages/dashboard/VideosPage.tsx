@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { videosAPI } from '../../services/api';
-import { Video, Upload, Trash2, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { Video, Upload, Trash2, Edit2, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface VideoItem {
   id: string; name: string; originalName: string; size: number;
@@ -13,6 +13,8 @@ export default function VideosPage() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -33,13 +35,19 @@ export default function VideosPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadError(null);
+    setUploadProgress(0);
     try {
       const fd = new FormData();
       fd.append('file', file);
-      await videosAPI.uploadLocal(fd);
+      await videosAPI.uploadLocal(fd, (progress: number) => setUploadProgress(progress));
       loadVideos();
-    } catch { /* ignore */ }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Upload failed. Try a smaller file or check your connection.';
+      setUploadError(errorMsg);
+    }
     setUploading(false);
+    setUploadProgress(0);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -75,6 +83,28 @@ export default function VideosPage() {
           <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={handleUpload} />
         </div>
       </div>
+
+      {uploading && (
+        <div className="mb-4 bg-white rounded-xl border p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Uploading video...</span>
+            <span className="text-sm text-gray-500">{uploadProgress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, backgroundColor: primary }} />
+          </div>
+        </div>
+      )}
+
+      {uploadError && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle size={18} className="text-red-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm text-red-700">{uploadError}</p>
+            <button onClick={() => setUploadError(null)} className="text-xs text-red-500 underline mt-1">Dismiss</button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-gray-500">Loading...</div>

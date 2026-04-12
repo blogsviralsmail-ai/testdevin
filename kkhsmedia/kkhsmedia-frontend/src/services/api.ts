@@ -69,8 +69,16 @@ export const videosAPI = {
   getOne: (id: string) => api.get(`/api/videos/${id}`),
   getUploadUrl: (fileName: string) => api.get(`/api/videos/upload-url?fileName=${fileName}`),
   confirmUpload: (data: { fileName: string; fileSize: number; s3Key: string }) => api.post('/api/videos/confirm-upload', data),
-  uploadLocal: (formData: FormData) => {
-    return api.post('/api/videos/upload-local', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  uploadLocal: (formData: FormData, onProgress?: (progress: number) => void) => {
+    return api.post('/api/videos/upload-local', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600000, // 10 minutes for large files
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) {
+          onProgress(Math.round((e.loaded * 100) / e.total));
+        }
+      },
+    });
   },
   update: (id: string, data: { name: string }) => api.patch(`/api/videos/${id}`, data),
   rename: (id: string, name: string) => api.patch(`/api/videos/${id}`, { name }),
