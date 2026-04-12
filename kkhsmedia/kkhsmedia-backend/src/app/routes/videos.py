@@ -118,7 +118,7 @@ async def get_upload_url(fileName: str, fileType: str = "video/mp4", user=Depend
 @router.post("/upload-local")
 async def upload_local(file: UploadFile = File(...), user=Depends(get_current_user)):
     """Local file upload fallback when S3 is not configured."""
-    upload_dir = "/tmp/kkhsmedia_uploads"
+    upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
     os.makedirs(upload_dir, exist_ok=True)
 
     ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "mp4"
@@ -234,9 +234,13 @@ async def delete_video(video_id: str, user=Depends(get_current_user)):
             pass
 
     # Delete local file if exists
-    if video.get("fileUrl") and video["fileUrl"].startswith("/tmp/"):
+    if video.get("fileUrl") and os.path.exists(video["fileUrl"]):
         try:
             os.remove(video["fileUrl"])
+            # Also delete thumbnail if exists
+            thumb_path = video["fileUrl"].replace(os.path.basename(video["fileUrl"]), f"thumbnails/{os.path.basename(video['fileUrl']).rsplit('.', 1)[0]}.jpg")
+            if os.path.exists(thumb_path):
+                os.remove(thumb_path)
         except Exception:
             pass
 
@@ -250,7 +254,7 @@ async def delete_video(video_id: str, user=Depends(get_current_user)):
 @router.get("/file/{filename:path}")
 async def serve_file(filename: str, user=Depends(get_current_user_from_token_param)):
     """Serve uploaded video or thumbnail files."""
-    upload_dir = "/tmp/kkhsmedia_uploads"
+    upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
     file_path = os.path.join(upload_dir, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 # Store active FFmpeg processes
 active_streams: dict = {}
 
-# Cache for FFmpeg RTMP capability
+# Cache for FFmpeg RTMP capability - None means unchecked
 _ffmpeg_rtmp_ok: Optional[bool] = None
 
 

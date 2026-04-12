@@ -11,7 +11,7 @@ interface Slot {
 interface VideoItem { id: string; name: string; }
 
 export default function LiveSlotsPage() {
-  const { settings, user } = useAuth();
+  const { settings } = useAuth();
   const [slots, setSlots] = useState<Slot[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,6 @@ export default function LiveSlotsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const primary = settings?.primaryColor || '#6366f1';
-  const isAdmin = user?.role === 'admin';
 
   const platformIcons: Record<string, React.ReactNode> = {
     youtube: <Youtube size={18} className="text-red-500" />,
@@ -249,7 +248,7 @@ export default function LiveSlotsPage() {
               {slot.status === 'inactive' && (
                 <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700 flex items-center gap-2">
                   <AlertCircle size={14} />
-                  Slot is inactive. {isAdmin ? 'Use Admin Panel to activate.' : 'Please purchase a plan to activate this slot.'}
+                  Slot is inactive. Please purchase a plan to activate.
                 </div>
               )}
               {slot.status === 'active' && !slot.videoId && (

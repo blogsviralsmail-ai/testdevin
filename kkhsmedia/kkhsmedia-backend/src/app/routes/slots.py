@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson import ObjectId
 
 from app.database import get_db
@@ -36,10 +36,10 @@ async def create_slot(req: CreateSlotRequest, user=Depends(get_current_user)):
         "streamKey": req.streamKey,
         "rtmpUrl": req.rtmpUrl or get_default_rtmp(req.platform),
         "videoId": None,
-        "status": "inactive",  # Will be activated after payment
+        "status": "active",  # Auto-activated, no admin approval needed
         "isStreaming": False,
         "streamProcessId": None,
-        "expiryDate": None,
+        "expiryDate": datetime.utcnow() + timedelta(days=365),  # 1 year default
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow(),
     }
