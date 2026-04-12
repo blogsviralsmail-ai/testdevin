@@ -1,0 +1,27 @@
+{
+  "name": "KKHS Media - 24/7 Live Streaming",
+  "short_name": "KKHS Media",
+  "description": "24/7 Live Streaming Platform - Stream pre-recorded videos to YouTube, Facebook & more",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "social", "utilities"],
+  "lang": "en",
+  "dir": "ltr"
+}

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 import string
 from bson import ObjectId
@@ -49,7 +49,26 @@ async def register(req: RegisterRequest):
         "createdAt": datetime.utcnow(),
     })
 
-    # TODO: Send email with OTP (for now just return it in dev mode)
+    # Send OTP email
+    from app.services.email import send_otp_email
+    await send_otp_email(req.email.lower(), otp, "email_verify")
+
+    # Set trial period (3 days free)
+    trial_expiry = datetime.utcnow() + timedelta(days=3)
+    await db.users.update_one(
+        {"_id": result.inserted_id},
+        {"$set": {"trialExpiry": trial_expiry, "plan": "trial", "maxSlots": 2}}
+    )
+
+    # Handle referral code
+    if hasattr(req, 'referralCode') and req.referralCode:
+        referrer = await db.users.find_one({"referralCode": req.referralCode})
+        if referrer:
+            await db.users.update_one(
+                {"_id": result.inserted_id},
+                {"$set": {"referredBy": str(referrer["_id"])}}
+            )
+
     return {
         "message": "Registration successful. Please verify your email.",
         "userId": str(result.inserted_id),
@@ -120,7 +139,10 @@ async def forgot_password(req: ForgotPasswordRequest):
         "createdAt": datetime.utcnow(),
     })
 
-    # TODO: Send email with reset OTP
+    # Send reset OTP email
+    from app.services.email import send_otp_email
+    await send_otp_email(req.email.lower(), otp, "password_reset")
+
     return {"message": "If the email exists, a reset link has been sent.", "otp_dev": otp}
 
 
@@ -151,6 +173,10 @@ async def get_me(user=Depends(get_current_user)):
         "address": user.get("address", {}),
         "role": user.get("role", "user"),
         "emailVerified": user.get("emailVerified", False),
+        "plan": user.get("plan", "free"),
+        "trialExpiry": user.get("trialExpiry", "").isoformat() if isinstance(user.get("trialExpiry"), datetime) else str(user.get("trialExpiry", "")),
+        "maxSlots": user.get("maxSlots", 2),
+        "referralCode": user.get("referralCode", ""),
         "createdAt": user.get("createdAt", ""),
     }
     if isinstance(safe_user["createdAt"], datetime):

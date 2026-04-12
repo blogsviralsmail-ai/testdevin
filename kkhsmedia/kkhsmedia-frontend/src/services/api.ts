@@ -128,6 +128,104 @@ export const youtubeAPI = {
   disconnect: () => api.post('/api/youtube/disconnect'),
 };
 
+// Coupons
+export const couponsAPI = {
+  validate: (code: string, orderAmount: number) => api.post(`/api/coupons/validate?code=${code}&order_amount=${orderAmount}`),
+  apply: (code: string, orderId: string) => api.post(`/api/coupons/apply?code=${code}&order_id=${orderId}`),
+  adminList: (params?: Record<string, unknown>) => api.get('/api/coupons/admin', { params }),
+  adminCreate: (data: Record<string, unknown>) => api.post('/api/coupons/admin', data),
+  adminUpdate: (id: string, data: Record<string, unknown>) => api.put(`/api/coupons/admin/${id}`, data),
+  adminDelete: (id: string) => api.delete(`/api/coupons/admin/${id}`),
+};
+
+// Invoices
+export const invoicesAPI = {
+  get: (orderId: string) => api.get(`/api/invoices/${orderId}`),
+  download: (orderId: string) => api.get(`/api/invoices/${orderId}/download`, { responseType: 'blob' }),
+};
+
+// Affiliates
+export const affiliatesAPI = {
+  getMyReferral: () => api.get('/api/affiliates/my-referral'),
+  getMyEarnings: () => api.get('/api/affiliates/my-earnings'),
+  getMyReferrals: () => api.get('/api/affiliates/my-referrals'),
+  adminStats: () => api.get('/api/affiliates/admin/stats'),
+  adminEarnings: () => api.get('/api/affiliates/admin/earnings'),
+  adminMarkPaid: (id: string) => api.post(`/api/affiliates/admin/earnings/${id}/pay`),
+  adminUpdateSettings: (data: Record<string, unknown>) => api.put('/api/affiliates/admin/settings', data),
+};
+
+// Webhooks
+export const webhooksAPI = {
+  getAll: () => api.get('/api/webhooks'),
+  create: (data: Record<string, unknown>) => api.post('/api/webhooks', data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/api/webhooks/${id}`, data),
+  delete: (id: string) => api.delete(`/api/webhooks/${id}`),
+  getLogs: (params?: Record<string, unknown>) => api.get('/api/webhooks/logs', { params }),
+};
+
+// Notifications
+export const notificationsAPI = {
+  getSettings: () => api.get('/api/notifications/settings'),
+  updateSettings: (data: Record<string, unknown>) => api.put('/api/notifications/settings', data),
+  getHistory: (params?: Record<string, unknown>) => api.get('/api/notifications/history', { params }),
+  markRead: (id: string) => api.put(`/api/notifications/read/${id}`),
+  markAllRead: () => api.put('/api/notifications/read-all'),
+  getUnreadCount: () => api.get('/api/notifications/unread-count'),
+};
+
+// Analytics
+export const analyticsAPI = {
+  getStreamStats: () => api.get('/api/analytics/stream-stats'),
+  getStreamHealth: (slotId: string) => api.get(`/api/analytics/stream-health/${slotId}`),
+  getActivityLogs: (params?: Record<string, unknown>) => api.get('/api/analytics/activity-logs', { params }),
+  adminOverview: (period?: string) => api.get('/api/analytics/admin/overview', { params: { period } }),
+};
+
+// Advanced Streaming
+export const streamingAPI = {
+  youtubeUrl: (data: { slotId: string; url: string; loop?: boolean }) => api.post('/api/streaming/youtube-url', data),
+  extractYoutubeInfo: (url: string) => api.post(`/api/streaming/youtube-url/extract?url=${encodeURIComponent(url)}`),
+  multiStream: (data: Record<string, unknown>) => api.post('/api/streaming/multi-stream', data),
+  stopMultiStream: (streamIds: string[]) => api.post('/api/streaming/multi-stream/stop', streamIds),
+  playlistQueue: (data: { slotId: string; videoIds: string[] }) => api.post('/api/streaming/playlist-queue', data),
+  scheduledPlaylist: (data: Record<string, unknown>) => api.post('/api/streaming/scheduled-playlist', data),
+  uploadOverlay: (slotId: string, formData: FormData) => api.post(`/api/streaming/overlay/${slotId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  removeOverlay: (slotId: string) => api.delete(`/api/streaming/overlay/${slotId}`),
+  startRecording: (slotId: string) => api.post(`/api/streaming/record/${slotId}/start`),
+  stopRecording: (slotId: string) => api.post(`/api/streaming/record/${slotId}/stop`),
+  multiBitrate: (data: Record<string, unknown>) => api.post('/api/streaming/multi-bitrate', data),
+  getPreview: (slotId: string) => api.get(`/api/streaming/preview/${slotId}`),
+  restream: (data: Record<string, unknown>) => api.post('/api/streaming/restream', data),
+  cloudStream: (data: Record<string, unknown>) => api.post('/api/streaming/cloud-stream', data),
+};
+
+// Social Platforms
+export const socialAPI = {
+  facebookAuthUrl: () => api.get('/api/social/facebook/auth-url'),
+  facebookCallback: (code: string) => api.post(`/api/social/facebook/callback?code=${code}`),
+  facebookStatus: () => api.get('/api/social/facebook/status'),
+  facebookDisconnect: () => api.post('/api/social/facebook/disconnect'),
+  facebookGoLive: (pageId: string, title: string) => api.post(`/api/social/facebook/go-live?page_id=${pageId}&title=${encodeURIComponent(title)}`),
+  instagramAuthUrl: () => api.get('/api/social/instagram/auth-url'),
+  instagramStatus: () => api.get('/api/social/instagram/status'),
+  instagramDisconnect: () => api.post('/api/social/instagram/disconnect'),
+  adminGetConfig: () => api.get('/api/social/admin/config'),
+  adminUpdateConfig: (data: Record<string, unknown>) => api.put('/api/social/admin/config', data),
+};
+
+// Reseller
+export const resellerAPI = {
+  getDashboard: () => api.get('/api/reseller/dashboard'),
+  getClients: (params?: Record<string, unknown>) => api.get('/api/reseller/clients', { params }),
+  createClient: (data: Record<string, unknown>) => api.post('/api/reseller/clients', data),
+  updateClientStatus: (id: string, status: string) => api.put(`/api/reseller/clients/${id}/status?status=${status}`),
+  deleteClient: (id: string) => api.delete(`/api/reseller/clients/${id}`),
+  adminCreateReseller: (data: Record<string, unknown>) => api.post('/api/reseller/admin/create', data),
+  adminListResellers: () => api.get('/api/reseller/admin/list'),
+  adminRemoveReseller: (id: string) => api.delete(`/api/reseller/admin/${id}`),
+};
+
 // Orders
 export const ordersAPI = {
   create: (data: Record<string, unknown>) => api.post('/api/orders', data),

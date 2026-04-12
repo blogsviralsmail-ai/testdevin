@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Toaster } from 'react-hot-toast';
 
 // Pages
@@ -13,6 +15,11 @@ import LiveSlotsPage from './pages/dashboard/LiveSlotsPage';
 import VideosPage from './pages/dashboard/VideosPage';
 import BillingPage from './pages/dashboard/BillingPage';
 import ProfilePage from './pages/dashboard/ProfilePage';
+import AnalyticsPage from './pages/dashboard/AnalyticsPage';
+import NotificationsPage from './pages/dashboard/NotificationsPage';
+import WebhooksPage from './pages/dashboard/WebhooksPage';
+import ReferralsPage from './pages/dashboard/ReferralsPage';
+import ResellerPage from './pages/dashboard/ResellerPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminSlots from './pages/admin/AdminSlots';
@@ -22,6 +29,9 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminContacts from './pages/admin/AdminContacts';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminCoupons from './pages/admin/AdminCoupons';
+import AdminResellers from './pages/admin/AdminResellers';
+import AdminAffiliates from './pages/admin/AdminAffiliates';
 import DashboardLayout from './components/layout/DashboardLayout';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -55,6 +65,11 @@ function AppRoutes() {
         <Route path="/live-slots" element={<LiveSlotsPage />} />
         <Route path="/videos" element={<VideosPage />} />
         <Route path="/billing" element={<BillingPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/webhooks" element={<WebhooksPage />} />
+        <Route path="/referrals" element={<ReferralsPage />} />
+        <Route path="/reseller" element={<ResellerPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
@@ -68,6 +83,9 @@ function AppRoutes() {
         <Route path="/admin/products" element={<AdminProducts />} />
         <Route path="/admin/contacts" element={<AdminContacts />} />
         <Route path="/admin/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/coupons" element={<AdminCoupons />} />
+        <Route path="/admin/resellers" element={<AdminResellers />} />
+        <Route path="/admin/affiliates" element={<AdminAffiliates />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
 
@@ -80,10 +98,14 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster position="top-right" />
-      </AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster position="top-right" />
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

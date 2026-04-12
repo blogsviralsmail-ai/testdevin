@@ -1,5 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config import MONGODB_URL, DATABASE_NAME
+import logging
+
+logger = logging.getLogger(__name__)
 
 client: AsyncIOMotorClient = None
 db = None
@@ -7,8 +10,17 @@ db = None
 
 async def connect_db():
     global client, db
-    client = AsyncIOMotorClient(MONGODB_URL)
-    db = client[DATABASE_NAME]
+    try:
+        client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=5000)
+        # Test connection
+        await client.admin.command("ping")
+        db = client[DATABASE_NAME]
+        logger.info("Connected to MongoDB successfully")
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB: {e}")
+        logger.warning("App will start but database features will be unavailable")
+        db = None
+        return
     # Create indexes
     await db.users.create_index("email", unique=True)
     await db.slots.create_index("userId")

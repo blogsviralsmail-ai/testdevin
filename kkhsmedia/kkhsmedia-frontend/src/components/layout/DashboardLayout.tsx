@@ -4,14 +4,18 @@ import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, Radio, Video, CreditCard, User, MessageSquare,
   LogOut, Menu, X, Moon, Sun, ChevronDown,
-  Users, Settings, BarChart3, Package, ShoppingCart, MonitorPlay
+  Users, Settings, BarChart3, Package, ShoppingCart, MonitorPlay,
+  Bell, Webhook, Gift, Store, Globe, Tag, UserPlus
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function DashboardLayout() {
   const { user, settings, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const { darkMode, toggleDarkMode } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const isAdmin = user?.role === 'admin';
@@ -21,7 +25,12 @@ export default function DashboardLayout() {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/live-slots', icon: Radio, label: 'Live Slots' },
     { to: '/videos', icon: Video, label: 'Videos' },
+    { to: '/analytics', icon: BarChart3, label: 'Analytics' },
     { to: '/billing', icon: CreditCard, label: 'Billing' },
+    { to: '/notifications', icon: Bell, label: 'Notifications' },
+    { to: '/webhooks', icon: Webhook, label: 'Webhooks' },
+    { to: '/referrals', icon: Gift, label: 'Referrals' },
+    { to: '/reseller', icon: Store, label: 'Reseller' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 
@@ -32,6 +41,9 @@ export default function DashboardLayout() {
     { to: '/admin/videos', icon: MonitorPlay, label: 'Videos' },
     { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
     { to: '/admin/products', icon: Package, label: 'Plans' },
+    { to: '/admin/coupons', icon: Tag, label: 'Coupons' },
+    { to: '/admin/resellers', icon: Store, label: 'Resellers' },
+    { to: '/admin/affiliates', icon: UserPlus, label: 'Affiliates' },
     { to: '/admin/contacts', icon: MessageSquare, label: 'Messages' },
     { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
     { to: '/admin/settings', icon: Settings, label: 'Settings' },
@@ -129,8 +141,17 @@ export default function DashboardLayout() {
 
           <div className="flex-1" />
 
+          {/* Language toggle */}
           <button
-            onClick={() => setDarkMode(!darkMode)}
+            onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
+            className={`p-2 rounded-lg mr-2 text-xs font-bold ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+            title="Switch language"
+          >
+            <Globe size={18} />
+          </button>
+
+          <button
+            onClick={toggleDarkMode}
             className={`p-2 rounded-lg mr-3 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
           >
             {darkMode ? <Sun size={18} /> : <Moon size={18} />}

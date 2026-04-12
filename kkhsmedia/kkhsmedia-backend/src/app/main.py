@@ -10,6 +10,17 @@ from app.routes.orders import router as orders_router
 from app.routes.admin import router as admin_router
 from app.routes.public import router as public_router
 from app.routes.youtube import router as youtube_router
+from app.routes.coupons import router as coupons_router
+from app.routes.invoices import router as invoices_router
+from app.routes.affiliates import router as affiliates_router
+from app.routes.webhooks import router as webhooks_router
+from app.routes.notifications import router as notifications_router
+from app.routes.analytics import router as analytics_router
+from app.routes.streaming_advanced import router as streaming_adv_router
+from app.routes.social import router as social_router
+from app.routes.reseller import router as reseller_router
+from app.routes.bulk import router as bulk_router
+from app.routes.rtmp_config import router as rtmp_router
 
 
 @asynccontextmanager
@@ -46,6 +57,17 @@ app.include_router(orders_router)
 app.include_router(admin_router)
 app.include_router(public_router)
 app.include_router(youtube_router)
+app.include_router(coupons_router)
+app.include_router(invoices_router)
+app.include_router(affiliates_router)
+app.include_router(webhooks_router)
+app.include_router(notifications_router)
+app.include_router(analytics_router)
+app.include_router(streaming_adv_router)
+app.include_router(social_router)
+app.include_router(reseller_router)
+app.include_router(bulk_router)
+app.include_router(rtmp_router)
 
 
 @app.get("/")
