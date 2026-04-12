@@ -9,6 +9,7 @@ from app.routes.videos import router as videos_router
 from app.routes.orders import router as orders_router
 from app.routes.admin import router as admin_router
 from app.routes.public import router as public_router
+from app.routes.youtube import router as youtube_router
 
 
 @asynccontextmanager
@@ -44,6 +45,7 @@ app.include_router(videos_router)
 app.include_router(orders_router)
 app.include_router(admin_router)
 app.include_router(public_router)
+app.include_router(youtube_router)
 
 
 @app.get("/")

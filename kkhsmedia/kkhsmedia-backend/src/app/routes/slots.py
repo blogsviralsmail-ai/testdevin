@@ -189,6 +189,30 @@ async def start_stream(slot_id: str, user=Depends(get_current_user)):
         {"_id": ObjectId(slot_id)},
         {"$set": {"isStreaming": True, "streamProcessId": process_id, "updatedAt": datetime.utcnow()}}
     )
+
+    # Set YouTube custom thumbnail via API (background, non-blocking)
+    if slot.get("platform") == "youtube":
+        import asyncio
+        async def _set_yt_thumb():
+            try:
+                await asyncio.sleep(15)  # Wait for YouTube to register the broadcast
+                from app.routes.youtube import set_youtube_thumbnail
+                upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
+                # Use custom thumbnail if uploaded, otherwise auto-generated
+                thumb_url = slot.get("customThumbnail") or slot.get("autoThumbnail", "")
+                if thumb_url:
+                    # Convert URL path to file path
+                    thumb_file = thumb_url.replace("/api/videos/file/", f"{upload_dir}/")
+                    if os.path.exists(thumb_file):
+                        result = await set_youtube_thumbnail(user["id"], thumb_file)
+                        if result:
+                            logger.info(f"YouTube thumbnail set for slot {slot_id}")
+                        else:
+                            logger.warning(f"Failed to set YouTube thumbnail for slot {slot_id}")
+            except Exception as e:
+                logger.error(f"YouTube thumbnail error for slot {slot_id}: {e}")
+        asyncio.create_task(_set_yt_thumb())
+
     return {"message": "Stream started", "processId": process_id}
 
 

@@ -128,6 +128,8 @@ class UpdateSettingsRequest(BaseModel):
     currency: Optional[str] = None
     metaTitle: Optional[str] = None
     metaDescription: Optional[str] = None
+    googleClientId: Optional[str] = None
+    googleClientSecret: Optional[str] = None
 
 class ContactMessageRequest(BaseModel):
     name: str

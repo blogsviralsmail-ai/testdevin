@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { adminAPI } from '../../services/api';
-import { Save, Palette, Globe, Mail, Building, FileText, Share2 } from 'lucide-react';
+import { Save, Palette, Globe, Mail, Building, FileText, Share2, Youtube } from 'lucide-react';
 
 export default function AdminSettings() {
   const { settings: currentSettings, refreshSettings } = useAuth();
@@ -46,6 +46,7 @@ export default function AdminSettings() {
     { id: 'social', label: 'Social', icon: Share2 },
     { id: 'email', label: 'Email & Payment', icon: Mail },
     { id: 'seo', label: 'SEO', icon: Globe },
+    { id: 'youtube', label: 'YouTube API', icon: Youtube },
   ];
 
   if (loading) return <div className="text-center py-12 text-gray-500">Loading settings...</div>;
@@ -284,6 +285,47 @@ export default function AdminSettings() {
               className="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2 resize-none"
               placeholder="Stream your pre-recorded videos 24/7 on YouTube, Facebook, Twitch & more..." />
             <p className="text-xs text-gray-400 mt-1">{((form.metaDescription as string) || '').length}/160 characters</p>
+          </div>
+        </div>
+      )}
+      {/* YouTube API Tab */}
+      {activeTab === 'youtube' && (
+        <div className="bg-white rounded-xl border p-6 space-y-4">
+          <h2 className="font-semibold text-lg mb-2">YouTube API Integration</h2>
+          <p className="text-sm text-gray-500 mb-4">Configure Google OAuth2 credentials to allow users to connect their YouTube channels for custom thumbnail uploads on live streams.</p>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+            <h3 className="font-medium text-blue-800 mb-2">Setup Instructions</h3>
+            <ol className="text-sm text-blue-700 space-y-1 list-decimal ml-4">
+              <li>Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="underline">Google Cloud Console</a></li>
+              <li>Create a project (or select existing)</li>
+              <li>Enable "YouTube Data API v3"</li>
+              <li>Go to Credentials → Create OAuth 2.0 Client ID</li>
+              <li>Set Authorized redirect URI to: <code className="bg-blue-100 px-1 rounded">https://api.kkhsmedia.com/api/youtube/callback</code></li>
+              <li>Copy Client ID and Client Secret below</li>
+            </ol>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Google Client ID</label>
+              <input type="text" value={(form.googleClientId as string) || ''} onChange={e => updateField('googleClientId', e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2" placeholder="xxxx.apps.googleusercontent.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Google Client Secret</label>
+              <input type="password" value={(form.googleClientSecret as string) || ''} onChange={e => updateField('googleClientSecret', e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2" placeholder="GOCSPX-xxxx" />
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <h3 className="font-medium text-yellow-800 mb-2">How it works</h3>
+            <ul className="text-sm text-yellow-700 space-y-1 list-disc ml-4">
+              <li>Users click "Connect YouTube" on their Live Slots page</li>
+              <li>They authorize via Google OAuth2 consent screen</li>
+              <li>When a stream starts, the custom thumbnail is automatically uploaded to their YouTube live broadcast</li>
+            </ul>
           </div>
         </div>
       )}

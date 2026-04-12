@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { slotsAPI, videosAPI } from '../../services/api';
+import { slotsAPI, videosAPI, youtubeAPI } from '../../services/api';
 import { Radio, Play, Square, Trash2, Plus, RefreshCw, Youtube, Facebook, Twitch, Instagram, Globe, AlertCircle, Film, Image, Upload, Clock, Calendar, Timer } from 'lucide-react';
 
 interface Slot {
@@ -27,6 +27,8 @@ export default function LiveSlotsPage() {
   const [showScheduleModal, setShowScheduleModal] = useState<string | null>(null);
   const [scheduleForm, setScheduleForm] = useState({ scheduledStart: '', scheduledEnd: '' });
   const thumbInputRef = useRef<HTMLInputElement>(null);
+  const [ytStatus, setYtStatus] = useState<{connected: boolean; channel?: {channelTitle?: string; channelThumbnail?: string}} | null>(null);
+  const [ytLoading, setYtLoading] = useState(false);
   const primary = settings?.primaryColor || '#6366f1';
 
   const platformIcons: Record<string, React.ReactNode> = {
@@ -50,7 +52,49 @@ export default function LiveSlotsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { loadData(); }, []);
+  const loadYoutubeStatus = async () => {
+    try {
+      const res = await youtubeAPI.getStatus();
+      setYtStatus(res.data);
+    } catch { /* ignore if not configured */ }
+  };
+
+  useEffect(() => { loadData(); loadYoutubeStatus(); }, []);
+
+  // Check URL params for YouTube OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('youtube_connected') === 'true') {
+      loadYoutubeStatus();
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (params.get('youtube_error')) {
+      setError(`YouTube connection failed: ${params.get('youtube_error')}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const handleConnectYoutube = async () => {
+    setYtLoading(true);
+    try {
+      const res = await youtubeAPI.getAuthUrl();
+      window.location.href = res.data.authUrl;
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to get YouTube auth URL';
+      setError(msg);
+      setYtLoading(false);
+    }
+  };
+
+  const handleDisconnectYoutube = async () => {
+    if (!confirm('Disconnect YouTube channel?')) return;
+    setYtLoading(true);
+    try {
+      await youtubeAPI.disconnect();
+      setYtStatus({ connected: false });
+    } catch { setError('Failed to disconnect YouTube'); }
+    setYtLoading(false);
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,6 +250,39 @@ export default function LiveSlotsPage() {
           <button onClick={() => setShowAdd(true)} className="px-4 py-2 rounded-lg text-white flex items-center gap-2" style={{ backgroundColor: primary }}>
             <Plus size={18} /> Add Slot
           </button>
+        </div>
+      </div>
+
+      {/* YouTube Connection Card */}
+      <div className="mb-4 p-4 bg-white rounded-xl border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Youtube size={24} className="text-red-500" />
+            <div>
+              <h3 className="font-semibold text-sm">YouTube Channel</h3>
+              {ytStatus?.connected ? (
+                <p className="text-xs text-green-600">Connected: {ytStatus.channel?.channelTitle || 'YouTube Channel'}</p>
+              ) : (
+                <p className="text-xs text-gray-500">Connect to auto-set custom thumbnails on YouTube live streams</p>
+              )}
+            </div>
+          </div>
+          {ytStatus?.connected ? (
+            <div className="flex items-center gap-2">
+              {ytStatus.channel?.channelThumbnail && (
+                <img src={ytStatus.channel.channelThumbnail} alt="" className="w-8 h-8 rounded-full" />
+              )}
+              <button onClick={handleDisconnectYoutube} disabled={ytLoading}
+                className="px-3 py-1.5 rounded-lg border text-sm text-red-500 hover:bg-red-50 disabled:opacity-50">
+                {ytLoading ? 'Disconnecting...' : 'Disconnect'}
+              </button>
+            </div>
+          ) : (
+            <button onClick={handleConnectYoutube} disabled={ytLoading}
+              className="px-4 py-2 rounded-lg text-white text-sm flex items-center gap-2 disabled:opacity-50 bg-red-500 hover:bg-red-600">
+              <Youtube size={16} /> {ytLoading ? 'Connecting...' : 'Connect YouTube'}
+            </button>
+          )}
         </div>
       </div>
 

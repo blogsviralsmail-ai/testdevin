@@ -121,6 +121,13 @@ export const videosAPI = {
   delete: (id: string) => api.delete(`/api/videos/${id}`),
 };
 
+// YouTube
+export const youtubeAPI = {
+  getAuthUrl: () => api.get('/api/youtube/auth-url'),
+  getStatus: () => api.get('/api/youtube/status'),
+  disconnect: () => api.post('/api/youtube/disconnect'),
+};
+
 // Orders
 export const ordersAPI = {
   create: (data: Record<string, unknown>) => api.post('/api/orders', data),
