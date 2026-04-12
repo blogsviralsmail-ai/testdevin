@@ -1,0 +1,115 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth
+export const authAPI = {
+  login: (data: { email: string; password: string }) => api.post('/api/auth/login', data),
+  register: (data: { firstName: string; lastName: string; email: string; password: string }) => api.post('/api/auth/register', data),
+  verifyEmail: (data: { email: string; otp: string }) => api.post('/api/auth/verify-email', data),
+  forgotPassword: (data: { email: string }) => api.post('/api/auth/forgot-password', data),
+  resetPassword: (data: { token: string; password: string }) => api.post('/api/auth/reset-password', data),
+  getMe: () => api.get('/api/auth/me'),
+  updatePassword: (data: { currentPassword: string; newPassword: string }) => api.put('/api/auth/update-password', data),
+  updateUsername: (data: { firstName?: string; lastName?: string }) => api.post('/api/auth/update-username', data),
+  updateDetails: (data: { phone?: string; address?: Record<string, string> }) => api.put('/api/auth/update-user-details', data),
+};
+
+// Public
+export const publicAPI = {
+  getSettings: () => api.get('/api/public/settings'),
+  getProducts: () => api.get('/api/public/products'),
+  submitContact: (data: { name: string; email: string; message: string }) => api.post('/api/public/contact', data),
+};
+
+// Slots
+export const slotsAPI = {
+  getAll: () => api.get('/api/slots'),
+  getOne: (id: string) => api.get(`/api/slots/${id}`),
+  create: (data: { name: string; platform: string; streamKey: string; rtmpUrl?: string }) => api.post('/api/slots', data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/api/slots/${id}`, data),
+  delete: (id: string) => api.delete(`/api/slots/${id}`),
+  startStream: (id: string) => api.post(`/api/slots/${id}/stream`),
+  stopStream: (id: string) => api.post(`/api/slots/${id}/stop`),
+  getStatus: (id: string) => api.get(`/api/slots/${id}/status`),
+};
+
+// Videos
+export const videosAPI = {
+  getAll: () => api.get('/api/videos'),
+  getOne: (id: string) => api.get(`/api/videos/${id}`),
+  getUploadUrl: (fileName: string) => api.get(`/api/videos/upload-url?fileName=${fileName}`),
+  confirmUpload: (data: { fileName: string; fileSize: number; s3Key: string }) => api.post('/api/videos/confirm-upload', data),
+  uploadLocal: (formData: FormData) => {
+    return api.post('/api/videos/upload-local', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+  update: (id: string, data: { name: string }) => api.patch(`/api/videos/${id}`, data),
+  rename: (id: string, name: string) => api.patch(`/api/videos/${id}`, { name }),
+  delete: (id: string) => api.delete(`/api/videos/${id}`),
+};
+
+// Orders
+export const ordersAPI = {
+  create: (data: Record<string, unknown>) => api.post('/api/orders', data),
+  getAll: () => api.get('/api/orders'),
+  getOne: (id: string) => api.get(`/api/orders/${id}`),
+  verify: (id: string) => api.post(`/api/orders/${id}/verify`),
+};
+
+// Admin
+export const adminAPI = {
+  getDashboard: () => api.get('/api/admin/dashboard'),
+  getUsers: (params?: Record<string, unknown>) => api.get('/api/admin/users', { params }),
+  getUser: (id: string) => api.get(`/api/admin/users/${id}`),
+  updateUser: (id: string, data: Record<string, unknown>) => api.put(`/api/admin/users/${id}`, data),
+  deleteUser: (id: string) => api.delete(`/api/admin/users/${id}`),
+  getSlots: (params?: Record<string, unknown>) => api.get('/api/admin/slots', { params }),
+  deleteSlot: (id: string) => api.delete(`/api/admin/slots/${id}`),
+  forceStopSlot: (id: string) => api.post(`/api/admin/slots/${id}/force-stop`),
+  extendSlot: (id: string, days: number) => api.put(`/api/admin/slots/${id}/extend?days=${days}`),
+  deleteVideo: (id: string) => api.delete(`/api/admin/videos/${id}`),
+  getVideos: (params?: Record<string, unknown>) => api.get('/api/admin/videos', { params }),
+  getOrders: (params?: Record<string, unknown>) => api.get('/api/admin/orders', { params }),
+  updateOrderStatus: (id: string, status: string) => api.put(`/api/admin/orders/${id}/status?new_status=${status}`),
+  getProducts: () => api.get('/api/admin/products'),
+  createProduct: (data: Record<string, unknown>) => api.post('/api/admin/products', data),
+  updateProduct: (id: string, data: Record<string, unknown>) => api.put(`/api/admin/products/${id}`, data),
+  deleteProduct: (id: string) => api.delete(`/api/admin/products/${id}`),
+  getSettings: () => api.get('/api/admin/settings'),
+  updateSettings: (data: Record<string, unknown>) => api.put('/api/admin/settings', data),
+  getContacts: (params?: Record<string, unknown>) => api.get('/api/admin/contacts', { params }),
+  deleteContact: (id: string) => api.delete(`/api/admin/contacts/${id}`),
+  updateContactStatus: (id: string, status: string) => api.put(`/api/admin/contacts/${id}/status?new_status=${status}`),
+  getAnalytics: (period?: string) => api.get('/api/admin/analytics', { params: { period } }),
+};
+
+export default api;
