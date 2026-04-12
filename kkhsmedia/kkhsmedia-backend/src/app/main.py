@@ -14,6 +14,9 @@ from app.routes.public import router as public_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_db()
+    # Start background scheduler for auto-start/stop/crash-recovery
+    from app.services.streaming import start_scheduler
+    await start_scheduler()
     yield
     await close_db()
 

@@ -45,6 +45,8 @@ class CreateSlotRequest(BaseModel):
     streamKey: str
     rtmpUrl: Optional[str] = None  # for custom RTMP
     videoId: Optional[str] = None  # assign video at creation time
+    scheduledStart: Optional[str] = None  # ISO datetime string for auto-start
+    scheduledEnd: Optional[str] = None  # ISO datetime string for auto-stop
 
 class UpdateSlotRequest(BaseModel):
     name: Optional[str] = None
@@ -52,6 +54,8 @@ class UpdateSlotRequest(BaseModel):
     streamKey: Optional[str] = None
     rtmpUrl: Optional[str] = None
     videoId: Optional[str] = None
+    scheduledStart: Optional[str] = None  # ISO datetime string for auto-start
+    scheduledEnd: Optional[str] = None  # ISO datetime string for auto-stop
 
 
 # Videos

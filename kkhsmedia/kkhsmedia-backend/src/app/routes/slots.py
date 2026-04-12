@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from datetime import datetime, timedelta
 from bson import ObjectId
+from dateutil import parser as dateutil_parser
 import os
 import uuid
 import subprocess
@@ -35,6 +36,20 @@ async def get_slot(slot_id: str, user=Depends(get_current_user)):
 async def create_slot(req: CreateSlotRequest, user=Depends(get_current_user)):
     db = get_db()
     # Check if user has active/paid slots available
+    # Parse schedule dates
+    scheduled_start = None
+    scheduled_end = None
+    if req.scheduledStart:
+        try:
+            scheduled_start = dateutil_parser.isoparse(req.scheduledStart).replace(tzinfo=None)
+        except (ValueError, AttributeError):
+            scheduled_start = req.scheduledStart
+    if req.scheduledEnd:
+        try:
+            scheduled_end = dateutil_parser.isoparse(req.scheduledEnd).replace(tzinfo=None)
+        except (ValueError, AttributeError):
+            scheduled_end = req.scheduledEnd
+
     slot = {
         "userId": user["id"],
         "name": req.name,
@@ -45,6 +60,8 @@ async def create_slot(req: CreateSlotRequest, user=Depends(get_current_user)):
         "status": "active",  # Auto-activated, no admin approval needed
         "isStreaming": False,
         "streamProcessId": None,
+        "scheduledStart": scheduled_start,
+        "scheduledEnd": scheduled_end,
         "expiryDate": datetime.utcnow() + timedelta(days=365),  # 1 year default
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow(),
@@ -74,6 +91,22 @@ async def update_slot(slot_id: str, req: UpdateSlotRequest, user=Depends(get_cur
         update["rtmpUrl"] = req.rtmpUrl
     if req.videoId is not None:
         update["videoId"] = req.videoId
+    if req.scheduledStart is not None:
+        if req.scheduledStart == "":
+            update["scheduledStart"] = None
+        else:
+            try:
+                update["scheduledStart"] = dateutil_parser.isoparse(req.scheduledStart).replace(tzinfo=None)
+            except (ValueError, AttributeError):
+                update["scheduledStart"] = req.scheduledStart
+    if req.scheduledEnd is not None:
+        if req.scheduledEnd == "":
+            update["scheduledEnd"] = None
+        else:
+            try:
+                update["scheduledEnd"] = dateutil_parser.isoparse(req.scheduledEnd).replace(tzinfo=None)
+            except (ValueError, AttributeError):
+                update["scheduledEnd"] = req.scheduledEnd
 
     await db.slots.update_one({"_id": ObjectId(slot_id)}, {"$set": update})
     updated = await db.slots.find_one({"_id": ObjectId(slot_id)})
