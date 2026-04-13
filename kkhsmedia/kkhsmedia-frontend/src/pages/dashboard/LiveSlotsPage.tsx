@@ -376,7 +376,7 @@ export default function LiveSlotsPage() {
   const handleOverlayUpload = async (slotId: string, file: File) => {
     setActionLoading(slotId); setError(null);
     try {
-      const fd = new FormData(); fd.append('overlay', file);
+      const fd = new FormData(); fd.append('file', file);
       await streamingAPI.uploadOverlay(slotId, fd);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to upload overlay';
