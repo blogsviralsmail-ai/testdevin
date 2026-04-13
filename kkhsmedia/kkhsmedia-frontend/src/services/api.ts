@@ -276,7 +276,7 @@ export const adminAPI = {
   createUser: (data: Record<string, unknown>) => api.post('/api/admin/create-user', data),
   getRoles: () => api.get('/api/admin/roles'),
   updateUserRole: (userId: string, role: string) => api.put(`/api/admin/users/${userId}/role?role=${role}`),
-  resetUserPassword: (userId: string, newPassword: string) => api.put(`/api/admin/users/${userId}/reset-password?new_password=${newPassword}`),
+  resetUserPassword: (userId: string, newPassword: string) => api.put(`/api/admin/users/${userId}/reset-password`, { new_password: newPassword }),
 };
 
 // Stream Health

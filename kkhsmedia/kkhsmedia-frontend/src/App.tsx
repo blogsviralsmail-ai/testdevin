@@ -39,6 +39,7 @@ import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminResellers from './pages/admin/AdminResellers';
 import AdminAffiliates from './pages/admin/AdminAffiliates';
 import AdminServers from './pages/admin/AdminServers';
+import AdminRoles from './pages/admin/AdminRoles';
 import DashboardLayout from './components/layout/DashboardLayout';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -52,7 +53,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
-  if (user.role !== 'admin') return <Navigate to="/dashboard" />;
+  if (user.role !== 'admin' && user.role !== 'moderator') return <Navigate to="/dashboard" />;
   return <>{children}</>;
 }
 
@@ -100,6 +101,7 @@ function AppRoutes() {
         <Route path="/admin/resellers" element={<AdminResellers />} />
         <Route path="/admin/affiliates" element={<AdminAffiliates />} />
         <Route path="/admin/servers" element={<AdminServers />} />
+        <Route path="/admin/roles" element={<AdminRoles />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
 

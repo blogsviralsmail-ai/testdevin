@@ -440,6 +440,10 @@ class AdminCreateUserRequest(_BaseModel):
     role: str = "user"
 
 
+class ResetPasswordBody(_BaseModel):
+    new_password: str = "Temp@1234"
+
+
 class AdminAssignPlanRequest(_BaseModel):
     userId: str
     slotCount: int = 1  # number of slots to assign (0 = unlimited)
@@ -760,7 +764,7 @@ async def update_user_role(user_id: str, role: str, admin=Depends(get_admin_user
 
 
 @router.put("/users/{user_id}/reset-password")
-async def admin_reset_user_password(user_id: str, new_password: str = "Temp@1234", admin=Depends(get_admin_user)):
+async def admin_reset_user_password(user_id: str, body: ResetPasswordBody, admin=Depends(get_admin_user)):
     """Admin can reset any user's password."""
     db = get_db()
     user = await db.users.find_one({"_id": ObjectId(user_id)})
@@ -769,6 +773,6 @@ async def admin_reset_user_password(user_id: str, new_password: str = "Temp@1234
 
     await db.users.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {"password": hash_password(new_password), "updatedAt": datetime.utcnow()}}
+        {"$set": {"password": hash_password(body.new_password), "updatedAt": datetime.utcnow()}}
     )
-    return {"message": f"Password reset successfully"}
+    return {"message": "Password reset successfully"}

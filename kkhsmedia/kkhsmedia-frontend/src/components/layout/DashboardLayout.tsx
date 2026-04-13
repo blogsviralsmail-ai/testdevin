@@ -25,6 +25,8 @@ export default function DashboardLayout() {
   const [cmdOpen, setCmdOpen] = useState(false);
 
   const isAdmin = user?.role === 'admin';
+  const isModerator = user?.role === 'moderator';
+  const isAdminOrMod = isAdmin || isModerator;
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Cmd+K handler
@@ -59,21 +61,24 @@ export default function DashboardLayout() {
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 
-  const adminLinks = [
-    { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/admin/users', icon: Users, label: 'Users' },
-    { to: '/admin/slots', icon: Radio, label: 'Slots' },
-    { to: '/admin/videos', icon: MonitorPlay, label: 'Videos' },
-    { to: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
-    { to: '/admin/products', icon: Package, label: 'Plans' },
-    { to: '/admin/coupons', icon: Tag, label: 'Coupons' },
-    { to: '/admin/resellers', icon: Store, label: 'Resellers' },
-    { to: '/admin/affiliates', icon: UserPlus, label: 'Affiliates' },
-    { to: '/admin/servers', icon: Server, label: 'Servers' },
-    { to: '/admin/contacts', icon: MessageSquare, label: 'Messages' },
-    { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
-    { to: '/admin/settings', icon: Settings, label: 'Settings' },
+  // Role-based admin menu: moderators see limited set
+  const allAdminLinks = [
+    { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'moderator'] },
+    { to: '/admin/users', icon: Users, label: 'Users', roles: ['admin', 'moderator'] },
+    { to: '/admin/slots', icon: Radio, label: 'Slots', roles: ['admin', 'moderator'] },
+    { to: '/admin/videos', icon: MonitorPlay, label: 'Videos', roles: ['admin', 'moderator'] },
+    { to: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['admin', 'moderator'] },
+    { to: '/admin/products', icon: Package, label: 'Plans', roles: ['admin'] },
+    { to: '/admin/coupons', icon: Tag, label: 'Coupons', roles: ['admin'] },
+    { to: '/admin/resellers', icon: Store, label: 'Resellers', roles: ['admin'] },
+    { to: '/admin/affiliates', icon: UserPlus, label: 'Affiliates', roles: ['admin'] },
+    { to: '/admin/servers', icon: Server, label: 'Servers', roles: ['admin'] },
+    { to: '/admin/contacts', icon: MessageSquare, label: 'Messages', roles: ['admin', 'moderator'] },
+    { to: '/admin/analytics', icon: BarChart3, label: 'Analytics', roles: ['admin'] },
+    { to: '/admin/roles', icon: Shield, label: 'Roles', roles: ['admin'] },
+    { to: '/admin/settings', icon: Settings, label: 'Settings', roles: ['admin'] },
   ];
+  const adminLinks = allAdminLinks.filter(link => link.roles.includes(user?.role || 'user'));
 
   const links = isAdminRoute ? adminLinks : userLinks;
   const allLinks = [...userLinks, ...adminLinks];
@@ -117,7 +122,7 @@ export default function DashboardLayout() {
         </div>
 
         {/* Panel switch */}
-        {isAdmin && !collapsed && (
+        {isAdminOrMod && !collapsed && (
           <div className="px-2 pt-2">
             <Link
               to={isAdminRoute ? '/dashboard' : '/admin'}
@@ -239,7 +244,7 @@ export default function DashboardLayout() {
                     </div>
                     <Link to="/profile" className="block px-3 py-2 text-xs text-secondary hover:text-primary hover:bg-[rgb(var(--bg-muted))] transition-colors"
                       onClick={() => setDropdownOpen(false)}>Profile</Link>
-                    {isAdmin && (
+                    {isAdminOrMod && (
                       <Link to={isAdminRoute ? '/dashboard' : '/admin'}
                         className="block px-3 py-2 text-xs text-secondary hover:text-primary hover:bg-[rgb(var(--bg-muted))] transition-colors"
                         onClick={() => setDropdownOpen(false)}>
