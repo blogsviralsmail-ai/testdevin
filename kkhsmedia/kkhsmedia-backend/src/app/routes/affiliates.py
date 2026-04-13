@@ -100,7 +100,10 @@ async def admin_affiliate_stats(admin=Depends(get_admin_user)):
     total_affiliates = await db.users.count_documents({"referralCode": {"$exists": True, "$ne": ""}})
     total_referred = await db.users.count_documents({"referredBy": {"$exists": True, "$ne": ""}})
 
-    pipeline = [{"$group": {"_id": None, "total": {"$sum": "$amount"}}}]
+    pipeline = [
+        {"$match": {"status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
     result = await db.referral_earnings.aggregate(pipeline).to_list(1)
     total_paid = result[0]["total"] if result else 0
 

@@ -729,6 +729,11 @@ async def start_recording(slot_id: str, user=Depends(get_current_user)):
 @router.post("/record/{slot_id}/stop")
 async def stop_recording(slot_id: str, user=Depends(get_current_user)):
     """Stop recording a stream."""
+    db = get_db()
+    slot = await db.slots.find_one({"_id": ObjectId(slot_id), "userId": user["id"]})
+    if not slot:
+        raise HTTPException(status_code=404, detail="Slot not found")
+
     rec_id = f"rec_{slot_id}"
     info = active_streams.get(rec_id)
     if info:
@@ -737,7 +742,6 @@ async def stop_recording(slot_id: str, user=Depends(get_current_user)):
             proc.terminate()
         active_streams.pop(rec_id, None)
 
-    db = get_db()
     await db.slots.update_one(
         {"_id": ObjectId(slot_id), "userId": user["id"]},
         {"$set": {"isRecording": False, "recordingPid": None}}
