@@ -138,10 +138,13 @@ async def verify_order(order_id: str, user=Depends(get_current_user)):
         verified = await verify_razorpay_payment(order.get("paymentData", {}).get("orderId", ""))
 
     if verified:
-        await db.orders.update_one(
-            {"_id": ObjectId(order_id)},
-            {"$set": {"status": "paid", "updatedAt": datetime.utcnow()}}
+        # Atomic update to prevent race condition with webhooks
+        updated = await db.orders.find_one_and_update(
+            {"_id": ObjectId(order_id), "status": {"$ne": "paid"}},
+            {"$set": {"status": "paid", "updatedAt": datetime.utcnow()}},
         )
+        if not updated:
+            return {"message": "Order already paid", "status": "paid"}
         # Activate/renew slots
         await activate_slots(db, order)
         # Process referral commission (non-blocking)
@@ -176,12 +179,12 @@ async def cashfree_webhook(request: Request):
     payment_status = body.get("data", {}).get("payment", {}).get("payment_status", "")
 
     if payment_status == "SUCCESS":
-        order = await db.orders.find_one({"orderId": order_id})
-        if order and order["status"] != "paid":
-            await db.orders.update_one(
-                {"_id": order["_id"]},
-                {"$set": {"status": "paid", "updatedAt": datetime.utcnow()}}
-            )
+        # Atomic update to prevent race condition with verify endpoint
+        order = await db.orders.find_one_and_update(
+            {"orderId": order_id, "status": {"$ne": "paid"}},
+            {"$set": {"status": "paid", "updatedAt": datetime.utcnow()}},
+        )
+        if order:
             await activate_slots(db, order)
             # Process referral commission
             from app.routes.affiliates import process_referral_commission
@@ -214,12 +217,12 @@ async def razorpay_webhook(request: Request):
         payment = body.get("payload", {}).get("payment", {}).get("entity", {})
         order_id = payment.get("notes", {}).get("order_id", "")
         if order_id:
-            order = await db.orders.find_one({"orderId": order_id})
-            if order and order["status"] != "paid":
-                await db.orders.update_one(
-                    {"_id": order["_id"]},
-                    {"$set": {"status": "paid", "paymentId": payment.get("id"), "updatedAt": datetime.utcnow()}}
-                )
+            # Atomic update to prevent race condition with verify endpoint
+            order = await db.orders.find_one_and_update(
+                {"orderId": order_id, "status": {"$ne": "paid"}},
+                {"$set": {"status": "paid", "paymentId": payment.get("id"), "updatedAt": datetime.utcnow()}},
+            )
+            if order:
                 await activate_slots(db, order)
                 # Process referral commission
                 from app.routes.affiliates import process_referral_commission

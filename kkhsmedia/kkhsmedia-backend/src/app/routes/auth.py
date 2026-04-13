@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timedelta
 import os
-import random
+import secrets
 import string
 from bson import ObjectId
 
@@ -42,7 +42,7 @@ async def register(req: RegisterRequest):
     result = await db.users.insert_one(user)
 
     # Generate OTP
-    otp = "".join(random.choices(string.digits, k=6))
+    otp = "".join(secrets.choice(string.digits) for _ in range(6))
     await db.otp_codes.insert_one({
         "email": req.email.lower(),
         "otp": otp,
@@ -132,7 +132,7 @@ async def forgot_password(req: ForgotPasswordRequest):
     if not user:
         return {"message": "If the email exists, a reset link has been sent."}
 
-    otp = "".join(random.choices(string.digits, k=6))
+    otp = "".join(secrets.choice(string.digits) for _ in range(6))
     await db.otp_codes.insert_one({
         "email": req.email.lower(),
         "otp": otp,
