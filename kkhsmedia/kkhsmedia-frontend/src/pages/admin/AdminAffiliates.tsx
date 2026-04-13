@@ -53,9 +53,9 @@ export default function AdminAffiliates() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total Affiliates', value: stats.totalAffiliates || 0, color: 'bg-blue-50 text-blue-700' },
-            { label: 'Total Referrals', value: stats.totalReferrals || 0, color: 'bg-green-50 text-green-700' },
-            { label: 'Total Earnings', value: `₹${stats.totalEarnings || 0}`, color: 'bg-purple-50 text-purple-700' },
-            { label: 'Pending Payouts', value: `₹${stats.pendingPayouts || 0}`, color: 'bg-orange-50 text-orange-700' },
+            { label: 'Total Referrals', value: stats.totalReferred || 0, color: 'bg-green-50 text-green-700' },
+            { label: 'Total Paid', value: `₹${stats.totalPaid || 0}`, color: 'bg-purple-50 text-purple-700' },
+            { label: 'Pending Payouts', value: `₹${stats.totalPending || 0}`, color: 'bg-orange-50 text-orange-700' },
           ].map((card, i) => (
             <div key={i} className={`rounded-lg p-4 ${card.color}`}>
               <p className="text-sm font-medium opacity-75">{card.label}</p>

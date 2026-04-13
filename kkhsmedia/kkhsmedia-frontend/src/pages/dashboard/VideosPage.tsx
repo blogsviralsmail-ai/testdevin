@@ -20,6 +20,7 @@ export default function VideosPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [playingVideo, setPlayingVideo] = useState<VideoItem | null>(null);
+  const [failedThumbs, setFailedThumbs] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadVideos = async () => {
@@ -181,12 +182,12 @@ export default function VideosPage() {
                 className="relative aspect-video bg-gray-900 cursor-pointer flex items-center justify-center"
                 onClick={() => setPlayingVideo(video)}
               >
-                {video.thumbnailUrl ? (
+                {video.thumbnailUrl && !failedThumbs.has(video.id) ? (
                   <img
                     src={getThumbUrl(video)}
                     alt={video.name}
                     className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    onError={() => setFailedThumbs(prev => new Set(prev).add(video.id))}
                   />
                 ) : (
                   <Video size={40} className="text-secondary" />
