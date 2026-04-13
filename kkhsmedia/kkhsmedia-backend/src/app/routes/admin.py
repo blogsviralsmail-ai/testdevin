@@ -94,7 +94,7 @@ async def get_users(
     admin=Depends(get_admin_user)
 ):
     db = get_db()
-    query = {"role": "user"}
+    query = {"role": {"$in": ["user", "moderator"]}}
     if search:
         query["$or"] = [
             {"email": {"$regex": search, "$options": "i"}},
@@ -463,7 +463,7 @@ async def admin_create_user(req: AdminCreateUserRequest, admin=Depends(get_admin
         "email": req.email.lower().strip(),
         "password": hash_password(req.password),
         "phone": req.phone.strip(),
-        "role": req.role if req.role in ("user", "admin") else "user",
+        "role": req.role if req.role in ("user", "admin", "moderator") else "user",
         "status": "active",
         "emailVerified": True,
         "createdAt": now,
@@ -697,3 +697,78 @@ async def admin_upload_logo(
     )
 
     return {"url": logo_url, "filename": filename, "type": logo_type}
+
+
+# ============ ROLE MANAGEMENT ============
+
+ROLE_PERMISSIONS = {
+    "admin": [
+        "dashboard", "users", "users.create", "users.edit", "users.delete",
+        "slots", "slots.manage", "slots.delete",
+        "videos", "videos.delete",
+        "orders", "orders.manage",
+        "products", "products.create", "products.edit", "products.delete",
+        "settings", "settings.edit",
+        "analytics", "contacts", "contacts.delete",
+        "roles", "roles.manage",
+    ],
+    "moderator": [
+        "dashboard", "users", "users.edit",
+        "slots", "slots.manage",
+        "videos",
+        "orders",
+        "contacts",
+    ],
+    "user": [
+        "own_profile", "own_slots", "own_videos", "own_orders",
+    ],
+}
+
+
+@router.get("/roles")
+async def get_roles(admin=Depends(get_admin_user)):
+    """Get all available roles and their permissions."""
+    return {
+        "roles": [
+            {"name": "admin", "label": "Administrator", "description": "Full system access", "permissions": ROLE_PERMISSIONS["admin"], "color": "red"},
+            {"name": "moderator", "label": "Moderator", "description": "Manage users, slots, videos and orders", "permissions": ROLE_PERMISSIONS["moderator"], "color": "blue"},
+            {"name": "user", "label": "User", "description": "Standard user access", "permissions": ROLE_PERMISSIONS["user"], "color": "green"},
+        ]
+    }
+
+
+@router.put("/users/{user_id}/role")
+async def update_user_role(user_id: str, role: str, admin=Depends(get_admin_user)):
+    """Update a user's role. Only admins can change roles."""
+    if role not in ("admin", "moderator", "user"):
+        raise HTTPException(status_code=400, detail="Invalid role. Must be admin, moderator, or user")
+
+    db = get_db()
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Prevent demoting yourself
+    if str(user["_id"]) == str(admin["_id"]) and role != "admin":
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"role": role, "updatedAt": datetime.utcnow()}}
+    )
+    return {"message": f"User role updated to {role}"}
+
+
+@router.put("/users/{user_id}/reset-password")
+async def admin_reset_user_password(user_id: str, new_password: str = "Temp@1234", admin=Depends(get_admin_user)):
+    """Admin can reset any user's password."""
+    db = get_db()
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"password": hash_password(new_password), "updatedAt": datetime.utcnow()}}
+    )
+    return {"message": f"Password reset successfully"}

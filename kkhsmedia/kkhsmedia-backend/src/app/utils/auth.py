@@ -88,6 +88,12 @@ async def get_admin_user(user=Depends(get_current_user)):
     return user
 
 
+async def get_admin_or_moderator(user=Depends(get_current_user)):
+    if user.get("role") not in ("admin", "moderator"):
+        raise HTTPException(status_code=403, detail="Admin or moderator access required")
+    return user
+
+
 def serialize_doc(doc) -> dict:
     """Convert MongoDB document to JSON-safe dict."""
     if doc is None:
