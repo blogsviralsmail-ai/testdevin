@@ -61,7 +61,7 @@ async def register(req: RegisterRequest):
     )
 
     # Handle referral code
-    if hasattr(req, 'referralCode') and req.referralCode:
+    if req.referralCode:
         referrer = await db.users.find_one({"referralCode": req.referralCode})
         if referrer:
             await db.users.update_one(

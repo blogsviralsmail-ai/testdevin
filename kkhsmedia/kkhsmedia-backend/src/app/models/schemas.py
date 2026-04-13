@@ -9,6 +9,7 @@ class RegisterRequest(BaseModel):
     lastName: str
     email: EmailStr
     password: str
+    referralCode: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: EmailStr

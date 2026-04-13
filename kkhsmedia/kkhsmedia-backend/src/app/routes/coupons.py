@@ -105,16 +105,10 @@ async def admin_delete_coupon(coupon_id: str, admin=Depends(get_admin_user)):
     return {"message": "Coupon deleted"}
 
 
-# ============ USER ENDPOINTS ============
+# ============ SHARED HELPERS ============
 
-@router.post("/validate")
-async def validate_coupon(code: str, order_amount: float = 0, user=Depends(get_current_user)):
-    """Validate a coupon code and return discount details."""
-    db = get_db()
-    coupon = await db.coupons.find_one({"code": code.upper(), "isActive": True})
-    if not coupon:
-        raise HTTPException(status_code=404, detail="Invalid coupon code")
-
+def _validate_coupon(coupon: dict, user_id: str, order_amount: float = 0) -> None:
+    """Validate coupon restrictions. Raises HTTPException on failure."""
     now = datetime.utcnow()
 
     # Check validity period
@@ -133,13 +127,26 @@ async def validate_coupon(code: str, order_amount: float = 0, user=Depends(get_c
         raise HTTPException(status_code=400, detail="Coupon usage limit reached")
 
     # Check per-user limit
-    user_uses = sum(1 for u in coupon.get("usedBy", []) if u == user["id"])
+    user_uses = sum(1 for u in coupon.get("usedBy", []) if u == user_id)
     if coupon.get("maxUsesPerUser", 1) > 0 and user_uses >= coupon["maxUsesPerUser"]:
         raise HTTPException(status_code=400, detail="You have already used this coupon")
 
     # Check minimum order amount
     if order_amount < coupon.get("minOrderAmount", 0):
         raise HTTPException(status_code=400, detail=f"Minimum order amount is {coupon['minOrderAmount']}")
+
+
+# ============ USER ENDPOINTS ============
+
+@router.post("/validate")
+async def validate_coupon(code: str, order_amount: float = 0, user=Depends(get_current_user)):
+    """Validate a coupon code and return discount details."""
+    db = get_db()
+    coupon = await db.coupons.find_one({"code": code.upper(), "isActive": True})
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Invalid coupon code")
+
+    _validate_coupon(coupon, user["id"], order_amount)
 
     # Calculate discount
     if coupon["discountType"] == "percentage":
@@ -169,8 +176,18 @@ async def apply_coupon(code: str, order_id: str, user=Depends(get_current_user))
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    # Calculate discount
+    # Reject if order is already paid or already has a coupon
+    if order.get("status") == "paid":
+        raise HTTPException(status_code=400, detail="Cannot apply coupon to a paid order")
+    if order.get("couponCode"):
+        raise HTTPException(status_code=400, detail="A coupon has already been applied to this order")
+
+    # Run the same validation as /validate (expiry, usage limits, min amount)
     subtotal = order.get("subtotal", 0)
+    _validate_coupon(coupon, user["id"], subtotal)
+
+    # Calculate discount
+    
     if coupon["discountType"] == "percentage":
         discount = round(subtotal * coupon["discountValue"] / 100, 2)
     else:

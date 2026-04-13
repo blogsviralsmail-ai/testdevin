@@ -147,12 +147,13 @@ async def verify_order(order_id: str, user=Depends(get_current_user)):
 async def cashfree_webhook(request: Request):
     from app.config import CASHFREE_SECRET_KEY
     raw_body = await request.body()
-    # Verify webhook signature if secret key is configured
-    if CASHFREE_SECRET_KEY:
-        signature = request.headers.get("x-webhook-signature", "")
-        expected = hmac.new(CASHFREE_SECRET_KEY.encode(), raw_body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(signature, expected):
-            raise HTTPException(status_code=401, detail="Invalid webhook signature")
+    # Reject requests when secret key is not configured
+    if not CASHFREE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Webhook not configured")
+    signature = request.headers.get("x-webhook-signature", "")
+    expected = hmac.new(CASHFREE_SECRET_KEY.encode(), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected):
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
     import json
     body = json.loads(raw_body)
@@ -176,12 +177,13 @@ async def cashfree_webhook(request: Request):
 async def razorpay_webhook(request: Request):
     from app.config import RAZORPAY_KEY_SECRET
     raw_body = await request.body()
-    # Verify webhook signature if secret key is configured
-    if RAZORPAY_KEY_SECRET:
-        signature = request.headers.get("x-razorpay-signature", "")
-        expected = hmac.new(RAZORPAY_KEY_SECRET.encode(), raw_body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(signature, expected):
-            raise HTTPException(status_code=401, detail="Invalid webhook signature")
+    # Reject requests when secret key is not configured
+    if not RAZORPAY_KEY_SECRET:
+        raise HTTPException(status_code=503, detail="Webhook not configured")
+    signature = request.headers.get("x-razorpay-signature", "")
+    expected = hmac.new(RAZORPAY_KEY_SECRET.encode(), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected):
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
     import json
     body = json.loads(raw_body)
