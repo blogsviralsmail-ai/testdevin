@@ -282,12 +282,13 @@ def generate_stream_thumbnail(video_path: str, thumbnail_path: str) -> bool:
 
         # Extract frame at 25% into video for best quality
         seek_time = max(1, duration * 0.25) if duration > 4 else 1
-        minutes = int(seek_time // 60)
+        hours = int(seek_time // 3600)
+        minutes = int((seek_time % 3600) // 60)
         seconds = seek_time % 60
 
         cmd = [
             ffmpeg, "-i", video_path,
-            "-ss", f"00:{minutes:02d}:{seconds:05.2f}",
+            "-ss", f"{hours:02d}:{minutes:02d}:{seconds:05.2f}",
             "-vframes", "1",
             "-vf", "scale=1280:-1",  # HD thumbnail
             "-q:v", "2",  # High quality JPEG

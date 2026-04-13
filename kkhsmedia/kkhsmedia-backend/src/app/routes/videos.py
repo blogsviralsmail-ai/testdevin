@@ -372,7 +372,9 @@ async def delete_video(video_id: str, user=Depends(get_current_user)):
 async def serve_file(filename: str, user=Depends(get_current_user_from_token_param)):
     """Serve uploaded video or thumbnail files."""
     upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
-    file_path = os.path.join(upload_dir, filename)
+    file_path = os.path.realpath(os.path.join(upload_dir, filename))
+    if not file_path.startswith(os.path.realpath(upload_dir)):
+        raise HTTPException(status_code=403, detail="Access denied")
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     # Determine media type

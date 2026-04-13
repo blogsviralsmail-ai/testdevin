@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from datetime import datetime, timedelta
 from bson import ObjectId
 import uuid
+import hmac
+import hashlib
 
 from app.database import get_db
 from app.models.schemas import CreateOrderRequest
@@ -143,7 +145,17 @@ async def verify_order(order_id: str, user=Depends(get_current_user)):
 
 @router.post("/webhook/cashfree")
 async def cashfree_webhook(request: Request):
-    body = await request.json()
+    from app.config import CASHFREE_SECRET_KEY
+    raw_body = await request.body()
+    # Verify webhook signature if secret key is configured
+    if CASHFREE_SECRET_KEY:
+        signature = request.headers.get("x-webhook-signature", "")
+        expected = hmac.new(CASHFREE_SECRET_KEY.encode(), raw_body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    import json
+    body = json.loads(raw_body)
     db = get_db()
     order_id = body.get("data", {}).get("order", {}).get("order_id", "")
     payment_status = body.get("data", {}).get("payment", {}).get("payment_status", "")
@@ -162,7 +174,17 @@ async def cashfree_webhook(request: Request):
 
 @router.post("/webhook/razorpay")
 async def razorpay_webhook(request: Request):
-    body = await request.json()
+    from app.config import RAZORPAY_KEY_SECRET
+    raw_body = await request.body()
+    # Verify webhook signature if secret key is configured
+    if RAZORPAY_KEY_SECRET:
+        signature = request.headers.get("x-razorpay-signature", "")
+        expected = hmac.new(RAZORPAY_KEY_SECRET.encode(), raw_body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    import json
+    body = json.loads(raw_body)
     db = get_db()
     event = body.get("event", "")
 
