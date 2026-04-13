@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timedelta
+import os
 import random
 import string
 from bson import ObjectId
@@ -72,7 +73,7 @@ async def register(req: RegisterRequest):
     return {
         "message": "Registration successful. Please verify your email.",
         "userId": str(result.inserted_id),
-        "otp_dev": otp,  # Remove in production
+        "otp_dev": otp if os.getenv("DEBUG", "").lower() == "true" else None,
     }
 
 
@@ -143,7 +144,7 @@ async def forgot_password(req: ForgotPasswordRequest):
     from app.services.email import send_otp_email
     await send_otp_email(req.email.lower(), otp, "password_reset")
 
-    return {"message": "If the email exists, a reset link has been sent.", "otp_dev": otp}
+    return {"message": "If the email exists, a reset link has been sent.", "otp_dev": otp if os.getenv("DEBUG", "").lower() == "true" else None}
 
 
 @router.post("/reset-password")

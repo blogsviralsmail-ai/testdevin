@@ -224,7 +224,7 @@ async def start_multi_stream(req: MultiStreamRequest, user=Depends(get_current_u
                 "video_url": video_url, "destination": destination,
                 "stream_key": stream_key, "rtmp_url": rtmp_url,
                 "started_at": datetime.utcnow().isoformat(), "restart_count": 0,
-                "source_type": "multi_stream",
+                "source_type": "multi_stream", "userId": user["id"],
             }
             started.append({"platform": platform, "pid": process.pid, "streamId": stream_id})
         except Exception as e:
@@ -235,11 +235,11 @@ async def start_multi_stream(req: MultiStreamRequest, user=Depends(get_current_u
 
 @router.post("/multi-stream/stop")
 async def stop_multi_stream(stream_ids: list, user=Depends(get_current_user)):
-    """Stop multi-stream processes."""
+    """Stop multi-stream processes (only streams owned by the current user)."""
     stopped = 0
     for sid in stream_ids:
         info = active_streams.get(sid)
-        if info:
+        if info and info.get("userId") == user["id"]:
             proc = info.get("process")
             if proc and proc.returncode is None:
                 proc.kill()
@@ -359,7 +359,7 @@ async def save_scheduled_playlist(req: ScheduledPlaylistRequest, user=Depends(ge
 
     schedule = []
     for item in req.schedule:
-        video = await db.videos.find_one({"_id": ObjectId(item.videoId)})
+        video = await db.videos.find_one({"_id": ObjectId(item.videoId), "userId": user["id"]})
         schedule.append({
             "videoId": item.videoId,
             "videoName": video.get("name", "") if video else "",
