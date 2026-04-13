@@ -8,6 +8,8 @@ Flow:
 """
 import os
 import json
+import hmac
+import hashlib
 import logging
 from datetime import datetime
 from typing import Optional
@@ -17,7 +19,7 @@ from fastapi.responses import RedirectResponse
 
 from app.database import get_db
 from app.utils.auth import get_current_user, serialize_doc
-from app.config import API_URL, APP_URL
+from app.config import API_URL, APP_URL, JWT_SECRET
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/youtube", tags=["YouTube"])
@@ -26,6 +28,23 @@ YOUTUBE_SCOPES = [
     "https://www.googleapis.com/auth/youtube",
     "https://www.googleapis.com/auth/youtube.force-ssl",
 ]
+
+
+def _sign_state(user_id: str) -> str:
+    """Create HMAC-signed state parameter for OAuth2 CSRF protection."""
+    sig = hmac.new(JWT_SECRET.encode(), user_id.encode(), hashlib.sha256).hexdigest()[:16]
+    return f"{user_id}:{sig}"
+
+
+def _verify_state(state: str) -> str | None:
+    """Verify HMAC-signed state and return user_id, or None if invalid."""
+    if ":" not in state:
+        return None
+    user_id, sig = state.rsplit(":", 1)
+    expected_sig = hmac.new(JWT_SECRET.encode(), user_id.encode(), hashlib.sha256).hexdigest()[:16]
+    if not hmac.compare_digest(sig, expected_sig):
+        return None
+    return user_id
 
 
 async def _get_google_credentials():
@@ -57,7 +76,7 @@ async def get_youtube_auth_url(user=Depends(get_current_user)):
         "scope": " ".join(YOUTUBE_SCOPES),
         "access_type": "offline",
         "prompt": "consent",
-        "state": user["id"],  # Pass user ID in state
+        "state": _sign_state(user["id"]),  # HMAC-signed state for CSRF protection
     }
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
     return {"authUrl": auth_url}
@@ -72,7 +91,9 @@ async def youtube_oauth_callback(code: str = "", state: str = "", error: str = "
     if not code or not state:
         return RedirectResponse(f"{APP_URL}/live-slots?youtube_error=missing_code")
 
-    user_id = state
+    user_id = _verify_state(state)
+    if not user_id:
+        return RedirectResponse(f"{APP_URL}/live-slots?youtube_error=invalid_state")
     client_id, client_secret = await _get_google_credentials()
     if not client_id:
         return RedirectResponse(f"{APP_URL}/live-slots?youtube_error=not_configured")

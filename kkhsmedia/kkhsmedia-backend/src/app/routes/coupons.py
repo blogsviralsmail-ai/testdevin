@@ -182,28 +182,29 @@ async def apply_coupon(code: str, order_id: str, user=Depends(get_current_user))
     if order.get("couponCode"):
         raise HTTPException(status_code=400, detail="A coupon has already been applied to this order")
 
-    # Run the same validation as /validate (expiry, usage limits, min amount)
-    subtotal = order.get("subtotal", 0)
-    _validate_coupon(coupon, user["id"], subtotal)
+    # Use originalSubtotal if already stored (e.g. if a previous coupon was removed),
+    # otherwise use current subtotal as the original base price.
+    original_subtotal = order.get("originalSubtotal", order.get("subtotal", 0))
+    _validate_coupon(coupon, user["id"], original_subtotal)
 
-    # Calculate discount
-    
+    # Calculate discount on the original (pre-discount) subtotal
     if coupon["discountType"] == "percentage":
-        discount = round(subtotal * coupon["discountValue"] / 100, 2)
+        discount = round(original_subtotal * coupon["discountValue"] / 100, 2)
     else:
-        discount = min(coupon["discountValue"], subtotal)
+        discount = min(coupon["discountValue"], original_subtotal)
 
-    new_subtotal = max(subtotal - discount, 0)
+    new_subtotal = max(original_subtotal - discount, 0)
     gst_rate = order.get("gstRate", 18)
     new_gst = round(new_subtotal * gst_rate / 100, 2)
     new_total = round(new_subtotal + new_gst, 2)
 
-    # Update order with coupon
+    # Update order with coupon - preserve originalSubtotal so it's never lost
     await db.orders.update_one(
         {"_id": ObjectId(order_id)},
         {"$set": {
             "couponCode": coupon["code"],
             "couponDiscount": discount,
+            "originalSubtotal": original_subtotal,
             "subtotal": new_subtotal,
             "gstAmount": new_gst,
             "totalAmount": new_total,

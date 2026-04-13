@@ -425,6 +425,59 @@ async def admin_update_contact_status(contact_id: str, new_status: str = "read",
     return {"message": "Contact status updated"}
 
 
+# ============ DELETE ENDPOINTS ============
+
+@router.delete("/slots/{slot_id}")
+async def admin_delete_slot(slot_id: str, admin=Depends(get_admin_user)):
+    db = get_db()
+    slot = await db.slots.find_one({"_id": ObjectId(slot_id)})
+    if not slot:
+        raise HTTPException(status_code=404, detail="Slot not found")
+
+    # Stop active stream before deleting
+    if slot.get("streamProcessId"):
+        from app.services.streaming import stop_ffmpeg_stream
+        await stop_ffmpeg_stream(slot["streamProcessId"])
+
+    await db.slots.delete_one({"_id": ObjectId(slot_id)})
+    return {"message": "Slot deleted"}
+
+
+@router.delete("/videos/{video_id}")
+async def admin_delete_video(video_id: str, admin=Depends(get_admin_user)):
+    db = get_db()
+    video = await db.videos.find_one({"_id": ObjectId(video_id)})
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    # Delete local file if exists
+    import os
+    local_path = video.get("localPath", "")
+    if local_path and os.path.exists(local_path):
+        try:
+            os.remove(local_path)
+        except Exception:
+            pass
+
+    # Remove video references from slots
+    await db.slots.update_many(
+        {"videoId": video_id},
+        {"$set": {"videoId": None, "updatedAt": datetime.utcnow()}}
+    )
+
+    await db.videos.delete_one({"_id": ObjectId(video_id)})
+    return {"message": "Video deleted"}
+
+
+@router.delete("/contacts/{contact_id}")
+async def admin_delete_contact(contact_id: str, admin=Depends(get_admin_user)):
+    db = get_db()
+    result = await db.contacts.delete_one({"_id": ObjectId(contact_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return {"message": "Contact deleted"}
+
+
 # ============ ANALYTICS ============
 @router.get("/analytics")
 async def admin_analytics(period: str = "30d", admin=Depends(get_admin_user)):
