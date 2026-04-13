@@ -10,7 +10,7 @@ export default function AdminDashboard() {
   const primary = settings?.primaryColor || '#6366f1';
 
   useEffect(() => {
-    adminAPI.getDashboard().then(res => { setStats(res.data); setLoading(false); }).catch(() => setLoading(false));
+    adminAPI.getDashboard().then(res => { setStats(res.data.stats || res.data); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
   const cards = [

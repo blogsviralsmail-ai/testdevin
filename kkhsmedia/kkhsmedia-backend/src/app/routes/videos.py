@@ -185,7 +185,11 @@ async def upload_chunk(
     Bypasses Cloudflare's 100MB per-request limit by splitting into smaller chunks.
     """
     upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
-    chunks_dir = f"{upload_dir}/chunks/{uploadId}"
+    import re as _re
+    safe_upload_id = _re.sub(r'[^a-zA-Z0-9_-]', '', uploadId)
+    if not safe_upload_id:
+        raise HTTPException(status_code=400, detail="Invalid upload ID")
+    chunks_dir = f"{upload_dir}/chunks/{safe_upload_id}"
     os.makedirs(chunks_dir, exist_ok=True)
 
     # Save this chunk to disk

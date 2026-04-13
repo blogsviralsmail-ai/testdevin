@@ -303,14 +303,14 @@ async def stop_ffmpeg_stream(process_id: Optional[int]) -> bool:
     except Exception as e:
         logger.warning(f"FFmpeg stop error for PID {process_id}: {e}")
 
-    # Strategy 3: Use pkill as last resort for orphaned processes
+    # Strategy 3: Kill only the specific PID as last resort (not all FFmpeg processes)
     if not killed:
         try:
             subprocess.run(
-                ["pkill", "-9", "-f", f"ffmpeg.*-re.*stream_loop"],
+                ["kill", "-9", str(process_id)],
                 capture_output=True, timeout=5
             )
-            logger.info("Used pkill to kill orphaned FFmpeg streaming processes")
+            logger.info(f"Used kill -9 as last resort for PID {process_id}")
             killed = True
         except Exception:
             pass
