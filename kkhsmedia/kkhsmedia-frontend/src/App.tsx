@@ -20,6 +20,12 @@ import NotificationsPage from './pages/dashboard/NotificationsPage';
 import WebhooksPage from './pages/dashboard/WebhooksPage';
 import ReferralsPage from './pages/dashboard/ReferralsPage';
 import ResellerPage from './pages/dashboard/ResellerPage';
+import StreamHealthPage from './pages/dashboard/StreamHealthPage';
+import SchedulePage from './pages/dashboard/SchedulePage';
+import OverlaysPage from './pages/dashboard/OverlaysPage';
+import SecurityPage from './pages/dashboard/SecurityPage';
+import RtmpPullPage from './pages/dashboard/RtmpPullPage';
+import BandwidthPage from './pages/dashboard/BandwidthPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminSlots from './pages/admin/AdminSlots';
@@ -32,6 +38,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminResellers from './pages/admin/AdminResellers';
 import AdminAffiliates from './pages/admin/AdminAffiliates';
+import AdminServers from './pages/admin/AdminServers';
 import DashboardLayout from './components/layout/DashboardLayout';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -70,6 +77,12 @@ function AppRoutes() {
         <Route path="/webhooks" element={<WebhooksPage />} />
         <Route path="/referrals" element={<ReferralsPage />} />
         <Route path="/reseller" element={<ResellerPage />} />
+        <Route path="/stream-health" element={<StreamHealthPage />} />
+        <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/overlays" element={<OverlaysPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+        <Route path="/rtmp-pull" element={<RtmpPullPage />} />
+        <Route path="/bandwidth" element={<BandwidthPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
@@ -86,6 +99,7 @@ function AppRoutes() {
         <Route path="/admin/coupons" element={<AdminCoupons />} />
         <Route path="/admin/resellers" element={<AdminResellers />} />
         <Route path="/admin/affiliates" element={<AdminAffiliates />} />
+        <Route path="/admin/servers" element={<AdminServers />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
 

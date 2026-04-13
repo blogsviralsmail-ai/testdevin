@@ -1,53 +1,78 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
+import { ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function VerifyEmailPage() {
-  const { settings } = useAuth();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const emailParam = params.get('email') || '';
-  const devOtp = params.get('dev_otp') || '';
+  const email = searchParams.get('email') || '';
+  const devOtp = searchParams.get('dev_otp') || '';
   const [otp, setOtp] = useState(devOtp);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const primary = settings?.primaryColor || '#6366f1';
-  const brandName = settings?.brandName || 'KKHS Media';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await authAPI.verifyEmail({ email: emailParam, otp });
-      navigate('/login?verified=true');
+      await authAPI.verifyEmail({ email, otp });
+      navigate('/login?verified=1');
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Verification failed');
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Verification failed';
+      setError(msg);
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center gap-2 mb-8 justify-center">
-          <div className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: primary }}>{brandName.charAt(0)}</div>
-          <span className="font-bold text-xl">{brandName}</span>
-        </Link>
-        <div className="bg-white rounded-2xl shadow-sm border p-8">
-          <h1 className="text-2xl font-bold mb-2 text-center">Verify Your Email</h1>
-          <p className="text-gray-600 mb-6 text-center text-sm">Enter the OTP sent to <strong>{emailParam}</strong></p>
-          {error && <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="text" required value={otp} onChange={e => setOtp(e.target.value)} placeholder="Enter 6-digit OTP"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-center text-2xl tracking-widest focus:outline-none focus:ring-2" maxLength={6} />
-            <button type="submit" disabled={loading || otp.length < 4} className="w-full py-3 rounded-xl text-white font-semibold disabled:opacity-50" style={{ backgroundColor: primary }}>
-              {loading ? 'Verifying...' : 'Verify Email'}
-            </button>
-          </form>
+    <div className="min-h-screen flex items-center justify-center surface-base px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-sm"
+      >
+        <div className="flex items-center justify-center gap-2 mb-10">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <span className="text-white text-xs font-bold">G</span>
+          </div>
+          <span className="text-sm font-semibold text-primary">GoLivePro</span>
         </div>
-      </div>
+
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 rounded-xl mx-auto mb-5 flex items-center justify-center" style={{ background: 'rgb(var(--accent) / 0.1)' }}>
+            <ShieldCheck size={22} className="text-indigo-400" />
+          </div>
+          <h1 className="text-xl font-semibold text-primary mb-1.5">Verify your email</h1>
+          <p className="text-sm text-tertiary">Enter the 6-digit code sent to <span className="font-medium text-secondary">{email}</span></p>
+        </div>
+
+        {error && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-5 px-3 py-2.5 rounded-lg text-xs font-medium text-red-400"
+            style={{ background: 'rgb(239 68 68 / 0.1)', border: '1px solid rgb(239 68 68 / 0.2)' }}
+          >{error}</motion.div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Verification code</label>
+            <input type="text" required value={otp} onChange={e => setOtp(e.target.value)}
+              placeholder="000000" maxLength={6}
+              className="input-premium text-center tracking-[0.3em] text-base font-semibold" />
+          </div>
+          <button type="submit" disabled={loading || otp.length < 4}
+            className="w-full btn-premium btn-premium-primary py-2.5 text-sm disabled:opacity-50">
+            {loading ? 'Verifying...' : 'Verify email'}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-xs text-tertiary">
+          <Link to="/login" className="text-primary font-medium hover:underline">Back to login</Link>
+        </p>
+      </motion.div>
     </div>
   );
 }

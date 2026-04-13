@@ -62,6 +62,9 @@ async def create_slot(req: CreateSlotRequest, user=Depends(get_current_user)):
         "streamProcessId": None,
         "scheduledStart": scheduled_start,
         "scheduledEnd": scheduled_end,
+        "resolution": req.resolution or "1080p",
+        "sourceType": req.sourceType or "uploaded",
+        "sourceUrl": req.sourceUrl or "",
         "expiryDate": datetime.utcnow() + timedelta(days=365),  # 1 year default
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow(),
@@ -107,6 +110,16 @@ async def update_slot(slot_id: str, req: UpdateSlotRequest, user=Depends(get_cur
                 update["scheduledEnd"] = dateutil_parser.isoparse(req.scheduledEnd).replace(tzinfo=None)
             except (ValueError, AttributeError):
                 update["scheduledEnd"] = req.scheduledEnd
+    if req.resolution is not None:
+        update["resolution"] = req.resolution
+    if req.sourceType is not None:
+        update["sourceType"] = req.sourceType
+    if req.sourceUrl is not None:
+        update["sourceUrl"] = req.sourceUrl
+    if req.isStreaming is not None:
+        update["isStreaming"] = req.isStreaming
+    if req.streamProcessId is not None:
+        update["streamProcessId"] = req.streamProcessId
 
     await db.slots.update_one({"_id": ObjectId(slot_id)}, {"$set": update})
     updated = await db.slots.find_one({"_id": ObjectId(slot_id)})
@@ -190,6 +203,14 @@ async def start_stream(slot_id: str, user=Depends(get_current_user)):
         {"$set": {"isStreaming": True, "streamProcessId": process_id, "updatedAt": datetime.utcnow()}}
     )
 
+    # Fire webhook + activity log (non-blocking)
+    import asyncio as _aio
+    from app.routes.webhooks import trigger_webhooks
+    from app.services.activity import log_activity, log_stream_event
+    _aio.create_task(trigger_webhooks(user["id"], "stream.started", {"slotId": slot_id, "platform": slot["platform"], "slotName": slot.get("name", "")}))
+    _aio.create_task(log_activity(user["id"], "stream.started", f"Started stream on slot {slot.get('name','')}", resource_type="slot", resource_id=slot_id))
+    _aio.create_task(log_stream_event(slot_id, user["id"], "started", f"Platform: {slot['platform']}"))
+
     # Set YouTube custom thumbnail via API (background, non-blocking)
     if slot.get("platform") == "youtube":
         import asyncio
@@ -232,6 +253,15 @@ async def stop_stream(slot_id: str, user=Depends(get_current_user)):
         {"_id": ObjectId(slot_id)},
         {"$set": {"isStreaming": False, "streamProcessId": None, "updatedAt": datetime.utcnow()}}
     )
+
+    # Fire webhook + activity log (non-blocking)
+    import asyncio as _aio
+    from app.routes.webhooks import trigger_webhooks
+    from app.services.activity import log_activity, log_stream_event
+    _aio.create_task(trigger_webhooks(user["id"], "stream.stopped", {"slotId": slot_id, "platform": slot.get("platform", ""), "slotName": slot.get("name", "")}))
+    _aio.create_task(log_activity(user["id"], "stream.stopped", f"Stopped stream on slot {slot.get('name','')}", resource_type="slot", resource_id=slot_id))
+    _aio.create_task(log_stream_event(slot_id, user["id"], "stopped"))
+
     return {"message": "Stream stopped"}
 
 

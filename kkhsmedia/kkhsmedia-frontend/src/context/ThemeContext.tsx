@@ -5,27 +5,25 @@ interface ThemeContextType {
   toggleDarkMode: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({ darkMode: false, toggleDarkMode: () => {} });
+const ThemeContext = createContext<ThemeContextType>({ darkMode: true, toggleDarkMode: () => {} });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved === 'true';
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : true; // dark mode default
   });
 
   useEffect(() => {
-    localStorage.setItem('darkMode', String(darkMode));
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
     if (darkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
     }
   }, [darkMode]);
 
-  const toggleDarkMode = () => setDarkMode(prev => !prev);
-
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode: () => setDarkMode(p => !p) }}>
       {children}
     </ThemeContext.Provider>
   );

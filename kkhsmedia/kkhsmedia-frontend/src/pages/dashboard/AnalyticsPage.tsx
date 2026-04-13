@@ -43,11 +43,11 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (loading) return <div className="p-6 text-gray-500">Loading analytics...</div>;
+  if (loading) return <div className="p-6 text-tertiary">Loading analytics...</div>;
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Stream Analytics</h1>
+      <h1 className="text-2xl font-bold text-primary">Stream Analytics</h1>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -70,7 +70,7 @@ export default function AnalyticsPage() {
 
       {/* Daily Activity Chart */}
       {stats?.dailyActivity && stats.dailyActivity.length > 0 && (
-        <div className="bg-white rounded-lg border p-6">
+        <div className="surface-base rounded-lg border p-6">
           <h2 className="text-lg font-semibold mb-4">Daily Stream Activity (Last 30 Days)</h2>
           <div className="flex items-end space-x-1 h-40">
             {stats.dailyActivity.map((day, i) => {
@@ -94,32 +94,32 @@ export default function AnalyticsPage() {
 
       {/* Per-Slot Stats */}
       {stats?.slotStats && stats.slotStats.length > 0 && (
-        <div className="bg-white rounded-lg border">
+        <div className="surface-base rounded-lg border">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">Per-Slot Statistics</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="surface-subtle">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Slot Name</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Platform</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Total Starts</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Errors</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Hours</th>
+                  <th className="px-4 py-3 text-left font-medium text-tertiary">Slot Name</th>
+                  <th className="px-4 py-3 text-left font-medium text-tertiary">Platform</th>
+                  <th className="px-4 py-3 text-center font-medium text-tertiary">Status</th>
+                  <th className="px-4 py-3 text-center font-medium text-tertiary">Total Starts</th>
+                  <th className="px-4 py-3 text-center font-medium text-tertiary">Errors</th>
+                  <th className="px-4 py-3 text-center font-medium text-tertiary">Hours</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {stats.slotStats.map((slot, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-[rgb(var(--bg-muted))]">
                     <td className="px-4 py-3 font-medium">{slot.slotName || 'Unnamed'}</td>
                     <td className="px-4 py-3 capitalize">{slot.platform}</td>
                     <td className="px-4 py-3 text-center">
                       {slot.isStreaming ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">LIVE</span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Offline</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium surface-muted text-secondary">Offline</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">{slot.totalStarts}</td>

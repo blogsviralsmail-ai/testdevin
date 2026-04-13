@@ -55,7 +55,7 @@ export const publicAPI = {
 export const slotsAPI = {
   getAll: () => api.get('/api/slots'),
   getOne: (id: string) => api.get(`/api/slots/${id}`),
-  create: (data: { name: string; platform: string; streamKey: string; rtmpUrl?: string }) => api.post('/api/slots', data),
+  create: (data: { name: string; platform: string; streamKey: string; rtmpUrl?: string; resolution?: string; sourceType?: string; sourceUrl?: string; videoId?: string; scheduledStart?: string; scheduledEnd?: string; streamUrl?: string }) => api.post('/api/slots', data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/api/slots/${id}`, data),
   delete: (id: string) => api.delete(`/api/slots/${id}`),
   startStream: (id: string) => api.post(`/api/slots/${id}/stream`),
@@ -226,6 +226,17 @@ export const resellerAPI = {
   adminRemoveReseller: (id: string) => api.delete(`/api/reseller/admin/${id}`),
 };
 
+// Bulk Operations
+export const bulkAPI = {
+  start: (slotIds: string[]) => api.post('/api/bulk/start', { slotIds }),
+  stop: (slotIds: string[]) => api.post('/api/bulk/stop', { slotIds }),
+  assignVideo: (slotIds: string[], videoId: string) => api.post('/api/bulk/assign-video', { slotIds, videoId }),
+  delete: (slotIds: string[]) => api.post('/api/bulk/delete', { slotIds }),
+  getApiKey: () => api.get('/api/bulk/api-key'),
+  regenerateApiKey: () => api.post('/api/bulk/api-key/regenerate'),
+  getApiDocs: () => api.get('/api/bulk/api-docs'),
+};
+
 // Orders
 export const ordersAPI = {
   create: (data: Record<string, unknown>) => api.post('/api/orders', data),
@@ -255,10 +266,103 @@ export const adminAPI = {
   deleteProduct: (id: string) => api.delete(`/api/admin/products/${id}`),
   getSettings: () => api.get('/api/admin/settings'),
   updateSettings: (data: Record<string, unknown>) => api.put('/api/admin/settings', data),
+  uploadLogo: (formData: FormData) => api.post('/api/admin/upload-logo', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getContacts: (params?: Record<string, unknown>) => api.get('/api/admin/contacts', { params }),
   deleteContact: (id: string) => api.delete(`/api/admin/contacts/${id}`),
   updateContactStatus: (id: string, status: string) => api.put(`/api/admin/contacts/${id}/status?new_status=${status}`),
   getAnalytics: (period?: string) => api.get('/api/admin/analytics', { params: { period } }),
+  assignPlan: (data: Record<string, unknown>) => api.post('/api/admin/assign-plan', data),
+  getUserPlan: (userId: string) => api.get(`/api/admin/users/${userId}/plan`),
+  createUser: (data: Record<string, unknown>) => api.post('/api/admin/create-user', data),
+};
+
+// Stream Health
+export const healthAPI = {
+  getSystem: () => api.get('/api/health/system'),
+  getStreamHealth: (slotId: string) => api.get(`/api/health/stream/${slotId}`),
+  adminOverview: () => api.get('/api/health/admin/overview'),
+  saveSnapshot: (slotId: string, data: Record<string, number>) => api.post(`/api/health/snapshot/${slotId}`, null, { params: data }),
+};
+
+// 2FA
+export const twoFactorAPI = {
+  setup: () => api.post('/api/2fa/setup'),
+  verifySetup: (data: { code: string }) => api.post('/api/2fa/verify-setup', data),
+  verify: (data: { code: string }) => api.post('/api/2fa/verify', data),
+  disable: (data: { code: string }) => api.post('/api/2fa/disable', data),
+  getStatus: () => api.get('/api/2fa/status'),
+};
+
+// i18n
+export const i18nAPI = {
+  getTranslations: (lang: string) => api.get(`/api/i18n/translations/${lang}`),
+  getLanguages: () => api.get('/api/i18n/languages'),
+  setUserLanguage: (lang: string) => api.put(`/api/i18n/user/language?language=${lang}`),
+};
+
+// Thumbnails
+export const thumbnailsAPI = {
+  generate: (data: Record<string, unknown>) => api.post('/api/thumbnails/generate', data),
+  generateGrid: (data: Record<string, unknown>) => api.post('/api/thumbnails/generate-grid', data),
+  textOverlay: (data: Record<string, unknown>) => api.post('/api/thumbnails/text-overlay', data),
+  getAll: () => api.get('/api/thumbnails'),
+  delete: (id: string) => api.delete(`/api/thumbnails/${id}`),
+};
+
+// Chat Overlay & Watermark
+export const overlayAPI = {
+  getChatConfig: (slotId: string) => api.get(`/api/overlay/chat/${slotId}`),
+  updateChatConfig: (data: Record<string, unknown>) => api.put('/api/overlay/chat', data),
+  addChatMessage: (data: Record<string, unknown>) => api.post('/api/overlay/chat/message', data),
+  getChatMessages: (slotId: string, limit?: number) => api.get(`/api/overlay/chat/messages/${slotId}`, { params: { limit } }),
+  getWatermarkConfig: (slotId: string) => api.get(`/api/overlay/watermark/${slotId}`),
+  updateWatermarkConfig: (data: Record<string, unknown>) => api.put('/api/overlay/watermark', data),
+  uploadWatermark: (formData: FormData) => api.post('/api/overlay/watermark/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+};
+
+// Schedule & Multi-YouTube
+export const scheduleAPI = {
+  getAll: (params?: Record<string, unknown>) => api.get('/api/schedule', { params }),
+  create: (data: Record<string, unknown>) => api.post('/api/schedule', data),
+  importCsv: (formData: FormData) => api.post('/api/schedule/csv-import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getTemplate: () => api.get('/api/schedule/csv-template', { responseType: 'blob' }),
+  delete: (id: string) => api.delete(`/api/schedule/${id}`),
+  updateStatus: (id: string, status: string) => api.put(`/api/schedule/${id}/status?status=${status}`),
+  getYouTubeAccounts: () => api.get('/api/schedule/youtube-accounts'),
+  addYouTubeAccount: (data: Record<string, unknown>) => api.post('/api/schedule/youtube-accounts', data),
+  updateYouTubeAccount: (id: string, data: Record<string, unknown>) => api.put(`/api/schedule/youtube-accounts/${id}`, data),
+  deleteYouTubeAccount: (id: string) => api.delete(`/api/schedule/youtube-accounts/${id}`),
+};
+
+// Billing & Metering
+export const billingAPI = {
+  getPPSRates: () => api.get('/api/billing/pay-per-stream/rates'),
+  createPPSOrder: (data: Record<string, unknown>) => api.post('/api/billing/pay-per-stream', data),
+  verifyPPSPayment: (data: Record<string, unknown>) => api.post('/api/billing/pay-per-stream/verify', null, { params: data }),
+  getBandwidth: (period?: string) => api.get('/api/billing/bandwidth', { params: { period } }),
+  getBandwidthAlerts: () => api.get('/api/billing/bandwidth/alerts'),
+  setBandwidthAlerts: (data: Record<string, unknown>) => api.put('/api/billing/bandwidth/alerts', data),
+  adminBandwidth: (period?: string) => api.get('/api/billing/bandwidth/admin', { params: { period } }),
+  getFreeTrial: () => api.get('/api/billing/free-trial'),
+  activateFreeTrial: () => api.post('/api/billing/free-trial/activate'),
+  toggleAutoUpgrade: (enabled: boolean) => api.put(`/api/billing/free-trial/auto-upgrade?enabled=${enabled}`),
+  getRazorpayConfig: () => api.get('/api/billing/razorpay/config'),
+  createRazorpayOrder: (amount: number, currency?: string) => api.post('/api/billing/razorpay/create-order', null, { params: { amount, currency: currency || 'INR' } }),
+  verifyRazorpay: (data: Record<string, unknown>) => api.post('/api/billing/razorpay/verify', null, { params: data }),
+};
+
+// RTMP Pull & Load Balancing
+export const rtmpPullAPI = {
+  start: (data: Record<string, unknown>) => api.post('/api/rtmp-pull/start', data),
+  stop: (slotId: string) => api.post(`/api/rtmp-pull/stop/${slotId}`),
+  getSources: () => api.get('/api/rtmp-pull/sources'),
+  saveSource: (name: string, url: string, type?: string) => api.post('/api/rtmp-pull/sources', null, { params: { name, url, source_type: type || 'rtmp' } }),
+  deleteSource: (id: string) => api.delete(`/api/rtmp-pull/sources/${id}`),
+  getServers: () => api.get('/api/rtmp-pull/servers'),
+  addServer: (data: Record<string, unknown>) => api.post('/api/rtmp-pull/servers', data),
+  updateServer: (id: string, data: Record<string, unknown>) => api.put(`/api/rtmp-pull/servers/${id}`, data),
+  deleteServer: (id: string) => api.delete(`/api/rtmp-pull/servers/${id}`),
+  getBestServer: () => api.get('/api/rtmp-pull/servers/best'),
 };
 
 export default api;

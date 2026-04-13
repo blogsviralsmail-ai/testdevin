@@ -49,15 +49,15 @@ export default function ResellerPage() {
     loadData();
   };
 
-  if (loading) return <div className="p-6 text-gray-500">Loading...</div>;
+  if (loading) return <div className="p-6 text-tertiary">Loading...</div>;
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Reseller Panel</h1>
+        <h1 className="text-2xl font-bold text-primary">Reseller Panel</h1>
         <div className="flex gap-2">
-          <button onClick={() => setTab('dashboard')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'dashboard' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Dashboard</button>
-          <button onClick={() => setTab('clients')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'clients' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Clients</button>
+          <button onClick={() => setTab('dashboard')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'dashboard' ? 'bg-blue-600 text-white' : 'surface-muted'}`}>Dashboard</button>
+          <button onClick={() => setTab('clients')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'clients' ? 'bg-blue-600 text-white' : 'surface-muted'}`}>Clients</button>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ export default function ResellerPage() {
           <button onClick={() => setShowAdd(!showAdd)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">+ Add Client</button>
 
           {showAdd && (
-            <div className="bg-white rounded-lg border p-6 space-y-4">
+            <div className="surface-base rounded-lg border p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
@@ -116,32 +116,32 @@ export default function ResellerPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={addClient} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">Create Client</button>
-                <button onClick={() => setShowAdd(false)} className="bg-gray-100 px-4 py-2 rounded-lg text-sm">Cancel</button>
+                <button onClick={() => setShowAdd(false)} className="surface-muted px-4 py-2 rounded-lg text-sm">Cancel</button>
               </div>
             </div>
           )}
 
-          <div className="bg-white rounded-lg border">
+          <div className="surface-base rounded-lg border">
             {clients.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">No clients yet. Add your first client!</div>
+              <div className="p-8 text-center text-tertiary">No clients yet. Add your first client!</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="surface-subtle">
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500">Client</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500">Email</th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-500">Slots</th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-500">Streaming</th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-500">Actions</th>
+                      <th className="px-4 py-3 text-left font-medium text-tertiary">Client</th>
+                      <th className="px-4 py-3 text-left font-medium text-tertiary">Email</th>
+                      <th className="px-4 py-3 text-center font-medium text-tertiary">Slots</th>
+                      <th className="px-4 py-3 text-center font-medium text-tertiary">Streaming</th>
+                      <th className="px-4 py-3 text-center font-medium text-tertiary">Status</th>
+                      <th className="px-4 py-3 text-center font-medium text-tertiary">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {clients.map((client: any) => (
-                      <tr key={client.id} className="hover:bg-gray-50">
+                      <tr key={client.id} className="hover:bg-[rgb(var(--bg-muted))]">
                         <td className="px-4 py-3 font-medium">{client.firstName} {client.lastName}</td>
-                        <td className="px-4 py-3 text-gray-500">{client.email}</td>
+                        <td className="px-4 py-3 text-tertiary">{client.email}</td>
                         <td className="px-4 py-3 text-center">{client.totalSlots}/{client.maxSlots}</td>
                         <td className="px-4 py-3 text-center">{client.streamingSlots}</td>
                         <td className="px-4 py-3 text-center">

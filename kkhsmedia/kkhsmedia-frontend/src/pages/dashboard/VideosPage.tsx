@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { videosAPI } from '../../services/api';
 import { Video, Upload, Trash2, Edit2, Check, X, RefreshCw, AlertCircle, Play, Clock } from 'lucide-react';
 
@@ -11,7 +10,7 @@ interface VideoItem {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function VideosPage() {
-  const { settings } = useAuth();
+
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -22,7 +21,6 @@ export default function VideosPage() {
   const [editName, setEditName] = useState('');
   const [playingVideo, setPlayingVideo] = useState<VideoItem | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const primary = settings?.primaryColor || '#6366f1';
 
   const loadVideos = async () => {
     setLoading(true);
@@ -115,9 +113,9 @@ export default function VideosPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Videos</h1>
         <div className="flex gap-2">
-          <button onClick={loadVideos} className="px-3 py-2 rounded-lg border hover:bg-gray-50"><RefreshCw size={18} /></button>
+          <button onClick={loadVideos} className="px-3 py-2 rounded-lg border hover:bg-[rgb(var(--bg-muted))]"><RefreshCw size={18} /></button>
           <button onClick={() => fileRef.current?.click()} disabled={uploading}
-            className="px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50" style={{ backgroundColor: primary }}>
+            className="px-4 py-2 rounded-lg text-white flex items-center gap-2 disabled:opacity-50">
             <Upload size={18} /> {uploading ? 'Uploading...' : 'Upload Video'}
           </button>
           <input ref={fileRef} type="file" accept="video/*" multiple className="hidden" onChange={handleUpload} />
@@ -125,29 +123,29 @@ export default function VideosPage() {
       </div>
 
       {uploading && (
-        <div className="mb-4 bg-white rounded-xl border p-4 space-y-3">
+        <div className="mb-4 surface-base rounded-xl border p-4 space-y-3">
           {uploadQueue.length > 1 && (
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium text-gray-700">Overall progress</span>
-                <span className="text-sm text-gray-500">{uploadProgress}%</span>
+                <span className="text-sm text-tertiary">{uploadProgress}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, backgroundColor: primary }} />
+                <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, backgroundColor: 'rgb(var(--accent))' }} />
               </div>
             </div>
           )}
           {uploadQueue.map((q, i) => (
             <div key={i}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-gray-600 truncate max-w-[70%]">
+                <span className="text-xs font-medium text-secondary truncate max-w-[70%]">
                   {q.status === 'done' ? '\u2714' : q.status === 'error' ? '\u2716' : q.status === 'uploading' ? '\u25B6' : '\u25CB'}{' '}{q.name}
                 </span>
-                <span className="text-xs text-gray-500">{q.status === 'done' ? 'Done' : q.status === 'error' ? 'Failed' : `${q.progress}%`}</span>
+                <span className="text-xs text-tertiary">{q.status === 'done' ? 'Done' : q.status === 'error' ? 'Failed' : `${q.progress}%`}</span>
               </div>
               {q.status === 'uploading' && (
                 <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${q.progress}%`, backgroundColor: primary }} />
+                  <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${q.progress}%`, backgroundColor: 'rgb(var(--accent))' }} />
                 </div>
               )}
             </div>
@@ -166,18 +164,18 @@ export default function VideosPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading...</div>
+        <div className="text-center py-12 text-tertiary">Loading...</div>
       ) : videos.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border">
-          <Video size={48} className="mx-auto mb-4 text-gray-300" />
+        <div className="text-center py-12 surface-base rounded-xl border">
+          <Video size={48} className="mx-auto mb-4 text-secondary" />
           <h3 className="font-semibold text-gray-700 mb-2">No Videos Yet</h3>
-          <p className="text-sm text-gray-500 mb-4">Upload your first video to start streaming.</p>
-          <button onClick={() => fileRef.current?.click()} className="px-4 py-2 rounded-lg text-white" style={{ backgroundColor: primary }}>Upload Video</button>
+          <p className="text-sm text-tertiary mb-4">Upload your first video to start streaming.</p>
+          <button onClick={() => fileRef.current?.click()} className="px-4 py-2 rounded-lg text-white">Upload Video</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {videos.map(video => (
-            <div key={video.id} className="bg-white rounded-xl border overflow-hidden group hover:shadow-md transition-shadow">
+            <div key={video.id} className="surface-base rounded-xl border overflow-hidden group hover:shadow-md transition-shadow">
               {/* Thumbnail / Play area */}
               <div
                 className="relative aspect-video bg-gray-900 cursor-pointer flex items-center justify-center"
@@ -191,12 +189,12 @@ export default function VideosPage() {
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                 ) : (
-                  <Video size={40} className="text-gray-600" />
+                  <Video size={40} className="text-secondary" />
                 )}
                 {/* Play overlay */}
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center">
-                    <Play size={24} className="text-gray-800 ml-1" />
+                  <div className="w-14 h-14 rounded-full surface-base/90 flex items-center justify-center">
+                    <Play size={24} className="text-primary ml-1" />
                   </div>
                 </div>
                 {/* Duration badge */}
@@ -215,18 +213,18 @@ export default function VideosPage() {
                     <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
                       className="px-2 py-1 border rounded text-sm flex-1" autoFocus />
                     <button onClick={() => handleRename(video.id)} className="text-green-600"><Check size={16} /></button>
-                    <button onClick={() => setEditingId(null)} className="text-gray-400"><X size={16} /></button>
+                    <button onClick={() => setEditingId(null)} className="text-tertiary"><X size={16} /></button>
                   </div>
                 ) : (
                   <div>
                     <h3 className="text-sm font-medium truncate" title={video.name}>{video.name}</h3>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-tertiary">
                         {formatSize(video.fileSize)} &middot; {new Date(video.createdAt).toLocaleDateString()}
                       </span>
                       <div className="flex items-center gap-0.5">
                         <button onClick={() => { setEditingId(video.id); setEditName(video.name); }}
-                          className="p-1 rounded hover:bg-gray-100 text-gray-400" title="Rename"><Edit2 size={13} /></button>
+                          className="p-1 rounded hover:bg-[rgb(var(--bg-muted))] text-tertiary" title="Rename"><Edit2 size={13} /></button>
                         <button onClick={() => handleDelete(video.id)}
                           className="p-1 rounded hover:bg-red-50 text-red-400" title="Delete"><Trash2 size={13} /></button>
                       </div>
@@ -242,10 +240,10 @@ export default function VideosPage() {
       {/* Video Player Modal */}
       {playingVideo && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setPlayingVideo(null)}>
-          <div className="bg-white rounded-xl overflow-hidden max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="surface-base card-premium overflow-hidden max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-3 border-b">
               <h3 className="font-semibold text-sm truncate flex-1">{playingVideo.name}</h3>
-              <button onClick={() => setPlayingVideo(null)} className="p-1 rounded hover:bg-gray-100 text-gray-500 ml-2"><X size={18} /></button>
+              <button onClick={() => setPlayingVideo(null)} className="p-1 rounded hover:bg-[rgb(var(--bg-muted))] text-tertiary ml-2"><X size={18} /></button>
             </div>
             <div className="bg-black flex-1">
               <video
@@ -258,7 +256,7 @@ export default function VideosPage() {
                 Your browser does not support video playback.
               </video>
             </div>
-            <div className="p-3 border-t flex items-center justify-between text-xs text-gray-500">
+            <div className="p-3 border-t flex items-center justify-between text-xs text-tertiary">
               <span>{formatSize(playingVideo.fileSize)} &middot; {formatDuration(playingVideo.duration)}</span>
               <span>Uploaded {new Date(playingVideo.createdAt).toLocaleDateString()}</span>
             </div>

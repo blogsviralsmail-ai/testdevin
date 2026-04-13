@@ -1,22 +1,16 @@
 {
-  "name": "KKHS Media - 24/7 Live Streaming",
-  "short_name": "KKHS Media",
-  "description": "24/7 Live Streaming Platform - Stream pre-recorded videos to YouTube, Facebook & more",
+  "name": "GoLivePro - The Professional Live Streaming Studio",
+  "short_name": "GoLivePro",
+  "description": "The Professional Live Streaming Studio - Stream pre-recorded videos 24/7 on YouTube, Facebook, Twitch & more",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#6366f1",
+  "theme_color": "#1B4F8A",
   "orientation": "any",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
+          "src": "/favicon.png",
+          "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }

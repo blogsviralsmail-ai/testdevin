@@ -138,6 +138,12 @@ async def verify_order(order_id: str, user=Depends(get_current_user)):
         )
         # Activate/renew slots
         await activate_slots(db, order)
+        # Process referral commission (non-blocking)
+        import asyncio as _aio
+        from app.routes.affiliates import process_referral_commission
+        from app.services.activity import log_activity
+        _aio.create_task(process_referral_commission(order))
+        _aio.create_task(log_activity(user["id"], "payment.verified", f"Order {order.get('orderId','')} paid", resource_type="order", resource_id=order_id))
         return {"message": "Payment verified", "status": "paid"}
 
     return {"message": "Payment not confirmed yet", "status": order["status"]}
@@ -169,6 +175,10 @@ async def cashfree_webhook(request: Request):
                 {"$set": {"status": "paid", "updatedAt": datetime.utcnow()}}
             )
             await activate_slots(db, order)
+            # Process referral commission
+            from app.routes.affiliates import process_referral_commission
+            import asyncio as _aio
+            _aio.create_task(process_referral_commission(order))
 
     return {"status": "ok"}
 
@@ -201,6 +211,10 @@ async def razorpay_webhook(request: Request):
                     {"$set": {"status": "paid", "paymentId": payment.get("id"), "updatedAt": datetime.utcnow()}}
                 )
                 await activate_slots(db, order)
+                # Process referral commission
+                from app.routes.affiliates import process_referral_commission
+                import asyncio as _aio
+                _aio.create_task(process_referral_commission(order))
 
     return {"status": "ok"}
 
@@ -251,15 +265,16 @@ async def activate_slots(db, order):
 
 
 async def create_cashfree_order(order_id: str, amount: float, currency: str, user: dict) -> dict:
-    from app.config import CASHFREE_APP_ID, CASHFREE_SECRET_KEY, CASHFREE_ENV
-    if not CASHFREE_APP_ID:
+    from app.config import get_cashfree_config
+    cfg = await get_cashfree_config()
+    if not cfg["app_id"]:
         return {"mock": True, "orderId": order_id, "message": "Cashfree not configured - using mock payment"}
 
     import httpx
-    base_url = "https://sandbox.cashfree.com" if CASHFREE_ENV == "sandbox" else "https://api.cashfree.com"
+    base_url = "https://sandbox.cashfree.com" if cfg["env"] == "sandbox" else "https://api.cashfree.com"
     headers = {
-        "x-client-id": CASHFREE_APP_ID,
-        "x-client-secret": CASHFREE_SECRET_KEY,
+        "x-client-id": cfg["app_id"],
+        "x-client-secret": cfg["secret_key"],
         "x-api-version": "2023-08-01",
         "Content-Type": "application/json",
     }
@@ -283,8 +298,9 @@ async def create_cashfree_order(order_id: str, amount: float, currency: str, use
 
 
 async def create_razorpay_order(order_id: str, amount: float, currency: str) -> dict:
-    from app.config import RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
-    if not RAZORPAY_KEY_ID:
+    from app.config import get_razorpay_config
+    cfg = await get_razorpay_config()
+    if not cfg["key_id"]:
         return {"mock": True, "orderId": order_id, "message": "Razorpay not configured - using mock payment"}
 
     import httpx
@@ -294,22 +310,23 @@ async def create_razorpay_order(order_id: str, amount: float, currency: str) -> 
                 "https://api.razorpay.com/v1/orders",
                 json={"amount": int(amount * 100), "currency": currency, "receipt": order_id,
                       "notes": {"order_id": order_id}},
-                auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET),
+                auth=(cfg["key_id"], cfg["key_secret"]),
             )
             data = resp.json()
             return {"orderId": data.get("id"), "amount": data.get("amount"), "currency": currency, "gateway": "razorpay",
-                    "key": RAZORPAY_KEY_ID}
+                    "key": cfg["key_id"]}
     except Exception as e:
         return {"error": str(e), "orderId": order_id}
 
 
 async def verify_cashfree_payment(order_id: str) -> bool:
-    from app.config import CASHFREE_APP_ID, CASHFREE_SECRET_KEY, CASHFREE_ENV
-    if not CASHFREE_APP_ID:
+    from app.config import get_cashfree_config
+    cfg = await get_cashfree_config()
+    if not cfg["app_id"]:
         return True  # Mock mode
     import httpx
-    base_url = "https://sandbox.cashfree.com" if CASHFREE_ENV == "sandbox" else "https://api.cashfree.com"
-    headers = {"x-client-id": CASHFREE_APP_ID, "x-client-secret": CASHFREE_SECRET_KEY, "x-api-version": "2023-08-01"}
+    base_url = "https://sandbox.cashfree.com" if cfg["env"] == "sandbox" else "https://api.cashfree.com"
+    headers = {"x-client-id": cfg["app_id"], "x-client-secret": cfg["secret_key"], "x-api-version": "2023-08-01"}
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(f"{base_url}/pg/orders/{order_id}", headers=headers)
@@ -320,15 +337,16 @@ async def verify_cashfree_payment(order_id: str) -> bool:
 
 
 async def verify_razorpay_payment(rp_order_id: str) -> bool:
-    from app.config import RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
-    if not RAZORPAY_KEY_ID:
+    from app.config import get_razorpay_config
+    cfg = await get_razorpay_config()
+    if not cfg["key_id"]:
         return True  # Mock mode
     import httpx
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"https://api.razorpay.com/v1/orders/{rp_order_id}/payments",
-                auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET),
+                auth=(cfg["key_id"], cfg["key_secret"]),
             )
             data = resp.json()
             for item in data.get("items", []):

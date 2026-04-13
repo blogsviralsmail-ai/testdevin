@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { adminAPI } from '../../services/api';
 import { Plus, Edit2, Trash2, RefreshCw, Save } from 'lucide-react';
 
@@ -10,14 +9,13 @@ interface Product {
 }
 
 export default function AdminProducts() {
-  const { settings } = useAuth();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', durationType: 'day', durationValue: 1, price: 0, features: '', streamQuality: '720p', sortOrder: 0 });
   const [saving, setSaving] = useState(false);
-  const primary = settings?.primaryColor || '#6366f1';
 
   const loadProducts = async () => {
     setLoading(true);
@@ -64,8 +62,8 @@ export default function AdminProducts() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Plans & Pricing</h1>
         <div className="flex gap-2">
-          <button onClick={loadProducts} className="px-3 py-2 rounded-lg border hover:bg-gray-50"><RefreshCw size={18} /></button>
-          <button onClick={() => setShowAdd(true)} className="px-4 py-2 rounded-lg text-white flex items-center gap-2" style={{ backgroundColor: primary }}>
+          <button onClick={loadProducts} className="px-3 py-2 rounded-lg border hover:bg-[rgb(var(--bg-muted))]"><RefreshCw size={18} /></button>
+          <button onClick={() => setShowAdd(true)} className="px-4 py-2 rounded-lg text-white flex items-center gap-2">
             <Plus size={18} /> Add Plan
           </button>
         </div>
@@ -74,8 +72,8 @@ export default function AdminProducts() {
       {/* Add/Edit Modal */}
       {(showAdd || editing) && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-screen overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">{editing ? 'Edit Plan' : 'Add New Plan'}</h2>
+          <div className="surface-base rounded-xl p-6 w-full max-w-lg max-h-screen overflow-y-auto">
+            <h2 className="text-lg font-semibold text-primary mb-4">{editing ? 'Edit Plan' : 'Add New Plan'}</h2>
             <form onSubmit={editing ? (e) => { e.preventDefault(); handleUpdate(); } : handleCreate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Plan Name</label>
@@ -132,7 +130,7 @@ export default function AdminProducts() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => { setShowAdd(false); setEditing(null); }} className="flex-1 py-2.5 rounded-xl border">Cancel</button>
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl text-white disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primary }}>
+                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl text-white disabled:opacity-50 flex items-center justify-center gap-2">
                   <Save size={16} /> {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
                 </button>
               </div>
@@ -142,16 +140,16 @@ export default function AdminProducts() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading...</div>
+        <div className="text-center py-12 text-tertiary">Loading...</div>
       ) : (
         <div className="grid md:grid-cols-3 gap-4">
           {products.map(product => (
-            <div key={product.id} className="bg-white rounded-xl border p-6">
+            <div key={product.id} className="surface-base rounded-xl border p-6">
               <div className="flex items-start justify-between mb-3">
                 <h3 className="font-bold text-lg">{product.name}</h3>
                 <div className="flex gap-1">
-                  <button onClick={() => setEditing(product)} className="p-1.5 rounded hover:bg-gray-100">
-                    <Edit2 size={14} style={{ color: primary }} />
+                  <button onClick={() => setEditing(product)} className="p-1.5 rounded hover:bg-[rgb(var(--bg-muted))]">
+                    <Edit2 size={14} />
                   </button>
                   <button onClick={() => handleDelete(product.id)} className="p-1.5 rounded hover:bg-red-50">
                     <Trash2 size={14} className="text-red-500" />
@@ -159,11 +157,11 @@ export default function AdminProducts() {
                 </div>
               </div>
               <div className="text-3xl font-bold mb-1">₹{product.price.INR}</div>
-              <div className="text-sm text-gray-500 mb-3">per {product.durationType} • {product.streamQuality}</div>
+              <div className="text-sm text-tertiary mb-3">per {product.durationType} • {product.streamQuality}</div>
               <ul className="space-y-1">
                 {product.features.map((f, i) => (
-                  <li key={i} className="text-sm text-gray-600 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primary }} /> {f}
+                  <li key={i} className="text-sm text-secondary flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full" /> {f}
                   </li>
                 ))}
               </ul>

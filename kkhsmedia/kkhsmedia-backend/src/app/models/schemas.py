@@ -48,6 +48,9 @@ class CreateSlotRequest(BaseModel):
     videoId: Optional[str] = None  # assign video at creation time
     scheduledStart: Optional[str] = None  # ISO datetime string for auto-start
     scheduledEnd: Optional[str] = None  # ISO datetime string for auto-stop
+    resolution: Optional[str] = "1080p"  # auto, 4k, 1080p, 720p
+    sourceType: Optional[str] = None  # uploaded, youtube_url, gdrive, playlist
+    sourceUrl: Optional[str] = None  # URL for youtube_url or gdrive
 
 class UpdateSlotRequest(BaseModel):
     name: Optional[str] = None
@@ -57,6 +60,11 @@ class UpdateSlotRequest(BaseModel):
     videoId: Optional[str] = None
     scheduledStart: Optional[str] = None  # ISO datetime string for auto-start
     scheduledEnd: Optional[str] = None  # ISO datetime string for auto-stop
+    resolution: Optional[str] = None  # auto, 4k, 1080p, 720p
+    sourceType: Optional[str] = None  # uploaded, youtube_url, gdrive, playlist
+    sourceUrl: Optional[str] = None  # URL for youtube_url or gdrive
+    isStreaming: Optional[bool] = None
+    streamProcessId: Optional[int] = None
 
 
 # Videos
@@ -131,6 +139,29 @@ class UpdateSettingsRequest(BaseModel):
     metaDescription: Optional[str] = None
     googleClientId: Optional[str] = None
     googleClientSecret: Optional[str] = None
+    # Payment Gateway Keys
+    cashfreeAppId: Optional[str] = None
+    cashfreeSecretKey: Optional[str] = None
+    cashfreeEnv: Optional[str] = None  # sandbox or production
+    razorpayKeyId: Optional[str] = None
+    razorpayKeySecret: Optional[str] = None
+    # SMTP / Email
+    smtpHost: Optional[str] = None
+    smtpPort: Optional[int] = None
+    smtpUser: Optional[str] = None
+    smtpPassword: Optional[str] = None
+    fromEmail: Optional[str] = None
+    # Messaging / Notifications
+    whatsappApiKey: Optional[str] = None
+    telegramBotToken: Optional[str] = None
+    # Facebook
+    facebookAppId: Optional[str] = None
+    facebookAppSecret: Optional[str] = None
+    # AWS S3
+    awsAccessKeyId: Optional[str] = None
+    awsSecretAccessKey: Optional[str] = None
+    awsS3Bucket: Optional[str] = None
+    awsRegion: Optional[str] = None
 
 class ContactMessageRequest(BaseModel):
     name: str

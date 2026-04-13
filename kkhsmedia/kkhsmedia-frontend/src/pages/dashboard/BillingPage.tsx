@@ -19,7 +19,6 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [gateway, setGateway] = useState('cashfree');
-  const primary = settings?.primaryColor || '#6366f1';
   const gstRate = settings?.gstRate || 18;
 
   useEffect(() => {
@@ -65,14 +64,14 @@ export default function BillingPage() {
     switch (type) { case 'day': return '/day'; case 'week': return '/week'; case 'month': return '/month'; default: return ''; }
   };
 
-  if (loading) return <div className="text-center py-12 text-gray-500">Loading...</div>;
+  if (loading) return <div className="text-center py-12 text-tertiary">Loading...</div>;
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Billing</h1>
 
       {/* Gateway Selection */}
-      <div className="bg-white rounded-xl border p-4 mb-6">
+      <div className="surface-base rounded-xl border p-4 mb-6">
         <label className="text-sm font-medium text-gray-700 mr-4">Payment Gateway:</label>
         <select value={gateway} onChange={e => setGateway(e.target.value)}
           className="px-3 py-1.5 rounded-lg border text-sm">
@@ -84,29 +83,29 @@ export default function BillingPage() {
       {/* Plans */}
       <div className="grid md:grid-cols-3 gap-4 mb-8">
         {products.map((product, i) => (
-          <div key={product.id} className={`bg-white rounded-xl border-2 p-6 relative ${i === 1 ? 'shadow-lg' : ''}`}
-            style={{ borderColor: i === 1 ? primary : '#e5e7eb' }}>
+          <div key={product.id} className={`surface-base rounded-xl border-2 p-6 relative ${i === 1 ? 'shadow-lg' : ''}`}
+            style={{ borderColor: i === 1 ? 'rgb(99,102,241)' : '#e5e7eb' }}>
             {i === 1 && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-white text-xs font-bold" style={{ backgroundColor: primary }}>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-white text-xs font-bold">
                 POPULAR
               </div>
             )}
             <h3 className="font-bold text-lg">{product.name}</h3>
-            <p className="text-sm text-gray-500 mb-3">{product.streamQuality} Quality</p>
+            <p className="text-sm text-tertiary mb-3">{product.streamQuality} Quality</p>
             <div className="mb-1">
               <span className="text-3xl font-bold">₹{product.price.INR}</span>
-              <span className="text-gray-500 text-sm">{getDurationLabel(product.durationType)}</span>
+              <span className="text-tertiary text-sm">{getDurationLabel(product.durationType)}</span>
             </div>
-            <p className="text-xs text-gray-400 mb-4">+ {gstRate}% GST = ₹{(product.price.INR * (1 + gstRate / 100)).toFixed(2)}</p>
+            <p className="text-xs text-tertiary mb-4">+ {gstRate}% GST = ₹{(product.price.INR * (1 + gstRate / 100)).toFixed(2)}</p>
             <ul className="space-y-1.5 mb-4">
               {product.features.map((f, j) => (
-                <li key={j} className="flex items-center gap-2 text-sm text-gray-600">
-                  <Check size={14} style={{ color: primary }} /> {f}
+                <li key={j} className="flex items-center gap-2 text-sm text-secondary">
+                  <Check size={14} /> {f}
                 </li>
               ))}
             </ul>
             <button onClick={() => handlePurchase(product.id)} disabled={purchasing === product.id}
-              className="w-full py-2.5 rounded-xl text-white font-semibold disabled:opacity-50" style={{ backgroundColor: primary }}>
+              className="w-full py-2.5 rounded-xl text-white font-semibold disabled:opacity-50">
               {purchasing === product.id ? 'Processing...' : 'Buy Now'}
             </button>
           </div>
@@ -114,23 +113,23 @@ export default function BillingPage() {
       </div>
 
       {/* Order History */}
-      <h2 className="text-xl font-bold mb-4">Order History</h2>
+      <h2 className="text-lg font-semibold text-primary mb-4">Order History</h2>
       {orders.length === 0 ? (
-        <div className="text-center py-8 bg-white rounded-xl border">
-          <CreditCard size={40} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500">No orders yet</p>
+        <div className="text-center py-8 surface-base rounded-xl border">
+          <CreditCard size={40} className="mx-auto mb-3 text-secondary" />
+          <p className="text-tertiary">No orders yet</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border overflow-x-auto">
+        <div className="surface-base rounded-xl border overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Plan</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 hidden sm:table-cell">Amount</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 hidden md:table-cell">Gateway</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">Status</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 hidden md:table-cell">Date</th>
-                <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">Action</th>
+              <tr className="border-b surface-subtle">
+                <th className="text-left px-4 py-3 text-sm font-medium text-tertiary">Plan</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-tertiary hidden sm:table-cell">Amount</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-tertiary hidden md:table-cell">Gateway</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-tertiary">Status</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-tertiary hidden md:table-cell">Date</th>
+                <th className="text-right px-4 py-3 text-sm font-medium text-tertiary">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -144,11 +143,11 @@ export default function BillingPage() {
                       {getStatusIcon(order.status)} {order.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{new Date(order.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-sm text-tertiary hidden md:table-cell">{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
                     {order.status === 'pending' && order.paymentUrl && (
                       <a href={order.paymentUrl} target="_blank" rel="noopener noreferrer"
-                        className="text-sm flex items-center gap-1 justify-end" style={{ color: primary }}>
+                        className="text-sm flex items-center gap-1 justify-end">
                         Pay <ExternalLink size={12} />
                       </a>
                     )}

@@ -36,6 +36,22 @@ def decode_token(token: str) -> dict:
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
+
+    # Support API key auth (keys start with "kkhs_")
+    if token.startswith("kkhs_"):
+        db = get_db()
+        api_key_doc = await db.api_keys.find_one({"key": token, "isActive": True})
+        if not api_key_doc:
+            raise HTTPException(status_code=401, detail="Invalid or deactivated API key")
+        user = await db.users.find_one({"_id": ObjectId(api_key_doc["userId"])})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        if user.get("status") == "banned":
+            raise HTTPException(status_code=403, detail="Account suspended")
+        user["id"] = str(user["_id"])
+        return user
+
+    # Standard JWT auth
     payload = decode_token(token)
     user_id = payload.get("sub")
     if not user_id:

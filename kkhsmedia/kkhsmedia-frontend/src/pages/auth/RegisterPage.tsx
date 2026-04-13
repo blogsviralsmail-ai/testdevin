@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
-import { Eye, EyeOff, Radio } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function RegisterPage() {
-  const { settings } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [showPw, setShowPw] = useState(false);
@@ -13,17 +12,16 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const primary = settings?.primaryColor || '#6366f1';
-  const brandName = settings?.brandName || 'KKHS Media';
+  const set = (key: string, val: string) => setForm(p => ({ ...p, [key]: val }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreed) return setError('Please agree to the terms.');
     setError('');
     setLoading(true);
     try {
-      const res = await authAPI.register(form);
-      // Navigate to verify email page
-      navigate(`/verify-email?email=${encodeURIComponent(form.email)}&dev_otp=${res.data.otp_dev || ''}`);
+      await authAPI.register(form);
+      navigate('/verify-email?email=' + encodeURIComponent(form.email));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Registration failed';
       setError(msg);
@@ -32,69 +30,81 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12" style={{ background: `linear-gradient(135deg, ${primary} 0%, ${primary}dd 100%)` }}>
-        <div className="text-white text-center max-w-md">
-          <Radio size={64} className="mx-auto mb-6 opacity-90" />
-          <h2 className="text-3xl font-bold mb-4">Join {brandName} Today!</h2>
-          <p className="text-lg opacity-80">Start your 24/7 live streaming journey. Connect to multiple platforms instantly!</p>
+    <div className="min-h-screen flex items-center justify-center surface-base px-4 py-10">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="w-full max-w-sm"
+      >
+        <div className="flex items-center justify-center gap-2 mb-10">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <span className="text-white text-xs font-bold">G</span>
+          </div>
+          <span className="text-sm font-semibold text-primary">GoLivePro</span>
         </div>
-      </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-gray-50">
-        <div className="w-full max-w-md">
-          <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: primary }}>{brandName.charAt(0)}</div>
-            <span className="font-bold text-xl">{brandName}</span>
-          </Link>
+        <div className="text-center mb-8">
+          <h1 className="text-xl font-semibold text-primary mb-1.5">Create an account</h1>
+          <p className="text-sm text-tertiary">Get started with GoLivePro</p>
+        </div>
 
-          <h1 className="text-2xl font-bold mb-2">Create Account</h1>
-          <p className="text-gray-600 mb-8">Fill in your details to get started.</p>
+        {error && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-5 px-3 py-2.5 rounded-lg text-xs font-medium text-red-400"
+            style={{ background: 'rgb(239 68 68 / 0.1)', border: '1px solid rgb(239 68 68 / 0.2)' }}
+          >{error}</motion.div>
+        )}
 
-          {error && <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                <input type="text" required value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})}
-                  placeholder="John" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                <input type="text" required value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})}
-                  placeholder="Doe" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2" />
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-secondary mb-1.5">First name</label>
+              <input type="text" required value={form.firstName} onChange={e => set('firstName', e.target.value)}
+                placeholder="John" className="input-premium" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" required value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-                placeholder="john@example.com" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2" />
+              <label className="block text-xs font-medium text-secondary mb-1.5">Last name</label>
+              <input type="text" required value={form.lastName} onChange={e => set('lastName', e.target.value)}
+                placeholder="Doe" className="input-premium" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <div className="relative">
-                <input type={showPw ? 'text' : 'password'} required value={form.password} onChange={e => setForm({...form, password: e.target.value})}
-                  placeholder="Min 8 characters" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 pr-12" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Email</label>
+            <input type="email" required value={form.email} onChange={e => set('email', e.target.value)}
+              placeholder="you@example.com" className="input-premium" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Password</label>
+            <div className="relative">
+              <input type={showPw ? 'text' : 'password'} required value={form.password} onChange={e => set('password', e.target.value)}
+                placeholder="Min 8 characters" className="input-premium pr-9" />
+              <button type="button" onClick={() => setShowPw(p => !p)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors">
+                {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
             </div>
-            <label className="flex items-start gap-2">
-              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1" />
-              <span className="text-sm text-gray-600">I agree to the <Link to="/privacy-policy" className="underline" style={{ color: primary }}>Privacy Policy</Link> & <Link to="/terms-of-service" className="underline" style={{ color: primary }}>Terms of Service</Link></span>
-            </label>
-            <button type="submit" disabled={loading || !agreed || !form.email || !form.password}
-              className="w-full py-3 rounded-xl text-white font-semibold disabled:opacity-50" style={{ backgroundColor: primary }}>
-              {loading ? 'Creating account...' : 'Sign Up'}
-            </button>
-          </form>
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account? <Link to="/login" className="font-medium" style={{ color: primary }}>Sign in</Link>
-          </p>
-        </div>
-      </div>
+          </div>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
+              className="mt-0.5 rounded border-gray-600 bg-transparent" />
+            <span className="text-xs text-tertiary leading-relaxed">
+              I agree to the <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>{' '}
+              & <Link to="/terms-of-service" className="text-primary hover:underline">Terms of Service</Link>
+            </span>
+          </label>
+          <button type="submit" disabled={loading || !agreed}
+            className="w-full btn-premium btn-premium-primary py-2.5 text-sm disabled:opacity-50">
+            {loading ? 'Creating account...' : 'Create account'}
+            {!loading && <ArrowRight size={14} />}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-xs text-tertiary">
+          Already have an account?{' '}
+          <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
+        </p>
+      </motion.div>
     </div>
   );
 }

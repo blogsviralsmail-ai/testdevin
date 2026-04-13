@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 export default function AdminAffiliates() {
   const [stats, setStats] = useState<any>(null);
   const [earnings, setEarnings] = useState<any[]>([]);
-  const [settings, setSettings] = useState({ commissionRate: 10, minPayout: 500 });
+  const [settings, setSettings] = useState({ commission: 10, minPayout: 500 });
   const [tab, setTab] = useState<'overview' | 'earnings' | 'settings'>('overview');
   const [loading, setLoading] = useState(true);
 
@@ -36,15 +36,15 @@ export default function AdminAffiliates() {
     } catch { toast.error('Failed'); }
   };
 
-  if (loading) return <div className="p-6 text-gray-500">Loading...</div>;
+  if (loading) return <div className="p-6 text-tertiary">Loading...</div>;
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Affiliate Program</h1>
+        <h1 className="text-2xl font-bold text-primary">Affiliate Program</h1>
         <div className="flex gap-2">
           {['overview', 'earnings', 'settings'].map(t => (
-            <button key={t} onClick={() => setTab(t as any)} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${tab === t ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{t}</button>
+            <button key={t} onClick={() => setTab(t as any)} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${tab === t ? 'bg-blue-600 text-white' : 'surface-muted'}`}>{t}</button>
           ))}
         </div>
       </div>
@@ -66,25 +66,25 @@ export default function AdminAffiliates() {
       )}
 
       {tab === 'earnings' && (
-        <div className="bg-white rounded-lg border">
+        <div className="surface-base rounded-lg border">
           {earnings.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">No earnings yet</div>
+            <div className="p-8 text-center text-tertiary">No earnings yet</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50">
+                <thead className="surface-subtle">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Affiliate</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Referred User</th>
-                    <th className="px-4 py-3 text-center font-medium text-gray-500">Order</th>
-                    <th className="px-4 py-3 text-center font-medium text-gray-500">Commission</th>
-                    <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
-                    <th className="px-4 py-3 text-center font-medium text-gray-500">Actions</th>
+                    <th className="px-4 py-3 text-left font-medium text-tertiary">Affiliate</th>
+                    <th className="px-4 py-3 text-left font-medium text-tertiary">Referred User</th>
+                    <th className="px-4 py-3 text-center font-medium text-tertiary">Order</th>
+                    <th className="px-4 py-3 text-center font-medium text-tertiary">Commission</th>
+                    <th className="px-4 py-3 text-center font-medium text-tertiary">Status</th>
+                    <th className="px-4 py-3 text-center font-medium text-tertiary">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {earnings.map((e: any) => (
-                    <tr key={e.id} className="hover:bg-gray-50">
+                    <tr key={e.id} className="hover:bg-[rgb(var(--bg-muted))]">
                       <td className="px-4 py-3">{e.affiliateName || e.affiliateEmail}</td>
                       <td className="px-4 py-3">{e.referredUserName || e.referredUserEmail}</td>
                       <td className="px-4 py-3 text-center">₹{e.orderAmount}</td>
@@ -109,10 +109,10 @@ export default function AdminAffiliates() {
       )}
 
       {tab === 'settings' && (
-        <div className="bg-white rounded-lg border p-6 space-y-4 max-w-md">
+        <div className="surface-base rounded-lg border p-6 space-y-4 max-w-md">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Commission Rate (%)</label>
-            <input type="number" value={settings.commissionRate} onChange={e => setSettings({ ...settings, commissionRate: parseFloat(e.target.value) || 10 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
+            <input type="number" value={settings.commission} onChange={e => setSettings({ ...settings, commission: parseFloat(e.target.value) || 10 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Payout (₹)</label>

@@ -1,25 +1,44 @@
-import { useState } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Radio, Video, CreditCard, User, MessageSquare,
-  LogOut, Menu, X, Moon, Sun, ChevronDown,
+  LogOut, Menu, Moon, Sun, ChevronDown, Search,
   Users, Settings, BarChart3, Package, ShoppingCart, MonitorPlay,
-  Bell, Webhook, Gift, Store, Globe, Tag, UserPlus
+  Bell, Webhook, Gift, Store, Globe, Tag, UserPlus,
+  Activity, Calendar, Layers, Shield, Wifi, Server,
+  PanelLeftClose, PanelLeft
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function DashboardLayout() {
-  const { user, settings, logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
   const { language, setLanguage } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
 
   const isAdmin = user?.role === 'admin';
   const isAdminRoute = location.pathname.startsWith('/admin');
+
+  // Cmd+K handler
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen(p => !p);
+      }
+      if (e.key === 'Escape') setCmdOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const userLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -31,6 +50,12 @@ export default function DashboardLayout() {
     { to: '/webhooks', icon: Webhook, label: 'Webhooks' },
     { to: '/referrals', icon: Gift, label: 'Referrals' },
     { to: '/reseller', icon: Store, label: 'Reseller' },
+    { to: '/stream-health', icon: Activity, label: 'Stream Health' },
+    { to: '/schedule', icon: Calendar, label: 'Schedule' },
+    { to: '/overlays', icon: Layers, label: 'Overlays' },
+    { to: '/rtmp-pull', icon: Wifi, label: 'RTMP Pull' },
+    { to: '/bandwidth', icon: BarChart3, label: 'Bandwidth' },
+    { to: '/security', icon: Shield, label: 'Security' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 
@@ -44,87 +69,106 @@ export default function DashboardLayout() {
     { to: '/admin/coupons', icon: Tag, label: 'Coupons' },
     { to: '/admin/resellers', icon: Store, label: 'Resellers' },
     { to: '/admin/affiliates', icon: UserPlus, label: 'Affiliates' },
+    { to: '/admin/servers', icon: Server, label: 'Servers' },
     { to: '/admin/contacts', icon: MessageSquare, label: 'Messages' },
     { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
     { to: '/admin/settings', icon: Settings, label: 'Settings' },
   ];
 
   const links = isAdminRoute ? adminLinks : userLinks;
-  const brandName = settings?.brandName || 'KKHS Media';
-  const primaryColor = settings?.primaryColor || '#6366f1';
+  const allLinks = [...userLinks, ...adminLinks];
+
+  const [cmdSearch, setCmdSearch] = useState('');
+  const cmdFiltered = allLinks.filter(l => l.label.toLowerCase().includes(cmdSearch.toLowerCase()));
+
+  const handleCmdNav = useCallback((to: string) => {
+    navigate(to);
+    setCmdOpen(false);
+    setCmdSearch('');
+  }, [navigate]);
 
   return (
-    <div className={`min-h-screen flex ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className="min-h-screen flex surface-base">
       {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r flex flex-col`}>
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 sidebar-premium flex flex-col transition-all duration-200 ${
+          collapsed ? 'w-[52px]' : 'w-[220px]'
+        } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+      >
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b" style={{ borderColor: darkMode ? '#374151' : '#e5e7eb' }}>
-          <Link to={isAdminRoute ? '/admin' : '/dashboard'} className="flex items-center gap-2">
-            {settings?.logoUrl ? (
-              <img src={settings.logoUrl} alt={brandName} className="h-8" />
-            ) : (
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>
-                {brandName.charAt(0)}
-              </div>
-            )}
-            <span className="font-bold text-lg">{brandName}</span>
+        <div className="h-12 flex items-center px-3 border-b" style={{ borderColor: 'rgb(var(--border))' }}>
+          <Link to={isAdminRoute ? '/admin' : '/dashboard'} className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-[10px] font-bold">G</span>
+            </div>
+            {!collapsed && <span className="text-sm font-semibold truncate text-primary">GoLivePro</span>}
           </Link>
-          <button className="ml-auto lg:hidden" onClick={() => setSidebarOpen(false)}>
-            <X size={20} />
-          </button>
         </div>
 
+        {/* Panel switch */}
+        {isAdmin && !collapsed && (
+          <div className="px-2 pt-2">
+            <Link
+              to={isAdminRoute ? '/dashboard' : '/admin'}
+              className="flex items-center justify-center text-[11px] font-medium px-2 py-1.5 rounded-md text-secondary hover:text-primary"
+              style={{ background: 'rgb(var(--bg-muted))' }}
+            >
+              {isAdminRoute ? '\u2190 User Panel' : '\u2192 Admin Panel'}
+            </Link>
+          </div>
+        )}
+
         {/* Nav */}
-        <nav className="flex-1 py-4 overflow-y-auto">
-          {isAdmin && (
-            <div className="px-4 mb-3">
-              <Link
-                to={isAdminRoute ? '/dashboard' : '/admin'}
-                className="text-xs font-semibold px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: primaryColor + '20', color: primaryColor }}
-              >
-                {isAdminRoute ? '← User Panel' : '→ Admin Panel'}
-              </Link>
-            </div>
-          )}
-          {links.map((link) => {
-            const isActive = location.pathname === link.to || 
-              (link.to !== '/admin' && link.to !== '/dashboard' && location.pathname.startsWith(link.to));
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-6 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'border-r-2 text-white'
-                    : darkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-                style={isActive ? { backgroundColor: primaryColor + '15', borderRightColor: primaryColor, color: primaryColor } : {}}
-              >
-                <link.icon size={18} />
-                {link.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-2 overflow-y-auto overflow-x-hidden">
+          <div className="space-y-0.5 px-2">
+            {links.map((link) => {
+              const isActive = location.pathname === link.to ||
+                (link.to !== '/admin' && link.to !== '/dashboard' && location.pathname.startsWith(link.to));
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                  title={collapsed ? link.label : undefined}
+                >
+                  <link.icon size={16} className="flex-shrink-0" />
+                  {!collapsed && <span className="truncate">{link.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         {/* Sidebar footer */}
-        <div className={`p-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="p-2 border-t" style={{ borderColor: 'rgb(var(--border))' }}>
+          {!collapsed && (
+            <button
+              onClick={logout}
+              className="sidebar-nav-item w-full text-left hover:!text-red-400"
+            >
+              <LogOut size={16} className="flex-shrink-0" />
+              <span>Logout</span>
+            </button>
+          )}
           <button
-            onClick={logout}
-            className={`flex items-center gap-2 text-sm w-full px-2 py-2 rounded-lg ${
-              darkMode ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700' : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-            }`}
+            onClick={() => setCollapsed(p => !p)}
+            className="sidebar-nav-item w-full justify-center lg:justify-start mt-0.5 hidden lg:flex"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            <LogOut size={18} /> Logout
+            {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+            {!collapsed && <span>Collapse</span>}
           </button>
         </div>
       </aside>
@@ -132,67 +176,83 @@ export default function DashboardLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
-        <header className={`h-16 flex items-center px-4 lg:px-6 border-b sticky top-0 z-30 ${
-          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-        }`}>
-          <button className="lg:hidden mr-3" onClick={() => setSidebarOpen(true)}>
-            <Menu size={24} />
+        <header className="h-12 flex items-center px-4 border-b sticky top-0 z-30 surface-base" style={{ borderColor: 'rgb(var(--border))' }}>
+          <button className="lg:hidden mr-3 p-1 rounded-md btn-premium-ghost" onClick={() => setMobileOpen(true)}>
+            <Menu size={18} />
+          </button>
+
+          {/* Search / Cmd+K trigger */}
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-tertiary hover:text-secondary transition-colors"
+            style={{ background: 'rgb(var(--bg-muted))', border: '1px solid rgb(var(--border))' }}
+          >
+            <Search size={13} />
+            <span>Search...</span>
+            <div className="flex items-center gap-0.5 ml-4">
+              <span className="kbd">\u2318</span>
+              <span className="kbd">K</span>
+            </div>
           </button>
 
           <div className="flex-1" />
 
-          {/* Language toggle */}
+          {/* Language */}
           <button
             onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-            className={`p-2 rounded-lg mr-2 text-xs font-bold ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-            title="Switch language"
+            className="p-1.5 rounded-md btn-premium-ghost text-xs font-medium"
           >
-            <Globe size={18} />
+            <Globe size={15} />
           </button>
 
-          <button
-            onClick={toggleDarkMode}
-            className={`p-2 rounded-lg mr-3 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-          >
-            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          {/* Theme */}
+          <button onClick={toggleDarkMode} className="p-1.5 rounded-md btn-premium-ghost ml-0.5">
+            {darkMode ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
-          <div className="relative">
+          {/* User menu */}
+          <div className="relative ml-1.5">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              className="flex items-center gap-2 px-2 py-1 rounded-md btn-premium-ghost"
             >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium" style={{ backgroundColor: primaryColor }}>
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-semibold">
                 {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
               </div>
-              <span className="text-sm font-medium hidden sm:block">
-                {user?.firstName} {user?.lastName}
+              <span className="text-xs font-medium hidden sm:block text-secondary">
+                {user?.firstName}
               </span>
-              <ChevronDown size={14} />
+              <ChevronDown size={12} className="text-tertiary" />
             </button>
-            {dropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                <div className={`absolute right-0 top-full mt-1 w-48 rounded-lg shadow-lg border z-50 ${
-                  darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-                }`}>
-                  <Link to="/profile" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    onClick={() => setDropdownOpen(false)}>
-                    Profile
-                  </Link>
-                  {isAdmin && (
-                    <Link to={isAdminRoute ? '/dashboard' : '/admin'}
-                      className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                      onClick={() => setDropdownOpen(false)}>
-                      {isAdminRoute ? 'User Panel' : 'Admin Panel'}
-                    </Link>
-                  )}
-                  <button onClick={logout} className={`block w-full text-left px-4 py-2 text-sm text-red-500 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-red-50'}`}>
-                    Logout
-                  </button>
-                </div>
-              </>
-            )}
+            <AnimatePresence>
+              {dropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.1 }}
+                    className="absolute right-0 top-full mt-1 w-48 rounded-lg overflow-hidden z-50 card-premium"
+                  >
+                    <div className="px-3 py-2 border-b" style={{ borderColor: 'rgb(var(--border))' }}>
+                      <p className="text-xs font-medium text-primary">{user?.firstName} {user?.lastName}</p>
+                      <p className="text-[11px] text-tertiary">{user?.email}</p>
+                    </div>
+                    <Link to="/profile" className="block px-3 py-2 text-xs text-secondary hover:text-primary hover:bg-[rgb(var(--bg-muted))] transition-colors"
+                      onClick={() => setDropdownOpen(false)}>Profile</Link>
+                    {isAdmin && (
+                      <Link to={isAdminRoute ? '/dashboard' : '/admin'}
+                        className="block px-3 py-2 text-xs text-secondary hover:text-primary hover:bg-[rgb(var(--bg-muted))] transition-colors"
+                        onClick={() => setDropdownOpen(false)}>
+                        {isAdminRoute ? 'User Panel' : 'Admin Panel'}
+                      </Link>
+                    )}
+                    <button onClick={logout} className="block w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors">
+                      Log out
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </header>
 
@@ -201,6 +261,56 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Command Palette */}
+      <AnimatePresence>
+        {cmdOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
+            className="cmd-overlay"
+            onClick={() => setCmdOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -8 }}
+              transition={{ duration: 0.15 }}
+              className="cmd-dialog"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center px-4 border-b" style={{ borderColor: 'rgb(var(--border))' }}>
+                <Search size={16} className="text-tertiary mr-3 flex-shrink-0" />
+                <input
+                  autoFocus
+                  value={cmdSearch}
+                  onChange={e => setCmdSearch(e.target.value)}
+                  placeholder="Search pages..."
+                  className="flex-1 py-3.5 bg-transparent text-sm text-primary placeholder:text-tertiary outline-none"
+                />
+                <span className="kbd text-[10px]">ESC</span>
+              </div>
+              <div className="max-h-72 overflow-y-auto p-2">
+                {cmdFiltered.length === 0 ? (
+                  <p className="px-3 py-6 text-center text-xs text-tertiary">No results found.</p>
+                ) : (
+                  cmdFiltered.map(link => (
+                    <button
+                      key={link.to}
+                      onClick={() => handleCmdNav(link.to)}
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm text-secondary hover:text-primary hover:bg-[rgb(var(--bg-muted))] transition-colors text-left"
+                    >
+                      <link.icon size={15} className="flex-shrink-0 text-tertiary" />
+                      <span>{link.label}</span>
+                      <span className="ml-auto text-[10px] text-tertiary">{link.to}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

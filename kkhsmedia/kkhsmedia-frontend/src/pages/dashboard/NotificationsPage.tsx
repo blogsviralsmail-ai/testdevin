@@ -47,38 +47,38 @@ export default function NotificationsPage() {
     }
   };
 
-  if (loading) return <div className="p-6 text-gray-500">Loading...</div>;
+  if (loading) return <div className="p-6 text-tertiary">Loading...</div>;
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+        <h1 className="text-2xl font-bold text-primary">Notifications</h1>
         <div className="flex gap-2">
-          <button onClick={() => setTab('inbox')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'inbox' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Inbox</button>
-          <button onClick={() => setTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'settings' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Settings</button>
+          <button onClick={() => setTab('inbox')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'inbox' ? 'bg-blue-600 text-white' : 'surface-muted text-gray-700'}`}>Inbox</button>
+          <button onClick={() => setTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'settings' ? 'bg-blue-600 text-white' : 'surface-muted text-gray-700'}`}>Settings</button>
         </div>
       </div>
 
       {tab === 'inbox' && (
-        <div className="bg-white rounded-lg border">
+        <div className="surface-base rounded-lg border">
           <div className="p-4 border-b flex items-center justify-between">
-            <p className="text-sm text-gray-500">{notifications.length} notifications</p>
+            <p className="text-sm text-tertiary">{notifications.length} notifications</p>
             <button onClick={markAllRead} className="text-sm text-blue-600 hover:underline">Mark all read</button>
           </div>
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">No notifications yet</div>
+            <div className="p-8 text-center text-tertiary">No notifications yet</div>
           ) : (
             <div className="divide-y">
               {notifications.map((n: any) => (
-                <div key={n.id} className={`p-4 hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}`} onClick={() => markRead(n.id)}>
+                <div key={n.id} className={`p-4 hover:bg-[rgb(var(--bg-muted))] cursor-pointer ${!n.read ? 'bg-blue-50' : ''}`} onClick={() => markRead(n.id)}>
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className={`text-sm font-medium ${!n.read ? 'text-gray-900' : 'text-gray-600'}`}>{n.title}</p>
-                      <p className="text-sm text-gray-500 mt-1">{n.message}</p>
+                      <p className={`text-sm font-medium ${!n.read ? 'text-primary' : 'text-secondary'}`}>{n.title}</p>
+                      <p className="text-sm text-tertiary mt-1">{n.message}</p>
                     </div>
                     {!n.read && <span className="w-2 h-2 bg-blue-600 rounded-full mt-1 flex-shrink-0" />}
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">{new Date(n.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-tertiary mt-2">{new Date(n.createdAt).toLocaleString()}</p>
                 </div>
               ))}
             </div>
@@ -87,7 +87,7 @@ export default function NotificationsPage() {
       )}
 
       {tab === 'settings' && (
-        <div className="bg-white rounded-lg border p-6 space-y-6">
+        <div className="surface-base rounded-lg border p-6 space-y-6">
           <div>
             <h3 className="text-lg font-semibold mb-4">Notification Channels</h3>
             <div className="space-y-4">
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
                 <input type="checkbox" checked={settings.emailNotifications ?? true} onChange={e => setSettings({ ...settings, emailNotifications: e.target.checked })} className="w-4 h-4 rounded" />
                 <div>
                   <p className="font-medium text-sm">Email Notifications</p>
-                  <p className="text-xs text-gray-500">Receive notifications via email</p>
+                  <p className="text-xs text-tertiary">Receive notifications via email</p>
                 </div>
               </label>
 
@@ -104,7 +104,7 @@ export default function NotificationsPage() {
                   <input type="checkbox" checked={settings.telegramEnabled ?? false} onChange={e => setSettings({ ...settings, telegramEnabled: e.target.checked })} className="w-4 h-4 rounded" />
                   <div>
                     <p className="font-medium text-sm">Telegram Notifications</p>
-                    <p className="text-xs text-gray-500">Receive notifications via Telegram bot</p>
+                    <p className="text-xs text-tertiary">Receive notifications via Telegram bot</p>
                   </div>
                 </label>
                 {settings.telegramEnabled && (
@@ -117,7 +117,7 @@ export default function NotificationsPage() {
                   <input type="checkbox" checked={settings.whatsappEnabled ?? false} onChange={e => setSettings({ ...settings, whatsappEnabled: e.target.checked })} className="w-4 h-4 rounded" />
                   <div>
                     <p className="font-medium text-sm">WhatsApp Notifications</p>
-                    <p className="text-xs text-gray-500">Receive notifications via WhatsApp</p>
+                    <p className="text-xs text-tertiary">Receive notifications via WhatsApp</p>
                   </div>
                 </label>
                 {settings.whatsappEnabled && (
@@ -141,7 +141,7 @@ export default function NotificationsPage() {
                   <input type="checkbox" checked={settings[item.key] ?? true} onChange={e => setSettings({ ...settings, [item.key]: e.target.checked })} className="w-4 h-4 rounded" />
                   <div>
                     <p className="font-medium text-sm">{item.label}</p>
-                    <p className="text-xs text-gray-500">{item.desc}</p>
+                    <p className="text-xs text-tertiary">{item.desc}</p>
                   </div>
                 </label>
               ))}

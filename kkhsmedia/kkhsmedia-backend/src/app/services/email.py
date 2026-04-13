@@ -5,31 +5,32 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 
-from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL
+from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL, get_smtp_config
 
 logger = logging.getLogger(__name__)
 
 
 async def send_email(to: str, subject: str, html_body: str, text_body: Optional[str] = None) -> bool:
-    """Send email via SMTP. Returns True if sent successfully."""
-    if not SMTP_USER or not SMTP_PASSWORD:
+    """Send email via SMTP. Reads config from DB first, fallback to env vars."""
+    smtp = await get_smtp_config()
+    if not smtp["user"] or not smtp["password"]:
         logger.warning(f"SMTP not configured - skipping email to {to}: {subject}")
         return False
 
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = FROM_EMAIL
+        msg["From"] = smtp["from_email"]
         msg["To"] = to
 
         if text_body:
             msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        with smtplib.SMTP(smtp["host"], smtp["port"]) as server:
             server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(FROM_EMAIL, to, msg.as_string())
+            server.login(smtp["user"], smtp["password"])
+            server.sendmail(smtp["from_email"], to, msg.as_string())
 
         logger.info(f"Email sent to {to}: {subject}")
         return True

@@ -50,6 +50,8 @@ async def get_public_settings():
         "metaDescription": settings.get("metaDescription", ""),
         "logoUrl": settings.get("logoUrl", ""),
         "faviconUrl": settings.get("faviconUrl", ""),
+        "headerLogoUrl": settings.get("headerLogoUrl", ""),
+        "footerLogoUrl": settings.get("footerLogoUrl", ""),
         "maintenanceMode": settings.get("maintenanceMode", False),
         "gstRate": settings.get("gstRate", 18),
         "currency": settings.get("currency", "INR"),

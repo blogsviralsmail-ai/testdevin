@@ -118,10 +118,12 @@ async def get_users(
             "lastName": u.get("lastName", ""),
             "email": u["email"],
             "phone": u.get("phone", ""),
+            "role": u.get("role", "user"),
             "status": u.get("status", "active"),
             "emailVerified": u.get("emailVerified", False),
             "totalSlots": slots_count,
             "activeSlots": active_slots,
+            "planUnlimited": u.get("planUnlimited", False),
             "createdAt": u.get("createdAt", "").isoformat() if isinstance(u.get("createdAt"), datetime) else "",
         })
 
@@ -425,6 +427,105 @@ async def admin_update_contact_status(contact_id: str, new_status: str = "read",
     return {"message": "Contact status updated"}
 
 
+# ============ ASSIGN PLAN TO USER ============
+from pydantic import BaseModel as _BaseModel
+
+
+class AdminCreateUserRequest(_BaseModel):
+    firstName: str
+    lastName: str
+    email: str
+    password: str
+    phone: str = ""
+    role: str = "user"
+
+
+class AdminAssignPlanRequest(_BaseModel):
+    userId: str
+    slotCount: int = 1  # number of slots to assign (0 = unlimited)
+    duration: int = 30  # duration in days
+    planName: str = "Admin Assigned"
+    unlimited: bool = False
+
+
+@router.post("/create-user")
+async def admin_create_user(req: AdminCreateUserRequest, admin=Depends(get_admin_user)):
+    """Admin can create a new user directly."""
+    db = get_db()
+    existing = await db.users.find_one({"email": req.email.lower().strip()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    now = datetime.utcnow()
+    user_doc = {
+        "firstName": req.firstName.strip(),
+        "lastName": req.lastName.strip(),
+        "email": req.email.lower().strip(),
+        "password": hash_password(req.password),
+        "phone": req.phone.strip(),
+        "role": req.role if req.role in ("user", "admin") else "user",
+        "status": "active",
+        "emailVerified": True,
+        "createdAt": now,
+        "updatedAt": now,
+    }
+    result = await db.users.insert_one(user_doc)
+    return {
+        "message": f"User '{req.firstName} {req.lastName}' created successfully",
+        "userId": str(result.inserted_id),
+    }
+
+
+@router.post("/assign-plan")
+async def admin_assign_plan(req: AdminAssignPlanRequest, admin=Depends(get_admin_user)):
+    """Admin assigns a plan to a user - only updates plan info on user record. User creates their own slots."""
+    db = get_db()
+    user = await db.users.find_one({"_id": ObjectId(req.userId)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.utcnow()
+    expiry = None if req.unlimited else now + timedelta(days=req.duration)
+    slot_limit = 0 if req.unlimited else (req.slotCount if req.slotCount > 0 else 5)
+
+    # Only update user record with plan info - no auto-creating slots
+    plan_update = {
+        "currentPlan": req.planName,
+        "planSlots": slot_limit,
+        "planUnlimited": req.unlimited,
+        "planExpiry": expiry,
+        "planAssignedAt": now,
+        "planAssignedBy": str(admin["_id"]),
+        "updatedAt": now,
+    }
+    await db.users.update_one({"_id": ObjectId(req.userId)}, {"$set": plan_update})
+
+    slot_desc = "Unlimited" if req.unlimited else str(slot_limit)
+    expiry_desc = "no expiry" if req.unlimited else f"{req.duration} days"
+    return {
+        "message": f"Plan '{req.planName}' assigned - {slot_desc} slots, {expiry_desc}",
+    }
+
+
+@router.get("/users/{user_id}/plan")
+async def admin_get_user_plan(user_id: str, admin=Depends(get_admin_user)):
+    """Get current plan info for a user."""
+    db = get_db()
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    slots = await db.slots.find({"userId": user_id, "status": "active"}).to_list(100)
+    return {
+        "currentPlan": user.get("currentPlan", "None"),
+        "planSlots": user.get("planSlots", 0),
+        "planUnlimited": user.get("planUnlimited", False),
+        "planExpiry": user.get("planExpiry", "").isoformat() if isinstance(user.get("planExpiry"), datetime) else None,
+        "activeSlots": len(slots),
+        "totalSlots": await db.slots.count_documents({"userId": user_id}),
+    }
+
+
 # ============ DELETE ENDPOINTS ============
 
 @router.delete("/slots/{slot_id}")
@@ -536,3 +637,63 @@ async def admin_analytics(period: str = "30d", admin=Depends(get_admin_user)):
         "planPopularity": [{"plan": r["_id"], "count": r["count"], "revenue": r.get("revenue", 0)} for r in plan_data],
         "platformDistribution": [{"platform": r["_id"], "count": r["count"]} for r in platform_data],
     }
+
+
+# ============ LOGO UPLOAD ============
+from fastapi import UploadFile, File, Form
+import os
+import shutil
+from pathlib import Path
+
+UPLOAD_DIR = Path("/var/www/kkhsmedia-app/uploads/logos")
+
+@router.post("/upload-logo")
+async def admin_upload_logo(
+    file: UploadFile = File(...),
+    logo_type: str = Form(...),  # header, footer, favicon
+    admin=Depends(get_admin_user),
+):
+    """Upload a logo image. logo_type: header, footer, favicon"""
+    if logo_type not in ("header", "footer", "favicon"):
+        raise HTTPException(status_code=400, detail="logo_type must be header, footer, or favicon")
+
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "png"
+    if ext not in ("png", "jpg", "jpeg", "webp", "svg", "ico"):
+        raise HTTPException(status_code=400, detail="Unsupported image format")
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{logo_type}-logo.{ext}"
+    if logo_type == "favicon":
+        filename = f"favicon.{ext}"
+    filepath = UPLOAD_DIR / filename
+
+    with open(filepath, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    # Also copy to the main frontend directory for direct serving
+    frontend_dir = Path("/var/www/kkhsmedia-app")
+    if logo_type == "header":
+        shutil.copy2(filepath, frontend_dir / "header-logo.png")
+    elif logo_type == "footer":
+        shutil.copy2(filepath, frontend_dir / "footer-logo.png")
+    elif logo_type == "favicon":
+        shutil.copy2(filepath, frontend_dir / "favicon.png")
+
+    logo_url = f"/uploads/logos/{filename}"
+
+    # Update settings in DB
+    db = get_db()
+    field_map = {"header": "headerLogoUrl", "footer": "footerLogoUrl", "favicon": "faviconUrl"}
+    await db.settings.update_one(
+        {"key": "site"},
+        {"$set": {field_map[logo_type]: logo_url, "updatedAt": datetime.utcnow()}},
+        upsert=True,
+    )
+
+    return {"url": logo_url, "filename": filename, "type": logo_type}
