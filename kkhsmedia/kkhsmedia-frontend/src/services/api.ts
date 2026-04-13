@@ -132,8 +132,8 @@ export const youtubeAPI = {
 export const couponsAPI = {
   validate: (code: string, orderAmount: number) => api.post(`/api/coupons/validate?code=${code}&order_amount=${orderAmount}`),
   apply: (code: string, orderId: string) => api.post(`/api/coupons/apply?code=${code}&order_id=${orderId}`),
-  adminList: (params?: Record<string, unknown>) => api.get('/api/coupons/admin', { params }),
-  adminCreate: (data: Record<string, unknown>) => api.post('/api/coupons/admin', data),
+  adminList: (params?: Record<string, unknown>) => api.get('/api/coupons/admin/list', { params }),
+  adminCreate: (data: Record<string, unknown>) => api.post('/api/coupons/admin/create', data),
   adminUpdate: (id: string, data: Record<string, unknown>) => api.put(`/api/coupons/admin/${id}`, data),
   adminDelete: (id: string) => api.delete(`/api/coupons/admin/${id}`),
 };
@@ -151,7 +151,7 @@ export const affiliatesAPI = {
   getMyReferrals: () => api.get('/api/affiliates/my-referrals'),
   adminStats: () => api.get('/api/affiliates/admin/stats'),
   adminEarnings: () => api.get('/api/affiliates/admin/earnings'),
-  adminMarkPaid: (id: string) => api.post(`/api/affiliates/admin/earnings/${id}/pay`),
+  adminMarkPaid: (id: string) => api.put(`/api/affiliates/admin/earnings/${id}/pay`),
   adminUpdateSettings: (data: Record<string, unknown>) => api.put('/api/affiliates/admin/settings', data),
 };
 

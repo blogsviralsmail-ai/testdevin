@@ -176,16 +176,20 @@ async def admin_mark_paid(earning_id: str, admin=Depends(get_admin_user)):
     return {"message": "Earning marked as paid"}
 
 
+class UpdateAffiliateSettingsRequest(BaseModel):
+    commission: float = 10
+
+
 @router.put("/admin/settings")
-async def admin_update_affiliate_settings(commission: float = 10, admin=Depends(get_admin_user)):
+async def admin_update_affiliate_settings(req: UpdateAffiliateSettingsRequest, admin=Depends(get_admin_user)):
     """Update affiliate commission rate."""
     db = get_db()
     await db.settings.update_one(
         {"key": "site"},
-        {"$set": {"affiliateCommission": commission}},
+        {"$set": {"affiliateCommission": req.commission}},
         upsert=True,
     )
-    return {"message": f"Commission rate updated to {commission}%"}
+    return {"message": f"Commission rate updated to {req.commission}%"}
 
 
 # ============ HELPER FUNCTION (called from orders) ============

@@ -318,6 +318,82 @@ async def stop_ffmpeg_stream(process_id: Optional[int]) -> bool:
     return killed
 
 
+async def start_stream(slot_id: str, user_id: str) -> Optional[int]:
+    """High-level wrapper: look up slot + video from DB and start FFmpeg stream.
+
+    Used by bulk.py and rtmp_config.py to start a stream without needing
+    to know the low-level start_ffmpeg_stream arguments.
+    """
+    from app.database import get_db
+    from bson import ObjectId
+
+    db = get_db()
+    slot = await db.slots.find_one({"_id": ObjectId(slot_id), "userId": user_id})
+    if not slot:
+        raise ValueError(f"Slot {slot_id} not found for user {user_id}")
+
+    video_id = slot.get("videoId")
+    if not video_id:
+        raise ValueError(f"Slot {slot_id} has no video assigned")
+
+    video = await db.videos.find_one({"_id": ObjectId(video_id)})
+    if not video:
+        raise ValueError(f"Video {video_id} not found")
+
+    video_url = video.get("localPath") or video.get("fileUrl") or video.get("s3Key", "")
+    if not video_url:
+        raise ValueError(f"Video {video_id} has no file URL")
+
+    process_id = await start_ffmpeg_stream(
+        slot_id=slot_id,
+        video_url=video_url,
+        stream_key=slot.get("streamKey", ""),
+        rtmp_url=slot.get("rtmpUrl", ""),
+        platform=slot.get("platform", "youtube"),
+    )
+
+    if process_id:
+        await db.slots.update_one(
+            {"_id": ObjectId(slot_id)},
+            {"$set": {
+                "isStreaming": True,
+                "streamProcessId": process_id,
+                "updatedAt": datetime.utcnow(),
+            }}
+        )
+
+    return process_id
+
+
+async def stop_stream(slot_id: str, user_id: str) -> bool:
+    """High-level wrapper: look up slot from DB and stop its FFmpeg stream.
+
+    Used by bulk.py and rtmp_config.py to stop a stream without needing
+    to know the low-level stop_ffmpeg_stream arguments.
+    """
+    from app.database import get_db
+    from bson import ObjectId
+
+    db = get_db()
+    slot = await db.slots.find_one({"_id": ObjectId(slot_id), "userId": user_id})
+    if not slot:
+        raise ValueError(f"Slot {slot_id} not found for user {user_id}")
+
+    process_id = slot.get("streamProcessId")
+    killed = await stop_ffmpeg_stream(process_id)
+
+    await db.slots.update_one(
+        {"_id": ObjectId(slot_id)},
+        {"$set": {
+            "isStreaming": False,
+            "streamProcessId": None,
+            "updatedAt": datetime.utcnow(),
+        }}
+    )
+
+    return killed
+
+
 async def check_stream_status(process_id: Optional[int]) -> bool:
     """Check if FFmpeg process is still running."""
     if not process_id:
