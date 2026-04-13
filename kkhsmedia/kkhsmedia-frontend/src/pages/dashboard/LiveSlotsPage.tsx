@@ -538,7 +538,7 @@ export default function LiveSlotsPage() {
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">Platform</label>
                   <select value={form.platform} onChange={e => setForm({...form, platform: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2">
+                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 bg-[rgb(var(--bg-muted))] text-[rgb(var(--text))] border-[rgb(var(--border))]">
                     <option value="youtube">YouTube</option>
                     <option value="facebook">Facebook</option>
                     <option value="twitch">Twitch</option>
@@ -557,7 +557,7 @@ export default function LiveSlotsPage() {
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">Stream Quality</label>
                   <select value={form.resolution} onChange={e => setForm({...form, resolution: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2">
+                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 bg-[rgb(var(--bg-muted))] text-[rgb(var(--text))] border-[rgb(var(--border))]">
                     <option value="auto">Auto (Smart Fallback)</option>
                     <option value="4k">4K (2160p)</option>
                     <option value="1080p">1080p Full HD</option>
@@ -596,7 +596,7 @@ export default function LiveSlotsPage() {
                 </div>
                 {form.sourceType === 'uploaded' && (
                   <select value={form.videoId} onChange={e => setForm({...form, videoId: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2">
+                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 bg-[rgb(var(--bg-muted))] text-[rgb(var(--text))] border-[rgb(var(--border))]">
                     <option value="">Select a video (optional)</option>
                     {videos.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                   </select>

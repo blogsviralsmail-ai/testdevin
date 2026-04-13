@@ -137,6 +137,20 @@
     color: rgb(var(--text));
   }
 
+  /* Global form element styling for dark theme */
+  input, select, textarea {
+    background: rgb(var(--bg-muted));
+    color: rgb(var(--text));
+    border-color: rgb(var(--border));
+  }
+  input::placeholder, textarea::placeholder {
+    color: rgb(var(--text-tertiary));
+  }
+  select option {
+    background: rgb(var(--bg-muted));
+    color: rgb(var(--text));
+  }
+
   /* Premium input */
   .input-premium {
     width: 100%;
@@ -382,3 +396,4 @@
 .animate-spin-slow { animation: spin-slow-ring 12s linear infinite; }
 .animate-spin-reverse { animation: spin-reverse-ring 15s linear infinite; }
 .animate-spin-slow-2 { animation: spin-slow-ring-2 18s linear infinite; }
+
