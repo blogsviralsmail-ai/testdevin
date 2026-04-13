@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { slotsAPI, videosAPI, youtubeAPI } from '../../services/api';
-import { Radio, Play, Square, Trash2, Plus, RefreshCw, Youtube, Facebook, Twitch, Instagram, Globe, AlertCircle, Film, Image, Upload, Clock, Calendar, Timer } from 'lucide-react';
+import { slotsAPI, videosAPI, youtubeAPI, streamingAPI } from '../../services/api';
+import { Radio, Play, Square, Trash2, Plus, RefreshCw, Youtube, Facebook, Twitch, Instagram, Globe, AlertCircle, Film, Image, Upload, Clock, Calendar, Timer, Link, HardDrive, List, ExternalLink } from 'lucide-react';
 
 interface Slot {
   id: string; name: string; platform: string; streamKey: string; streamUrl?: string;
   rtmpUrl?: string; status: string; videoId?: string; videoName?: string; isStreaming: boolean;
   expiryDate?: string; expiresAt?: string; createdAt: string;
   scheduledStart?: string; scheduledEnd?: string;
+  sourceType?: string; sourceUrl?: string;
 }
 interface VideoItem { id: string; name: string; }
+
+type VideoSourceType = 'uploaded' | 'youtube_url' | 'google_drive' | 'playlist';
 
 export default function LiveSlotsPage() {
   const { settings } = useAuth();
@@ -30,6 +33,15 @@ export default function LiveSlotsPage() {
   const [ytStatus, setYtStatus] = useState<{connected: boolean; channel?: {channelTitle?: string; channelThumbnail?: string}} | null>(null);
   const [ytLoading, setYtLoading] = useState(false);
   const primary = settings?.primaryColor || '#6366f1';
+
+  // Video source states for stream modal
+  const [videoSource, setVideoSource] = useState<VideoSourceType>('uploaded');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [youtubeUrlInfo, setYoutubeUrlInfo] = useState<{title?: string; thumbnail?: string; duration?: string; type?: string; count?: number} | null>(null);
+  const [ytUrlLoading, setYtUrlLoading] = useState(false);
+  const [gdriveUrl, setGdriveUrl] = useState('');
+  const [playlistVideoIds, setPlaylistVideoIds] = useState<string[]>([]);
+  const [streamLoop, setStreamLoop] = useState(true);
 
   const platformIcons: Record<string, React.ReactNode> = {
     youtube: <Youtube size={18} className="text-red-500" />,
@@ -126,9 +138,30 @@ export default function LiveSlotsPage() {
   };
 
   const openStreamModal = (slotId: string) => {
+    const slot = slots.find(s => s.id === slotId);
     setShowStreamModal(slotId);
     setStreamThumb(null);
     setStreamEndDate('');
+    setVideoSource(slot?.videoId ? 'uploaded' : 'uploaded');
+    setYoutubeUrl('');
+    setYoutubeUrlInfo(null);
+    setGdriveUrl('');
+    setPlaylistVideoIds([]);
+    setStreamLoop(true);
+  };
+
+  const handleExtractYoutubeUrl = async () => {
+    if (!youtubeUrl.trim()) return;
+    setYtUrlLoading(true);
+    setYoutubeUrlInfo(null);
+    try {
+      const res = await streamingAPI.extractYoutubeInfo(youtubeUrl);
+      setYoutubeUrlInfo(res.data);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to extract YouTube URL info';
+      setError(msg);
+    }
+    setYtUrlLoading(false);
   };
 
   const handleStartStream = async (slotId: string) => {
@@ -142,11 +175,18 @@ export default function LiveSlotsPage() {
         formData.append('slotId', slotId);
         await slotsAPI.uploadThumbnail(slotId, formData);
       }
-      // Save end date if set
       if (streamEndDate) {
         await slotsAPI.update(slotId, { scheduledEnd: new Date(streamEndDate).toISOString() });
       }
-      await slotsAPI.startStream(slotId);
+      if (videoSource === 'youtube_url' && youtubeUrl.trim()) {
+        await streamingAPI.youtubeUrl({ slotId, url: youtubeUrl.trim(), loop: streamLoop });
+      } else if (videoSource === 'google_drive' && gdriveUrl.trim()) {
+        await streamingAPI.cloudStream({ slotId, cloudUrl: gdriveUrl.trim(), provider: 'gdrive', loop: streamLoop });
+      } else if (videoSource === 'playlist' && playlistVideoIds.length > 0) {
+        await streamingAPI.playlistQueue({ slotId, videoIds: playlistVideoIds });
+      } else {
+        await slotsAPI.startStream(slotId);
+      }
       loadData();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to start stream';
@@ -155,6 +195,10 @@ export default function LiveSlotsPage() {
     setActionLoading(null);
     setStreamThumb(null);
     setStreamEndDate('');
+    setYoutubeUrl('');
+    setYoutubeUrlInfo(null);
+    setGdriveUrl('');
+    setPlaylistVideoIds([]);
   };
 
   const handleSaveSchedule = async (slotId: string) => {
@@ -241,6 +285,29 @@ export default function LiveSlotsPage() {
     return null;
   };
 
+  const getSourceLabel = (slot: Slot) => {
+    if (slot.sourceType === 'youtube_url') return { label: 'YouTube URL', icon: <Youtube size={13} className="text-red-500" />, color: 'text-red-600' };
+    if (slot.sourceType === 'cloud_gdrive') return { label: 'Google Drive', icon: <HardDrive size={13} className="text-green-500" />, color: 'text-green-600' };
+    if (slot.sourceType === 'playlist_queue') return { label: 'Playlist Queue', icon: <List size={13} className="text-purple-500" />, color: 'text-purple-600' };
+    return null;
+  };
+
+  const togglePlaylistVideo = (videoId: string) => {
+    setPlaylistVideoIds(prev =>
+      prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]
+    );
+  };
+
+  const canStartStream = (slotId: string) => {
+    const slot = slots.find(s => s.id === slotId);
+    if (!slot || slot.status !== 'active') return false;
+    if (videoSource === 'uploaded') return !!slot.videoId;
+    if (videoSource === 'youtube_url') return !!youtubeUrl.trim();
+    if (videoSource === 'google_drive') return !!gdriveUrl.trim();
+    if (videoSource === 'playlist') return playlistVideoIds.length > 0;
+    return false;
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -284,6 +351,11 @@ export default function LiveSlotsPage() {
             </button>
           )}
         </div>
+        {ytStatus?.connected && (
+          <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+            Channel connect hone ke fayde: Jab aap live stream start karoge to custom thumbnail automatically YouTube pe set ho jayega. Bina channel connect ke YouTube apna auto-generated thumbnail use karta hai.
+          </div>
+        )}
       </div>
 
       {/* Error Banner */}
@@ -380,6 +452,7 @@ export default function LiveSlotsPage() {
         <div className="grid gap-4">
           {slots.map(slot => {
             const videoName = getVideoName(slot);
+            const sourceLabel = getSourceLabel(slot);
             return (
             <div key={slot.id} className="bg-white rounded-xl border p-5">
               <div className="flex items-start justify-between">
@@ -408,6 +481,13 @@ export default function LiveSlotsPage() {
                 </div>
                 {(slot.expiryDate || slot.expiresAt) && (
                   <div>Expires: {new Date(slot.expiryDate || slot.expiresAt || '').toLocaleDateString()}</div>
+                )}
+                {sourceLabel && slot.isStreaming && (
+                  <div className="flex items-center gap-1">
+                    {sourceLabel.icon}
+                    <span className={`${sourceLabel.color} font-medium text-xs`}>{sourceLabel.label}</span>
+                    {slot.sourceUrl && <span className="text-xs text-gray-400 truncate max-w-32">{slot.sourceUrl}</span>}
+                  </div>
                 )}
               </div>
 
@@ -453,15 +533,8 @@ export default function LiveSlotsPage() {
                   Slot is inactive. Please purchase a plan to activate.
                 </div>
               )}
-              {slot.status === 'active' && !slot.videoId && (
-                <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex items-center gap-2">
-                  <Film size={14} />
-                  Assign a video above to start streaming.
-                </div>
-              )}
-
               <div className="mt-4 flex gap-2 flex-wrap">
-                {slot.status === 'active' && !slot.isStreaming && slot.videoId && (
+                {slot.status === 'active' && !slot.isStreaming && (
                   <button onClick={() => openStreamModal(slot.id)} disabled={actionLoading === slot.id}
                     className="px-3 py-1.5 rounded-lg text-white text-sm flex items-center gap-1.5 disabled:opacity-50" style={{ backgroundColor: '#22c55e' }}>
                     <Play size={14} /> {actionLoading === slot.id ? 'Starting...' : 'Start Stream'}
@@ -488,18 +561,142 @@ export default function LiveSlotsPage() {
         </div>
       )}
 
-      {/* Stream Start Modal - Thumbnail + End Date */}
+      {/* Stream Start Modal - Video Source + Thumbnail + End Date */}
       {showStreamModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Play size={20} /> Start Stream</h2>
-            <p className="text-sm text-gray-600 mb-4">Video is already assigned. It will loop continuously in its original quality (up to 4K).</p>
-            
+
+            {/* Video Source Tabs */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Video Source</label>
+              <div className="grid grid-cols-4 gap-1 bg-gray-100 p-1 rounded-xl">
+                <button type="button" onClick={() => setVideoSource('uploaded')}
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'uploaded' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <Film size={16} />
+                  Uploaded
+                </button>
+                <button type="button" onClick={() => setVideoSource('youtube_url')}
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'youtube_url' ? 'bg-white shadow text-red-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <Youtube size={16} />
+                  YouTube URL
+                </button>
+                <button type="button" onClick={() => setVideoSource('google_drive')}
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'google_drive' ? 'bg-white shadow text-green-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <HardDrive size={16} />
+                  Drive
+                </button>
+                <button type="button" onClick={() => setVideoSource('playlist')}
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'playlist' ? 'bg-white shadow text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <List size={16} />
+                  Playlist
+                </button>
+              </div>
+            </div>
+
+            {/* Uploaded Video Source */}
+            {videoSource === 'uploaded' && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+                <p className="text-sm text-gray-600 mb-2">Using assigned uploaded video. It will loop continuously in its original quality (up to 4K).</p>
+                {(() => {
+                  const slot = slots.find(s => s.id === showStreamModal);
+                  const vName = slot ? getVideoName(slot) : null;
+                  return vName ? (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Film size={14} className="text-green-600" />
+                      <span className="text-green-700 font-medium">{vName}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-orange-600">
+                      <AlertCircle size={14} />
+                      No video assigned. Please assign a video first or use YouTube URL / Google Drive.
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* YouTube URL Source */}
+            {videoSource === 'youtube_url' && (
+              <div className="mb-4 p-3 bg-red-50 rounded-xl space-y-3">
+                <p className="text-sm text-gray-600">Paste a YouTube video or playlist URL. Video download ki zaroorat nahi - direct stream hoga!</p>
+                <div className="flex gap-2">
+                  <input type="text" value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=... or playlist URL"
+                    className="flex-1 px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2" />
+                  <button type="button" onClick={handleExtractYoutubeUrl} disabled={ytUrlLoading || !youtubeUrl.trim()}
+                    className="px-3 py-2 rounded-lg bg-red-500 text-white text-sm disabled:opacity-50 flex items-center gap-1">
+                    {ytUrlLoading ? <RefreshCw size={14} className="animate-spin" /> : <ExternalLink size={14} />}
+                    {ytUrlLoading ? '...' : 'Check'}
+                  </button>
+                </div>
+                {youtubeUrlInfo && (
+                  <div className="flex items-center gap-3 p-2 bg-white rounded-lg border">
+                    {youtubeUrlInfo.thumbnail && <img src={youtubeUrlInfo.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{youtubeUrlInfo.title || 'YouTube Video'}</p>
+                      <p className="text-xs text-gray-500">
+                        {youtubeUrlInfo.type === 'playlist' ? `Playlist - ${youtubeUrlInfo.count || '?'} videos` : youtubeUrlInfo.duration || 'Video'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={streamLoop} onChange={e => setStreamLoop(e.target.checked)} className="rounded" />
+                  Loop video (repeat continuously)
+                </label>
+              </div>
+            )}
+
+            {/* Google Drive Source */}
+            {videoSource === 'google_drive' && (
+              <div className="mb-4 p-3 bg-green-50 rounded-xl space-y-3">
+                <p className="text-sm text-gray-600">Paste a Google Drive video share link. Make sure the file is shared as &quot;Anyone with the link can view&quot;.</p>
+                <input type="text" value={gdriveUrl} onChange={e => setGdriveUrl(e.target.value)}
+                  placeholder="https://drive.google.com/file/d/... or direct link"
+                  className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2" />
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={streamLoop} onChange={e => setStreamLoop(e.target.checked)} className="rounded" />
+                  Loop video (repeat continuously)
+                </label>
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <Link size={12} /> Tip: Google Drive se video download nahi hoga, direct stream hoga server se YouTube ko.
+                </div>
+              </div>
+            )}
+
+            {/* Playlist Queue Source */}
+            {videoSource === 'playlist' && (
+              <div className="mb-4 p-3 bg-purple-50 rounded-xl space-y-3">
+                <p className="text-sm text-gray-600">Multiple uploaded videos ko queue me add karo - ek ke baad ek stream hongi.</p>
+                {videos.length === 0 ? (
+                  <p className="text-sm text-orange-600 flex items-center gap-1"><AlertCircle size={14} /> Koi video upload nahi hai. Pehle Videos page se upload karo.</p>
+                ) : (
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {videos.map(v => (
+                      <label key={v.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition ${playlistVideoIds.includes(v.id) ? 'bg-purple-100 border border-purple-300' : 'bg-white border hover:bg-gray-50'}`}>
+                        <input type="checkbox" checked={playlistVideoIds.includes(v.id)} onChange={() => togglePlaylistVideo(v.id)} className="rounded" />
+                        <Film size={14} className="text-gray-400" />
+                        <span className="text-sm truncate">{v.name}</span>
+                        {playlistVideoIds.includes(v.id) && (
+                          <span className="ml-auto text-xs text-purple-600 font-medium">#{playlistVideoIds.indexOf(v.id) + 1}</span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {playlistVideoIds.length > 0 && (
+                  <p className="text-xs text-purple-700 font-medium">{playlistVideoIds.length} videos selected - will play in order</p>
+                )}
+              </div>
+            )}
+
+            {/* Thumbnail */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2 flex items-center gap-1.5"><Image size={14} /> Custom Thumbnail (optional)</label>
-              <div 
+              <div
                 onClick={() => thumbInputRef.current?.click()}
-                className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50 transition"
+                className="border-2 border-dashed rounded-xl p-3 text-center cursor-pointer hover:bg-gray-50 transition"
               >
                 {streamThumb ? (
                   <div className="flex items-center gap-2 justify-center">
@@ -511,15 +708,16 @@ export default function LiveSlotsPage() {
                   </div>
                 ) : (
                   <div>
-                    <Upload size={24} className="mx-auto mb-1 text-gray-400" />
-                    <p className="text-sm text-gray-500">Click to upload thumbnail</p>
-                    <p className="text-xs text-gray-400">If not provided, auto-generated from video</p>
+                    <Upload size={20} className="mx-auto mb-1 text-gray-400" />
+                    <p className="text-xs text-gray-500">Click to upload thumbnail</p>
+                    <p className="text-xs text-gray-400">Auto-set on YouTube if channel is connected</p>
                   </div>
                 )}
               </div>
               <input ref={thumbInputRef} type="file" accept="image/*" className="hidden" onChange={e => setStreamThumb(e.target.files?.[0] || null)} />
             </div>
 
+            {/* End Date */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2 flex items-center gap-1.5"><Clock size={14} /> End Date & Time (optional)</label>
               <input type="datetime-local" value={streamEndDate} onChange={e => setStreamEndDate(e.target.value)}
@@ -529,7 +727,8 @@ export default function LiveSlotsPage() {
 
             <div className="flex gap-3">
               <button onClick={() => { setShowStreamModal(null); setStreamThumb(null); setStreamEndDate(''); }} className="flex-1 py-2.5 rounded-xl border">Cancel</button>
-              <button onClick={() => handleStartStream(showStreamModal)} className="flex-1 py-2.5 rounded-xl text-white" style={{ backgroundColor: '#22c55e' }}>
+              <button onClick={() => handleStartStream(showStreamModal)} disabled={!canStartStream(showStreamModal)}
+                className="flex-1 py-2.5 rounded-xl text-white disabled:opacity-50" style={{ backgroundColor: '#22c55e' }}>
                 Start Stream
               </button>
             </div>
