@@ -56,9 +56,10 @@ async def _check_ffmpeg_rtmp() -> bool:
 
 async def _kill_existing_stream_by_destination(destination: str) -> None:
     """Kill any existing FFmpeg process streaming to the same destination."""
+    import re as _re
     try:
         result = subprocess.run(
-            ["pgrep", "-f", f"ffmpeg.*{destination}"],
+            ["pgrep", "-f", f"ffmpeg.*{_re.escape(destination)}"],
             capture_output=True, text=True, timeout=5
         )
         if result.stdout.strip():

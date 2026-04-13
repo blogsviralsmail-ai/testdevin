@@ -152,8 +152,9 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
             pass
     # Kill any orphan FFmpeg processes targeting the same RTMP destination
     import subprocess as _sp
+    import re as _re
     try:
-        _sp.run(["pkill", "-f", f"rtmp.*{stream_key}"], timeout=5, capture_output=True)
+        _sp.run(["pkill", "-f", f"rtmp.*{_re.escape(stream_key)}"], timeout=5, capture_output=True)
         await asyncio.sleep(1)  # Let processes die
     except Exception:
         pass

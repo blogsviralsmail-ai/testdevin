@@ -127,16 +127,20 @@ async def admin_get_whatsapp_config(admin=Depends(get_admin_user)):
     db = get_db()
     config = await db.settings.find_one({"key": "whatsapp"})
     if not config:
-        return {"apiKey": "", "configured": False}
-    return {"apiKey": config.get("apiKey", ""), "configured": bool(config.get("apiKey"))}
+        return {"apiKey": "", "phoneId": "", "configured": False}
+    return {
+        "apiKey": config.get("apiKey", ""),
+        "phoneId": config.get("phoneId", ""),
+        "configured": bool(config.get("apiKey") and config.get("phoneId")),
+    }
 
 
 @router.put("/admin/whatsapp-config")
-async def admin_update_whatsapp_config(apiKey: str = "", admin=Depends(get_admin_user)):
+async def admin_update_whatsapp_config(apiKey: str = "", phoneId: str = "", admin=Depends(get_admin_user)):
     db = get_db()
     await db.settings.update_one(
         {"key": "whatsapp"},
-        {"$set": {"apiKey": apiKey, "updatedAt": datetime.utcnow()}},
+        {"$set": {"apiKey": apiKey, "phoneId": phoneId, "updatedAt": datetime.utcnow()}},
         upsert=True,
     )
     return {"message": "WhatsApp API configured"}
@@ -214,11 +218,15 @@ async def _send_whatsapp(number: str, text: str):
         if not config or not config.get("apiKey"):
             return
 
+        phone_id = config.get("phoneId", "")
+        if not phone_id:
+            return
+
         import httpx
-        # Using generic WhatsApp Business API format
+        # Using WhatsApp Business API format
         async with httpx.AsyncClient() as client:
             await client.post(
-                "https://graph.facebook.com/v18.0/FROM_PHONE/messages",
+                f"https://graph.facebook.com/v18.0/{phone_id}/messages",
                 headers={"Authorization": f"Bearer {config['apiKey']}", "Content-Type": "application/json"},
                 json={
                     "messaging_product": "whatsapp",

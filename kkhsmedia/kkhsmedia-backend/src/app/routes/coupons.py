@@ -212,10 +212,17 @@ async def apply_coupon(code: str, order_id: str, user=Depends(get_current_user))
         }}
     )
 
-    # Update coupon usage
-    await db.coupons.update_one(
-        {"_id": coupon["_id"]},
-        {"$inc": {"usedCount": 1}, "$push": {"usedBy": user["id"]}}
+    # Update coupon usage atomically with limit checks to prevent race conditions
+    coupon_filter = {"_id": coupon["_id"], "isActive": True}
+    max_uses = coupon.get("maxUses", 0)
+    if max_uses > 0:
+        coupon_filter["$expr"] = {"$lt": ["$usedCount", max_uses]}
+    coupon_update = await db.coupons.find_one_and_update(
+        coupon_filter,
+        {"$inc": {"usedCount": 1}, "$push": {"usedBy": user["id"]}},
     )
+    if not coupon_update:
+        # Race condition: coupon limit was reached concurrently
+        raise HTTPException(status_code=400, detail="Coupon usage limit reached")
 
     return {"message": "Coupon applied", "discount": discount, "newTotal": new_total}
