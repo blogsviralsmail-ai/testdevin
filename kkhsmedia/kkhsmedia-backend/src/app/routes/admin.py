@@ -322,19 +322,28 @@ async def admin_get_orders(
 @router.put("/orders/{order_id}/status")
 async def admin_update_order_status(order_id: str, new_status: str, admin=Depends(get_admin_user)):
     db = get_db()
-    order = await db.orders.find_one({"_id": ObjectId(order_id)})
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    await db.orders.update_one(
-        {"_id": ObjectId(order_id)},
-        {"$set": {"status": new_status, "updatedAt": datetime.utcnow()}}
-    )
-
-    # If marking as paid, activate slots
-    if new_status == "paid" and order["status"] != "paid":
+    if new_status == "paid":
+        # Atomic update to prevent race condition with webhooks
+        order = await db.orders.find_one_and_update(
+            {"_id": ObjectId(order_id), "status": {"$ne": "paid"}},
+            {"$set": {"status": "paid", "updatedAt": datetime.utcnow()}},
+        )
+        if not order:
+            # Either not found or already paid
+            exists = await db.orders.find_one({"_id": ObjectId(order_id)})
+            if not exists:
+                raise HTTPException(status_code=404, detail="Order not found")
+            return {"message": "Order already paid", "status": "paid"}
         from app.routes.orders import activate_slots
         await activate_slots(db, order)
+    else:
+        order = await db.orders.find_one({"_id": ObjectId(order_id)})
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        await db.orders.update_one(
+            {"_id": ObjectId(order_id)},
+            {"$set": {"status": new_status, "updatedAt": datetime.utcnow()}}
+        )
 
     return {"message": f"Order status updated to {new_status}"}
 
@@ -683,11 +692,11 @@ async def admin_upload_logo(
     # Also copy to the main frontend directory for direct serving
     frontend_dir = Path("/var/www/kkhsmedia-app")
     if logo_type == "header":
-        shutil.copy2(filepath, frontend_dir / "header-logo.png")
+        shutil.copy2(filepath, frontend_dir / f"header-logo.{ext}")
     elif logo_type == "footer":
-        shutil.copy2(filepath, frontend_dir / "footer-logo.png")
+        shutil.copy2(filepath, frontend_dir / f"footer-logo.{ext}")
     elif logo_type == "favicon":
-        shutil.copy2(filepath, frontend_dir / "favicon.png")
+        shutil.copy2(filepath, frontend_dir / f"favicon.{ext}")
 
     logo_url = f"/uploads/logos/{filename}"
 
