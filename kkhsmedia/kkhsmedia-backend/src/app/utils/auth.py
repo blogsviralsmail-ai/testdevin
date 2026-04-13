@@ -94,14 +94,19 @@ async def get_admin_or_moderator(user=Depends(get_current_user)):
     return user
 
 
+SENSITIVE_FIELDS = {"password"}
+
+
 def serialize_doc(doc) -> dict:
-    """Convert MongoDB document to JSON-safe dict."""
+    """Convert MongoDB document to JSON-safe dict, stripping sensitive fields."""
     if doc is None:
         return None
     result = {}
     for key, value in doc.items():
         if key == "_id":
             result["id"] = str(value)
+        elif key in SENSITIVE_FIELDS:
+            continue
         elif isinstance(value, ObjectId):
             result[key] = str(value)
         elif isinstance(value, datetime):

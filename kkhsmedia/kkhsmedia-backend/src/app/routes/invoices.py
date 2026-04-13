@@ -135,6 +135,21 @@ def _generate_invoice_html(order: dict, user: dict, settings: dict) -> str:
     return html
 
 
+@router.get("/admin/{order_id}")
+async def admin_get_invoice(order_id: str, admin=Depends(get_admin_user)):
+    """Admin: Get invoice for any order."""
+    db = get_db()
+    order = await db.orders.find_one({"_id": ObjectId(order_id)})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    settings = await db.settings.find_one({"key": "site"}) or {}
+    user_doc = await db.users.find_one({"_id": ObjectId(order["userId"])}) or {}
+
+    html = _generate_invoice_html(order, user_doc, settings)
+    return {"html": html, "orderId": order.get("orderId", "")}
+
+
 @router.get("/{order_id}")
 async def get_invoice(order_id: str, user=Depends(get_current_user)):
     """Get invoice HTML for an order."""
@@ -168,18 +183,3 @@ async def download_invoice(order_id: str, user=Depends(get_current_user)):
         media_type="text/html",
         headers={"Content-Disposition": f"attachment; filename=invoice-{order.get('orderId','')}.html"}
     )
-
-
-@router.get("/admin/{order_id}")
-async def admin_get_invoice(order_id: str, admin=Depends(get_admin_user)):
-    """Admin: Get invoice for any order."""
-    db = get_db()
-    order = await db.orders.find_one({"_id": ObjectId(order_id)})
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    settings = await db.settings.find_one({"key": "site"}) or {}
-    user_doc = await db.users.find_one({"_id": ObjectId(order["userId"])}) or {}
-
-    html = _generate_invoice_html(order, user_doc, settings)
-    return {"html": html, "orderId": order.get("orderId", "")}
