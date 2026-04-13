@@ -98,7 +98,7 @@ export default function AdminUsers() {
 
   const handleStatusToggle = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'active' ? 'banned' : 'active';
-    try { await adminAPI.updateUser(id, { status: newStatus }); fetchUsers(); } catch {}
+    try { await adminAPI.updateUser(id, { status: newStatus }); fetchUsers(); } catch { /* ignore */ }
   };
 
   const getRoleBadge = (role: string) => {
