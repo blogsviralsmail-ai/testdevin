@@ -166,8 +166,9 @@ async def update_user(user_id: str, req: AdminUpdateUserRequest, admin=Depends(g
     update = {"updatedAt": datetime.utcnow()}
     if req.status is not None:
         update["status"] = req.status
-    if req.role is not None:
-        update["role"] = req.role
+    # Role changes are handled exclusively by PUT /users/{user_id}/role
+    # which is admin-only with self-demotion prevention. Ignore req.role
+    # here to prevent moderator privilege escalation.
 
     await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update})
     return {"message": "User updated"}
