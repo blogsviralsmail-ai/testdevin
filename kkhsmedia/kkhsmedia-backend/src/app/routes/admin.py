@@ -163,6 +163,12 @@ async def get_user_detail(user_id: str, admin=Depends(get_admin_or_moderator)):
 @router.put("/users/{user_id}")
 async def update_user(user_id: str, req: AdminUpdateUserRequest, admin=Depends(get_admin_or_moderator)):
     db = get_db()
+    target_user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Prevent moderators from modifying admin users
+    if admin.get("role") == "moderator" and target_user.get("role") == "admin":
+        raise HTTPException(status_code=403, detail="Moderators cannot modify admin users")
     update = {"updatedAt": datetime.utcnow()}
     if req.status is not None:
         update["status"] = req.status
