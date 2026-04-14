@@ -253,6 +253,118 @@ async def admin_force_stop(slot_id: str, admin=Depends(get_admin_or_moderator)):
     return {"message": "Stream force stopped"}
 
 
+@router.post("/slots/{slot_id}/force-start")
+async def admin_force_start(slot_id: str, admin=Depends(get_admin_user)):
+    """Admin-only: start streaming on any slot (bypasses user auth check)."""
+    db = get_db()
+    slot = await db.slots.find_one({"_id": ObjectId(slot_id)})
+    if not slot:
+        raise HTTPException(status_code=404, detail="Slot not found")
+    if slot.get("isStreaming"):
+        raise HTTPException(status_code=400, detail="Slot is already streaming")
+    if not slot.get("streamKey"):
+        raise HTTPException(status_code=400, detail="No stream key set")
+
+    source_type = slot.get("sourceType", "uploaded")
+
+    # For youtube_url source, use the advanced streaming endpoint logic
+    if source_type == "youtube_url" and slot.get("sourceUrl"):
+        from app.routes.streaming_advanced import (
+            _get_yt_format, _build_ffmpeg_cmd, RESOLUTION_PRESETS, FALLBACK_CHAIN,
+        )
+        from app.services.streaming import _get_ffmpeg_path, active_streams, stop_ffmpeg_stream
+        import asyncio
+        import shutil
+
+        yt_dlp = shutil.which("yt-dlp")
+        if not yt_dlp:
+            raise HTTPException(status_code=500, detail="yt-dlp not installed")
+
+        slot_res = slot.get("resolution", "1080p")
+        start_idx = FALLBACK_CHAIN.index(slot_res) if slot_res in FALLBACK_CHAIN else 1
+
+        stream_key = slot["streamKey"]
+        rtmp_url = slot.get("rtmpUrl", "rtmp://a.rtmp.youtube.com/live2")
+        destination = f"{rtmp_url}/{stream_key}"
+
+        ffmpeg = _get_ffmpeg_path()
+        stream_urls = []
+        chosen_res = FALLBACK_CHAIN[start_idx]
+        for res_name in FALLBACK_CHAIN[start_idx:]:
+            height, vbitrate, maxrate, bufsize = RESOLUTION_PRESETS[res_name]
+            try:
+                import subprocess
+                urls = _get_yt_format(yt_dlp, slot["sourceUrl"], height)
+                if urls:
+                    stream_urls = urls
+                    chosen_res = res_name
+                    break
+            except Exception:
+                continue
+
+        if not stream_urls:
+            raise HTTPException(status_code=400, detail="Failed to get stream URL from YouTube source")
+
+        video_url = stream_urls[0]
+        audio_url = stream_urls[1] if len(stream_urls) >= 2 else None
+        height, vbitrate, maxrate, bufsize = RESOLUTION_PRESETS[chosen_res]
+
+        cmd = _build_ffmpeg_cmd(ffmpeg, video_url, audio_url, destination,
+                                height, vbitrate, maxrate, bufsize, loop=False)
+        process = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+
+        slot_id_str = str(slot["_id"])
+        active_streams[slot_id_str] = {
+            "process": process, "pid": process.pid, "platform": slot.get("platform", "youtube"),
+            "video_url": video_url, "destination": destination,
+            "stream_key": stream_key, "rtmp_url": rtmp_url,
+            "started_at": datetime.utcnow().isoformat(), "restart_count": 0,
+            "source_type": "youtube_url", "source_url": slot["sourceUrl"],
+            "resolution": chosen_res,
+        }
+
+        await db.slots.update_one(
+            {"_id": ObjectId(slot_id)},
+            {"$set": {
+                "isStreaming": True, "streamProcessId": process.pid,
+                "currentResolution": chosen_res, "updatedAt": datetime.utcnow(),
+            }}
+        )
+        return {"message": f"Stream force-started at {chosen_res}", "pid": process.pid}
+
+    # For uploaded video source
+    if not slot.get("videoId"):
+        raise HTTPException(status_code=400, detail="No video assigned to slot")
+
+    video = await db.videos.find_one({"_id": ObjectId(slot["videoId"])})
+    if not video:
+        raise HTTPException(status_code=400, detail="Assigned video not found")
+
+    video_file_url = video.get("localPath") or video.get("fileUrl") or video.get("s3Key", "")
+    if not video_file_url:
+        raise HTTPException(status_code=400, detail="Video has no file URL")
+
+    from app.services.streaming import start_ffmpeg_stream
+    process_id = await start_ffmpeg_stream(
+        slot_id=str(slot["_id"]),
+        video_url=video_file_url,
+        stream_key=slot["streamKey"],
+        rtmp_url=slot.get("rtmpUrl", ""),
+        platform=slot.get("platform", "youtube"),
+    )
+
+    if process_id is None:
+        raise HTTPException(status_code=500, detail="FFmpeg failed to start")
+
+    await db.slots.update_one(
+        {"_id": ObjectId(slot_id)},
+        {"$set": {"isStreaming": True, "streamProcessId": process_id, "updatedAt": datetime.utcnow()}}
+    )
+    return {"message": "Stream force-started", "pid": process_id}
+
+
 @router.put("/slots/{slot_id}/extend")
 async def admin_extend_slot(slot_id: str, days: int = 30, admin=Depends(get_admin_or_moderator)):
     db = get_db()
