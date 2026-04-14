@@ -52,7 +52,7 @@ async def register(req: RegisterRequest):
 
     # Send OTP email
     from app.services.email import send_otp_email
-    await send_otp_email(req.email.lower(), otp, "email_verify")
+    await send_otp_email(req.email.lower(), otp, "verify")
 
     # Set trial period (3 days free)
     trial_expiry = datetime.utcnow() + timedelta(days=3)
