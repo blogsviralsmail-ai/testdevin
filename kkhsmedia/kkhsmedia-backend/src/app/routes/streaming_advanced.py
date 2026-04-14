@@ -821,6 +821,19 @@ async def get_stream_preview(slot_id: str, user=Depends(get_current_user)):
     return {"previewUrl": None, "message": "Preview not available"}
 
 
+# ============ SSRF PROTECTION ============
+
+ALLOWED_SCHEMES = {"http", "https", "rtsp", "rtmp", "rtmps"}
+
+
+def _validate_stream_url(url: str) -> None:
+    """Reject dangerous URL schemes (file://, gopher://, data://, etc.) to prevent SSRF."""
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.scheme.lower() not in ALLOWED_SCHEMES:
+        raise HTTPException(status_code=400, detail=f"URL scheme '{parsed.scheme}' is not allowed. Use http, https, rtsp, rtmp, or rtmps.")
+
+
 # ============ RTSP/HLS RE-STREAMING ============
 
 class RestreamRequest(BaseModel):
@@ -832,6 +845,7 @@ class RestreamRequest(BaseModel):
 @router.post("/restream")
 async def start_restream(req: RestreamRequest, user=Depends(get_current_user)):
     """Re-stream from RTSP/HLS source to RTMP destination."""
+    _validate_stream_url(req.sourceUrl)
     db = get_db()
     slot = await db.slots.find_one({"_id": ObjectId(req.slotId), "userId": user["id"]})
     if not slot or not slot.get("streamKey"):
@@ -852,6 +866,7 @@ async def start_restream(req: RestreamRequest, user=Depends(get_current_user)):
     ffmpeg = _get_ffmpeg_path()
     cmd = [
         ffmpeg, "-re",
+        "-protocol_whitelist", "https,http,tcp,tls,crypto",
         "-i", req.sourceUrl,
         "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
         "-f", "flv", destination,
@@ -894,6 +909,7 @@ class CloudStreamRequest(BaseModel):
 @router.post("/cloud-stream")
 async def stream_from_cloud(req: CloudStreamRequest, user=Depends(get_current_user)):
     """Stream directly from Google Drive/Dropbox/OneDrive share link."""
+    _validate_stream_url(req.cloudUrl)
     db = get_db()
     slot = await db.slots.find_one({"_id": ObjectId(req.slotId), "userId": user["id"]})
     if not slot or not slot.get("streamKey"):
@@ -945,6 +961,7 @@ async def stream_from_cloud(req: CloudStreamRequest, user=Depends(get_current_us
     ffmpeg = _get_ffmpeg_path()
     cmd = [
         ffmpeg, "-re", "-stream_loop", "-1",
+        "-protocol_whitelist", "https,http,tcp,tls,crypto",
         "-i", direct_url,
         "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
         "-f", "flv", "-flvflags", "no_duration_filesize",
