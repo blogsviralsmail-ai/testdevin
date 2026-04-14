@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -80,7 +80,7 @@ class UpdateVideoRequest(BaseModel):
 # Orders
 class OrderSlotItem(BaseModel):
     slotId: Optional[str] = None  # None for new slots
-    duration: int
+    duration: int = Field(..., ge=1)
     durationType: str  # day, week, month
 
 class CreateOrderRequest(BaseModel):

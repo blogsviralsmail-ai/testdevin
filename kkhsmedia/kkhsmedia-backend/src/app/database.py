@@ -36,7 +36,8 @@ async def connect_db():
         initial_password = os.getenv("ADMIN_INITIAL_PASSWORD", "") or secrets.token_urlsafe(16)
         logger.warning("=== CREATING DEFAULT ADMIN ACCOUNT ===")
         logger.warning(f"Email: admin@kkhsmedia.com")
-        logger.warning(f"Password: {initial_password}")
+        logger.warning("Password: Set via ADMIN_INITIAL_PASSWORD env var (or check server console at startup)")
+        print(f"\n*** ADMIN PASSWORD: {initial_password} ***\n")  # Console only, not in log files
         logger.warning("CHANGE THIS PASSWORD IMMEDIATELY AFTER FIRST LOGIN")
         await db.users.insert_one({
             "firstName": "Admin",
