@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -64,7 +65,7 @@ def _find_ffmpeg_pids_for_stream_key(stream_key: str) -> list:
     """Find all FFmpeg PIDs streaming to a given stream key."""
     try:
         result = subprocess.run(
-            ["pgrep", "-f", f"ffmpeg.*{stream_key}"],
+            ["pgrep", "-f", f"ffmpeg.*{re.escape(stream_key)}"],
             capture_output=True, text=True, timeout=5
         )
         if result.stdout.strip():
