@@ -342,7 +342,7 @@ async def verify_cashfree_payment(order_id: str) -> bool:
     from app.config import get_cashfree_config
     cfg = await get_cashfree_config()
     if not cfg["app_id"]:
-        return True  # Mock mode
+        return False  # Gateway not configured — reject verification
     import httpx
     base_url = "https://sandbox.cashfree.com" if cfg["env"] == "sandbox" else "https://api.cashfree.com"
     headers = {"x-client-id": cfg["app_id"], "x-client-secret": cfg["secret_key"], "x-api-version": "2023-08-01"}
@@ -359,7 +359,7 @@ async def verify_razorpay_payment(rp_order_id: str) -> bool:
     from app.config import get_razorpay_config
     cfg = await get_razorpay_config()
     if not cfg["key_id"]:
-        return True  # Mock mode
+        return False  # Gateway not configured — reject verification
     import httpx
     try:
         async with httpx.AsyncClient() as client:
