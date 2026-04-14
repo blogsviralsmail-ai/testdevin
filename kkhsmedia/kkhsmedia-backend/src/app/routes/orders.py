@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from datetime import datetime, timedelta
 from bson import ObjectId
+import base64
 import uuid
 import hmac
 import hashlib
@@ -168,7 +169,12 @@ async def cashfree_webhook(request: Request):
     if not secret:
         raise HTTPException(status_code=503, detail="Webhook not configured")
     signature = request.headers.get("x-webhook-signature", "")
-    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    timestamp = request.headers.get("x-webhook-timestamp", "")
+    # Cashfree signature = base64(HMAC-SHA256(timestamp + rawBody, secret))
+    sign_payload = timestamp.encode() + raw_body
+    expected = base64.b64encode(
+        hmac.new(secret.encode(), sign_payload, hashlib.sha256).digest()
+    ).decode()
     if not hmac.compare_digest(signature, expected):
         raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
