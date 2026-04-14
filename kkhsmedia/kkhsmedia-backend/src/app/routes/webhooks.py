@@ -1,7 +1,10 @@
 """Webhook notifications system - send HTTP callbacks on stream events."""
+import ipaddress
 import logging
+import socket
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -35,8 +38,30 @@ async def get_webhooks(user=Depends(get_current_user)):
     return serialize_docs(hooks)
 
 
+def _validate_webhook_url(url: str) -> None:
+    """Reject webhook URLs targeting private/internal networks (SSRF protection)."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("https", "http"):
+        raise HTTPException(status_code=400, detail="Webhook URL must use http or https")
+    hostname = parsed.hostname
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Invalid webhook URL")
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+        for _family, _type, _proto, _canonname, sockaddr in resolved:
+            ip = ipaddress.ip_address(sockaddr[0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Webhook URL must not target private or internal networks",
+                )
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="Cannot resolve webhook URL hostname")
+
+
 @router.post("")
 async def create_webhook(req: CreateWebhookRequest, user=Depends(get_current_user)):
+    _validate_webhook_url(req.url)
     db = get_db()
     count = await db.webhooks.count_documents({"userId": user["id"]})
     if count >= 10:
@@ -63,6 +88,8 @@ async def update_webhook(webhook_id: str, req: UpdateWebhookRequest, user=Depend
     update = {}
     for field, value in req.model_dump(exclude_none=True).items():
         update[field] = value
+    if "url" in update:
+        _validate_webhook_url(update["url"])
     if update:
         await db.webhooks.update_one(
             {"_id": ObjectId(webhook_id), "userId": user["id"]},
