@@ -1,4 +1,5 @@
 """Email service for sending OTP, notifications, and transactional emails."""
+import asyncio
 import logging
 import smtplib
 from email.mime.text import MIMEText
@@ -8,6 +9,14 @@ from typing import Optional
 from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL, get_smtp_config
 
 logger = logging.getLogger(__name__)
+
+
+def _send_smtp_sync(host: str, port: int, user: str, password: str, from_email: str, to: str, msg_string: str) -> None:
+    """Synchronous SMTP send — run via asyncio.to_thread to avoid blocking the event loop."""
+    with smtplib.SMTP(host, port) as server:
+        server.starttls()
+        server.login(user, password)
+        server.sendmail(from_email, to, msg_string)
 
 
 async def send_email(to: str, subject: str, html_body: str, text_body: Optional[str] = None) -> bool:
@@ -27,10 +36,11 @@ async def send_email(to: str, subject: str, html_body: str, text_body: Optional[
             msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        with smtplib.SMTP(smtp["host"], smtp["port"]) as server:
-            server.starttls()
-            server.login(smtp["user"], smtp["password"])
-            server.sendmail(smtp["from_email"], to, msg.as_string())
+        await asyncio.to_thread(
+            _send_smtp_sync,
+            smtp["host"], smtp["port"], smtp["user"], smtp["password"],
+            smtp["from_email"], to, msg.as_string(),
+        )
 
         logger.info(f"Email sent to {to}: {subject}")
         return True

@@ -201,9 +201,19 @@ async def apply_coupon(code: str, order_id: str, user=Depends(get_current_user))
     # Claim coupon usage FIRST (atomically) before modifying the order.
     # This prevents the order being discounted without the coupon being consumed.
     coupon_filter = {"_id": coupon["_id"], "isActive": True}
+    expr_conditions = []
     max_uses = coupon.get("maxUses", 0)
     if max_uses > 0:
-        coupon_filter["$expr"] = {"$lt": ["$usedCount", max_uses]}
+        expr_conditions.append({"$lt": ["$usedCount", max_uses]})
+    # Enforce per-user limit atomically to prevent TOCTOU race
+    max_per_user = coupon.get("maxUsesPerUser", 1)
+    if max_per_user > 0:
+        expr_conditions.append({"$lt": [
+            {"$size": {"$filter": {"input": "$usedBy", "cond": {"$eq": ["$$this", user["id"]]}}}},
+            max_per_user,
+        ]})
+    if expr_conditions:
+        coupon_filter["$expr"] = {"$and": expr_conditions} if len(expr_conditions) > 1 else expr_conditions[0]
     coupon_update = await db.coupons.find_one_and_update(
         coupon_filter,
         {"$inc": {"usedCount": 1}, "$push": {"usedBy": user["id"]}},

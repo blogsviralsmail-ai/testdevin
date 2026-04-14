@@ -573,7 +573,7 @@ async def admin_delete_video(video_id: str, admin=Depends(get_admin_user)):
 
     # Delete local file if exists
     import os
-    local_path = video.get("localPath", "")
+    local_path = video.get("fileUrl") or video.get("localPath", "")
     if local_path and os.path.exists(local_path):
         try:
             os.remove(local_path)
