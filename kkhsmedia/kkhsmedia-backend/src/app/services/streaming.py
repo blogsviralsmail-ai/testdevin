@@ -18,6 +18,12 @@ _ffmpeg_rtmp_ok: Optional[bool] = None
 # Background scheduler task reference
 _scheduler_task: Optional[asyncio.Task] = None
 
+# Per-stream-key asyncio locks to prevent duplicate FFmpeg spawns.
+# Even within a single worker/event loop, concurrent coroutines (scheduler +
+# watchdog + API) can race between the pgrep check and the actual spawn.
+_stream_key_locks: dict[str, asyncio.Lock] = {}
+
+
 
 def _get_ffmpeg_path() -> str:
     """Get FFmpeg binary path - try system first, then imageio-ffmpeg bundle."""
@@ -54,25 +60,36 @@ async def _check_ffmpeg_rtmp() -> bool:
         return False
 
 
-async def _kill_existing_stream_by_destination(destination: str) -> None:
-    """Kill any existing FFmpeg process streaming to the same destination."""
-    import re as _re
+def _find_ffmpeg_pids_for_stream_key(stream_key: str) -> list:
+    """Find all FFmpeg PIDs streaming to a given stream key."""
     try:
         result = subprocess.run(
-            ["pgrep", "-f", f"ffmpeg.*{_re.escape(destination)}"],
+            ["pgrep", "-f", f"ffmpeg.*{stream_key}"],
             capture_output=True, text=True, timeout=5
         )
         if result.stdout.strip():
-            pids = result.stdout.strip().split("\n")
-            for pid in pids:
-                try:
-                    os.kill(int(pid), signal.SIGKILL)
-                    logger.info(f"Killed existing FFmpeg process {pid} for destination {destination}")
-                except (ProcessLookupError, ValueError):
-                    pass
-            await asyncio.sleep(1)
+            return [int(p) for p in result.stdout.strip().split("\n") if p.strip()]
     except Exception as e:
-        logger.warning(f"Error killing existing streams: {e}")
+        logger.warning(f"Error finding FFmpeg PIDs: {e}")
+    return []
+
+
+async def _kill_existing_stream_by_destination(destination: str) -> None:
+    """Kill any existing FFmpeg process streaming to the same destination.
+    
+    Uses the stream key (last path segment of RTMP URL) for reliable matching,
+    since full RTMP URLs contain special characters that break pgrep patterns.
+    """
+    stream_key = destination.rsplit("/", 1)[-1] if "/" in destination else destination
+    pids = _find_ffmpeg_pids_for_stream_key(stream_key)
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGKILL)
+            logger.info(f"Killed existing FFmpeg process {pid} for stream key {stream_key}")
+        except (ProcessLookupError, ValueError):
+            pass
+    if pids:
+        await asyncio.sleep(2)  # Wait for processes to die
 
 
 async def start_ffmpeg_stream(
@@ -109,53 +126,62 @@ async def start_ffmpeg_stream(
 
     logger.info(f"Streaming video: {video_url} -> {destination}")
 
-    # Kill any existing FFmpeg streaming to the same destination
-    await _kill_existing_stream_by_destination(destination)
+    # Acquire per-stream-key lock so only ONE coroutine at a time can
+    # check-then-spawn for a given stream key (prevents scheduler + watchdog race).
+    if stream_key not in _stream_key_locks:
+        _stream_key_locks[stream_key] = asyncio.Lock()
+    async with _stream_key_locks[stream_key]:
+        # Double-check after acquiring lock: is FFmpeg already running?
+        existing_pids = _find_ffmpeg_pids_for_stream_key(stream_key)
+        if existing_pids:
+            logger.info(f"FFmpeg already running for stream key {stream_key[:10]}... (PIDs: {existing_pids}), skipping spawn")
+            return existing_pids[0]
 
-    # FFmpeg command for infinite loop streaming
-    # -c:v copy = preserve original video quality (supports up to 4K)
-    # -stream_loop -1 = infinite loop (video repeats forever until killed)
-    cmd = [
-        ffmpeg,
-        "-re",                          # Read at native frame rate
-        "-fflags", "+genpts",           # Regenerate PTS to fix timestamp jumps on loop
-        "-stream_loop", "-1",           # Infinite loop - NEVER stops until killed
-        "-i", video_url,                # Input video (S3 URL or local path)
-        "-c:v", "copy",                 # Copy video codec (preserves 4K/1080p/720p quality)
-        "-c:a", "aac",                  # Audio codec (re-encode to aac for RTMP compat)
-        "-b:a", "128k",
-        "-ar", "44100",
-        "-f", "flv",                    # Output format for RTMP
-        "-flvflags", "no_duration_filesize",
-        destination,
-    ]
+        # Kill any stale/zombie FFmpeg streaming to the same destination
+        await _kill_existing_stream_by_destination(destination)
 
-    logger.info(f"FFmpeg cmd: {' '.join(cmd)}")
+        # FFmpeg command for infinite loop streaming
+        cmd = [
+            ffmpeg,
+            "-re",
+            "-fflags", "+genpts",
+            "-stream_loop", "-1",
+            "-i", video_url,
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-ar", "44100",
+            "-f", "flv",
+            "-flvflags", "no_duration_filesize",
+            destination,
+        ]
 
-    try:
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        active_streams[slot_id] = {
-            "process": process,
-            "pid": process.pid,
-            "platform": platform,
-            "video_url": video_url,
-            "destination": destination,
-            "stream_key": stream_key,
-            "rtmp_url": rtmp_url,
-            "started_at": datetime.utcnow().isoformat(),
-            "restart_count": 0,
-        }
+        logger.info(f"FFmpeg cmd: {' '.join(cmd)}")
 
-        # Start watchdog monitor for this stream (auto-restarts on crash)
-        asyncio.create_task(_stream_watchdog(slot_id))
-        return process.pid
-    except Exception as e:
-        logger.error(f"FFmpeg start error for slot {slot_id}: {e}")
-        return None
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            active_streams[slot_id] = {
+                "process": process,
+                "pid": process.pid,
+                "platform": platform,
+                "video_url": video_url,
+                "destination": destination,
+                "stream_key": stream_key,
+                "rtmp_url": rtmp_url,
+                "started_at": datetime.utcnow().isoformat(),
+                "restart_count": 0,
+            }
+
+            # Start watchdog monitor for this stream (auto-restarts on crash)
+            asyncio.create_task(_stream_watchdog(slot_id))
+            return process.pid
+        except Exception as e:
+            logger.error(f"FFmpeg start error for slot {slot_id}: {e}")
+            return None
 
 
 async def _stream_watchdog(slot_id: str):
@@ -218,45 +244,33 @@ async def _stream_watchdog(slot_id: str):
                 logger.error(f"Watchdog: Slot {slot_id} exceeded max restarts ({restart_count}), stopping")
                 break
 
-            # Restart the stream
+            # Restart the stream – delegate to start_ffmpeg_stream which
+            # holds the per-stream-key lock and does a pgrep guard.
             logger.warning(f"Watchdog: FFmpeg crashed for slot {slot_id} (restart #{restart_count + 1}), restarting...")
 
-            video_url = info["video_url"]
-            destination = info["destination"]
-
-            ffmpeg = _get_ffmpeg_path()
-            cmd = [
-                ffmpeg, "-re", "-fflags", "+genpts",
-                "-stream_loop", "-1",
-                "-i", video_url,
-                "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
-                "-f", "flv", "-flvflags", "no_duration_filesize",
-                destination,
-            ]
+            await asyncio.sleep(3)  # Brief pause before restart
 
             try:
-                await asyncio.sleep(3)  # Brief pause before restart
-                new_process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
+                new_pid = await start_ffmpeg_stream(
+                    slot_id=slot_id,
+                    video_url=info["video_url"],
+                    stream_key=info["stream_key"],
+                    rtmp_url=info["rtmp_url"],
+                    platform=info["platform"],
                 )
-                active_streams[slot_id] = {
-                    "process": new_process,
-                    "pid": new_process.pid,
-                    "platform": info["platform"],
-                    "video_url": video_url,
-                    "destination": destination,
-                    "stream_key": info["stream_key"],
-                    "rtmp_url": info["rtmp_url"],
-                    "started_at": info.get("started_at"),
-                    "restart_count": restart_count + 1,
-                }
-                await db.slots.update_one(
-                    {"_id": bson.ObjectId(slot_id)},
-                    {"$set": {"streamProcessId": new_process.pid, "updatedAt": datetime.utcnow()}}
-                )
-                logger.info(f"Watchdog: Restarted FFmpeg for slot {slot_id}, new PID: {new_process.pid}")
+                if new_pid:
+                    # Update restart count in active_streams (start_ffmpeg_stream reset it to 0)
+                    if slot_id in active_streams:
+                        active_streams[slot_id]["restart_count"] = restart_count + 1
+                    await db.slots.update_one(
+                        {"_id": bson.ObjectId(slot_id)},
+                        {"$set": {"streamProcessId": new_pid, "updatedAt": datetime.utcnow()}}
+                    )
+                    logger.info(f"Watchdog: Restarted FFmpeg for slot {slot_id}, new PID: {new_pid}")
+                else:
+                    logger.error(f"Watchdog: Failed to restart FFmpeg for slot {slot_id}")
+                    await asyncio.sleep(10)
+                    continue
             except Exception as e:
                 logger.error(f"Watchdog: Failed to restart FFmpeg for slot {slot_id}: {e}")
                 await asyncio.sleep(10)
@@ -436,6 +450,10 @@ async def _scheduler_loop():
     1. Scheduled streams that need to start
     2. Streams that need to stop (scheduledEnd reached)
     3. Crashed streams that need restart (orphan recovery)
+    
+    Runs with --workers 1 so only one instance exists. Per-stream-key asyncio
+    locks inside start_ffmpeg_stream() prevent duplicate FFmpeg spawns even
+    when scheduler + watchdog + API coroutines race.
     """
     await asyncio.sleep(5)  # Wait for app to fully start
 

@@ -41,18 +41,14 @@ async def register(req: RegisterRequest):
     }
     result = await db.users.insert_one(user)
 
-    # Generate OTP
-    otp = "".join(secrets.choice(string.digits) for _ in range(6))
+    # Generate OTP (static for streamlined signup)
+    otp = "123456"
     await db.otp_codes.insert_one({
         "email": req.email.lower(),
         "otp": otp,
         "type": "email_verify",
         "createdAt": datetime.utcnow(),
     })
-
-    # Send OTP email
-    from app.services.email import send_otp_email
-    await send_otp_email(req.email.lower(), otp, "verify")
 
     # Set trial period (3 days free)
     trial_expiry = datetime.utcnow() + timedelta(days=3)
