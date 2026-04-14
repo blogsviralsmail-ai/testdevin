@@ -142,13 +142,25 @@ async def start_ffmpeg_stream(
         await _kill_existing_stream_by_destination(destination)
 
         # FFmpeg command for infinite loop streaming
+        # Re-encode video to ensure -stream_loop works reliably.
+        # With -c:v copy, some MP4 files fail to loop because FFmpeg
+        # cannot seek back to the start properly, causing the stream
+        # to stop after one playthrough (~video duration).
         cmd = [
             ffmpeg,
             "-re",
-            "-fflags", "+genpts",
+            "-fflags", "+genpts+igndts",
             "-stream_loop", "-1",
             "-i", video_url,
-            "-c:v", "copy",
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-tune", "zerolatency",
+            "-b:v", "4500k",
+            "-maxrate", "5000k",
+            "-bufsize", "8000k",
+            "-g", "60",
+            "-keyint_min", "60",
+            "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "128k",
             "-ar", "44100",
