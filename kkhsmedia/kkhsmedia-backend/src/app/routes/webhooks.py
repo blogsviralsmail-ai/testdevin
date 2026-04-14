@@ -38,6 +38,19 @@ async def get_webhooks(user=Depends(get_current_user)):
     return serialize_docs(hooks)
 
 
+def _is_private_ip(hostname: str) -> bool:
+    """Resolve hostname and check if any resolved IP is private/internal."""
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+        for _family, _type, _proto, _canonname, sockaddr in resolved:
+            ip = ipaddress.ip_address(sockaddr[0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                return True
+    except socket.gaierror:
+        return True  # treat unresolvable as private
+    return False
+
+
 def _validate_webhook_url(url: str) -> None:
     """Reject webhook URLs targeting private/internal networks (SSRF protection)."""
     parsed = urlparse(url)
@@ -46,17 +59,11 @@ def _validate_webhook_url(url: str) -> None:
     hostname = parsed.hostname
     if not hostname:
         raise HTTPException(status_code=400, detail="Invalid webhook URL")
-    try:
-        resolved = socket.getaddrinfo(hostname, None)
-        for _family, _type, _proto, _canonname, sockaddr in resolved:
-            ip = ipaddress.ip_address(sockaddr[0])
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Webhook URL must not target private or internal networks",
-                )
-    except socket.gaierror:
-        raise HTTPException(status_code=400, detail="Cannot resolve webhook URL hostname")
+    if _is_private_ip(hostname):
+        raise HTTPException(
+            status_code=400,
+            detail="Webhook URL must not target private or internal networks",
+        )
 
 
 @router.post("")
@@ -145,6 +152,12 @@ async def trigger_webhooks(user_id: str, event: str, payload: dict):
                 if hook.get("secret"):
                     sig = hmac.new(hook["secret"].encode(), body.encode(), hashlib.sha256).hexdigest()
                     headers["X-Webhook-Signature"] = sig
+
+                # Re-validate URL at send time to prevent DNS rebinding attacks
+                hook_parsed = urlparse(hook["url"])
+                if hook_parsed.hostname and _is_private_ip(hook_parsed.hostname):
+                    logger.warning(f"Webhook URL {hook['url']} resolves to private IP, skipping")
+                    continue
 
                 async with httpx.AsyncClient() as client:
                     resp = await client.post(hook["url"], content=body, headers=headers, timeout=10)

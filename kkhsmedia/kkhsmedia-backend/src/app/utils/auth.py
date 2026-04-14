@@ -94,7 +94,11 @@ async def get_admin_or_moderator(user=Depends(get_current_user)):
     return user
 
 
-SENSITIVE_FIELDS = {"password", "secret"}
+SENSITIVE_FIELDS = {
+    "password", "secret",
+    "cashfreeSecretKey", "razorpayKeySecret", "smtpPassword",
+    "awsSecretAccessKey", "facebookAppSecret", "googleClientSecret",
+}
 
 
 def serialize_doc(doc) -> dict:
