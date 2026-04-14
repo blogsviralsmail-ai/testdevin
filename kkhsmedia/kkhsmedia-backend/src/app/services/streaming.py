@@ -118,6 +118,7 @@ async def start_ffmpeg_stream(
     cmd = [
         ffmpeg,
         "-re",                          # Read at native frame rate
+        "-fflags", "+genpts",           # Regenerate PTS to fix timestamp jumps on loop
         "-stream_loop", "-1",           # Infinite loop - NEVER stops until killed
         "-i", video_url,                # Input video (S3 URL or local path)
         "-c:v", "copy",                 # Copy video codec (preserves 4K/1080p/720p quality)
@@ -225,7 +226,8 @@ async def _stream_watchdog(slot_id: str):
 
             ffmpeg = _get_ffmpeg_path()
             cmd = [
-                ffmpeg, "-re", "-stream_loop", "-1",
+                ffmpeg, "-re", "-fflags", "+genpts",
+                "-stream_loop", "-1",
                 "-i", video_url,
                 "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
                 "-f", "flv", "-flvflags", "no_duration_filesize",
