@@ -537,7 +537,9 @@ async def start_playlist_queue(req: PlaylistQueueRequest, user=Depends(get_curre
     concat_file = os.path.join(upload_dir, f"playlist_{req.slotId}.txt")
     with open(concat_file, "w") as f:
         for vf in video_files:
-            f.write(f"file '{vf}'\n")
+            # Escape single quotes to prevent concat file injection
+            safe_path = vf.replace("'", "'\\''")
+            f.write(f"file '{safe_path}'\n")
 
     # Build destination
     platform = slot.get("platform", "youtube")
