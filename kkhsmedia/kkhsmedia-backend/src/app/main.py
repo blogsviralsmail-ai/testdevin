@@ -40,10 +40,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS - Allow all origins for development
+# CORS - Restrict to known origins in production
+import os as _os
+_allowed_origins = _os.environ.get(
+    "CORS_ORIGINS",
+    "https://app.golivepro.in,https://app.kkhsmedia.com,http://localhost:5173",
+).split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

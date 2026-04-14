@@ -7,14 +7,14 @@ from app.models.schemas import (
     AdminUpdateUserRequest, UpdateProductRequest, CreateProductRequest,
     UpdateSettingsRequest,
 )
-from app.utils.auth import get_admin_user, serialize_doc, serialize_docs, hash_password
+from app.utils.auth import get_admin_user, get_admin_or_moderator, serialize_doc, serialize_docs, hash_password
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
 
 # ============ DASHBOARD ============
 @router.get("/dashboard")
-async def admin_dashboard(admin=Depends(get_admin_user)):
+async def admin_dashboard(admin=Depends(get_admin_or_moderator)):
     db = get_db()
     now = datetime.utcnow()
     thirty_days_ago = now - timedelta(days=30)
@@ -91,7 +91,7 @@ async def admin_dashboard(admin=Depends(get_admin_user)):
 @router.get("/users")
 async def get_users(
     page: int = 1, limit: int = 20, search: str = "", status: str = "",
-    admin=Depends(get_admin_user)
+    admin=Depends(get_admin_or_moderator)
 ):
     db = get_db()
     query = {"role": {"$in": ["user", "moderator"]}}
@@ -131,7 +131,7 @@ async def get_users(
 
 
 @router.get("/users/{user_id}")
-async def get_user_detail(user_id: str, admin=Depends(get_admin_user)):
+async def get_user_detail(user_id: str, admin=Depends(get_admin_or_moderator)):
     db = get_db()
     user = await db.users.find_one({"_id": ObjectId(user_id)})
     if not user:
@@ -161,7 +161,7 @@ async def get_user_detail(user_id: str, admin=Depends(get_admin_user)):
 
 
 @router.put("/users/{user_id}")
-async def update_user(user_id: str, req: AdminUpdateUserRequest, admin=Depends(get_admin_user)):
+async def update_user(user_id: str, req: AdminUpdateUserRequest, admin=Depends(get_admin_or_moderator)):
     db = get_db()
     update = {"updatedAt": datetime.utcnow()}
     if req.status is not None:
@@ -201,7 +201,7 @@ async def delete_user(user_id: str, admin=Depends(get_admin_user)):
 @router.get("/slots")
 async def admin_get_slots(
     page: int = 1, limit: int = 20, status: str = "", streaming: str = "",
-    admin=Depends(get_admin_user)
+    admin=Depends(get_admin_or_moderator)
 ):
     db = get_db()
     query = {}
@@ -227,7 +227,7 @@ async def admin_get_slots(
 
 
 @router.post("/slots/{slot_id}/force-stop")
-async def admin_force_stop(slot_id: str, admin=Depends(get_admin_user)):
+async def admin_force_stop(slot_id: str, admin=Depends(get_admin_or_moderator)):
     db = get_db()
     slot = await db.slots.find_one({"_id": ObjectId(slot_id)})
     if not slot:
@@ -245,7 +245,7 @@ async def admin_force_stop(slot_id: str, admin=Depends(get_admin_user)):
 
 
 @router.put("/slots/{slot_id}/extend")
-async def admin_extend_slot(slot_id: str, days: int = 30, admin=Depends(get_admin_user)):
+async def admin_extend_slot(slot_id: str, days: int = 30, admin=Depends(get_admin_or_moderator)):
     db = get_db()
     slot = await db.slots.find_one({"_id": ObjectId(slot_id)})
     if not slot:
@@ -265,7 +265,7 @@ async def admin_extend_slot(slot_id: str, days: int = 30, admin=Depends(get_admi
 
 # ============ VIDEO MANAGEMENT ============
 @router.get("/videos")
-async def admin_get_videos(page: int = 1, limit: int = 20, admin=Depends(get_admin_user)):
+async def admin_get_videos(page: int = 1, limit: int = 20, admin=Depends(get_admin_or_moderator)):
     db = get_db()
     total = await db.videos.count_documents({})
     skip = (page - 1) * limit
@@ -297,7 +297,7 @@ async def admin_get_videos(page: int = 1, limit: int = 20, admin=Depends(get_adm
 @router.get("/orders")
 async def admin_get_orders(
     page: int = 1, limit: int = 20, status: str = "",
-    admin=Depends(get_admin_user)
+    admin=Depends(get_admin_or_moderator)
 ):
     db = get_db()
     query = {}
@@ -418,7 +418,7 @@ async def admin_update_settings(req: UpdateSettingsRequest, admin=Depends(get_ad
 
 # ============ CONTACTS/MESSAGES ============
 @router.get("/contacts")
-async def admin_get_contacts(page: int = 1, limit: int = 20, admin=Depends(get_admin_user)):
+async def admin_get_contacts(page: int = 1, limit: int = 20, admin=Depends(get_admin_or_moderator)):
     db = get_db()
     total = await db.contacts.count_documents({})
     skip = (page - 1) * limit
