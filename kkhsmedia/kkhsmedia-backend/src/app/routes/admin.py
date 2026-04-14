@@ -96,10 +96,12 @@ async def get_users(
     db = get_db()
     query = {"role": {"$in": ["user", "moderator"]}}
     if search:
+        import re
+        escaped_search = re.escape(search)
         query["$or"] = [
-            {"email": {"$regex": search, "$options": "i"}},
-            {"firstName": {"$regex": search, "$options": "i"}},
-            {"lastName": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": escaped_search, "$options": "i"}},
+            {"firstName": {"$regex": escaped_search, "$options": "i"}},
+            {"lastName": {"$regex": escaped_search, "$options": "i"}},
         ]
     if status:
         query["status"] = status

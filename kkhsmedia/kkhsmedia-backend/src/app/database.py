@@ -31,12 +31,18 @@ async def connect_db():
     # Seed default admin if not exists
     admin = await db.users.find_one({"role": "admin"})
     if not admin:
+        import os, secrets
         from app.utils.auth import hash_password
+        initial_password = os.getenv("ADMIN_INITIAL_PASSWORD", "") or secrets.token_urlsafe(16)
+        logger.warning("=== CREATING DEFAULT ADMIN ACCOUNT ===")
+        logger.warning(f"Email: admin@kkhsmedia.com")
+        logger.warning(f"Password: {initial_password}")
+        logger.warning("CHANGE THIS PASSWORD IMMEDIATELY AFTER FIRST LOGIN")
         await db.users.insert_one({
             "firstName": "Admin",
             "lastName": "User",
             "email": "admin@kkhsmedia.com",
-            "password": hash_password("admin123"),
+            "password": hash_password(initial_password),
             "phone": "",
             "address": {},
             "role": "admin",
