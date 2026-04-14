@@ -1,4 +1,5 @@
 """Invoice PDF generation for orders."""
+import html as html_mod
 import io
 import logging
 from datetime import datetime
@@ -15,15 +16,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/invoices", tags=["Invoices"])
 
 
+def _esc(val: str) -> str:
+    """HTML-escape a string to prevent XSS."""
+    return html_mod.escape(str(val)) if val else ""
+
+
 def _generate_invoice_html(order: dict, user: dict, settings: dict) -> str:
     """Generate invoice HTML."""
-    brand = settings.get("brandName", "KKHS Media")
-    company = settings.get("companyName", brand)
-    company_address = settings.get("address", "")
-    company_email = settings.get("contactEmail", "")
-    company_phone = settings.get("phone", "")
-    gst_number = settings.get("gstNumber", "")
-    logo_url = settings.get("logoUrl", "")
+    brand = _esc(settings.get("brandName", "KKHS Media"))
+    company = _esc(settings.get("companyName", brand))
+    company_address = _esc(settings.get("address", ""))
+    company_email = _esc(settings.get("contactEmail", ""))
+    company_phone = _esc(settings.get("phone", ""))
+    gst_number = _esc(settings.get("gstNumber", ""))
+    logo_url = _esc(settings.get("logoUrl", ""))
 
     order_date = order.get("createdAt", datetime.utcnow())
     if isinstance(order_date, datetime):
@@ -37,7 +43,7 @@ def _generate_invoice_html(order: dict, user: dict, settings: dict) -> str:
         items_html += f"""
         <tr>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{i}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">Streaming Slot - {slot.get('durationType','').title()} Plan</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">Streaming Slot - {_esc(slot.get('durationType','').title())} Plan</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{slot.get('duration',1)}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{order.get('currency','INR')} {slot.get('unitPrice',0):.2f}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{order.get('currency','INR')} {slot.get('total',0):.2f}</td>
@@ -48,7 +54,7 @@ def _generate_invoice_html(order: dict, user: dict, settings: dict) -> str:
     if order.get("couponCode"):
         coupon_row = f"""
         <tr>
-            <td colspan="4" style="padding:8px;text-align:right;color:#16a34a;">Coupon ({order['couponCode']})</td>
+            <td colspan="4" style="padding:8px;text-align:right;color:#16a34a;">Coupon ({_esc(order['couponCode'])})</td>
             <td style="padding:8px;text-align:right;color:#16a34a;">-{order.get('currency','INR')} {order.get('couponDiscount',0):.2f}</td>
         </tr>
         """
@@ -80,15 +86,15 @@ def _generate_invoice_html(order: dict, user: dict, settings: dict) -> str:
             </div>
             <div>
                 <h3 style="margin:0 0 8px 0;font-size:14px;color:#6b7280;text-transform:uppercase;">Bill To</h3>
-                <p style="margin:0;font-weight:bold;">{user.get('firstName','')} {user.get('lastName','')}</p>
-                <p style="margin:2px 0;font-size:14px;color:#6b7280;">{user.get('email','')}</p>
-                <p style="margin:2px 0;font-size:14px;color:#6b7280;">{user.get('phone','')}</p>
+                <p style="margin:0;font-weight:bold;">{_esc(user.get('firstName',''))} {_esc(user.get('lastName',''))}</p>
+                <p style="margin:2px 0;font-size:14px;color:#6b7280;">{_esc(user.get('email',''))}</p>
+                <p style="margin:2px 0;font-size:14px;color:#6b7280;">{_esc(user.get('phone',''))}</p>
             </div>
             <div>
                 <h3 style="margin:0 0 8px 0;font-size:14px;color:#6b7280;text-transform:uppercase;">Invoice Details</h3>
                 <p style="margin:2px 0;font-size:14px;">Date: {order_date_str}</p>
                 <p style="margin:2px 0;font-size:14px;">Status: <span style="color:{'#16a34a' if order.get('status')=='paid' else '#f59e0b'};font-weight:bold;">{order.get('status','pending').upper()}</span></p>
-                <p style="margin:2px 0;font-size:14px;">Payment: {order.get('paymentGateway','').title()}</p>
+                <p style="margin:2px 0;font-size:14px;">Payment: {_esc(order.get('paymentGateway','').title())}</p>
             </div>
         </div>
 
