@@ -95,7 +95,7 @@ async def get_admin_or_moderator(user=Depends(get_current_user)):
 
 
 SENSITIVE_FIELDS = {
-    "password", "secret",
+    "password",
     "cashfreeSecretKey", "razorpayKeySecret", "smtpPassword",
     "awsSecretAccessKey", "facebookAppSecret", "googleClientSecret",
 }
