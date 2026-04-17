@@ -44,7 +44,7 @@ app = FastAPI(
 import os as _os
 _allowed_origins = _os.environ.get(
     "CORS_ORIGINS",
-    "https://app.golivepro.in,https://app.kkhsmedia.com,http://localhost:5173",
+    "https://app.golivepro.in,https://golivepro.in,https://www.golivepro.in,https://app.kkhsmedia.com,https://kkhsmedia.com,http://localhost:5173",
 ).split(",")
 app.add_middleware(
     CORSMiddleware,
