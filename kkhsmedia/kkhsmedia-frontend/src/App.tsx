@@ -44,14 +44,14 @@ import DashboardLayout from './components/layout/DashboardLayout';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-tertiary">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
   return <>{children}</>;
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-tertiary">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
   if (user.role !== 'admin' && user.role !== 'moderator') return <Navigate to="/dashboard" />;
   return <>{children}</>;

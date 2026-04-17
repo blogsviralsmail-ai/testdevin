@@ -978,22 +978,22 @@ export default function LiveSlotsPage() {
               <label className="block text-sm font-medium mb-2">Video Source</label>
               <div className="grid grid-cols-4 gap-1 surface-muted p-1 rounded-xl">
                 <button type="button" onClick={() => setVideoSource('uploaded')}
-                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'uploaded' ? 'surface-base shadow text-primary' : 'text-tertiary hover:text-gray-700'}`}>
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'uploaded' ? 'surface-base shadow text-primary' : 'text-tertiary                   hover:text-secondary'}`}>
                   <Film size={16} />
                   Uploaded
                 </button>
                 <button type="button" onClick={() => setVideoSource('youtube_url')}
-                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'youtube_url' ? 'surface-base shadow text-red-600' : 'text-tertiary hover:text-gray-700'}`}>
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'youtube_url' ? 'surface-base shadow text-red-600' : 'text-tertiary                   hover:text-secondary'}`}>
                   <Youtube size={16} />
                   YouTube URL
                 </button>
                 <button type="button" onClick={() => setVideoSource('google_drive')}
-                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'google_drive' ? 'surface-base shadow text-green-600' : 'text-tertiary hover:text-gray-700'}`}>
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'google_drive' ? 'surface-base shadow text-green-600' : 'text-tertiary                   hover:text-secondary'}`}>
                   <HardDrive size={16} />
                   Drive
                 </button>
                 <button type="button" onClick={() => setVideoSource('playlist')}
-                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'playlist' ? 'surface-base shadow text-purple-600' : 'text-tertiary hover:text-gray-700'}`}>
+                  className={`py-2 px-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 ${videoSource === 'playlist' ? 'surface-base shadow text-purple-600' : 'text-tertiary                   hover:text-secondary'}`}>
                   <List size={16} />
                   Playlist
                 </button>

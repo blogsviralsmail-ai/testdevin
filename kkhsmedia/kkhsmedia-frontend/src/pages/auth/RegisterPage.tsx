@@ -87,7 +87,7 @@ export default function RegisterPage() {
           </div>
           <label className="flex items-start gap-2 cursor-pointer">
             <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
-              className="mt-0.5 rounded border-gray-600 bg-transparent" />
+              className="mt-0.5 rounded border-[rgb(var(--border))] bg-transparent" />
             <span className="text-xs text-tertiary leading-relaxed">
               I agree to the <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>{' '}
               & <Link to="/terms-of-service" className="text-primary hover:underline">Terms of Service</Link>

@@ -63,7 +63,7 @@ export default function BandwidthPage() {
           <span className="text-sm font-medium text-secondary">Bandwidth Usage</span>
           <span className="text-sm text-tertiary">{(usage?.totalGB as number) || 0} / {(usage?.limitGB as number) || 500} GB</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-[rgb(var(--bg-muted))] rounded-full h-3">
           <div
             className={`h-3 rounded-full ${((usage?.usagePercent as number) || 0) > 80 ? 'bg-red-500' : ((usage?.usagePercent as number) || 0) > 50 ? 'bg-yellow-500' : 'bg-green-500'}`}
             style={{ width: `${Math.min((usage?.usagePercent as number) || 0, 100)}%` }}
@@ -82,7 +82,7 @@ export default function BandwidthPage() {
               return (
                 <div key={i} className="flex-1 flex flex-col items-center group relative">
                   <div className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors min-h-[2px]" style={{ height: `${height}%` }} />
-                  <div className="hidden group-hover:block absolute -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                  <div className="hidden group-hover:block absolute -top-10 bg-[rgb(var(--text))] text-[rgb(var(--bg-elevated))] text-xs px-2 py-1 rounded whitespace-nowrap z-10">
                     {d.date}: {d.gb}GB, {d.hours}h
                   </div>
                 </div>
