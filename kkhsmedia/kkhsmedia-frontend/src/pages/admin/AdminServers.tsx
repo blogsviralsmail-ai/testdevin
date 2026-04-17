@@ -82,7 +82,7 @@ export default function AdminServers() {
             <div key={s.id} className="surface-base border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${s.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  <div className={`w-3 h-3 rounded-full ${s.isActive ? 'bg-green-500' : 'bg-[rgb(var(--border))]'}`} />
                   <div>
                     <h3 className="font-semibold">{s.name}</h3>
                     <p className="text-sm text-tertiary">{s.host}:{s.port} {s.region && `(${s.region})`}</p>
@@ -96,7 +96,7 @@ export default function AdminServers() {
                     <span>{s.activeStreams} / {s.maxStreams} streams</span>
                     <span>{s.loadPercent}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-[rgb(var(--bg-muted))] rounded-full h-2">
                     <div className={`h-2 rounded-full ${s.loadPercent > 80 ? 'bg-red-500' : s.loadPercent > 50 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${s.loadPercent}%` }} />
                   </div>
                 </div>

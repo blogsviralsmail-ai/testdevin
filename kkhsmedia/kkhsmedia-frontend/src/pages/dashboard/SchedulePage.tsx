@@ -238,7 +238,7 @@ export default function SchedulePage() {
                 Upload CSV
                 <input type="file" accept=".csv" onChange={handleCsvImport} className="hidden" />
               </label>
-              <a href={`${import.meta.env.VITE_API_URL || ''}/api/schedule/csv-template`} className="surface-muted text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm">
+              <a href={`${import.meta.env.VITE_API_URL || ''}/api/schedule/csv-template`} className="surface-muted text-secondary px-4 py-2 rounded-lg hover:bg-gray-200 text-sm">
                 Download Template
               </a>
             </div>

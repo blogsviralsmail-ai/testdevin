@@ -54,8 +54,8 @@ export default function NotificationsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary">Notifications</h1>
         <div className="flex gap-2">
-          <button onClick={() => setTab('inbox')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'inbox' ? 'bg-blue-600 text-white' : 'surface-muted text-gray-700'}`}>Inbox</button>
-          <button onClick={() => setTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'settings' ? 'bg-blue-600 text-white' : 'surface-muted text-gray-700'}`}>Settings</button>
+          <button onClick={() => setTab('inbox')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'inbox' ? 'bg-blue-600 text-white' : 'surface-muted text-secondary'}`}>Inbox</button>
+          <button onClick={() => setTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === 'settings' ? 'bg-blue-600 text-white' : 'surface-muted text-secondary'}`}>Settings</button>
         </div>
       </div>
 

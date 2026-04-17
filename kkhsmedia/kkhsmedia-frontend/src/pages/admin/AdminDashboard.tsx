@@ -45,7 +45,7 @@ export default function AdminDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold text-primary">
           Admin Dashboard
         </h1>
         <p className="text-sm text-tertiary mt-1">Real-time platform overview and analytics</p>

@@ -165,7 +165,7 @@ export default function AdminRoles() {
             <h2 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
               {(() => {
                 const RIcon = ROLE_ICONS[activeRole.name] || Shield;
-                return <RIcon size={18} className={ROLE_COLORS[activeRole.name]?.text || 'text-gray-400'} />;
+                return <RIcon size={18} className={ROLE_COLORS[activeRole.name]?.text || 'text-tertiary'} />;
               })()}
               {activeRole.label} Permissions
             </h2>

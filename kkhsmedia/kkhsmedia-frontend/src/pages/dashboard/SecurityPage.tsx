@@ -111,7 +111,7 @@ export default function SecurityPage() {
               <div className="flex space-x-2">
                 <input type="text" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} placeholder="000000" className="border rounded p-2 text-sm w-32 text-center font-mono tracking-widest" />
                 <button onClick={verifySetup} className="bg-green-600 text-white px-6 py-2 rounded text-sm hover:bg-green-700">Verify & Enable</button>
-                <button onClick={() => setStep('status')} className="text-tertiary px-4 py-2 text-sm hover:text-gray-700">Cancel</button>
+                <button onClick={() => setStep('status')} className="text-tertiary px-4 py-2 text-sm hover:text-secondary">Cancel</button>
               </div>
             </div>
           </div>

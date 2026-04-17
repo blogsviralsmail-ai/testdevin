@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
                     className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors min-h-[2px]"
                     style={{ height: `${height}%` }}
                   />
-                  <div className="hidden group-hover:block absolute -top-8 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                  <div className="hidden group-hover:block absolute -top-8 bg-[rgb(var(--text))] text-[rgb(var(--bg-elevated))] text-xs px-2 py-1 rounded whitespace-nowrap">
                     {day.date}: {day.count} streams
                   </div>
                 </div>
