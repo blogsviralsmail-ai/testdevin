@@ -66,13 +66,13 @@ export default function ProfilePage() {
     setTimeout(() => { setPwMsg(''); setPwSuccess(false); }, 4000);
   };
 
-  const inputClass = "w-full px-4 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-white/10 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-[rgb(var(--text-tertiary))]";
+  const inputClass = "w-full px-4 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-[rgb(var(--border))] text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-[rgb(var(--text-tertiary))]";
 
   const getRoleBadge = (role: string) => {
     const styles: Record<string, string> = {
-      admin: 'bg-red-500/10 text-red-400 border-red-500/30',
-      moderator: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-      user: 'bg-green-500/10 text-green-400 border-green-500/30',
+      admin: 'bg-red-500/10 text-red-600 border-red-500/30',
+      moderator: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+      user: 'bg-green-500/10 text-green-600 border-green-500/30',
     };
     return styles[role] || styles.user;
   };
@@ -81,7 +81,7 @@ export default function ProfilePage() {
     <div className="max-w-2xl space-y-6">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold text-primary">
           Profile Settings
         </h1>
         <p className="text-sm text-tertiary mt-1">Manage your account settings and preferences</p>
@@ -230,7 +230,7 @@ export default function ProfilePage() {
                   <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${
                     pwForm.newPassword.length >= i * 3
                       ? i <= 1 ? 'bg-red-500' : i <= 2 ? 'bg-amber-500' : i <= 3 ? 'bg-emerald-500' : 'bg-emerald-400'
-                      : 'bg-white/10'
+                      : 'bg-[rgb(var(--bg-muted))]'
                   }`} />
                 ))}
               </div>

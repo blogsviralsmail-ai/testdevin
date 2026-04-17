@@ -128,10 +128,10 @@ export default function VideosPage() {
           {uploadQueue.length > 1 && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-700">Overall progress</span>
+                <span className="text-sm font-medium text-secondary">Overall progress</span>
                 <span className="text-sm text-tertiary">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-[rgb(var(--bg-muted))] rounded-full h-2">
                 <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, backgroundColor: 'rgb(var(--accent))' }} />
               </div>
             </div>
@@ -145,7 +145,7 @@ export default function VideosPage() {
                 <span className="text-xs text-tertiary">{q.status === 'done' ? 'Done' : q.status === 'error' ? 'Failed' : `${q.progress}%`}</span>
               </div>
               {q.status === 'uploading' && (
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div className="w-full bg-[rgb(var(--bg-muted))] rounded-full h-1.5">
                   <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${q.progress}%`, backgroundColor: 'rgb(var(--accent))' }} />
                 </div>
               )}
@@ -169,7 +169,7 @@ export default function VideosPage() {
       ) : videos.length === 0 ? (
         <div className="text-center py-12 surface-base rounded-xl border">
           <Video size={48} className="mx-auto mb-4 text-secondary" />
-          <h3 className="font-semibold text-gray-700 mb-2">No Videos Yet</h3>
+          <h3 className="font-semibold text-primary mb-2">No Videos Yet</h3>
           <p className="text-sm text-tertiary mb-4">Upload your first video to start streaming.</p>
           <button onClick={() => fileRef.current?.click()} className="px-4 py-2 rounded-lg text-white">Upload Video</button>
         </div>
@@ -179,7 +179,7 @@ export default function VideosPage() {
             <div key={video.id} className="surface-base rounded-xl border overflow-hidden group hover:shadow-md transition-shadow">
               {/* Thumbnail / Play area */}
               <div
-                className="relative aspect-video bg-gray-900 cursor-pointer flex items-center justify-center"
+                className="relative aspect-video bg-[rgb(var(--bg-muted))] cursor-pointer flex items-center justify-center"
                 onClick={() => setPlayingVideo(video)}
               >
                 {video.thumbnailUrl && !failedThumbs.has(video.id) ? (

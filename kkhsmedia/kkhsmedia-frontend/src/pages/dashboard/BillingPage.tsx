@@ -72,7 +72,7 @@ export default function BillingPage() {
 
       {/* Gateway Selection */}
       <div className="surface-base rounded-xl border p-4 mb-6">
-        <label className="text-sm font-medium text-gray-700 mr-4">Payment Gateway:</label>
+        <label className="text-sm font-medium text-secondary mr-4">Payment Gateway:</label>
         <select value={gateway} onChange={e => setGateway(e.target.value)}
           className="px-3 py-1.5 rounded-lg border text-sm">
           <option value="cashfree">Cashfree</option>

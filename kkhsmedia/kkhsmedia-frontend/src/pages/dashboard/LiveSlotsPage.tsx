@@ -399,7 +399,7 @@ export default function LiveSlotsPage() {
   };
 
   const getStatusColor = (s: string) => {
-    switch (s) { case 'active': return 'bg-green-100 text-green-700'; case 'expired': return 'bg-red-100 text-red-700'; default: return 'surface-muted text-gray-700'; }
+    switch (s) { case 'active': return 'bg-green-100 text-green-700'; case 'expired': return 'bg-red-100 text-red-700'; default: return 'surface-muted text-secondary'; }
   };
 
   const getVideoName = (slot: Slot) => {
@@ -659,7 +659,7 @@ export default function LiveSlotsPage() {
       ) : slots.length === 0 ? (
         <div className="text-center py-12 surface-base rounded-xl border">
           <Radio size={48} className="mx-auto mb-4 text-secondary" />
-          <h3 className="font-semibold text-gray-700 mb-2">No Live Slots Yet</h3>
+          <h3 className="font-semibold text-primary mb-2">No Live Slots Yet</h3>
           <p className="text-sm text-tertiary mb-4">Create your first slot to start streaming 24/7.</p>
           <button onClick={() => setShowAdd(true)} className="px-4 py-2 rounded-lg text-white">Add Slot</button>
         </div>

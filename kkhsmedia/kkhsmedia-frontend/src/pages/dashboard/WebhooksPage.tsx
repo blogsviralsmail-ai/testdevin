@@ -66,15 +66,15 @@ export default function WebhooksPage() {
           {showAdd && (
             <div className="surface-base rounded-lg border p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL *</label>
+                <label className="block text-sm font-medium text-secondary mb-1">Webhook URL *</label>
                 <input type="url" value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="https://your-server.com/webhook" className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Secret (for signature verification)</label>
+                <label className="block text-sm font-medium text-secondary mb-1">Secret (for signature verification)</label>
                 <input type="text" value={newSecret} onChange={e => setNewSecret(e.target.value)} placeholder="Optional secret key" className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Events</label>
+                <label className="block text-sm font-medium text-secondary mb-1">Events</label>
                 <div className="flex flex-wrap gap-2">
                   {allEvents.map(evt => (
                     <label key={evt} className="flex items-center gap-1.5 text-sm">

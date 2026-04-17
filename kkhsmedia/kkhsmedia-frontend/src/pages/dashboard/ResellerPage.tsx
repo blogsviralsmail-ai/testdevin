@@ -94,24 +94,24 @@ export default function ResellerPage() {
             <div className="surface-base rounded-lg border p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <label className="block text-sm font-medium text-secondary mb-1">First Name</label>
                   <input type="text" value={newClient.firstName} onChange={e => setNewClient({ ...newClient, firstName: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <label className="block text-sm font-medium text-secondary mb-1">Last Name</label>
                   <input type="text" value={newClient.lastName} onChange={e => setNewClient({ ...newClient, lastName: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-secondary mb-1">Email *</label>
                 <input type="email" value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                <label className="block text-sm font-medium text-secondary mb-1">Password *</label>
                 <input type="password" value={newClient.password} onChange={e => setNewClient({ ...newClient, password: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Slots</label>
+                <label className="block text-sm font-medium text-secondary mb-1">Max Slots</label>
                 <input type="number" value={newClient.maxSlots} onChange={e => setNewClient({ ...newClient, maxSlots: parseInt(e.target.value) || 5 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div className="flex gap-2">

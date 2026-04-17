@@ -46,19 +46,19 @@ export default function AdminResellers() {
         <div className="surface-base rounded-lg border p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">User ID *</label>
+              <label className="block text-sm font-medium text-secondary mb-1">User ID *</label>
               <input type="text" value={form.userId} onChange={e => setForm({ ...form, userId: e.target.value })} placeholder="Enter user ID to promote" className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Brand Name</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Brand Name</label>
               <input type="text" value={form.brandName} onChange={e => setForm({ ...form, brandName: e.target.value })} placeholder="White-label brand name" className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Commission Rate (%)</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Commission Rate (%)</label>
               <input type="number" value={form.commissionRate} onChange={e => setForm({ ...form, commissionRate: parseFloat(e.target.value) || 15 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max Clients</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Max Clients</label>
               <input type="number" value={form.maxClients} onChange={e => setForm({ ...form, maxClients: parseInt(e.target.value) || 50 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
           </div>

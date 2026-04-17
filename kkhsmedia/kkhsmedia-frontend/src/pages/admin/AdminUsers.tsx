@@ -118,7 +118,7 @@ export default function AdminUsers() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
             <UserCog size={24} className="text-indigo-400" /> User Management
           </h1>
           <p className="text-sm text-tertiary mt-1">{users.length} users total</p>
@@ -147,7 +147,7 @@ export default function AdminUsers() {
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search by name or email..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[rgb(var(--bg-elevated))] border border-white/5 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all" />
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[rgb(var(--bg-elevated))] border border-[rgb(var(--border))] text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all" />
       </motion.div>
 
       {/* Users Table */}
@@ -205,12 +205,12 @@ export default function AdminUsers() {
                         <AnimatePresence>
                           {showRoleMenu === userId && (
                             <motion.div initial={{ opacity: 0, y: -5, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                              className="absolute z-50 top-full mt-1 left-0 w-48 bg-[rgb(var(--bg-elevated))] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                              className="absolute z-50 top-full mt-1 left-0 w-48 bg-[rgb(var(--bg-elevated))] border border-[rgb(var(--border))] rounded-xl shadow-2xl overflow-hidden">
                               {ROLES.map(role => {
                                 const RIcon = role.icon;
                                 return (
                                 <button key={role.value} onClick={() => handleRoleChange(userId, role.value)}
-                                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs hover:bg-white/5 transition-colors ${user.role === role.value ? 'bg-white/[0.03]' : ''}`}>
+                                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs hover:bg-[rgb(var(--bg-muted))] transition-colors ${user.role === role.value ? 'bg-[rgb(var(--bg-subtle))]' : ''}`}>
                                   <RIcon size={14} className={role.color} />
                                   <div className="text-left">
                                     <div className="font-medium text-primary">{role.label}</div>
@@ -270,29 +270,29 @@ export default function AdminUsers() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowCreate(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md bg-[rgb(var(--bg-elevated))] border border-white/10 rounded-2xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+              className="w-full max-w-md bg-[rgb(var(--bg-elevated))] border border-[rgb(var(--border))] rounded-2xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg font-bold flex items-center gap-2"><Plus size={18} className="text-indigo-400" /> Create New User</h2>
-                <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-white/5"><X size={18} /></button>
+                <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-[rgb(var(--bg-muted))]"><X size={18} /></button>
               </div>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <input type="text" placeholder="First Name" value={createForm.firstName}
                     onChange={e => setCreateForm({...createForm, firstName: e.target.value})}
-                    className="px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-white/10 text-sm focus:outline-none focus:border-indigo-500/50" />
-                  <input type="text" placeholder="Last Name" value={createForm.lastName}
-                    onChange={e => setCreateForm({...createForm, lastName: e.target.value})}
-                    className="px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-white/10 text-sm focus:outline-none focus:border-indigo-500/50" />
-                </div>
-                <input type="email" placeholder="Email" value={createForm.email}
-                  onChange={e => setCreateForm({...createForm, email: e.target.value})}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-white/10 text-sm focus:outline-none focus:border-indigo-500/50" />
-                <input type="password" placeholder="Password" value={createForm.password}
-                  onChange={e => setCreateForm({...createForm, password: e.target.value})}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-white/10 text-sm focus:outline-none focus:border-indigo-500/50" />
-                <input type="tel" placeholder="Phone (optional)" value={createForm.phone}
-                  onChange={e => setCreateForm({...createForm, phone: e.target.value})}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-white/10 text-sm focus:outline-none focus:border-indigo-500/50" />
+                    className="px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border                 border-[rgb(var(--border))] text-sm focus:outline-none focus:border-indigo-500/50" />
+                                  <input type="text" placeholder="Last Name" value={createForm.lastName}
+                                    onChange={e => setCreateForm({...createForm, lastName: e.target.value})}
+                                    className="px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-[rgb(var(--border))] text-sm focus:outline-none focus:border-indigo-500/50" />
+                                </div>
+                                <input type="email" placeholder="Email" value={createForm.email}
+                                  onChange={e => setCreateForm({...createForm, email: e.target.value})}
+                                  className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-[rgb(var(--border))] text-sm focus:outline-none focus:border-indigo-500/50" />
+                                <input type="password" placeholder="Password" value={createForm.password}
+                                  onChange={e => setCreateForm({...createForm, password: e.target.value})}
+                                  className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-[rgb(var(--border))] text-sm focus:outline-none focus:border-indigo-500/50" />
+                                <input type="tel" placeholder="Phone (optional)" value={createForm.phone}
+                                  onChange={e => setCreateForm({...createForm, phone: e.target.value})}
+                                  className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-[rgb(var(--border))] text-sm focus:outline-none focus:border-indigo-500/50" />
 
                 {/* Role Selection */}
                 <div>
@@ -305,7 +305,7 @@ export default function AdminUsers() {
                         className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
                           createForm.role === role.value
                             ? `${role.bg} ${role.border} ${role.color}`
-                            : 'border-white/5 text-tertiary hover:border-white/10'
+                            : 'border-[rgb(var(--border))] text-tertiary hover:border-[rgb(var(--border-subtle))]'
                         }`}>
                         <RoleIcon size={18} />
                         <span className="text-xs font-medium">{role.label}</span>
@@ -331,14 +331,14 @@ export default function AdminUsers() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowResetPw(null)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-sm bg-[rgb(var(--bg-elevated))] border border-white/10 rounded-2xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+              className="w-full max-w-sm bg-[rgb(var(--bg-elevated))] border border-[rgb(var(--border))] rounded-2xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold flex items-center gap-2"><Key size={16} className="text-amber-400" /> Reset Password</h2>
-                <button onClick={() => setShowResetPw(null)} className="p-1 rounded-lg hover:bg-white/5"><X size={18} /></button>
+                <button onClick={() => setShowResetPw(null)} className="p-1 rounded-lg hover:bg-[rgb(var(--bg-muted))]"><X size={18} /></button>
               </div>
               <p className="text-xs text-tertiary mb-3">Set a new temporary password for this user.</p>
               <input type="text" value={resetPwValue} onChange={e => setResetPwValue(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-white/10 text-sm focus:outline-none focus:border-amber-500/50 mb-3" />
+                className="w-full px-3 py-2.5 rounded-xl bg-[rgb(var(--bg))] border border-[rgb(var(--border))] text-sm focus:outline-none focus:border-amber-500/50 mb-3" />
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => { if (showResetPw) handleResetPassword(showResetPw); }}
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-medium">

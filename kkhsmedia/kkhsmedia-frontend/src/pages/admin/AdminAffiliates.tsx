@@ -111,11 +111,11 @@ export default function AdminAffiliates() {
       {tab === 'settings' && (
         <div className="surface-base rounded-lg border p-6 space-y-4 max-w-md">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Commission Rate (%)</label>
+            <label className="block text-sm font-medium text-secondary mb-1">Commission Rate (%)</label>
             <input type="number" value={settings.commission} onChange={e => setSettings({ ...settings, commission: parseFloat(e.target.value) || 10 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Payout (₹)</label>
+            <label className="block text-sm font-medium text-secondary mb-1">Minimum Payout (₹)</label>
             <input type="number" value={settings.minPayout} onChange={e => setSettings({ ...settings, minPayout: parseFloat(e.target.value) || 500 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
           </div>
           <button onClick={saveSettings} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Save Settings</button>

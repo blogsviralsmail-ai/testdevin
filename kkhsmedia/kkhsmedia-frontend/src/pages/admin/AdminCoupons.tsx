@@ -52,43 +52,43 @@ export default function AdminCoupons() {
         <div className="surface-base rounded-lg border p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Coupon Code *</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Coupon Code *</label>
               <input type="text" value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="SAVE20" className="w-full px-3 py-2 border rounded-lg text-sm uppercase" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Discount Type</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Discount Type</label>
               <select value={form.discountType} onChange={e => setForm({ ...form, discountType: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                 <option value="percentage">Percentage (%)</option>
                 <option value="fixed">Fixed Amount (₹)</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Discount Value</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Discount Value</label>
               <input type="number" value={form.discountValue} onChange={e => setForm({ ...form, discountValue: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Order Amount</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Min Order Amount</label>
               <input type="number" value={form.minOrderAmount} onChange={e => setForm({ ...form, minOrderAmount: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses (0 = unlimited)</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Max Uses (0 = unlimited)</label>
               <input type="number" value={form.maxUses} onChange={e => setForm({ ...form, maxUses: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Per User Limit</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Per User Limit</label>
               <input type="number" value={form.maxUsesPerUser} onChange={e => setForm({ ...form, maxUsesPerUser: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Valid From</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Valid From</label>
               <input type="datetime-local" value={form.validFrom} onChange={e => setForm({ ...form, validFrom: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Valid Until</label>
+              <label className="block text-sm font-medium text-secondary mb-1">Valid Until</label>
               <input type="datetime-local" value={form.validUntil} onChange={e => setForm({ ...form, validUntil: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-secondary mb-1">Description</label>
             <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Get 20% off on all plans" className="w-full px-3 py-2 border rounded-lg text-sm" />
           </div>
           <div className="flex gap-2">
