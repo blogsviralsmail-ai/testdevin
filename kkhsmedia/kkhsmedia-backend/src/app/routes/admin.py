@@ -173,6 +173,9 @@ async def update_user(user_id: str, req: AdminUpdateUserRequest, admin=Depends(g
         raise HTTPException(status_code=403, detail="Moderators cannot modify admin users")
     update = {"updatedAt": datetime.utcnow()}
     if req.status is not None:
+        allowed_statuses = {"active", "banned", "suspended"}
+        if req.status not in allowed_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Allowed: {', '.join(sorted(allowed_statuses))}")
         update["status"] = req.status
     # Role changes are handled exclusively by PUT /users/{user_id}/role
     # which is admin-only with self-demotion prevention. Ignore req.role
