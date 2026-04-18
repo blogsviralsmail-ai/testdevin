@@ -45,20 +45,22 @@ def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
         f"bestvideo[height<={max_height}]+bestaudio/"
         f"best[ext=mp4][height<={max_height}]/best[ext=mp4]/best"
     )
+    # Common args: ensure deno JS runtime is used for YouTube bot challenge
+    js_args = ["--js-runtimes", "deno"]
     # Try local yt-dlp first
     result = subprocess.run(
-        [yt_dlp, "--get-url", "-f", fmt, "--no-playlist", "--remote-components", "ejs:github", url],
-        capture_output=True, text=True, timeout=60,
+        [yt_dlp, "--get-url", "-f", fmt, "--no-playlist", *js_args, url],
+        capture_output=True, text=True, timeout=120,
     )
     if result.returncode != 0:
         result = subprocess.run(
-            [yt_dlp, "--get-url", "-f", "best[ext=mp4]/best", "--no-playlist", "--remote-components", "ejs:github", url],
-            capture_output=True, text=True, timeout=60,
+            [yt_dlp, "--get-url", "-f", "best[ext=mp4]/best", "--no-playlist", *js_args, url],
+            capture_output=True, text=True, timeout=120,
         )
     if result.returncode != 0:
         result = subprocess.run(
-            [yt_dlp, "--get-url", "-f", "best[ext=mp4]/best", "--flat-playlist", "--remote-components", "ejs:github", url],
-            capture_output=True, text=True, timeout=60,
+            [yt_dlp, "--get-url", "-f", "best[ext=mp4]/best", "--flat-playlist", *js_args, url],
+            capture_output=True, text=True, timeout=120,
         )
     urls = [u.strip() for u in result.stdout.strip().split("\n") if u.strip()] if result.returncode == 0 else []
 
@@ -410,18 +412,19 @@ async def extract_youtube_info(url: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="yt-dlp not installed")
 
     try:
+        # Use --js-runtimes deno for YouTube bot challenge bypass
         result = subprocess.run(
-            [yt_dlp, "--dump-json", "--flat-playlist", "--no-download", url],
-            capture_output=True, text=True, timeout=30,
+            [yt_dlp, "--dump-json", "--flat-playlist", "--no-download", "--js-runtimes", "deno", url],
+            capture_output=True, text=True, timeout=120,
         )
-        # If local yt-dlp failed (likely YouTube 429), try proxy through old server
+        # If local yt-dlp failed, try proxy through old server
         if result.returncode != 0:
             proxy_bin = "/usr/local/bin/yt-dlp-proxy"
             if os.path.exists(proxy_bin):
                 logger.info(f"Local yt-dlp extract failed, trying proxy for {url}")
                 result = subprocess.run(
                     [proxy_bin, "--dump-json", "--flat-playlist", "--no-download", url],
-                    capture_output=True, text=True, timeout=30,
+                    capture_output=True, text=True, timeout=120,
                 )
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail="Failed to extract info")
