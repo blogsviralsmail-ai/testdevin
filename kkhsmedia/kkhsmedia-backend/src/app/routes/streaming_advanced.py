@@ -39,12 +39,13 @@ FALLBACK_CHAIN = ["4k", "1080p", "720p", "480p"]
 
 
 def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
-    """Get stream URLs from yt-dlp with height cap."""
+    """Get stream URLs from yt-dlp with height cap. Falls back to proxy server if local yt-dlp gets 429."""
     fmt = (
         f"bestvideo[ext=mp4][height<={max_height}]+bestaudio[ext=m4a]/"
         f"bestvideo[height<={max_height}]+bestaudio/"
         f"best[ext=mp4][height<={max_height}]/best[ext=mp4]/best"
     )
+    # Try local yt-dlp first
     result = subprocess.run(
         [yt_dlp, "--get-url", "-f", fmt, "--no-playlist", "--remote-components", "ejs:github", url],
         capture_output=True, text=True, timeout=60,
@@ -60,6 +61,27 @@ def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
             capture_output=True, text=True, timeout=60,
         )
     urls = [u.strip() for u in result.stdout.strip().split("\n") if u.strip()] if result.returncode == 0 else []
+
+    # If local yt-dlp failed (likely YouTube 429), try proxy through old server
+    if not urls:
+        logger.info(f"Local yt-dlp failed, trying proxy via old server for {url}")
+        proxy_bin = "/usr/local/bin/yt-dlp-proxy"
+        if os.path.exists(proxy_bin):
+            try:
+                result = subprocess.run(
+                    [proxy_bin, "--get-url", "-f", fmt, "--no-playlist", url],
+                    capture_output=True, text=True, timeout=60,
+                )
+                if result.returncode != 0:
+                    result = subprocess.run(
+                        [proxy_bin, "--get-url", "-f", "best[ext=mp4]/best", "--no-playlist", url],
+                        capture_output=True, text=True, timeout=60,
+                    )
+                urls = [u.strip() for u in result.stdout.strip().split("\n") if u.strip()] if result.returncode == 0 else []
+                if urls:
+                    logger.info(f"Proxy yt-dlp succeeded for {url}")
+            except Exception as e:
+                logger.error(f"Proxy yt-dlp failed: {e}")
     return urls
 
 
@@ -392,6 +414,15 @@ async def extract_youtube_info(url: str, user=Depends(get_current_user)):
             [yt_dlp, "--dump-json", "--flat-playlist", "--no-download", url],
             capture_output=True, text=True, timeout=30,
         )
+        # If local yt-dlp failed (likely YouTube 429), try proxy through old server
+        if result.returncode != 0:
+            proxy_bin = "/usr/local/bin/yt-dlp-proxy"
+            if os.path.exists(proxy_bin):
+                logger.info(f"Local yt-dlp extract failed, trying proxy for {url}")
+                result = subprocess.run(
+                    [proxy_bin, "--dump-json", "--flat-playlist", "--no-download", url],
+                    capture_output=True, text=True, timeout=30,
+                )
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail="Failed to extract info")
 
