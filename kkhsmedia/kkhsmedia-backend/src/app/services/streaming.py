@@ -61,6 +61,32 @@ async def _check_ffmpeg_rtmp() -> bool:
         return False
 
 
+def _check_rtmp_connection_health(pid: int) -> bool:
+    """Check if FFmpeg's RTMP connection is healthy (ESTABLISHED, not CLOSE-WAIT/dead).
+
+    Uses `ss` to inspect the TCP state of the FFmpeg process's RTMP socket.
+    Returns False if connection is in CLOSE-WAIT, FIN-WAIT, or no connection found.
+    """
+    try:
+        result = subprocess.run(
+            ["ss", "-tnp"],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in result.stdout.splitlines():
+            if f"pid={pid}," in line and ":1935" in line:
+                state = line.split()[0]
+                if state == "ESTAB":
+                    return True
+                else:
+                    logger.warning(f"RTMP connection for PID {pid} is in state: {state}")
+                    return False
+        # No RTMP connection found for this PID - might be starting up or already dead
+        return True  # Give benefit of doubt during startup
+    except Exception as e:
+        logger.warning(f"RTMP health check failed for PID {pid}: {e}")
+        return True  # Don't kill on check failure
+
+
 def _find_ffmpeg_pids_for_stream_key(stream_key: str) -> list:
     """Find all FFmpeg PIDs streaming to a given stream key."""
     try:
@@ -201,11 +227,15 @@ async def _stream_watchdog(slot_id: str):
     """Watchdog that monitors FFmpeg and restarts it if it crashes.
 
     Ensures truly infinite streaming - if FFmpeg crashes for any reason
-    (network glitch, memory issue, etc.), it auto-restarts.
+    (network glitch, memory issue, RTMP disconnect, etc.), it auto-restarts.
     Stream only stops when explicitly stopped by user or scheduledEnd is reached.
+
+    Also monitors RTMP connection health - detects CLOSE-WAIT/dead sockets
+    where FFmpeg process is alive but YouTube has dropped the connection.
     """
     # Wait initial 10 seconds to detect early failures
     await asyncio.sleep(10)
+    rtmp_dead_count = 0  # consecutive unhealthy checks
 
     while slot_id in active_streams:
         info = active_streams.get(slot_id)
@@ -215,6 +245,33 @@ async def _stream_watchdog(slot_id: str):
         proc = info.get("process")
         if proc is None:
             break
+
+        # Check RTMP connection health (detect CLOSE-WAIT/dead sockets)
+        if proc.returncode is None:
+            pid = info.get("pid", proc.pid)
+            rtmp_healthy = _check_rtmp_connection_health(pid)
+            if not rtmp_healthy:
+                rtmp_dead_count += 1
+                logger.warning(f"Watchdog: Slot {slot_id} RTMP unhealthy (count={rtmp_dead_count}/3)")
+                if rtmp_dead_count >= 3:
+                    # RTMP connection is dead for 3 consecutive checks (~45s)
+                    # Kill the zombie FFmpeg and let restart logic handle it
+                    logger.error(f"Watchdog: Slot {slot_id} RTMP connection dead, killing FFmpeg PID {pid}")
+                    try:
+                        proc.kill()
+                        await proc.wait()
+                    except Exception:
+                        try:
+                            os.kill(pid, signal.SIGKILL)
+                        except Exception:
+                            pass
+                    rtmp_dead_count = 0
+                    # Fall through to the restart logic below
+                else:
+                    await asyncio.sleep(15)
+                    continue
+            else:
+                rtmp_dead_count = 0  # Reset on healthy check
 
         # Check if process is still running
         if proc.returncode is not None:
@@ -425,11 +482,14 @@ async def stop_stream(slot_id: str, user_id: str) -> bool:
 
 
 async def check_stream_status(process_id: Optional[int]) -> bool:
-    """Check if FFmpeg process is still running."""
+    """Check if FFmpeg process is still running AND has a healthy RTMP connection."""
     if not process_id:
         return False
     try:
         os.kill(process_id, 0)  # Signal 0 = check if process exists
+        # Also check RTMP connection health
+        if not _check_rtmp_connection_health(process_id):
+            return False
         return True
     except (ProcessLookupError, PermissionError):
         return False
