@@ -273,7 +273,7 @@ async def admin_force_start(slot_id: str, admin=Depends(get_admin_user)):
     # For youtube_url source, use the advanced streaming endpoint logic
     if source_type == "youtube_url" and slot.get("sourceUrl"):
         from app.routes.streaming_advanced import (
-            _get_yt_format, _build_ffmpeg_cmd, RESOLUTION_PRESETS, FALLBACK_CHAIN,
+            _get_yt_format, _build_ffmpeg_cmd, RESOLUTION_PRESETS, FALLBACK_CHAIN, _YT_HTTP_PROXY,
         )
         from app.services.streaming import _get_ffmpeg_path, active_streams, stop_ffmpeg_stream
         import asyncio
@@ -297,7 +297,7 @@ async def admin_force_start(slot_id: str, admin=Depends(get_admin_user)):
             height, vbitrate, maxrate, bufsize = RESOLUTION_PRESETS[res_name]
             try:
                 import subprocess
-                urls = _get_yt_format(yt_dlp, slot["sourceUrl"], height)
+                urls, used_proxy = _get_yt_format(yt_dlp, slot["sourceUrl"], height)
                 if urls:
                     stream_urls = urls
                     chosen_res = res_name
@@ -312,8 +312,10 @@ async def admin_force_start(slot_id: str, admin=Depends(get_admin_user)):
         audio_url = stream_urls[1] if len(stream_urls) >= 2 else None
         height, vbitrate, maxrate, bufsize = RESOLUTION_PRESETS[chosen_res]
 
+        yt_proxy = _YT_HTTP_PROXY if used_proxy else ""
         cmd = _build_ffmpeg_cmd(ffmpeg, video_url, audio_url, destination,
-                                height, vbitrate, maxrate, bufsize, loop=False)
+                                height, vbitrate, maxrate, bufsize, loop=False,
+                                http_proxy=yt_proxy)
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
@@ -325,7 +327,7 @@ async def admin_force_start(slot_id: str, admin=Depends(get_admin_user)):
             "stream_key": stream_key, "rtmp_url": rtmp_url,
             "started_at": datetime.utcnow().isoformat(), "restart_count": 0,
             "source_type": "youtube_url", "source_url": slot["sourceUrl"],
-            "resolution": chosen_res,
+            "used_proxy": used_proxy, "resolution": chosen_res,
         }
 
         await db.slots.update_one(
