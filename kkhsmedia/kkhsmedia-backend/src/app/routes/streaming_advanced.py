@@ -42,6 +42,18 @@ FALLBACK_CHAIN = ["4k", "1080p", "720p", "480p"]
 _YT_COOKIES_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "youtube_cookies.txt")
 
 
+def _clean_env() -> dict:
+    """Return a copy of os.environ without vars that break deno/node sub-processes.
+
+    uvicorn workers may set NODE_CHANNEL_FD which causes deno to fail with:
+    'Failed to open IPC channel from NODE_CHANNEL_FD'.
+    """
+    env = os.environ.copy()
+    for key in ("NODE_CHANNEL_FD", "NODE_OPTIONS"):
+        env.pop(key, None)
+    return env
+
+
 def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
     """Get stream URLs from yt-dlp with height cap. Uses cookies for YouTube bot challenge bypass."""
     fmt = (
@@ -53,19 +65,20 @@ def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
     js_args = ["--js-runtimes", "deno"]
     # Use cookies if available to bypass YouTube bot detection
     cookie_args = ["--cookies", _YT_COOKIES_PATH] if os.path.exists(_YT_COOKIES_PATH) else []
+    env = _clean_env()
     result = subprocess.run(
         [yt_dlp, "--get-url", "-f", fmt, "--no-playlist", *js_args, *cookie_args, url],
-        capture_output=True, text=True, timeout=120,
+        capture_output=True, text=True, timeout=120, env=env,
     )
     if result.returncode != 0:
         result = subprocess.run(
             [yt_dlp, "--get-url", "-f", "best[ext=mp4]/best", "--no-playlist", *js_args, *cookie_args, url],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=120, env=env,
         )
     if result.returncode != 0:
         result = subprocess.run(
             [yt_dlp, "--get-url", "-f", "best[ext=mp4]/best", "--flat-playlist", *js_args, *cookie_args, url],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=120, env=env,
         )
     urls = [u.strip() for u in result.stdout.strip().split("\n") if u.strip()] if result.returncode == 0 else []
     return urls
@@ -398,9 +411,10 @@ async def extract_youtube_info(url: str, user=Depends(get_current_user)):
     try:
         # Use --js-runtimes deno for YouTube bot challenge bypass + cookies for auth
         cookie_args = ["--cookies", _YT_COOKIES_PATH] if os.path.exists(_YT_COOKIES_PATH) else []
+        env = _clean_env()
         result = subprocess.run(
             [yt_dlp, "--dump-json", "--flat-playlist", "--no-download", "--js-runtimes", "deno", *cookie_args, url],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=120, env=env,
         )
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail="Failed to extract info")
