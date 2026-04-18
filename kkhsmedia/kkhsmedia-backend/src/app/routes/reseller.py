@@ -200,6 +200,8 @@ async def reseller_create_client(req: CreateClientRequest, user=Depends(get_rese
 @router.put("/clients/{client_id}/status")
 async def reseller_update_client_status(client_id: str, status: str = "active", user=Depends(get_reseller_user)):
     """Update client status (active/suspended)."""
+    if status not in ("active", "suspended"):
+        raise HTTPException(status_code=400, detail="Status must be 'active' or 'suspended'")
     db = get_db()
     client = await db.users.find_one({"_id": ObjectId(client_id), "createdByReseller": user["id"]})
     if not client:
