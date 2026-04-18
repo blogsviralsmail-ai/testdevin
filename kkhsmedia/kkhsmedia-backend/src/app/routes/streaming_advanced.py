@@ -38,8 +38,13 @@ RESOLUTION_PRESETS = {
 FALLBACK_CHAIN = ["4k", "1080p", "720p", "480p"]
 
 
-def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
-    """Get stream URLs from yt-dlp with height cap. Falls back to proxy server if local yt-dlp gets 429."""
+# HTTP proxy through old server for YouTube URL downloads (SSH tunnel to tinyproxy)
+_YT_HTTP_PROXY = "http://127.0.0.1:8899"
+
+
+def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> tuple:
+    """Get stream URLs from yt-dlp with height cap. Falls back to proxy server if local yt-dlp gets 429.
+    Returns (urls: list, used_proxy: bool) - used_proxy indicates YouTube URLs are IP-locked to old server."""
     fmt = (
         f"bestvideo[ext=mp4][height<={max_height}]+bestaudio[ext=m4a]/"
         f"bestvideo[height<={max_height}]+bestaudio/"
@@ -63,39 +68,44 @@ def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
             capture_output=True, text=True, timeout=120,
         )
     urls = [u.strip() for u in result.stdout.strip().split("\n") if u.strip()] if result.returncode == 0 else []
+    if urls:
+        return urls, False
 
     # If local yt-dlp failed (likely YouTube 429), try proxy through old server
-    if not urls:
-        logger.info(f"Local yt-dlp failed, trying proxy via old server for {url}")
-        proxy_bin = "/usr/local/bin/yt-dlp-proxy"
-        if os.path.exists(proxy_bin):
-            try:
+    logger.info(f"Local yt-dlp failed, trying proxy via old server for {url}")
+    proxy_bin = "/usr/local/bin/yt-dlp-proxy"
+    if os.path.exists(proxy_bin):
+        try:
+            result = subprocess.run(
+                [proxy_bin, "--get-url", "-f", fmt, "--no-playlist", url],
+                capture_output=True, text=True, timeout=60,
+            )
+            if result.returncode != 0:
                 result = subprocess.run(
-                    [proxy_bin, "--get-url", "-f", fmt, "--no-playlist", url],
+                    [proxy_bin, "--get-url", "-f", "best[ext=mp4]/best", "--no-playlist", url],
                     capture_output=True, text=True, timeout=60,
                 )
-                if result.returncode != 0:
-                    result = subprocess.run(
-                        [proxy_bin, "--get-url", "-f", "best[ext=mp4]/best", "--no-playlist", url],
-                        capture_output=True, text=True, timeout=60,
-                    )
-                urls = [u.strip() for u in result.stdout.strip().split("\n") if u.strip()] if result.returncode == 0 else []
-                if urls:
-                    logger.info(f"Proxy yt-dlp succeeded for {url}")
-            except Exception as e:
-                logger.error(f"Proxy yt-dlp failed: {e}")
-    return urls
+            urls = [u.strip() for u in result.stdout.strip().split("\n") if u.strip()] if result.returncode == 0 else []
+            if urls:
+                logger.info(f"Proxy yt-dlp succeeded for {url} (URLs are IP-locked, will use HTTP proxy)")
+                return urls, True
+        except Exception as e:
+            logger.error(f"Proxy yt-dlp failed: {e}")
+    return [], False
 
 
 def _build_ffmpeg_cmd(ffmpeg: str, video_url: str, audio_url: str, destination: str,
                       height: int, vbitrate: str, maxrate: str, bufsize: str,
-                      loop: bool = True) -> list:
-    """Build FFmpeg command for given resolution."""
+                      loop: bool = True, http_proxy: str = "") -> list:
+    """Build FFmpeg command for given resolution.
+    When http_proxy is set, routes YouTube video downloads through the proxy
+    (needed when URLs are IP-locked to a different server)."""
     loop_args = ["-stream_loop", "-1"] if loop else []
+    proxy_args = ["-http_proxy", http_proxy] if http_proxy else []
     vf = f"scale=-2:{height}"
     if audio_url:
         return [
-            ffmpeg, "-re", *loop_args,
+            ffmpeg, "-re", *loop_args, *proxy_args,
             "-i", video_url, "-i", audio_url,
             "-vf", vf,
             "-pix_fmt", "yuv420p",
@@ -108,7 +118,7 @@ def _build_ffmpeg_cmd(ffmpeg: str, video_url: str, audio_url: str, destination: 
         ]
     else:
         return [
-            ffmpeg, "-re", *loop_args,
+            ffmpeg, "-re", *loop_args, *proxy_args,
             "-i", video_url,
             "-vf", vf,
             "-pix_fmt", "yuv420p",
@@ -191,7 +201,7 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
     for res_name in FALLBACK_CHAIN[start_idx:]:
         height, vbitrate, maxrate, bufsize = RESOLUTION_PRESETS[res_name]
         try:
-            urls = _get_yt_format(yt_dlp, req.url, height)
+            urls, used_proxy = _get_yt_format(yt_dlp, req.url, height)
             if urls:
                 stream_urls = urls
                 chosen_res = res_name
@@ -210,8 +220,11 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
 
     # IMPORTANT: Never use -stream_loop with HTTP streams (YouTube URLs are non-seekable)
     # Loop is handled by the monitor task which restarts FFmpeg when video ends
+    # When proxy was used, YouTube URLs are IP-locked to old server - route FFmpeg through HTTP proxy
+    yt_proxy = _YT_HTTP_PROXY if used_proxy else ""
     cmd = _build_ffmpeg_cmd(ffmpeg, video_url, audio_url, destination,
-                            height, vbitrate, maxrate, bufsize, loop=False)
+                            height, vbitrate, maxrate, bufsize, loop=False,
+                            http_proxy=yt_proxy)
 
     try:
         process = await asyncio.create_subprocess_exec(
@@ -224,7 +237,7 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
             "video_url": video_url, "destination": destination,
             "stream_key": stream_key, "rtmp_url": rtmp_url,
             "started_at": datetime.utcnow().isoformat(), "restart_count": 0,
-            "source_type": "youtube_url", "source_url": req.url,
+            "source_type": "youtube_url", "source_url": req.url, "used_proxy": used_proxy,
             "resolution": chosen_res, "slot_res": slot_res,
         }
 
@@ -275,15 +288,19 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                             cur_res = si.get("resolution", current_res)
                             r_h, r_vb, r_mr, r_bs = RESOLUTION_PRESETS.get(cur_res, RESOLUTION_PRESETS["720p"])
                             try:
-                                fresh_urls = _get_yt_format(yt_dlp, req.url, r_h)
+                                fresh_urls, fresh_proxy = _get_yt_format(yt_dlp, req.url, r_h)
                                 if not fresh_urls:
                                     fresh_urls = [si.get("video_url", video_url)]
+                                    fresh_proxy = si.get("used_proxy", False)
                             except Exception:
                                 fresh_urls = [si.get("video_url", video_url)]
+                                fresh_proxy = si.get("used_proxy", False)
                             f_video = fresh_urls[0]
                             f_audio = fresh_urls[1] if len(fresh_urls) >= 2 else None
+                            f_proxy = _YT_HTTP_PROXY if fresh_proxy else ""
                             new_cmd = _build_ffmpeg_cmd(ffmpeg, f_video, f_audio, destination,
-                                                        r_h, r_vb, r_mr, r_bs, loop=False)
+                                                        r_h, r_vb, r_mr, r_bs, loop=False,
+                                                        http_proxy=f_proxy)
                             new_proc = await asyncio.create_subprocess_exec(
                                 *new_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
                             )
@@ -340,15 +357,19 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                                     await proc.wait()
                                     new_h, new_vb, new_mr, new_bs = RESOLUTION_PRESETS[next_res]
                                     try:
-                                        new_urls = _get_yt_format(yt_dlp, req.url, new_h)
+                                        new_urls, new_proxy = _get_yt_format(yt_dlp, req.url, new_h)
                                         if not new_urls:
                                             new_urls = stream_urls
+                                            new_proxy = si.get("used_proxy", False)
                                     except Exception:
                                         new_urls = stream_urls
+                                        new_proxy = si.get("used_proxy", False)
                                     new_video = new_urls[0]
                                     new_audio = new_urls[1] if len(new_urls) >= 2 else None
+                                    n_proxy = _YT_HTTP_PROXY if new_proxy else ""
                                     new_cmd = _build_ffmpeg_cmd(ffmpeg, new_video, new_audio, destination,
-                                                                new_h, new_vb, new_mr, new_bs, loop=False)
+                                                                new_h, new_vb, new_mr, new_bs, loop=False,
+                                                                http_proxy=n_proxy)
                                     new_proc = await asyncio.create_subprocess_exec(
                                         *new_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
                                     )
