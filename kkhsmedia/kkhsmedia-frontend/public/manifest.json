@@ -1,0 +1,21 @@
+{
+  "name": "GoLivePro - The Professional Live Streaming Studio",
+  "short_name": "GoLivePro",
+  "description": "The Professional Live Streaming Studio - Stream pre-recorded videos 24/7 on YouTube, Facebook, Twitch & more",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1B4F8A",
+  "orientation": "any",
+  "icons": [
+    {
+          "src": "/favicon.png",
+          "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "social", "utilities"],
+  "lang": "en",
+  "dir": "ltr"
+}
