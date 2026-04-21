@@ -92,6 +92,19 @@ if ($step === 'setup') {
         echo '</div>'; jc_install_footer(); exit;
     }
 
+    // Apply idempotent migrations (adds is_hot, reset tokens, suspended status,
+    // stock_adjustments table, new settings keys, etc.). Without this, fresh
+    // installs crash on the homepage (is_hot query), stock page, forgot-password
+    // and admin suspend flows.
+    try {
+        require_once __DIR__ . '/includes/migrate.php';
+        $migrated = jcMigrate();
+        echo '<div class="ok">✓ Migrations applied' . ($migrated ? ' (' . count($migrated) . ' change(s))' : '') . '</div>';
+    } catch (Exception $ex) {
+        echo '<div class="err">✗ Migration error: ' . htmlspecialchars($ex->getMessage()) . '</div>';
+        echo '</div>'; jc_install_footer(); exit;
+    }
+
     // Seed default admin
     try {
         $pdo = getPDO();

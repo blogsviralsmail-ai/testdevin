@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // was originally requested (-amount). All counters + wallet move in
             // a single transaction inside walletCredit, so a DB failure can't
             // leave them drifted.
-            walletCredit(
+            $refunded = walletCredit(
                 $payout['agent_id'],
                 $payout['amount'],
                 'payout_refund',
@@ -55,6 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 0,
                 -$payout['amount']
             );
+            if (!$refunded) {
+                // Roll back the rejection so admin can retry. Without this, the
+                // payout would stay 'rejected' while the agent's wallet was
+                // never refunded — money lost.
+                $pdo->prepare("UPDATE payouts SET status = 'pending', processed_by = NULL, processed_at = NULL WHERE id = ?")->execute([$id]);
+                error_log('[payout-reject] walletCredit refund failed for payout #' . $id . ' (agent ' . $payout['agent_id'] . ', amount ' . $payout['amount'] . '); rolled back to pending');
+                setFlash('error', 'Refund failed — payout returned to pending. Please retry.');
+                redirect('payout-detail.php?id=' . $id);
+            }
             setFlash('info', 'Payout rejected. Agent wallet refunded.');
         }
         redirect('payout-detail.php?id=' . $id);

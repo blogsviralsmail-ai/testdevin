@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS products (
     stock INT NOT NULL DEFAULT 0,                  -- fallback stock if no variants
     has_variants TINYINT(1) DEFAULT 0,
     is_featured TINYINT(1) DEFAULT 0,
+    is_hot TINYINT(1) DEFAULT 0,
     sort_order INT DEFAULT 0,
     status ENUM('active','inactive') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
