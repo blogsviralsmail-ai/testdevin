@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/rogerpay.php';
+require_once __DIR__ . '/includes/notify.php';
 
 $cart = cartResolved();
 if (!$cart['items']) { redirect(SITE_URL . '/cart.php'); }
@@ -100,6 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->commit();
             cartClear();
+
+            // Email (customer) + Telegram (admin) notifications
+            notifyOrderPlaced($orderId);
 
             if ($payment === 'rogerpay') {
                 $res = rogerpayCreateOrder($orderId, $total, $name, $email, $mobile);

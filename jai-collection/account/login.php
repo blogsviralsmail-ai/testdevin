@@ -15,12 +15,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$mobile || !$password) {
         $error = 'Mobile and password are required.';
     } else {
-        $stmt = getPDO()->prepare("SELECT * FROM customers WHERE mobile = ? AND status = 'active'");
+        $stmt = getPDO()->prepare("SELECT * FROM customers WHERE mobile = ?");
         $stmt->execute([$mobile]);
         $c = $stmt->fetch();
         if ($c && password_verify($password, $c['password'])) {
-            $_SESSION['customer'] = ['id' => $c['id'], 'name' => $c['name'], 'mobile' => $c['mobile'], 'email' => $c['email']];
-            redirect($redirect);
+            if ($c['status'] === 'suspended') { $error = 'Your account has been suspended. Please contact support.'; }
+            elseif ($c['status'] === 'inactive') { $error = 'Your account is inactive.'; }
+            else {
+                $_SESSION['customer'] = ['id' => $c['id'], 'name' => $c['name'], 'mobile' => $c['mobile'], 'email' => $c['email']];
+                redirect($redirect);
+            }
         } else {
             $error = 'Invalid mobile or password.';
         }
@@ -39,6 +43,9 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="jc-form-group"><label>Password</label><input class="jc-input" type="password" name="password" required></div>
         <button class="jc-btn jc-btn-primary jc-btn-block" type="submit">Login</button>
     </form>
-    <p style="text-align:center;margin-top:14px;">New to <?php echo e(SITE_NAME); ?>? <a href="register.php">Create an account</a></p>
+    <p style="text-align:center;margin-top:14px;">
+        <a href="forgot-password.php">Forgot Password?</a>
+        &nbsp;|&nbsp; New to <?php echo e(SITE_NAME); ?>? <a href="register.php">Create an account</a>
+    </p>
 </div>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

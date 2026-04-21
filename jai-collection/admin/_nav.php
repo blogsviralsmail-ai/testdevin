@@ -4,6 +4,7 @@ $navItems = [
     ['orders.php', 'fa-receipt', 'Orders'],
     ['categories.php', 'fa-sitemap', 'Categories'],
     ['products.php', 'fa-box', 'Products'],
+    ['stock.php', 'fa-warehouse', 'Stock'],
     ['customers.php', 'fa-users', 'Customers'],
     ['agents.php', 'fa-handshake', 'Agents'],
     ['commissions.php', 'fa-percent', 'Commissions'],

@@ -42,7 +42,9 @@ function getProducts($opts = []) {
     if (!empty($opts['only_active'])) { $where[] = "p.status = 'active'"; }
     if (!empty($opts['category_id'])) { $where[] = "p.category_id = ?"; $args[] = (int)$opts['category_id']; }
     if (!empty($opts['is_featured'])) { $where[] = "p.is_featured = 1"; }
-    if (!empty($opts['search'])) { $where[] = "(p.name LIKE ? OR p.short_description LIKE ?)"; $args[] = '%' . $opts['search'] . '%'; $args[] = '%' . $opts['search'] . '%'; }
+    if (!empty($opts['is_hot'])) { $where[] = "p.is_hot = 1"; }
+    if (isset($opts['low_stock'])) { $where[] = "p.stock <= ?"; $args[] = (int)$opts['low_stock']; }
+    if (!empty($opts['search'])) { $where[] = "(p.name LIKE ? OR p.short_description LIKE ? OR p.sku LIKE ?)"; $args[] = '%' . $opts['search'] . '%'; $args[] = '%' . $opts['search'] . '%'; $args[] = '%' . $opts['search'] . '%'; }
     if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
     $sql .= ' ORDER BY p.sort_order, p.id DESC';
     if (!empty($opts['limit'])) {

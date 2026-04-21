@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Order Detail';
 require_once __DIR__ . '/_header.php';
+require_once __DIR__ . '/../includes/notify.php';
 $pdo = getPDO();
 
 $id = (int)($_GET['id'] ?? 0);
@@ -35,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE order_id = ? AND status = 'pending'")->execute([$id]);
             reverseCommissionForOrder($id);
         }
+        // Email + Telegram notification (safe if SMTP/bot not configured)
+        notifyOrderStatusChange($id, $new);
         setFlash('success', 'Status updated to ' . $new);
         redirect('order-detail.php?id=' . $id);
     }

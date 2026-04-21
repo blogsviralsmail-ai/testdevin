@@ -1,9 +1,13 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/notify.php';
 
 $error = '';
 if (currentCustomer()) redirect(SITE_URL . '/account/dashboard.php');
+if (getSetting('enable_registration','1') !== '1') {
+    $error = 'New registrations are temporarily disabled.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();
@@ -24,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([$name, $mobile, $email, $hash]);
             $id = $pdo->lastInsertId();
             $_SESSION['customer'] = ['id' => $id, 'name' => $name, 'mobile' => $mobile, 'email' => $email];
+            if ($email) notifyWelcome($email, $name, 'customer');
             setFlash('success', 'Welcome to ' . SITE_NAME . '!');
             redirect(SITE_URL . '/account/dashboard.php');
         }

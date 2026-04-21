@@ -12,8 +12,10 @@ $stats = [
     'revenue' => (float)$pdo->query("SELECT COALESCE(SUM(total),0) FROM orders WHERE (payment_status = 'paid' OR payment_method = 'cod') AND status NOT IN ('cancelled','returned')")->fetchColumn(),
     'pending_payouts' => (float)$pdo->query("SELECT COALESCE(SUM(amount),0) FROM payouts WHERE status IN ('pending','approved')")->fetchColumn(),
     'wallet_outstanding' => (float)$pdo->query("SELECT COALESCE(SUM(wallet_balance),0) FROM agents")->fetchColumn(),
+    'low_stock' => (int)$pdo->query("SELECT COUNT(*) FROM products WHERE stock <= 5")->fetchColumn(),
 ];
 $recentOrders = $pdo->query("SELECT * FROM orders ORDER BY id DESC LIMIT 10")->fetchAll();
+$lowStockList = $pdo->query("SELECT id, name, stock FROM products WHERE stock <= 5 ORDER BY stock ASC LIMIT 8")->fetchAll();
 ?>
 
 <div class="jc-admin-stats">
@@ -25,7 +27,26 @@ $recentOrders = $pdo->query("SELECT * FROM orders ORDER BY id DESC LIMIT 10")->f
     <div class="jc-admin-stat"><div class="jc-stat-label">Active Agents</div><div class="jc-stat-value"><?php echo $stats['agents']; ?></div></div>
     <div class="jc-admin-stat red"><div class="jc-stat-label">Pending Payouts</div><div class="jc-stat-value"><?php echo money($stats['pending_payouts']); ?></div></div>
     <div class="jc-admin-stat yellow"><div class="jc-stat-label">Wallet Outstanding</div><div class="jc-stat-value"><?php echo money($stats['wallet_outstanding']); ?></div></div>
+    <div class="jc-admin-stat red"><div class="jc-stat-label">Low Stock</div><div class="jc-stat-value"><?php echo $stats['low_stock']; ?></div></div>
 </div>
+
+<?php if ($lowStockList): ?>
+<div class="jc-admin-actions"><h2>Low Stock Alerts</h2><a href="stock.php?low=1" class="jc-btn jc-btn-outline jc-btn-sm">Manage Stock</a></div>
+<div class="jc-panel" style="padding:0;margin-bottom:20px;">
+<table class="jc-table">
+    <thead><tr><th>Product</th><th>Stock</th><th></th></tr></thead>
+    <tbody>
+        <?php foreach ($lowStockList as $p): ?>
+            <tr>
+                <td><?php echo e($p['name']); ?></td>
+                <td><strong style="color:<?php echo (int)$p['stock'] <= 0 ? '#c62828' : '#ef6c00'; ?>;"><?php echo (int)$p['stock']; ?></strong></td>
+                <td><a class="jc-btn jc-btn-sm jc-btn-outline" href="product-edit.php?id=<?php echo (int)$p['id']; ?>">Edit</a></td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+</div>
+<?php endif; ?>
 
 <div class="jc-admin-actions"><h2>Recent Orders</h2><a href="orders.php" class="jc-btn jc-btn-outline jc-btn-sm">View All</a></div>
 <div class="jc-panel" style="padding:0;">

@@ -1,6 +1,8 @@
 <?php
 $pageTitle = 'Agents';
 require_once __DIR__ . '/_header.php';
+require_once __DIR__ . '/../includes/export.php';
+require_once __DIR__ . '/../includes/notify.php';
 $pdo = getPDO();
 
 $edit = null;
@@ -21,7 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mobile = sanitize($_POST['mobile']);
         $commission = (float)$_POST['commission_percent'];
         $refCode = sanitize($_POST['referral_code'] ?? '') ?: generateReferralCode($name);
-        $status = $_POST['status'] === 'active' ? 'active' : 'inactive';
+        $allowed = ['active','inactive','suspended'];
+        $status = in_array($_POST['status'] ?? 'active', $allowed, true) ? $_POST['status'] : 'active';
         $notes = sanitize($_POST['notes'] ?? '');
         $bankHolder = sanitize($_POST['bank_account_holder'] ?? '');
         $bankAcc = sanitize($_POST['bank_account_number'] ?? '');
@@ -57,15 +60,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setFlash('info', 'Agent deleted.');
         redirect('agents.php');
     }
+    if ($action === 'bulk') {
+        $ids = array_filter(array_map('intval', $_POST['ids'] ?? []));
+        if (!$ids) { setFlash('error','No rows selected.'); redirect('agents.php'); }
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $bulk = $_POST['bulk_action'];
+        if ($bulk === 'delete')        $pdo->prepare("DELETE FROM agents WHERE id IN ($ph)")->execute($ids);
+        elseif ($bulk === 'suspend')   $pdo->prepare("UPDATE agents SET status='suspended' WHERE id IN ($ph)")->execute($ids);
+        elseif ($bulk === 'activate')  $pdo->prepare("UPDATE agents SET status='active' WHERE id IN ($ph)")->execute($ids);
+        setFlash('success', count($ids) . ' agent(s) updated.');
+        redirect('agents.php');
+    }
+    if ($action === 'reset_pw') {
+        $id = (int)$_POST['id'];
+        $a = $pdo->prepare("SELECT * FROM agents WHERE id = ?"); $a->execute([$id]); $a = $a->fetch();
+        if ($a) {
+            $new = generateRandomString(8);
+            $pdo->prepare("UPDATE agents SET password=? WHERE id=?")->execute([password_hash($new, PASSWORD_DEFAULT), $id]);
+            setFlash('success', 'New password for ' . $a['name'] . ': ' . $new);
+        }
+        redirect('agents.php');
+    }
 }
 
-$agents = $pdo->query("SELECT a.*,
-    (SELECT COUNT(*) FROM orders o WHERE o.agent_id = a.id) AS orders_count
-    FROM agents a ORDER BY a.id DESC")->fetchAll();
+// Filters
+$q = trim($_GET['q'] ?? ''); $fstatus = $_GET['status'] ?? '';
+$where = []; $args = [];
+if ($q) { $where[] = "(a.name LIKE ? OR a.mobile LIKE ? OR a.referral_code LIKE ?)"; $args[] = "%$q%"; $args[] = "%$q%"; $args[] = "%$q%"; }
+if (in_array($fstatus, ['active','inactive','suspended'], true)) { $where[] = "a.status = ?"; $args[] = $fstatus; }
+$wsql = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
+
+$stmt = $pdo->prepare("SELECT a.*, (SELECT COUNT(*) FROM orders o WHERE o.agent_id = a.id) AS orders_count FROM agents a $wsql ORDER BY a.id DESC");
+$stmt->execute($args);
+$agents = $stmt->fetchAll();
+
+if (($_GET['export'] ?? '') === 'csv' || ($_GET['export'] ?? '') === 'pdf') {
+    $headers = ['ID','Name','Mobile','Email','Ref Code','Commission %','Orders','Wallet','Earned','Paid','Status','Joined'];
+    $out = [];
+    foreach ($agents as $a) {
+        $out[] = [$a['id'],$a['name'],$a['mobile'],$a['email'],$a['referral_code'],$a['commission_percent'],$a['orders_count'],$a['wallet_balance'],$a['lifetime_earned'],$a['lifetime_paid'],$a['status'],$a['created_at']];
+    }
+    if ($_GET['export'] === 'csv') exportCsv('agents-'.date('Ymd-Hi').'.csv', $headers, $out);
+    else exportPdf('Agents', $headers, $out);
+}
 ?>
 <div class="jc-admin-actions">
     <h2>Agents (<?php echo count($agents); ?>)</h2>
-    <a href="?edit=new" class="jc-btn jc-btn-primary"><i class="fas fa-plus"></i> Onboard Agent</a>
+    <div>
+        <a href="?edit=new" class="jc-btn jc-btn-primary"><i class="fas fa-plus"></i> Onboard Agent</a>
+        <a href="?<?php echo http_build_query(array_merge($_GET,['export'=>'csv'])); ?>" class="jc-btn jc-btn-outline"><i class="fas fa-file-csv"></i> CSV</a>
+        <a href="?<?php echo http_build_query(array_merge($_GET,['export'=>'pdf'])); ?>" class="jc-btn jc-btn-outline" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+    </div>
+</div>
+
+<div class="jc-panel" style="margin-bottom:14px;">
+    <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+        <div><label style="font-size:12px;color:#888;">Search</label><br><input class="jc-input" name="q" value="<?php echo e($q); ?>" placeholder="Name / mobile / ref code"></div>
+        <div><label style="font-size:12px;color:#888;">Status</label><br>
+            <select class="jc-select" name="status">
+                <option value="">All</option>
+                <option value="active" <?php if ($fstatus==='active') echo 'selected'; ?>>Active</option>
+                <option value="inactive" <?php if ($fstatus==='inactive') echo 'selected'; ?>>Inactive</option>
+                <option value="suspended" <?php if ($fstatus==='suspended') echo 'selected'; ?>>Suspended</option>
+            </select>
+        </div>
+        <button class="jc-btn jc-btn-primary">Filter</button>
+        <a href="agents.php" class="jc-btn jc-btn-outline">Reset</a>
+    </form>
 </div>
 
 <?php if ($edit !== null || $editId === 'new'): ?>
@@ -108,6 +169,7 @@ $agents = $pdo->query("SELECT a.*,
             <select class="jc-select" name="status">
                 <option value="active" <?php if (($edit['status'] ?? 'active') === 'active') echo 'selected'; ?>>Active</option>
                 <option value="inactive" <?php if (($edit['status'] ?? '') === 'inactive') echo 'selected'; ?>>Inactive</option>
+                <option value="suspended" <?php if (($edit['status'] ?? '') === 'suspended') echo 'selected'; ?>>Suspended</option>
             </select>
         </div>
         <button class="jc-btn jc-btn-primary" type="submit">Save</button>
@@ -116,12 +178,28 @@ $agents = $pdo->query("SELECT a.*,
 </div>
 <?php endif; ?>
 
+<form method="post" data-jc-bulk-confirm>
+<?php echo csrfField(); ?>
+<input type="hidden" name="action" value="bulk">
+<div class="jc-panel" style="padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:center;">
+    <select class="jc-select" name="bulk_action" style="max-width:240px;">
+        <option value="">Bulk action...</option>
+        <option value="activate">Activate</option>
+        <option value="suspend">Suspend</option>
+        <option value="delete">Delete</option>
+    </select>
+    <button class="jc-btn jc-btn-primary">Apply</button>
+</div>
 <div class="jc-panel" style="padding:0;">
 <table class="jc-table">
-    <thead><tr><th>Name</th><th>Mobile</th><th>Ref Code</th><th>Comm %</th><th>Orders</th><th>Wallet</th><th>Earned</th><th>Paid</th><th>Status</th><th></th></tr></thead>
+    <thead><tr>
+        <th style="width:30px;"><input type="checkbox" data-jc-check-all='input[name="ids[]"]'></th>
+        <th>Name</th><th>Mobile</th><th>Ref Code</th><th>Comm %</th><th>Orders</th><th>Wallet</th><th>Earned</th><th>Paid</th><th>Status</th><th></th>
+    </tr></thead>
     <tbody>
         <?php foreach ($agents as $a): ?>
             <tr>
+                <td><input type="checkbox" name="ids[]" value="<?php echo (int)$a['id']; ?>"></td>
                 <td><?php echo e($a['name']); ?></td>
                 <td><?php echo e($a['mobile']); ?></td>
                 <td><code><?php echo e($a['referral_code']); ?></code><br><small><a href="<?php echo e(SITE_URL); ?>/?ref=<?php echo e($a['referral_code']); ?>" target="_blank" style="font-size:11px;">Link</a></small></td>
@@ -136,9 +214,10 @@ $agents = $pdo->query("SELECT a.*,
                 </td>
             </tr>
         <?php endforeach; ?>
-        <?php if (!$agents): ?><tr><td colspan="10" style="text-align:center;color:#888;">No agents yet. Click "Onboard Agent" to add one.</td></tr><?php endif; ?>
+        <?php if (!$agents): ?><tr><td colspan="11" style="text-align:center;color:#888;">No agents yet. Click "Onboard Agent" to add one.</td></tr><?php endif; ?>
     </tbody>
 </table>
 </div>
+</form>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

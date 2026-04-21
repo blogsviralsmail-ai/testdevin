@@ -5,8 +5,11 @@ require_once __DIR__ . '/functions.php';
 $pageTitle = $pageTitle ?? getSetting('site_name', SITE_NAME);
 $logoUrl = getSetting('logo_url', '/uploads/logo/jai-collection-logo.png');
 if (strpos($logoUrl, 'http') !== 0 && strpos($logoUrl, '/') === 0) { $logoUrl = SITE_URL . $logoUrl; }
+$faviconUrl = getSetting('favicon_url', $logoUrl);
+if (strpos($faviconUrl, 'http') !== 0 && strpos($faviconUrl, '/') === 0) { $faviconUrl = SITE_URL . $faviconUrl; }
 
-$primaryCats = getCategories(true, 0);
+// Build nav: top-level categories (limit 10 for nav), plus an "All" link.
+$navCats = array_slice(getCategories(true, 0), 0, 10);
 $customer = currentCustomer();
 $flash = getFlash();
 ?>
@@ -15,12 +18,13 @@ $flash = getFlash();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo e($pageTitle); ?> - <?php echo e(getSetting('site_name', SITE_NAME)); ?></title>
+    <title><?php echo e($pageTitle); ?> &middot; <?php echo e(getSetting('site_name', SITE_NAME)); ?></title>
     <meta name="description" content="<?php echo e(getSetting('site_tagline', SITE_TAGLINE)); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo e(SITE_URL); ?>/assets/css/style.css">
-    <link rel="icon" href="<?php echo e($logoUrl); ?>">
+    <link rel="stylesheet" href="<?php echo e(SITE_URL); ?>/assets/css/modern.css">
+    <link rel="icon" href="<?php echo e($faviconUrl); ?>">
 </head>
 <body>
 
@@ -62,9 +66,10 @@ $flash = getFlash();
     <nav class="jc-catnav">
         <div class="container jc-catnav-inner">
             <a href="<?php echo e(SITE_URL); ?>/">Home</a>
-            <?php foreach ($primaryCats as $c): ?>
+            <?php foreach ($navCats as $c): ?>
                 <a href="<?php echo e(SITE_URL); ?>/category.php?slug=<?php echo e($c['slug']); ?>"><?php echo e($c['name']); ?></a>
             <?php endforeach; ?>
+            <a href="<?php echo e(SITE_URL); ?>/categories.php" style="font-weight:600;color:#e53935;">All Categories &raquo;</a>
         </div>
     </nav>
 </header>

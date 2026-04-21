@@ -8,14 +8,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();
     $mobile = sanitize($_POST['mobile'] ?? '');
     $password = $_POST['password'] ?? '';
-    $stmt = getPDO()->prepare("SELECT * FROM agents WHERE (mobile = ? OR email = ?) AND status = 'active' LIMIT 1");
+    $stmt = getPDO()->prepare("SELECT * FROM agents WHERE (mobile = ? OR email = ?) LIMIT 1");
     $stmt->execute([$mobile, $mobile]);
     $u = $stmt->fetch();
     if ($u && password_verify($password, $u['password'])) {
-        $_SESSION['agent'] = ['id' => $u['id'], 'name' => $u['name'], 'mobile' => $u['mobile'], 'referral_code' => $u['referral_code']];
-        redirect('dashboard.php');
+        if ($u['status'] === 'suspended') { $error = 'Your account has been suspended. Please contact admin.'; }
+        elseif ($u['status'] === 'inactive') { $error = 'Your account is inactive. Please contact admin.'; }
+        else {
+            $_SESSION['agent'] = ['id' => $u['id'], 'name' => $u['name'], 'mobile' => $u['mobile'], 'referral_code' => $u['referral_code']];
+            redirect('dashboard.php');
+        }
+    } else {
+        $error = 'Invalid credentials.';
     }
-    $error = 'Invalid credentials or account not active.';
 }
 $logoUrl = SITE_URL . '/uploads/logo/jai-collection-logo.png';
 ?>
@@ -43,6 +48,8 @@ $logoUrl = SITE_URL . '/uploads/logo/jai-collection-logo.png';
             <div class="jc-form-group"><label>Password</label><input class="jc-input" type="password" name="password" required></div>
             <button class="jc-btn jc-btn-primary jc-btn-block" type="submit">Login</button>
         </form>
-        <p style="text-align:center;font-size:13px;margin-top:14px;color:#888;">Contact admin to get agent credentials.</p>
+        <p style="text-align:center;font-size:13px;margin-top:14px;color:#888;">
+            <a href="forgot-password.php">Forgot Password?</a> &middot; Contact admin to get agent credentials.
+        </p>
     </div>
 </body></html>

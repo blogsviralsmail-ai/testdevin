@@ -28,6 +28,7 @@ if ($agent) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo e(SITE_URL); ?>/assets/css/style.css">
     <link rel="stylesheet" href="<?php echo e(SITE_URL); ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo e(SITE_URL); ?>/assets/css/modern.css">
 </head>
 <body class="jc-admin-body">
 <?php if (!$skipAuth): ?>

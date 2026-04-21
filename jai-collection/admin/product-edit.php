@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stock = (int)$_POST['stock'];
         $hasVariants = !empty($_POST['has_variants']) ? 1 : 0;
         $isFeatured = !empty($_POST['is_featured']) ? 1 : 0;
+        $isHot = !empty($_POST['is_hot']) ? 1 : 0;
         $sortOrder = (int)$_POST['sort_order'];
         $status = $_POST['status'] === 'active' ? 'active' : 'inactive';
 
@@ -54,11 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($id) {
-            $pdo->prepare("UPDATE products SET category_id=?, name=?, slug=?, sku=?, short_description=?, description=?, image=?, price=?, compare_price=?, cost_price=?, stock=?, has_variants=?, is_featured=?, sort_order=?, status=? WHERE id=?")
-                ->execute([$categoryId, $name, $slug, $sku, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $sortOrder, $status, $id]);
+            $pdo->prepare("UPDATE products SET category_id=?, name=?, slug=?, sku=?, short_description=?, description=?, image=?, price=?, compare_price=?, cost_price=?, stock=?, has_variants=?, is_featured=?, is_hot=?, sort_order=?, status=? WHERE id=?")
+                ->execute([$categoryId, $name, $slug, $sku, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $isHot, $sortOrder, $status, $id]);
         } else {
-            $pdo->prepare("INSERT INTO products (category_id, name, slug, sku, short_description, description, image, price, compare_price, cost_price, stock, has_variants, is_featured, sort_order, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-                ->execute([$categoryId, $name, $slug, $sku, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $sortOrder, $status]);
+            $pdo->prepare("INSERT INTO products (category_id, name, slug, sku, short_description, description, image, price, compare_price, cost_price, stock, has_variants, is_featured, is_hot, sort_order, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+                ->execute([$categoryId, $name, $slug, $sku, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $isHot, $sortOrder, $status]);
             $id = (int)$pdo->lastInsertId();
         }
 
@@ -169,8 +170,9 @@ $variants = $id ? getProductVariants($id) : [];
             </select>
         </div>
     </div>
-    <div style="display:flex;gap:20px;margin-bottom:14px;">
-        <label><input type="checkbox" name="is_featured" value="1" <?php if (!empty($product['is_featured'])) echo 'checked'; ?>> Featured</label>
+    <div style="display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap;">
+        <label><input type="checkbox" name="is_featured" value="1" <?php if (!empty($product['is_featured'])) echo 'checked'; ?>> ★ Featured</label>
+        <label><input type="checkbox" name="is_hot" value="1" <?php if (!empty($product['is_hot'])) echo 'checked'; ?>> 🔥 Hot (blinking badge)</label>
         <label><input type="checkbox" name="has_variants" value="1" <?php if (!empty($product['has_variants'])) echo 'checked'; ?>> Has Variants</label>
     </div>
     <button class="jc-btn jc-btn-primary" type="submit">Save Product</button>

@@ -32,7 +32,7 @@ $recent = $recent->fetchAll();
     <h3 style="margin-top:0;color:#0d2d66;">Your Referral Link</h3>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <input class="jc-input" readonly value="<?php echo e($referralLink); ?>" id="refLink" style="flex:1;min-width:200px;background:#f7f8fa;font-family:monospace;">
-        <button type="button" class="jc-btn jc-btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('refLink').value);this.textContent='Copied!';setTimeout(()=>this.innerHTML='<i class=&quot;fas fa-copy&quot;></i> Copy',1500);"><i class="fas fa-copy"></i> Copy</button>
+        <button type="button" class="jc-btn jc-btn-primary" data-jc-copy="#refLink"><i class="fas fa-copy"></i> Copy</button>
         <a class="jc-btn jc-btn-secondary" target="_blank" href="https://wa.me/?text=<?php echo urlencode('Shop at ' . SITE_NAME . ': ' . $referralLink); ?>"><i class="fab fa-whatsapp"></i> Share on WhatsApp</a>
     </div>
     <p style="margin:10px 0 0;color:#888;font-size:13px;">
