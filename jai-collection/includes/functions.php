@@ -205,10 +205,12 @@ function walletDebit($agentId, $amount, $refType, $refId, $description) {
     $pdo = getPDO();
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance - ?, lifetime_paid = lifetime_paid + ? WHERE id = ? AND wallet_balance >= ?")
-            ->execute([$amount, $amount, $agentId, $amount]);
+        $upd = $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance - ?, lifetime_paid = lifetime_paid + ? WHERE id = ? AND wallet_balance >= ?");
+        $upd->execute([$amount, $amount, $agentId, $amount]);
+        if ($upd->rowCount() === 0) {
+            throw new Exception('Insufficient wallet balance or agent not found');
+        }
         $row = $pdo->query("SELECT wallet_balance FROM agents WHERE id = " . (int)$agentId)->fetch();
-        if (!$row) throw new Exception('agent missing');
         $pdo->prepare("INSERT INTO agent_wallet_transactions (agent_id, type, amount, balance_after, ref_type, ref_id, description) VALUES (?, 'debit', ?, ?, ?, ?, ?)")
             ->execute([$agentId, $amount, $row['wallet_balance'], $refType, $refId, $description]);
         $pdo->commit();
@@ -217,6 +219,31 @@ function walletDebit($agentId, $amount, $refType, $refId, $description) {
         $pdo->rollBack();
         return false;
     }
+}
+
+// Reverse already-credited commission (e.g. when a delivered order is returned/cancelled).
+// Debits the wallet and marks the commission row cancelled. Safe to call for
+// orders with no agent or no credited commission (no-op).
+function reverseCommissionForOrder($orderId) {
+    $pdo = getPDO();
+    $order = $pdo->prepare("SELECT agent_id, order_number FROM orders WHERE id = ?");
+    $order->execute([$orderId]);
+    $o = $order->fetch();
+    if (!$o || empty($o['agent_id'])) return false;
+    $stmt = $pdo->prepare("SELECT * FROM agent_commissions WHERE order_id = ? AND agent_id = ? AND status = 'credited'");
+    $stmt->execute([$orderId, $o['agent_id']]);
+    $reversed = false;
+    while ($row = $stmt->fetch()) {
+        $amt = (float)$row['amount'];
+        if ($amt > 0) {
+            walletDebit($o['agent_id'], $amt, 'commission_reversal', (int)$row['id'], 'Reversal: order ' . $o['order_number']);
+            $pdo->prepare("UPDATE agents SET lifetime_earned = GREATEST(lifetime_earned - ?, 0) WHERE id = ?")
+                ->execute([$amt, $o['agent_id']]);
+        }
+        $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE id = ?")->execute([$row['id']]);
+        $reversed = true;
+    }
+    return $reversed;
 }
 
 // Credit commission when order is confirmed/delivered (per setting)

@@ -74,8 +74,19 @@ function e($s) {
     return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }
 
+// Sanitize user input for storage (strips tags, does NOT HTML-encode — e() handles
+// encoding at render time). Never use this on cryptographic keys or webhook secrets.
 function sanitize($data) {
-    return htmlspecialchars(strip_tags(trim((string)$data)), ENT_QUOTES, 'UTF-8');
+    return strip_tags(trim((string)$data));
+}
+
+// Return a safe internal redirect path. Rejects external URLs (open-redirect guard).
+function safeRedirect($target, $fallback) {
+    if (!is_string($target) || $target === '') return $fallback;
+    // Must be an internal path starting with '/' and not a protocol-relative '//'
+    if ($target[0] !== '/' || (isset($target[1]) && $target[1] === '/')) return $fallback;
+    if (strpos($target, "\n") !== false || strpos($target, "\r") !== false) return $fallback;
+    return $target;
 }
 
 function redirect($url) {

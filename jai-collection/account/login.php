@@ -3,9 +3,10 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 $error = '';
-$redirect = sanitize($_GET['redirect'] ?? '/');
+$dashboardUrl = SITE_URL . '/account/dashboard.php';
+$redirect = safeRedirect($_GET['redirect'] ?? '', $dashboardUrl);
 
-if (currentCustomer()) redirect(SITE_URL . '/account/dashboard.php');
+if (currentCustomer()) redirect($dashboardUrl);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();
@@ -19,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $c = $stmt->fetch();
         if ($c && password_verify($password, $c['password'])) {
             $_SESSION['customer'] = ['id' => $c['id'], 'name' => $c['name'], 'mobile' => $c['mobile'], 'email' => $c['email']];
-            redirect($redirect ?: SITE_URL . '/account/dashboard.php');
+            redirect($redirect);
         } else {
             $error = 'Invalid mobile or password.';
         }

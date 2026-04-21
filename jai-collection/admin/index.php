@@ -9,7 +9,7 @@ $stats = [
     'customers' => (int)$pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn(),
     'agents' => (int)$pdo->query("SELECT COUNT(*) FROM agents WHERE status = 'active'")->fetchColumn(),
     'products' => (int)$pdo->query("SELECT COUNT(*) FROM products")->fetchColumn(),
-    'revenue' => (float)$pdo->query("SELECT COALESCE(SUM(total),0) FROM orders WHERE payment_status = 'paid' OR payment_method = 'cod' AND status = 'delivered'")->fetchColumn(),
+    'revenue' => (float)$pdo->query("SELECT COALESCE(SUM(total),0) FROM orders WHERE (payment_status = 'paid' OR payment_method = 'cod') AND status NOT IN ('cancelled','returned')")->fetchColumn(),
     'pending_payouts' => (float)$pdo->query("SELECT COALESCE(SUM(amount),0) FROM payouts WHERE status IN ('pending','approved')")->fetchColumn(),
     'wallet_outstanding' => (float)$pdo->query("SELECT COALESCE(SUM(wallet_balance),0) FROM agents")->fetchColumn(),
 ];

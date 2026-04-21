@@ -19,9 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($new === 'delivered' && $order['agent_id']) {
             creditCommissionForOrder($id);
         }
-        // Cancel commission if order cancelled
+        // Cancel pending commissions and reverse any already-credited ones if the
+        // order is cancelled or returned.
         if (in_array($new, ['cancelled', 'returned']) && $order['agent_id']) {
             $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE order_id = ? AND status = 'pending'")->execute([$id]);
+            reverseCommissionForOrder($id);
         }
         setFlash('success', 'Status updated to ' . $new);
         redirect('order-detail.php?id=' . $id);
