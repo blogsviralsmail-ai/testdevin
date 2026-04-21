@@ -37,7 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Logo upload
     if (!empty($_FILES['logo']['tmp_name'])) {
         $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, ['jpg','jpeg','png','webp','svg'])) {
+        // No SVG — SVG can embed <script> / onload handlers that execute when
+        // a user navigates directly to /uploads/logo/logo_*.svg (stored XSS).
+        if (in_array($ext, ['jpg','jpeg','png','webp'])) {
             $fn = 'logo_' . time() . '.' . $ext;
             $dest = UPLOAD_DIR . '/logo/' . $fn;
             if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
@@ -47,7 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (!empty($_FILES['favicon']['tmp_name'])) {
         $ext = strtolower(pathinfo($_FILES['favicon']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, ['ico','png','jpg','jpeg','svg'])) {
+        // No SVG here either — same stored-XSS risk as the logo upload above.
+        if (in_array($ext, ['ico','png','jpg','jpeg','webp'])) {
             $fn = 'favicon_' . time() . '.' . $ext;
             $dest = UPLOAD_DIR . '/logo/' . $fn;
             if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);

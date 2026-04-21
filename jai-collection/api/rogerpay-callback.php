@@ -19,6 +19,11 @@ $sigOk = rogerpayVerifySignature($params, $signature);
 // Only mutate the order when the signature is valid — otherwise an unauthenticated
 // attacker could mark any order as payment-failed by guessing its number. On a
 // bad signature we just display an error and redirect without touching the DB.
+// Whitelist this order for anonymous view on /order-success.php within the
+// current session. Without this flag, the success page requires a customer
+// login or shipping-mobile match (see order-success.php access rules).
+$_SESSION['jc_order_confirm'][] = $orderNumber;
+
 if (!$sigOk) {
     setFlash('error', 'Payment verification failed. Please contact support if you were charged.');
     redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));

@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$ids) { setFlash('error','No rows selected.'); redirect('orders.php'); }
         $ph = implode(',', array_fill(0, count($ids), '?'));
         $bulk = $_POST['bulk_action'];
-        $allowed = ['confirmed','packed','shipped','delivered','cancelled'];
+        $allowed = ['confirmed','packed','shipped','delivered','cancelled','returned'];
         if (in_array($bulk, $allowed, true)) {
             $pdo->prepare("UPDATE orders SET status=? WHERE id IN ($ph)")->execute(array_merge([$bulk], $ids));
             foreach ($ids as $oid) {

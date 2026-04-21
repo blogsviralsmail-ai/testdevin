@@ -6,9 +6,13 @@ $token = trim($_GET['token'] ?? ($_POST['token'] ?? ''));
 $pdo = getPDO();
 $error = ''; $ok = false;
 
-$stmt = $pdo->prepare("SELECT * FROM agents WHERE reset_token = ? AND reset_expires_at > NOW()");
-$stmt->execute([$token]);
-$a = $stmt->fetch();
+if ($token === '') {
+    $a = false;
+} else {
+    $stmt = $pdo->prepare("SELECT * FROM agents WHERE reset_token = ? AND reset_token != '' AND reset_expires_at > NOW()");
+    $stmt->execute([$token]);
+    $a = $stmt->fetch();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();

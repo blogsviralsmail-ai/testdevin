@@ -7,9 +7,16 @@ $pdo = getPDO();
 $error = '';
 $ok = false;
 
-$stmt = $pdo->prepare("SELECT * FROM customers WHERE reset_token = ? AND reset_expires_at > NOW()");
-$stmt->execute([$token]);
-$c = $stmt->fetch();
+// Short-circuit on empty token so an attacker can't probe for rows where
+// reset_token accidentally ended up as ''. Non-empty tokens are looked up
+// normally; we still filter reset_token != '' as a belt-and-braces guard.
+if ($token === '') {
+    $c = false;
+} else {
+    $stmt = $pdo->prepare("SELECT * FROM customers WHERE reset_token = ? AND reset_token != '' AND reset_expires_at > NOW()");
+    $stmt->execute([$token]);
+    $c = $stmt->fetch();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();

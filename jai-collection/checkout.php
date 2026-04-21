@@ -117,9 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // success page instead so they can see the order number, contact support,
                 // or retry payment.
                 setFlash('error', 'Payment gateway unavailable. Your order has been placed — please contact support or retry payment from your orders page.');
+                // Whitelist this order for anonymous view on /order-success.php
+                // within the current session (see order-success.php access rules).
+                $_SESSION['jc_order_confirm'][] = $orderNumber;
                 redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
             }
 
+            $_SESSION['jc_order_confirm'][] = $orderNumber;
             redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
         } catch (Exception $e) {
             $pdo->rollBack();
