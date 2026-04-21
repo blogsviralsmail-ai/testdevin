@@ -119,7 +119,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
         } catch (Exception $e) {
             $pdo->rollBack();
-            $error = 'Order failed: ' . $e->getMessage();
+            // Never expose the raw PDO/exception message to the end user — it
+            // can leak table/column names, constraint details, and SQL fragments
+            // that help an attacker reconnoitre the schema. Log it server-side
+            // for debugging and show a generic message to the customer.
+            error_log('[checkout] Order transaction failed: ' . $e->getMessage());
+            $error = 'Order failed. Please try again or contact support if this keeps happening.';
         }
     }
 }

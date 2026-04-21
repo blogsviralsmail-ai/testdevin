@@ -266,6 +266,14 @@ function creditCommissionForOrder($orderId) {
     $check->execute([$orderId, $order['agent_id']]);
     $existing = $check->fetch();
     if ($existing && $existing['status'] === 'credited') return true;
+    // If the commission was previously credited and then reversed (e.g. order
+    // was delivered -> returned/cancelled, which flips the row to 'cancelled'
+    // and debits the wallet), do NOT re-credit if the admin later toggles the
+    // status back to 'delivered'. Without this guard, re-delivery would pass
+    // the check above (status is 'cancelled', not 'credited'), reuse the same
+    // row, call walletCredit() again, and flip the row back to 'credited' —
+    // giving the agent the commission twice while only one reversal happened.
+    if ($existing && $existing['status'] === 'cancelled') return false;
     $amount = (float)$order['agent_commission_amount'];
     if ($amount <= 0) return false;
     // Ensure a commission row exists in 'pending' state so walletCredit() has
