@@ -18,22 +18,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
         try {
             if ($vid) {
+                // Read the pre-update stock so the audit log records the
+                // actual change, not the requested one (GREATEST clamps at 0,
+                // so delta=-100 on stock=5 really only changed stock by -5).
+                $getOld = $pdo->prepare("SELECT stock FROM product_variants WHERE id = ? AND product_id = ?");
+                $getOld->execute([$vid, $pid]);
+                $old = (int)$getOld->fetchColumn();
                 $pdo->prepare("UPDATE product_variants SET stock = GREATEST(stock + ?, 0) WHERE id = ? AND product_id = ?")
                     ->execute([$delta, $vid, $pid]);
-                $new = (int)$pdo->query("SELECT stock FROM product_variants WHERE id = " . (int)$vid)->fetchColumn();
+                $getNew = $pdo->prepare("SELECT stock FROM product_variants WHERE id = ?");
+                $getNew->execute([$vid]);
+                $new = (int)$getNew->fetchColumn();
                 // Also refresh aggregated product stock
-                $sum = (int)$pdo->query("SELECT COALESCE(SUM(stock),0) FROM product_variants WHERE product_id = " . (int)$pid)->fetchColumn();
-                $pdo->prepare("UPDATE products SET stock = ? WHERE id = ?")->execute([$sum, $pid]);
+                $sumStmt = $pdo->prepare("SELECT COALESCE(SUM(stock),0) FROM product_variants WHERE product_id = ?");
+                $sumStmt->execute([$pid]);
+                $pdo->prepare("UPDATE products SET stock = ? WHERE id = ?")->execute([(int)$sumStmt->fetchColumn(), $pid]);
             } else {
+                $getOld = $pdo->prepare("SELECT stock FROM products WHERE id = ?");
+                $getOld->execute([$pid]);
+                $old = (int)$getOld->fetchColumn();
                 $pdo->prepare("UPDATE products SET stock = GREATEST(stock + ?, 0) WHERE id = ?")
                     ->execute([$delta, $pid]);
-                $new = (int)$pdo->query("SELECT stock FROM products WHERE id = " . (int)$pid)->fetchColumn();
+                $getNew = $pdo->prepare("SELECT stock FROM products WHERE id = ?");
+                $getNew->execute([$pid]);
+                $new = (int)$getNew->fetchColumn();
             }
+            $actualDelta = $new - $old;
             $admin = currentAdmin();
             $pdo->prepare("INSERT INTO stock_adjustments (product_id, variant_id, delta, new_stock, reason, admin_id) VALUES (?,?,?,?,?,?)")
-                ->execute([$pid, $vid, $delta, $new, $reason, (int)($admin['id'] ?? 0)]);
+                ->execute([$pid, $vid, $actualDelta, $new, $reason, (int)($admin['id'] ?? 0)]);
             $pdo->commit();
-            setFlash('success', 'Stock adjusted (' . ($delta > 0 ? '+' : '') . $delta . '). New: ' . $new);
+            setFlash('success', 'Stock adjusted (' . ($actualDelta > 0 ? '+' : '') . $actualDelta . '). New: ' . $new);
         } catch (Exception $e) {
             $pdo->rollBack();
             error_log('[stock-adjust] ' . $e->getMessage());
@@ -114,25 +129,34 @@ if (($_GET['export'] ?? '') === 'pdf') {
     </form>
 </div>
 
-<form method="post" data-jc-bulk-confirm>
-<?php echo csrfField(); ?>
-<input type="hidden" name="action" value="bulk_set">
-<div class="jc-panel" style="padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-    <label style="font-size:12px;color:#888;">Set selected to stock:</label>
-    <input class="jc-input" type="number" name="new_stock" value="10" style="max-width:110px;">
-    <button class="jc-btn jc-btn-primary">Apply</button>
-    <span style="color:#888;font-size:12px;">Tip: use +/- below for single adjustments.</span>
-</div>
+<!--
+    Bulk-set form and per-row quick-adjust forms CANNOT be nested (HTML parsers
+    close the outer form at the first inner </form>, which would orphan every
+    row-2+ checkbox from the bulk form). We close the outer form right after
+    the Apply button, then use the HTML5 `form="stock-bulk-form"` attribute on
+    the row checkboxes so they still submit with the bulk form even though
+    they live outside it in the DOM. Per-row forms remain standalone.
+-->
+<form method="post" data-jc-bulk-confirm id="stock-bulk-form">
+    <?php echo csrfField(); ?>
+    <input type="hidden" name="action" value="bulk_set">
+    <div class="jc-panel" style="padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:12px;color:#888;">Set selected to stock:</label>
+        <input class="jc-input" type="number" name="new_stock" value="10" style="max-width:110px;">
+        <button class="jc-btn jc-btn-primary">Apply</button>
+        <span style="color:#888;font-size:12px;">Tip: use +/- below for single adjustments.</span>
+    </div>
+</form>
 <div class="jc-panel" style="padding:0;">
 <table class="jc-table">
     <thead><tr>
-        <th style="width:30px;"><input type="checkbox" data-jc-check-all='input[name="ids[]"]'></th>
+        <th style="width:30px;"><input type="checkbox" data-jc-check-all='input[name="ids[]"]' form="stock-bulk-form"></th>
         <th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Quick Adjust</th>
     </tr></thead>
     <tbody>
         <?php foreach ($rows as $r): ?>
             <tr class="<?php echo (int)$r['stock'] <= $lowThreshold ? ($r['stock']<=0 ? 'jc-row-danger' : 'jc-row-warn') : ''; ?>">
-                <td><input type="checkbox" name="ids[]" value="<?php echo (int)$r['id']; ?>"></td>
+                <td><input type="checkbox" name="ids[]" value="<?php echo (int)$r['id']; ?>" form="stock-bulk-form"></td>
                 <td>
                     <a href="product-edit.php?id=<?php echo (int)$r['id']; ?>"><?php echo e($r['name']); ?></a>
                     <?php if ($r['has_variants']): ?><br><small style="color:#888;">Has variants</small><?php endif; ?>
@@ -157,7 +181,6 @@ if (($_GET['export'] ?? '') === 'pdf') {
     </tbody>
 </table>
 </div>
-</form>
 
 <?php if ($recentAdj): ?>
 <div class="jc-admin-actions" style="margin-top:24px;"><h3 style="margin:0;color:#0d2d66;">Recent Stock Adjustments</h3></div>
