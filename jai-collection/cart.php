@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'add') {
         $pid = (int)($_POST['product_id'] ?? 0);
-        $vid = $_POST['variant_id'] !== '' ? (int)$_POST['variant_id'] : null;
+        $vid = ($_POST['variant_id'] ?? '') !== '' ? (int)$_POST['variant_id'] : null;
         $qty = max(1, (int)($_POST['qty'] ?? 1));
         if ($pid) {
             cartAdd($pid, $vid, $qty);
