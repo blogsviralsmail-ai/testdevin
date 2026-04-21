@@ -13,7 +13,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();
     $action = $_POST['action'] ?? '';
     if ($action === 'update_status') {
-        $new = $_POST['status'];
+        // Whitelist against the allowed ENUM values. In non-strict MySQL mode
+        // an invalid ENUM value silently gets written as empty string, which
+        // would corrupt badges/filters and bypass the `$new === 'delivered'`
+        // commission-credit branch below.
+        $allowed = ['pending','confirmed','packed','shipped','delivered','cancelled','returned'];
+        $posted = $_POST['status'] ?? '';
+        if (!in_array($posted, $allowed, true)) {
+            setFlash('error', 'Invalid order status.');
+            redirect('order-detail.php?id=' . $id);
+        }
+        $new = $posted;
         $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?")->execute([$new, $id]);
         // Auto-credit commission when delivered
         if ($new === 'delivered' && $order['agent_id']) {
@@ -21,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         // Cancel pending commissions and reverse any already-credited ones if the
         // order is cancelled or returned.
-        if (in_array($new, ['cancelled', 'returned']) && $order['agent_id']) {
+        if (in_array($new, ['cancelled', 'returned'], true) && $order['agent_id']) {
             $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE order_id = ? AND status = 'pending'")->execute([$id]);
             reverseCommissionForOrder($id);
         }
@@ -29,8 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('order-detail.php?id=' . $id);
     }
     if ($action === 'update_payment') {
-        $new = $_POST['payment_status'];
-        $pdo->prepare("UPDATE orders SET payment_status = ? WHERE id = ?")->execute([$new, $id]);
+        $allowedPayment = ['pending','paid','failed','refunded'];
+        $posted = $_POST['payment_status'] ?? '';
+        if (!in_array($posted, $allowedPayment, true)) {
+            setFlash('error', 'Invalid payment status.');
+            redirect('order-detail.php?id=' . $id);
+        }
+        $pdo->prepare("UPDATE orders SET payment_status = ? WHERE id = ?")->execute([$posted, $id]);
         setFlash('success', 'Payment status updated.');
         redirect('order-detail.php?id=' . $id);
     }
