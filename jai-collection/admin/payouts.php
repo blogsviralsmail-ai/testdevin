@@ -18,7 +18,7 @@ if (($_GET['export'] ?? '') === 'csv' || ($_GET['export'] ?? '') === 'pdf') {
     $headers = ['Agent','Mobile','Amount','Method','Account','IFSC/UPI','Status','Requested','Paid At','UTR'];
     $out = [];
     foreach ($rows as $r) {
-        $out[] = [$r['agent_name'],$r['agent_mobile'],$r['amount'],$r['method'],$r['bank_account_number'],$r['method']==='upi'?$r['upi_id']:$r['bank_ifsc'],$r['status'],$r['requested_at'],$r['paid_at'],$r['utr']];
+        $out[] = [$r['agent_name'],$r['agent_mobile'],$r['amount'],$r['method'],$r['bank_account_number'],$r['method']==='upi'?$r['upi_id']:$r['bank_ifsc'],$r['status'],$r['requested_at'],$r['processed_at'] ?? '',$r['utr_number'] ?? ''];
     }
     if ($_GET['export'] === 'csv') exportCsv('payouts-'.date('Ymd-Hi').'.csv', $headers, $out);
     else exportPdf('Payout Requests', $headers, $out);

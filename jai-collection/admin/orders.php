@@ -16,7 +16,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $allowed = ['confirmed','packed','shipped','delivered','cancelled'];
         if (in_array($bulk, $allowed, true)) {
             $pdo->prepare("UPDATE orders SET status=? WHERE id IN ($ph)")->execute(array_merge([$bulk], $ids));
-            foreach ($ids as $oid) { notifyOrderStatusChange((int)$oid, $bulk); }
+            foreach ($ids as $oid) {
+                $oid = (int)$oid;
+                // Keep commission ledger consistent (mirrors admin/order-detail.php).
+                if ($bulk === 'delivered') {
+                    creditCommissionForOrder($oid);
+                } elseif (in_array($bulk, ['cancelled','returned'], true)) {
+                    $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE order_id = ? AND status = 'pending'")->execute([$oid]);
+                    reverseCommissionForOrder($oid);
+                }
+                notifyOrderStatusChange($oid, $bulk);
+            }
             setFlash('success', count($ids) . ' order(s) updated to ' . $bulk . '.');
         } elseif ($bulk === 'delete') {
             $pdo->prepare("DELETE FROM orders WHERE id IN ($ph)")->execute($ids);

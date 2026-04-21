@@ -9,7 +9,7 @@ if (getSetting('enable_registration','1') !== '1') {
     $error = 'New registrations are temporarily disabled.';
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
     csrfVerify();
     $name = sanitize($_POST['name'] ?? '');
     $mobile = sanitize($_POST['mobile'] ?? '');

@@ -191,23 +191,31 @@ function requireCustomer() {
 }
 
 // ====== Settings ======
+// Use a global cache so setSetting() can update it in the same request (e.g.
+// admin saves SMTP creds and immediately triggers a "send test email").
 function getSetting($key, $default = '') {
-    static $cache = null;
-    if ($cache === null) {
-        $cache = [];
+    global $JC_SETTINGS_CACHE;
+    if ($JC_SETTINGS_CACHE === null) {
+        $JC_SETTINGS_CACHE = [];
         try {
             $stmt = getPDO()->query("SELECT setting_key, setting_value FROM settings");
             foreach ($stmt->fetchAll() as $row) {
-                $cache[$row['setting_key']] = $row['setting_value'];
+                $JC_SETTINGS_CACHE[$row['setting_key']] = $row['setting_value'];
             }
         } catch (Exception $e) { /* table may not exist yet during install */ }
     }
-    return array_key_exists($key, $cache) ? $cache[$key] : $default;
+    return array_key_exists($key, $JC_SETTINGS_CACHE) ? $JC_SETTINGS_CACHE[$key] : $default;
 }
 
 function setSetting($key, $value) {
+    global $JC_SETTINGS_CACHE;
     $stmt = getPDO()->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
-    return $stmt->execute([$key, $value]);
+    $ok = $stmt->execute([$key, $value]);
+    if ($ok) {
+        if (!is_array($JC_SETTINGS_CACHE)) $JC_SETTINGS_CACHE = [];
+        $JC_SETTINGS_CACHE[$key] = $value;
+    }
+    return $ok;
 }
 
 // ====== Cart (session-based for guests + DB-backed for logged-in customers later) ======

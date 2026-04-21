@@ -6,24 +6,33 @@ $pdo = getPDO();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();
-    $fields = [
+    // Fields that pass through sanitize() (strip_tags + trim). SAFE for plain text.
+    $textFields = [
         // Site
         'site_name','site_tagline','site_email','site_phone','site_address',
         'homepage_heading','homepage_subheading',
         'footer_about','footer_copyright',
         // Commerce
         'default_commission_percent','default_shipping_fee','free_shipping_above','min_payout_amount',
-        // Payments
-        'rogerpay_api_key','rogerpay_secret_key','rogerpay_base_url','rogerpay_mode',
-        // SMTP
-        'smtp_host','smtp_port','smtp_user','smtp_pass','smtp_secure','smtp_from_email','smtp_from_name',
-        // Telegram
-        'telegram_bot_token','telegram_chat_id',
+        // Payments (non-secret config only)
+        'rogerpay_base_url','rogerpay_mode',
+        // SMTP (non-secret)
+        'smtp_host','smtp_port','smtp_user','smtp_secure','smtp_from_email','smtp_from_name',
         // Social
         'facebook_url','instagram_url','whatsapp_number','youtube_url',
     ];
-    foreach ($fields as $f) {
+    foreach ($textFields as $f) {
         if (array_key_exists($f, $_POST)) { setSetting($f, sanitize($_POST[$f])); }
+    }
+    // Secret / key / token fields — store verbatim (strip_tags would corrupt HMAC keys
+    // containing characters like '<' followed by alpha). Only trim whitespace.
+    $secretFields = [
+        'rogerpay_api_key','rogerpay_secret_key',
+        'smtp_pass',
+        'telegram_bot_token','telegram_chat_id',
+    ];
+    foreach ($secretFields as $f) {
+        if (array_key_exists($f, $_POST)) { setSetting($f, trim((string)$_POST[$f])); }
     }
     // Logo upload
     if (!empty($_FILES['logo']['tmp_name'])) {
