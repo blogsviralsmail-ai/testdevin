@@ -212,7 +212,12 @@ function generateReferralCode($name = '') {
 function walletCredit($agentId, $amount, $refType, $refId, $description, $lifetimeEarnedDelta = null, $lifetimePaidDelta = 0) {
     if ($lifetimeEarnedDelta === null) $lifetimeEarnedDelta = $amount;
     $pdo = getPDO();
-    $pdo->beginTransaction();
+    // Guard against nested transactions: PDO without savepoint emulation will
+    // throw "There is already an active transaction" if the caller already has
+    // one open. We join the caller's transaction when one exists (no commit /
+    // rollback here — the caller is responsible) and start our own otherwise.
+    $ownsTx = !$pdo->inTransaction();
+    if ($ownsTx) $pdo->beginTransaction();
     try {
         $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance + ?, lifetime_earned = GREATEST(lifetime_earned + ?, 0), lifetime_paid = GREATEST(lifetime_paid + ?, 0) WHERE id = ?")
             ->execute([$amount, $lifetimeEarnedDelta, $lifetimePaidDelta, $agentId]);
@@ -221,10 +226,11 @@ function walletCredit($agentId, $amount, $refType, $refId, $description, $lifeti
         $bal = (float)$balStmt->fetchColumn();
         $pdo->prepare("INSERT INTO agent_wallet_transactions (agent_id, type, amount, balance_after, ref_type, ref_id, description) VALUES (?, 'credit', ?, ?, ?, ?, ?)")
             ->execute([$agentId, $amount, $bal, $refType, $refId, $description]);
-        $pdo->commit();
+        if ($ownsTx) $pdo->commit();
         return true;
     } catch (Exception $e) {
-        $pdo->rollBack();
+        if ($ownsTx && $pdo->inTransaction()) $pdo->rollBack();
+        error_log('[walletCredit] ' . $e->getMessage());
         return false;
     }
 }
@@ -232,7 +238,8 @@ function walletCredit($agentId, $amount, $refType, $refId, $description, $lifeti
 function walletDebit($agentId, $amount, $refType, $refId, $description, $lifetimeEarnedDelta = 0, $lifetimePaidDelta = null) {
     if ($lifetimePaidDelta === null) $lifetimePaidDelta = $amount;
     $pdo = getPDO();
-    $pdo->beginTransaction();
+    $ownsTx = !$pdo->inTransaction();
+    if ($ownsTx) $pdo->beginTransaction();
     try {
         $upd = $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance - ?, lifetime_earned = GREATEST(lifetime_earned + ?, 0), lifetime_paid = GREATEST(lifetime_paid + ?, 0) WHERE id = ? AND wallet_balance >= ?");
         $upd->execute([$amount, $lifetimeEarnedDelta, $lifetimePaidDelta, $agentId, $amount]);
@@ -244,12 +251,54 @@ function walletDebit($agentId, $amount, $refType, $refId, $description, $lifetim
         $bal = (float)$balStmt->fetchColumn();
         $pdo->prepare("INSERT INTO agent_wallet_transactions (agent_id, type, amount, balance_after, ref_type, ref_id, description) VALUES (?, 'debit', ?, ?, ?, ?, ?)")
             ->execute([$agentId, $amount, $bal, $refType, $refId, $description]);
-        $pdo->commit();
+        if ($ownsTx) $pdo->commit();
         return true;
     } catch (Exception $e) {
-        $pdo->rollBack();
+        if ($ownsTx && $pdo->inTransaction()) $pdo->rollBack();
+        error_log('[walletDebit] ' . $e->getMessage());
         return false;
     }
+}
+
+// ==========================================================================
+// Coupons
+// ==========================================================================
+// validateCoupon(code, subtotal) -> ['ok'=>bool, 'error'=>msg, 'coupon'=>row, 'discount'=>float]
+// Applies: status=active, valid_from/valid_to window, min_order, usage_limit.
+// Returns a clamped discount (percent with max_discount cap, or flat not
+// exceeding the subtotal so total can't go below 0).
+function validateCoupon($code, $subtotal) {
+    $code = strtoupper(trim((string)$code));
+    if ($code === '') return ['ok' => false, 'error' => ''];
+    $stmt = getPDO()->prepare("SELECT * FROM coupons WHERE code = ? AND status = 'active' LIMIT 1");
+    $stmt->execute([$code]);
+    $c = $stmt->fetch();
+    if (!$c) return ['ok' => false, 'error' => 'Invalid coupon code.'];
+    $today = date('Y-m-d');
+    if (!empty($c['valid_from']) && $today < $c['valid_from']) {
+        return ['ok' => false, 'error' => 'This coupon is not yet active.'];
+    }
+    if (!empty($c['valid_to']) && $today > $c['valid_to']) {
+        return ['ok' => false, 'error' => 'This coupon has expired.'];
+    }
+    if ($c['usage_limit'] !== null && (int)$c['used_count'] >= (int)$c['usage_limit']) {
+        return ['ok' => false, 'error' => 'This coupon has reached its usage limit.'];
+    }
+    if ((float)$c['min_order'] > 0 && $subtotal < (float)$c['min_order']) {
+        return ['ok' => false, 'error' => 'Minimum order of ' . money($c['min_order']) . ' required for this coupon.'];
+    }
+    if ($c['type'] === 'flat') {
+        $discount = (float)$c['value'];
+    } else {
+        $discount = $subtotal * ((float)$c['value'] / 100);
+        if ($c['max_discount'] !== null && $discount > (float)$c['max_discount']) {
+            $discount = (float)$c['max_discount'];
+        }
+    }
+    // Never discount more than the subtotal so total can't go negative.
+    if ($discount > $subtotal) $discount = $subtotal;
+    $discount = round($discount, 2);
+    return ['ok' => true, 'coupon' => $c, 'discount' => $discount];
 }
 
 // Reverse already-credited commission (e.g. when a delivered order is returned/cancelled).

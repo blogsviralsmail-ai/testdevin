@@ -77,9 +77,17 @@ function rogerpayCreateOrder($orderId, $amount, $name, $email, $mobile) {
     $err = curl_error($ch);
     curl_close($ch);
 
-    // Log gateway response for debugging
+    // Log gateway response for debugging. Redact the api_key and the computed
+    // signature before writing to payment_raw — that column ends up in DB
+    // backups, admin order detail screens, and any future log export, and we
+    // don't want either value visible to anyone with read access (signatures
+    // could theoretically be replayed inside the valid_to window; api_key
+    // leaks the merchant identity even if not the secret itself).
+    $safePayload = $payload;
+    if (isset($safePayload['api_key'])) $safePayload['api_key'] = '***REDACTED***';
+    if (isset($safePayload['signature'])) $safePayload['signature'] = '***REDACTED***';
     $pdo->prepare("UPDATE orders SET payment_raw = ? WHERE id = ?")
-        ->execute([json_encode(['request' => $payload, 'response' => $res, 'http' => $http, 'err' => $err]), $orderId]);
+        ->execute([json_encode(['request' => $safePayload, 'response' => $res, 'http' => $http, 'err' => $err]), $orderId]);
 
     if ($res === false || $http >= 500) {
         return ['success' => false, 'message' => 'Gateway unreachable'];

@@ -15,16 +15,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$mobile || !$password) {
         $error = 'Mobile and password are required.';
     } else {
-        $stmt = getPDO()->prepare("SELECT * FROM customers WHERE mobile = ?");
+        // Filter status in the SQL query (match admin/agent login pattern) so
+        // that suspended / inactive accounts return the same generic error as
+        // wrong-password. Previously we fetched any customer and branched on
+        // status AFTER password_verify, which told an attacker who guessed the
+        // password that the account existed but was suspended — a textbook
+        // account-enumeration oracle.
+        $stmt = getPDO()->prepare("SELECT * FROM customers WHERE mobile = ? AND status = 'active' LIMIT 1");
         $stmt->execute([$mobile]);
         $c = $stmt->fetch();
         if ($c && password_verify($password, $c['password'])) {
-            if ($c['status'] === 'suspended') { $error = 'Your account has been suspended. Please contact support.'; }
-            elseif ($c['status'] === 'inactive') { $error = 'Your account is inactive.'; }
-            else {
-                $_SESSION['customer'] = ['id' => $c['id'], 'name' => $c['name'], 'mobile' => $c['mobile'], 'email' => $c['email']];
-                redirect($redirect);
-            }
+            $_SESSION['customer'] = ['id' => $c['id'], 'name' => $c['name'], 'mobile' => $c['mobile'], 'email' => $c['email']];
+            redirect($redirect);
         } else {
             $error = 'Invalid mobile or password.';
         }

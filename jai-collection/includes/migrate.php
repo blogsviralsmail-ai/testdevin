@@ -60,6 +60,10 @@ function jcMigrate() {
     $ins = $pdo->prepare("INSERT IGNORE INTO settings (setting_key, setting_value) VALUES (?, ?)");
     foreach ($defaults as $k => $v) { $ins->execute([$k, $v]); }
 
+    // Orders: coupon tracking (code snapshot + FK so deletes don't break history)
+    $addCol('orders', 'coupon_code', 'VARCHAR(30) NULL AFTER discount');
+    $addCol('orders', 'coupon_id', 'INT NULL AFTER coupon_code');
+
     // Stock adjustment log
     $pdo->exec("CREATE TABLE IF NOT EXISTS stock_adjustments (
         id INT AUTO_INCREMENT PRIMARY KEY,

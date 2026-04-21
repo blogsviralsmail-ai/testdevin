@@ -84,7 +84,14 @@ $stmt = $pdo->prepare($sql); $stmt->execute($args);
 $rows = $stmt->fetchAll();
 
 $totalProducts = (int)$pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
-$lowCount = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE stock <= " . $lowThreshold)->fetchColumn();
+// Use a prepared statement for $lowThreshold instead of concatenation — even
+// though it's `(int)` cast above, every other DB access on this page goes
+// through prepared statements and concatenating integers into SQL breaks that
+// invariant. Also defends against a future code path where getSetting()
+// might return a non-integer.
+$lcStmt = $pdo->prepare("SELECT COUNT(*) FROM products WHERE stock <= ?");
+$lcStmt->execute([$lowThreshold]);
+$lowCount = (int)$lcStmt->fetchColumn();
 $outCount = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE stock <= 0")->fetchColumn();
 $recentAdj = $pdo->query("SELECT sa.*, p.name AS pname FROM stock_adjustments sa LEFT JOIN products p ON p.id = sa.product_id ORDER BY sa.id DESC LIMIT 15")->fetchAll();
 

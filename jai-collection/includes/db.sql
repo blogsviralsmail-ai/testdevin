@@ -178,6 +178,8 @@ CREATE TABLE IF NOT EXISTS orders (
     subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
     shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
     discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    coupon_code VARCHAR(30) NULL,
+    coupon_id INT NULL,
     tax DECIMAL(10,2) NOT NULL DEFAULT 0,
     total DECIMAL(12,2) NOT NULL DEFAULT 0,
     -- Payment

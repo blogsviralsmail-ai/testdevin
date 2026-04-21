@@ -15,9 +15,9 @@ $status = strtolower($params['status'] ?? $params['payment_status'] ?? '');
 $signature = $params['signature'] ?? ($_SERVER['HTTP_X_ROGERPAY_SIGNATURE'] ?? '');
 
 if ($orderNumber && rogerpayVerifySignature($params, $signature)) {
-    if (in_array($status, ['success', 'paid', 'captured', 'completed'])) {
+    if (in_array($status, ['success', 'paid', 'captured', 'completed'], true)) {
         rogerpayMarkOrderPaid($orderNumber, $params['txn_id'] ?? $params['transaction_id'] ?? null, $params);
-    } elseif (in_array($status, ['failed', 'cancelled', 'declined'])) {
+    } elseif (in_array($status, ['failed', 'cancelled', 'declined'], true)) {
         rogerpayMarkOrderFailed($orderNumber, $params);
     }
 }

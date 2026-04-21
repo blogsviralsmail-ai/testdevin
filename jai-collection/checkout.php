@@ -9,8 +9,26 @@ if (!$cart['items']) { redirect(SITE_URL . '/cart.php'); }
 
 $customer = currentCustomer();
 $error = '';
+$couponError = '';
+$couponCodeInput = strtoupper(trim((string)($_POST['coupon_code'] ?? $_GET['coupon'] ?? '')));
+$appliedCoupon = null;
+$appliedDiscount = 0;
+// Handle "apply coupon" as a non-order-placing action so users can preview the
+// discount before filling shipping. Any POST that does NOT include submit_order
+// re-renders the form with coupon state applied.
+$isApplyCouponOnly = $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['submit_order']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $couponCodeInput !== '') {
+    csrfVerify();
+    $res = validateCoupon($couponCodeInput, $cart['subtotal']);
+    if ($res['ok']) {
+        $appliedCoupon = $res['coupon'];
+        $appliedDiscount = $res['discount'];
+    } else {
+        $couponError = $res['error'] ?: 'Invalid coupon.';
+    }
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isApplyCouponOnly) {
     csrfVerify();
     // Re-resolve the cart with fresh DB state. Without this, the $cart read
     // above (at request start, before validation) would be used to compute
@@ -33,7 +51,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $shipping = calcShipping($cart['subtotal'], $pincode);
     $subtotal = $cart['subtotal'];
-    $total = $subtotal + $shipping;
+    // Re-validate the coupon on submit against the fresh subtotal so a user
+    // can't apply a coupon on a bigger cart, then shrink it below min_order
+    // before placing the order.
+    $discount = 0;
+    $couponId = null;
+    $couponCodeSnap = null;
+    if ($couponCodeInput !== '') {
+        $cv = validateCoupon($couponCodeInput, $subtotal);
+        if ($cv['ok']) {
+            $discount = $cv['discount'];
+            $couponId = (int)$cv['coupon']['id'];
+            $couponCodeSnap = $cv['coupon']['code'];
+            $appliedCoupon = $cv['coupon'];
+            $appliedDiscount = $discount;
+        } else {
+            $couponError = $cv['error'] ?: 'Coupon no longer valid.';
+            $appliedCoupon = null;
+            $appliedDiscount = 0;
+        }
+    }
+    $total = max(0, $subtotal + $shipping - $discount);
 
     if (!$name || !$mobile || !$line1 || !$city || !$state || !$pincode) {
         $error = 'Please fill all required fields.';
@@ -62,8 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("INSERT INTO orders (
                 order_number, customer_id, agent_id, agent_commission_percent, agent_commission_amount,
                 ship_name, ship_mobile, ship_email, ship_line1, ship_line2, ship_city, ship_state, ship_pincode, ship_landmark,
-                subtotal, shipping_fee, total, payment_method, payment_status, status, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?)");
+                subtotal, shipping_fee, discount, coupon_code, coupon_id, total, payment_method, payment_status, status, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?)");
             $stmt->execute([
                 $orderNumber,
                 $customer['id'] ?? null,
@@ -71,9 +109,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $agentCommissionPercent,
                 $agentCommissionAmount,
                 $name, $mobile, $email, $line1, $line2, $city, $state, $pincode, $landmark,
-                $subtotal, $shipping, $total, $payment, $notes
+                $subtotal, $shipping, $discount, $couponCodeSnap, $couponId, $total, $payment, $notes
             ]);
             $orderId = (int)$pdo->lastInsertId();
+
+            // Increment coupon usage counter within the same transaction as
+            // the order insert so a DB failure can't double-charge a usage
+            // slot or let a coupon exceed usage_limit. Re-check usage_limit
+            // atomically in the UPDATE; if another concurrent order just used
+            // the last slot, rowCount() == 0 and we roll back the order.
+            if ($couponId) {
+                $cu = $pdo->prepare("UPDATE coupons SET used_count = used_count + 1 WHERE id = ? AND status = 'active' AND (usage_limit IS NULL OR used_count < usage_limit)");
+                $cu->execute([$couponId]);
+                if ($cu->rowCount() === 0) {
+                    throw new Exception('Coupon just hit its usage limit, please try again without the coupon.');
+                }
+            }
 
             // Items
             $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, variant_id, product_name, variant_label, sku, image, price, qty, line_total) VALUES (?,?,?,?,?,?,?,?,?,?)");
@@ -162,7 +213,8 @@ $pageTitle = 'Checkout';
 require_once __DIR__ . '/includes/header.php';
 
 $shippingEst = calcShipping($cart['subtotal']);
-$total = $cart['subtotal'] + $shippingEst;
+$discountDisplay = $appliedDiscount;
+$total = max(0, $cart['subtotal'] + $shippingEst - $discountDisplay);
 $codEnabled = getSetting('cod_enabled', '1') === '1';
 $rpEnabled = getSetting('rogerpay_enabled', '0') === '1';
 ?>
@@ -219,8 +271,22 @@ $rpEnabled = getSetting('rogerpay_enabled', '0') === '1';
         <?php endforeach; ?>
         <div class="jc-summary-line"><span>Subtotal</span><span><?php echo money($cart['subtotal']); ?></span></div>
         <div class="jc-summary-line"><span>Shipping (est.)</span><span><?php echo $shippingEst > 0 ? money($shippingEst) : 'FREE'; ?></span></div>
+        <?php if ($appliedCoupon): ?>
+            <div class="jc-summary-line" style="color:#138a3f;"><span>Coupon (<?php echo e($appliedCoupon['code']); ?>)</span><span>− <?php echo money($appliedDiscount); ?></span></div>
+        <?php endif; ?>
         <div class="jc-summary-line jc-summary-total"><span>Total</span><span><?php echo money($total); ?></span></div>
-        <button type="submit" class="jc-btn jc-btn-primary jc-btn-block" style="margin-top:16px;">
+
+        <div class="jc-form-group" style="margin-top:16px;">
+            <label style="font-weight:600;">Have a coupon code?</label>
+            <div style="display:flex;gap:6px;">
+                <input class="jc-input" name="coupon_code" placeholder="e.g. WELCOME10" value="<?php echo e($couponCodeInput); ?>" style="flex:1;text-transform:uppercase;">
+                <button type="submit" name="apply_coupon" value="1" class="jc-btn" style="background:#0d2d66;color:#fff;">Apply</button>
+            </div>
+            <?php if ($couponError): ?><div class="jc-alert jc-alert-error" style="margin-top:8px;padding:8px;"><?php echo e($couponError); ?></div><?php endif; ?>
+            <?php if ($appliedCoupon): ?><div class="jc-alert jc-alert-success" style="margin-top:8px;padding:8px;">Coupon <strong><?php echo e($appliedCoupon['code']); ?></strong> applied — you save <?php echo money($appliedDiscount); ?>.</div><?php endif; ?>
+        </div>
+
+        <button type="submit" name="submit_order" value="1" class="jc-btn jc-btn-primary jc-btn-block" style="margin-top:16px;">
             <i class="fas fa-check-circle"></i> Place Order
         </button>
     </aside>
