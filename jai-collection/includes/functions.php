@@ -184,13 +184,28 @@ function generateReferralCode($name = '') {
     return 'JC' . generateRandomString(8);
 }
 
-function walletCredit($agentId, $amount, $refType, $refId, $description) {
+// walletCredit / walletDebit accept optional counter deltas so callers that are
+// NOT a real earn/payout (e.g. payout refunds, commission reversals) can adjust
+// lifetime_earned / lifetime_paid in the same transaction as the wallet move.
+// Previously the caller ran a separate UPDATE after walletCredit/walletDebit,
+// which meant a DB error between the two would leave wallet_balance correct
+// but lifetime_* counters permanently drifted.
+//
+// Defaults preserve the original behavior:
+//   walletCredit: lifetime_earned += amount, lifetime_paid unchanged
+//   walletDebit:  lifetime_paid   += amount, lifetime_earned unchanged
+// Pass explicit deltas (can be negative) to override, e.g. for a refund:
+//   walletCredit($aid, $amt, 'payout_refund', $id, $desc, 0, -$amt);
+function walletCredit($agentId, $amount, $refType, $refId, $description, $lifetimeEarnedDelta = null, $lifetimePaidDelta = 0) {
+    if ($lifetimeEarnedDelta === null) $lifetimeEarnedDelta = $amount;
     $pdo = getPDO();
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance + ?, lifetime_earned = lifetime_earned + ? WHERE id = ?")
-            ->execute([$amount, $amount, $agentId]);
-        $bal = (float)$pdo->query("SELECT wallet_balance FROM agents WHERE id = " . (int)$agentId)->fetchColumn();
+        $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance + ?, lifetime_earned = GREATEST(lifetime_earned + ?, 0), lifetime_paid = GREATEST(lifetime_paid + ?, 0) WHERE id = ?")
+            ->execute([$amount, $lifetimeEarnedDelta, $lifetimePaidDelta, $agentId]);
+        $balStmt = $pdo->prepare("SELECT wallet_balance FROM agents WHERE id = ?");
+        $balStmt->execute([$agentId]);
+        $bal = (float)$balStmt->fetchColumn();
         $pdo->prepare("INSERT INTO agent_wallet_transactions (agent_id, type, amount, balance_after, ref_type, ref_id, description) VALUES (?, 'credit', ?, ?, ?, ?, ?)")
             ->execute([$agentId, $amount, $bal, $refType, $refId, $description]);
         $pdo->commit();
@@ -201,18 +216,21 @@ function walletCredit($agentId, $amount, $refType, $refId, $description) {
     }
 }
 
-function walletDebit($agentId, $amount, $refType, $refId, $description) {
+function walletDebit($agentId, $amount, $refType, $refId, $description, $lifetimeEarnedDelta = 0, $lifetimePaidDelta = null) {
+    if ($lifetimePaidDelta === null) $lifetimePaidDelta = $amount;
     $pdo = getPDO();
     $pdo->beginTransaction();
     try {
-        $upd = $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance - ?, lifetime_paid = lifetime_paid + ? WHERE id = ? AND wallet_balance >= ?");
-        $upd->execute([$amount, $amount, $agentId, $amount]);
+        $upd = $pdo->prepare("UPDATE agents SET wallet_balance = wallet_balance - ?, lifetime_earned = GREATEST(lifetime_earned + ?, 0), lifetime_paid = GREATEST(lifetime_paid + ?, 0) WHERE id = ? AND wallet_balance >= ?");
+        $upd->execute([$amount, $lifetimeEarnedDelta, $lifetimePaidDelta, $agentId, $amount]);
         if ($upd->rowCount() === 0) {
             throw new Exception('Insufficient wallet balance or agent not found');
         }
-        $row = $pdo->query("SELECT wallet_balance FROM agents WHERE id = " . (int)$agentId)->fetch();
+        $balStmt = $pdo->prepare("SELECT wallet_balance FROM agents WHERE id = ?");
+        $balStmt->execute([$agentId]);
+        $bal = (float)$balStmt->fetchColumn();
         $pdo->prepare("INSERT INTO agent_wallet_transactions (agent_id, type, amount, balance_after, ref_type, ref_id, description) VALUES (?, 'debit', ?, ?, ?, ?, ?)")
-            ->execute([$agentId, $amount, $row['wallet_balance'], $refType, $refId, $description]);
+            ->execute([$agentId, $amount, $bal, $refType, $refId, $description]);
         $pdo->commit();
         return true;
     } catch (Exception $e) {
@@ -236,13 +254,11 @@ function reverseCommissionForOrder($orderId) {
     while ($row = $stmt->fetch()) {
         $amt = (float)$row['amount'];
         if ($amt > 0) {
-            // walletDebit() blindly increments lifetime_paid because it's designed
-            // for actual payouts. A commission reversal is not a payout, so we
-            // undo that increment here (and also decrement lifetime_earned to
-            // reflect that the commission was invalidated).
-            walletDebit($o['agent_id'], $amt, 'commission_reversal', (int)$row['id'], 'Reversal: order ' . $o['order_number']);
-            $pdo->prepare("UPDATE agents SET lifetime_earned = GREATEST(lifetime_earned - ?, 0), lifetime_paid = GREATEST(lifetime_paid - ?, 0) WHERE id = ?")
-                ->execute([$amt, $amt, $o['agent_id']]);
+            // Commission reversal is not a payout, so pass explicit deltas to
+            // walletDebit: subtract from lifetime_earned (the credit is being
+            // invalidated) and do NOT bump lifetime_paid. All three counters
+            // change in one transaction — if the DB fails, nothing drifts.
+            walletDebit($o['agent_id'], $amt, 'commission_reversal', (int)$row['id'], 'Reversal: order ' . $o['order_number'], -$amt, 0);
         }
         $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE id = ?")->execute([$row['id']]);
         $reversed = true;

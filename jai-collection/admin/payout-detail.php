@@ -40,12 +40,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($upd->rowCount() === 0) {
             setFlash('error', 'This payout can no longer be rejected (status has changed).');
         } else {
-            walletCredit($payout['agent_id'], $payout['amount'], 'payout_refund', $id, 'Payout #' . $id . ' rejected, amount refunded');
-            // walletCredit() bumps lifetime_earned and walletDebit() (used when the
-            // payout was requested) bumped lifetime_paid. A refund is neither a
-            // real payout nor new earnings, so undo both counter increments.
-            $pdo->prepare("UPDATE agents SET lifetime_paid = GREATEST(lifetime_paid - ?, 0), lifetime_earned = GREATEST(lifetime_earned - ?, 0) WHERE id = ?")
-                ->execute([$payout['amount'], $payout['amount'], $payout['agent_id']]);
+            // A payout refund is not new earnings and not an actual payout, so
+            // pass explicit counter deltas: do NOT bump lifetime_earned (0) and
+            // undo the lifetime_paid bump that walletDebit did when the payout
+            // was originally requested (-amount). All counters + wallet move in
+            // a single transaction inside walletCredit, so a DB failure can't
+            // leave them drifted.
+            walletCredit(
+                $payout['agent_id'],
+                $payout['amount'],
+                'payout_refund',
+                $id,
+                'Payout #' . $id . ' rejected, amount refunded',
+                0,
+                -$payout['amount']
+            );
             setFlash('info', 'Payout rejected. Agent wallet refunded.');
         }
         redirect('payout-detail.php?id=' . $id);

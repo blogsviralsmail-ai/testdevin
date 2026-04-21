@@ -14,18 +14,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bankAcc = sanitize($_POST['bank_account_number']);
     $bankIfsc = sanitize($_POST['bank_ifsc']);
     $bankName = sanitize($_POST['bank_name']);
-    $pdo->prepare("UPDATE agents SET name=?, email=?, upi_id=?, bank_account_holder=?, bank_account_number=?, bank_ifsc=?, bank_name=? WHERE id=?")
-        ->execute([$name, $email, $upi, $bankHolder, $bankAcc, $bankIfsc, $bankName, $agent['id']]);
-    if (!empty($_POST['new_password'])) {
-        $hash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
-        $pdo->prepare("UPDATE agents SET password = ? WHERE id = ?")->execute([$hash, $agent['id']]);
+    $newPassword = $_POST['new_password'] ?? '';
+    // Enforce the same minimum length used at customer registration so agents
+    // (or an attacker with a hijacked session) can't downgrade the account to
+    // a single-character password.
+    if ($newPassword !== '' && strlen($newPassword) < 6) {
+        $error = 'Password must be at least 6 characters.';
+    } else {
+        $pdo->prepare("UPDATE agents SET name=?, email=?, upi_id=?, bank_account_holder=?, bank_account_number=?, bank_ifsc=?, bank_name=? WHERE id=?")
+            ->execute([$name, $email, $upi, $bankHolder, $bankAcc, $bankIfsc, $bankName, $agent['id']]);
+        if ($newPassword !== '') {
+            $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $pdo->prepare("UPDATE agents SET password = ? WHERE id = ?")->execute([$hash, $agent['id']]);
+        }
+        $_SESSION['agent']['name'] = $name;
+        setFlash('success', 'Profile updated.');
+        redirect('profile.php');
     }
-    $_SESSION['agent']['name'] = $name;
-    setFlash('success', 'Profile updated.');
-    redirect('profile.php');
 }
 ?>
 <div class="jc-admin-actions"><h2>My Profile</h2></div>
+<?php if ($error): ?><div class="jc-alert jc-alert-error"><?php echo e($error); ?></div><?php endif; ?>
 <div class="jc-panel">
     <form method="post">
         <?php echo csrfField(); ?>
