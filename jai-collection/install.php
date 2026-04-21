@@ -199,8 +199,10 @@ if ($step === 'setup') {
         $pdo = getPDO();
         $hasProducts = (int)$pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
         if (!$hasProducts) {
-            // placeholder images: use a solid-colour data-URI-style asset shipped in /uploads/placeholders/
-            $placeholderDir = UPLOAD_DIR . '/placeholders';
+            // Placeholder image: stored under /uploads/products/placeholders/ so that
+            // productImageUrl() (which prefixes relative paths with /uploads/products/)
+            // resolves it correctly.
+            $placeholderDir = UPLOAD_DIR . '/products/placeholders';
             if (!is_dir($placeholderDir)) @mkdir($placeholderDir, 0775, true);
             $placeholder = 'placeholder.svg';
             $placeholderPath = $placeholderDir . '/' . $placeholder;

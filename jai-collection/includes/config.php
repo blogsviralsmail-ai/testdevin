@@ -10,7 +10,25 @@ define('DB_PASS', getenv('JC_DB_PASS') ?: 'JaiCollection@2025');
 define('DB_NAME', getenv('JC_DB_NAME') ?: 'jaicollection_db');
 
 // ====== Site Configuration ======
-define('SITE_URL', getenv('JC_SITE_URL') ?: 'https://jaicollection.in');
+// SITE_URL is derived at runtime from the incoming request so the app works on
+// any host (production domain, nip.io, IP). JC_SITE_URL env var wins when set
+// (e.g. cron jobs, CLI). Falls back to the production domain for CLI contexts.
+if (!defined('SITE_URL')) {
+    $envUrl = getenv('JC_SITE_URL');
+    if ($envUrl) {
+        define('SITE_URL', rtrim($envUrl, '/'));
+    } elseif (!empty($_SERVER['HTTP_HOST'])) {
+        $proto = 'http';
+        if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+            || (($_SERVER['SERVER_PORT'] ?? '') === '443')) {
+            $proto = 'https';
+        }
+        define('SITE_URL', $proto . '://' . $_SERVER['HTTP_HOST']);
+    } else {
+        define('SITE_URL', 'https://jaicollection.in');
+    }
+}
 define('SITE_NAME', 'Jai Collection');
 define('SITE_TAGLINE', 'Fashion. Home. Daily Essentials.');
 define('SITE_CURRENCY', 'INR');

@@ -16,7 +16,13 @@ if (!$orderNumber) {
 
 $sigOk = rogerpayVerifySignature($params, $signature);
 
-if ($sigOk && in_array($status, ['success', 'paid', 'captured', 'completed'])) {
+// Only mutate the order when the signature is valid — otherwise an unauthenticated
+// attacker could mark any order as payment-failed by guessing its number. On a
+// bad signature we just display an error and redirect without touching the DB.
+if (!$sigOk) {
+    setFlash('error', 'Payment verification failed. Please contact support if you were charged.');
+    redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
+} elseif (in_array($status, ['success', 'paid', 'captured', 'completed'], true)) {
     rogerpayMarkOrderPaid($orderNumber, $params['txn_id'] ?? $params['transaction_id'] ?? null, $params);
     redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
 } else {

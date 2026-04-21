@@ -2,11 +2,12 @@
 uploads/products/*
 uploads/payouts/*
 !uploads/products/.gitkeep
+!uploads/products/placeholders/
+!uploads/products/placeholders/.gitkeep
+!uploads/products/placeholders/placeholder.svg
 !uploads/payouts/.gitkeep
 !uploads/logo/.gitkeep
 !uploads/logo/jai-collection-logo.png
-!uploads/placeholders/.gitkeep
-!uploads/placeholders/placeholder.svg
 
 # Config overrides
 includes/config.local.php

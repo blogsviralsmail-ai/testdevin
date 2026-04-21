@@ -27,18 +27,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($method === 'bank' && (!$bankHolder || !$bankAcc || !$bankIfsc)) {
         $error = 'Bank details are required.';
     } else {
-        // Save defaults back to agent profile for convenience
+        // Save defaults back to agent profile for convenience (outside the payout
+        // transaction since this is idempotent user-convenience data).
         $pdo->prepare("UPDATE agents SET upi_id=?, bank_account_holder=?, bank_account_number=?, bank_ifsc=?, bank_name=? WHERE id=?")
             ->execute([$upi, $bankHolder, $bankAcc, $bankIfsc, $bankName, $agent['id']]);
 
+        // Create the payout row first (status='pending') so we have an ID to reference
+        // in the wallet ledger entry, then debit the wallet atomically. If the debit
+        // fails (insufficient balance due to a concurrent payout), we delete the
+        // just-inserted payout so no orphaned pending record is left for the admin
+        // to approve. walletDebit() uses a conditional UPDATE that only succeeds
+        // when the balance is sufficient, so it's race-safe at the row level.
         $pdo->prepare("INSERT INTO payouts (agent_id, amount, method, upi_id, bank_account_holder, bank_account_number, bank_ifsc, bank_name, agent_note, status, requested_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())")
             ->execute([$agent['id'], $amount, $method, $upi, $bankHolder, $bankAcc, $bankIfsc, $bankName, $note]);
         $payoutId = $pdo->lastInsertId();
-        // Lock funds by debiting wallet now; refund on rejection
-        walletDebit($agent['id'], $amount, 'payout', $payoutId, 'Payout request #' . $payoutId);
-        setFlash('success', 'Payout request submitted.');
-        redirect('payout-requests.php');
+        $debited = walletDebit($agent['id'], $amount, 'payout', $payoutId, 'Payout request #' . $payoutId);
+        if (!$debited) {
+            $pdo->prepare("DELETE FROM payouts WHERE id = ? AND status = 'pending'")->execute([$payoutId]);
+            $error = 'Insufficient wallet balance.';
+        } else {
+            setFlash('success', 'Payout request submitted.');
+            redirect('payout-requests.php');
+        }
     }
 }
 

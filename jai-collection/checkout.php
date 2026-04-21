@@ -31,6 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please fill all required fields.';
     } elseif ($payment === 'rogerpay' && getSetting('rogerpay_enabled', '0') !== '1') {
         $error = 'Online payment is currently disabled. Please choose Cash on Delivery.';
+    } elseif ($payment === 'cod' && getSetting('cod_enabled', '1') !== '1') {
+        $error = 'Cash on Delivery is currently disabled. Please choose online payment.';
+    } elseif (!in_array($payment, ['cod', 'rogerpay'], true)) {
+        $error = 'Invalid payment method.';
     } else {
         $pdo = getPDO();
         $pdo->beginTransaction();

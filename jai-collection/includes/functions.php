@@ -236,9 +236,13 @@ function reverseCommissionForOrder($orderId) {
     while ($row = $stmt->fetch()) {
         $amt = (float)$row['amount'];
         if ($amt > 0) {
+            // walletDebit() blindly increments lifetime_paid because it's designed
+            // for actual payouts. A commission reversal is not a payout, so we
+            // undo that increment here (and also decrement lifetime_earned to
+            // reflect that the commission was invalidated).
             walletDebit($o['agent_id'], $amt, 'commission_reversal', (int)$row['id'], 'Reversal: order ' . $o['order_number']);
-            $pdo->prepare("UPDATE agents SET lifetime_earned = GREATEST(lifetime_earned - ?, 0) WHERE id = ?")
-                ->execute([$amt, $o['agent_id']]);
+            $pdo->prepare("UPDATE agents SET lifetime_earned = GREATEST(lifetime_earned - ?, 0), lifetime_paid = GREATEST(lifetime_paid - ?, 0) WHERE id = ?")
+                ->execute([$amt, $amt, $o['agent_id']]);
         }
         $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE id = ?")->execute([$row['id']]);
         $reversed = true;
