@@ -16,18 +16,20 @@ if (!$orderNumber) {
 
 $sigOk = rogerpayVerifySignature($params, $signature);
 
-// Only mutate the order when the signature is valid — otherwise an unauthenticated
-// attacker could mark any order as payment-failed by guessing its number. On a
-// bad signature we just display an error and redirect without touching the DB.
-// Whitelist this order for anonymous view on /order-success.php within the
-// current session. Without this flag, the success page requires a customer
-// login or shipping-mobile match (see order-success.php access rules).
-$_SESSION['jc_order_confirm'][] = $orderNumber;
-
+// Only mutate the order or whitelist it for anonymous view when the signature
+// is valid. Without this check, an attacker who knows/guesses an order number
+// could hit this endpoint with no signature, get the order whitelisted in their
+// session, and then view the full order details on /order-success.php.
 if (!$sigOk) {
     setFlash('error', 'Payment verification failed. Please contact support if you were charged.');
+    // Do NOT whitelist — redirect to /order-success.php will fall back to
+    // the mobile-verification form for anyone without a valid session.
     redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
-} elseif (in_array($status, ['success', 'paid', 'captured', 'completed'], true)) {
+}
+
+jcPushOrderConfirm($orderNumber);
+
+if (in_array($status, ['success', 'paid', 'captured', 'completed'], true)) {
     rogerpayMarkOrderPaid($orderNumber, $params['txn_id'] ?? $params['transaction_id'] ?? null, $params);
     redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
 } else {

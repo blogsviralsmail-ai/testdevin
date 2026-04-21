@@ -310,9 +310,44 @@ function creditCommissionForOrder($orderId) {
             ->execute([$order['agent_id'], $orderId, $order['agent_commission_percent'], $order['subtotal'], $amount]);
         $commId = (int)$pdo->lastInsertId();
     }
+    // Reconcile a prior half-completed run: if walletCredit() already
+    // succeeded in an earlier attempt but the mark-credited UPDATE below
+    // never ran (DB disconnect between the two), there will be a wallet
+    // transaction row with ref_type='commission' and ref_id=commId. Do NOT
+    // call walletCredit() again (that would double-credit); just flip the
+    // commission row to 'credited'.
+    $already = $pdo->prepare("SELECT id FROM agent_wallet_transactions WHERE agent_id = ? AND ref_type = 'commission' AND ref_id = ? AND type = 'credit' LIMIT 1");
+    $already->execute([$order['agent_id'], $commId]);
+    if ($already->fetchColumn()) {
+        $pdo->prepare("UPDATE agent_commissions SET status = 'credited', credited_at = NOW() WHERE id = ? AND status <> 'credited'")
+            ->execute([$commId]);
+        return true;
+    }
     $credited = walletCredit($order['agent_id'], $amount, 'commission', $commId, 'Commission for order ' . $order['order_number']);
     if (!$credited) return false;
     $pdo->prepare("UPDATE agent_commissions SET status = 'credited', credited_at = NOW() WHERE id = ?")
         ->execute([$commId]);
     return true;
+}
+
+// Whitelist an order number so /order-success.php will render its details
+// within this session. Capped at 20 entries (rolling window) so the session
+// array can't grow without bound across many checkouts / bot-triggered
+// callbacks. Initialises the slot as an array so order-success.php doesn't
+// have to defensively coerce a scalar.
+function jcPushOrderConfirm($orderNumber) {
+    if (!$orderNumber) return;
+    if (!isset($_SESSION['jc_order_confirm']) || !is_array($_SESSION['jc_order_confirm'])) {
+        $_SESSION['jc_order_confirm'] = [];
+    }
+    // Remove duplicates so repeated callbacks for the same order don't fill
+    // the cap.
+    $_SESSION['jc_order_confirm'] = array_values(array_filter(
+        $_SESSION['jc_order_confirm'],
+        function ($n) use ($orderNumber) { return $n !== $orderNumber; }
+    ));
+    $_SESSION['jc_order_confirm'][] = $orderNumber;
+    if (count($_SESSION['jc_order_confirm']) > 20) {
+        $_SESSION['jc_order_confirm'] = array_slice($_SESSION['jc_order_confirm'], -20);
+    }
 }

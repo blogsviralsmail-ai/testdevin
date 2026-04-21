@@ -53,7 +53,10 @@ if ($agent) {
             <span style="color:#2a9d2a;font-weight:600;"><i class="fas fa-wallet"></i> <?php echo money($agent['wallet_balance'] ?? 0); ?></span>
             <span style="margin:0 10px;color:#888;">|</span>
             <?php echo e($agent['name']); ?>
-            <a href="logout.php" class="jc-btn jc-btn-sm" style="background:#fdecec;color:#8a1a1a;margin-left:10px;">Logout</a>
+            <form method="post" action="logout.php" style="display:inline;margin:0 0 0 10px;padding:0;">
+                <?php echo csrfField(); ?>
+                <button type="submit" class="jc-btn jc-btn-sm" style="background:#fdecec;color:#8a1a1a;">Logout</button>
+            </form>
         </div>
     </header>
     <div class="jc-admin-content">

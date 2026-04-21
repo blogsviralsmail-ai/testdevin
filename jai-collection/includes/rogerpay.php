@@ -47,10 +47,15 @@ function rogerpayCreateOrder($orderId, $amount, $name, $email, $mobile) {
         'webhook_url' => SITE_URL . '/api/rogerpay-webhook.php',
         'redirect_url' => SITE_URL . '/api/rogerpay-callback.php',
     ];
-    // Standard signature: sorted params + secret
+    // Standard signature: sorted params + secret. Skip non-scalar values so a
+    // nested array wouldn't stringify to "Array" and break verification on
+    // the callback side.
     ksort($payload);
     $signBase = '';
-    foreach ($payload as $k => $v) { $signBase .= $k . '=' . $v . '&'; }
+    foreach ($payload as $k => $v) {
+        if (!is_scalar($v)) continue;
+        $signBase .= $k . '=' . $v . '&';
+    }
     $signBase = rtrim($signBase, '&');
     $payload['signature'] = hash_hmac('sha256', $signBase, $secret);
 
@@ -110,7 +115,13 @@ function rogerpayVerifySignature($params, $providedSignature) {
     unset($data['signature']);
     ksort($data);
     $signBase = '';
-    foreach ($data as $k => $v) { $signBase .= $k . '=' . $v . '&'; }
+    // Skip non-scalar values (arrays / objects from nested JSON payloads) —
+    // PHP would otherwise cast them to the literal string "Array", breaking
+    // verification on legitimate callbacks that include nested data.
+    foreach ($data as $k => $v) {
+        if (!is_scalar($v)) continue;
+        $signBase .= $k . '=' . $v . '&';
+    }
     $signBase = rtrim($signBase, '&');
     $expected = hash_hmac('sha256', $signBase, $secret);
     return hash_equals($expected, $providedSignature);

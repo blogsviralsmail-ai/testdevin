@@ -14,13 +14,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bankAcc = sanitize($_POST['bank_account_number']);
     $bankIfsc = sanitize($_POST['bank_ifsc']);
     $bankName = sanitize($_POST['bank_name']);
+    $curPassword = $_POST['current_password'] ?? '';
     $newPassword = $_POST['new_password'] ?? '';
-    // Enforce the same minimum length used at customer registration so agents
-    // (or an attacker with a hijacked session) can't downgrade the account to
-    // a single-character password.
-    if ($newPassword !== '' && strlen($newPassword) < 6) {
-        $error = 'Password must be at least 6 characters.';
-    } else {
+    // Password change requires the current password — matches account/profile.php
+    // (customer) and prevents a silent change via a hijacked session / XSS.
+    if ($newPassword !== '') {
+        if (!password_verify($curPassword, $agentFull['password'])) {
+            $error = 'Current password is wrong.';
+        } elseif (strlen($newPassword) < 6) {
+            $error = 'New password must be at least 6 characters.';
+        }
+    }
+    if (!$error) {
         $pdo->prepare("UPDATE agents SET name=?, email=?, upi_id=?, bank_account_holder=?, bank_account_number=?, bank_ifsc=?, bank_name=? WHERE id=?")
             ->execute([$name, $email, $upi, $bankHolder, $bankAcc, $bankIfsc, $bankName, $agent['id']]);
         if ($newPassword !== '') {
@@ -57,7 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="jc-form-group"><label>Bank Name</label><input class="jc-input" name="bank_name" value="<?php echo e($agentFull['bank_name']); ?>"></div>
         </div>
         <h4 style="color:#0d2d66;">Change Password</h4>
-        <div class="jc-form-group"><label>New Password (leave blank to keep)</label><input class="jc-input" type="password" name="new_password"></div>
+        <div class="jc-row">
+            <div class="jc-form-group"><label>Current Password</label><input class="jc-input" type="password" name="current_password" autocomplete="current-password"></div>
+            <div class="jc-form-group"><label>New Password (leave blank to keep)</label><input class="jc-input" type="password" name="new_password" autocomplete="new-password" minlength="6"></div>
+        </div>
         <button class="jc-btn jc-btn-primary" type="submit">Save</button>
     </form>
 </div>

@@ -12,6 +12,13 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();
+    // Re-resolve the cart with fresh DB state. Without this, the $cart read
+    // above (at request start, before validation) would be used to compute
+    // line totals and stock — so a product price / stock change between the
+    // GET render and this POST submit would create an order with stale numbers
+    // (classic TOCTOU). cartResolved() also re-applies stock caps per line.
+    $cart = cartResolved();
+    if (!$cart['items']) { redirect(SITE_URL . '/cart.php'); }
     $name = sanitize($_POST['name'] ?? '');
     $mobile = sanitize($_POST['mobile'] ?? '');
     $email = sanitize($_POST['email'] ?? '');
@@ -119,11 +126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setFlash('error', 'Payment gateway unavailable. Your order has been placed — please contact support or retry payment from your orders page.');
                 // Whitelist this order for anonymous view on /order-success.php
                 // within the current session (see order-success.php access rules).
-                $_SESSION['jc_order_confirm'][] = $orderNumber;
+                jcPushOrderConfirm($orderNumber);
                 redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
             }
 
-            $_SESSION['jc_order_confirm'][] = $orderNumber;
+            jcPushOrderConfirm($orderNumber);
             redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
         } catch (Exception $e) {
             $pdo->rollBack();

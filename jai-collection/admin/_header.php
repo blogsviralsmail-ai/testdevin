@@ -44,7 +44,10 @@ if (strpos($logoUrl, '/') === 0) $logoUrl = SITE_URL . $logoUrl;
             <a href="<?php echo e(SITE_URL); ?>/" target="_blank" class="jc-btn jc-btn-sm jc-btn-outline"><i class="fas fa-external-link-alt"></i> View Site</a>
             <span style="margin:0 10px;color:#888;">|</span>
             <i class="fas fa-user-shield"></i> <?php echo e($admin['name']); ?>
-            <a href="logout.php" class="jc-btn jc-btn-sm" style="background:#fdecec;color:#8a1a1a;margin-left:10px;">Logout</a>
+            <form method="post" action="logout.php" style="display:inline;margin:0 0 0 10px;padding:0;">
+                <?php echo csrfField(); ?>
+                <button type="submit" class="jc-btn jc-btn-sm" style="background:#fdecec;color:#8a1a1a;">Logout</button>
+            </form>
         </div>
     </header>
     <div class="jc-admin-content">

@@ -19,7 +19,10 @@ require_once __DIR__ . '/../includes/header.php';
         <p><strong>Mobile:</strong> <?php echo e($customer['mobile']); ?></p>
         <p><strong>Email:</strong> <?php echo e($customer['email']); ?></p>
         <a href="orders.php" class="jc-btn jc-btn-outline">All Orders</a>
-        <a href="logout.php" class="jc-btn jc-btn-sm" style="background:#fdecec;color:#8a1a1a;">Logout</a>
+        <form method="post" action="logout.php" style="display:inline;margin:0;padding:0;">
+            <?php echo csrfField(); ?>
+            <button type="submit" class="jc-btn jc-btn-sm" style="background:#fdecec;color:#8a1a1a;">Logout</button>
+        </form>
     </div>
     <div class="jc-panel">
         <h3 style="margin-top:0;">Recent Orders</h3>

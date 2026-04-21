@@ -34,7 +34,10 @@ $flash = getFlash();
         <div>
             <?php if ($customer): ?>
                 <a href="<?php echo e(SITE_URL); ?>/account/dashboard.php"><i class="fas fa-user"></i> <?php echo e($customer['name']); ?></a>
-                <a href="<?php echo e(SITE_URL); ?>/account/logout.php">Logout</a>
+                <form method="post" action="<?php echo e(SITE_URL); ?>/account/logout.php" style="display:inline;margin:0;padding:0;">
+                    <?php echo csrfField(); ?>
+                    <button type="submit" class="jc-linkbtn" style="background:none;border:0;padding:0;color:inherit;cursor:pointer;font:inherit;">Logout</button>
+                </form>
             <?php else: ?>
                 <a href="<?php echo e(SITE_URL); ?>/account/login.php">Login</a>
                 <a href="<?php echo e(SITE_URL); ?>/account/register.php">Register</a>
