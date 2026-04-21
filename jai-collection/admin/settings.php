@@ -64,8 +64,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     setSetting('enable_registration', isset($_POST['enable_registration']) ? '1' : '0');
     setSetting('enable_hot_blink', isset($_POST['enable_hot_blink']) ? '1' : '0');
 
-    // Optional SMTP test
-    if (!empty($_POST['test_email'])) {
+    // Optional SMTP test — only fire when the "Send Test" button was clicked.
+    // Previously we checked just !empty($_POST['test_email']), which ran on
+    // every form submit if the admin had left a value in the test-email input
+    // (e.g. they typed one, clicked Save Settings, and the settings save was
+    // hijacked into "test email sent" flash with no confirmation that the
+    // settings themselves were persisted).
+    if (!empty($_POST['send_test_email']) && !empty($_POST['test_email'])) {
         $ok = sendEmail($_POST['test_email'], 'Test email from ' . getSetting('site_name','Jai Collection'),
             '<p>This is a test email sent from your Admin → Settings page.</p><p>If you received this, SMTP is working correctly.</p>');
         setFlash($ok ? 'success' : 'error', $ok ? ('Test email sent to ' . $_POST['test_email']) : 'Test email failed. Check SMTP settings and error log.');
@@ -198,7 +203,7 @@ function g($k,$d='') { static $cache = null; if ($cache === null) { $cache = [];
             <label>Send Test Email</label>
             <div style="display:flex;gap:8px;">
                 <input class="jc-input" type="email" name="test_email" placeholder="your@email.com" style="flex:1;">
-                <button type="submit" class="jc-btn" style="background:#0d2d66;color:#fff;">Send Test</button>
+                <button type="submit" name="send_test_email" value="1" class="jc-btn" style="background:#0d2d66;color:#fff;">Send Test</button>
             </div>
         </div>
     </div>

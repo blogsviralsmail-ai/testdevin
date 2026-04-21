@@ -6,7 +6,13 @@ $orderNumber = sanitize($_GET['order'] ?? '');
 $stmt = getPDO()->prepare("SELECT * FROM orders WHERE order_number = ?");
 $stmt->execute([$orderNumber]);
 $order = $stmt->fetch();
-if (!$order) { http_response_code(404); die('Order not found'); }
+// NOTE: do NOT short-circuit with a distinct 404 here when $order is missing.
+// Order numbers follow the predictable pattern JC{yymmdd}{5 chars}, so a
+// different response (404 "Order not found" vs the mobile verification form)
+// between non-existent and existing orders lets an unauthenticated attacker
+// enumerate valid order numbers by brute force. Instead, treat missing orders
+// the same as unauthorized access — show the same generic mobile verification
+// form, mirroring order-track.php's pattern.
 
 // Access control: order numbers follow a predictable JC{yymmdd}{5 chars} pattern
 // so we can't treat "knowing the number" as proof of ownership. Allow the
@@ -22,12 +28,14 @@ if (!is_array($sessionWhitelist)) $sessionWhitelist = [$sessionWhitelist];
 $mobileIn = sanitize($_GET['mobile'] ?? $_POST['mobile'] ?? '');
 
 $authorized = false;
-if ($customer && !empty($order['customer_id']) && (int)$order['customer_id'] === (int)$customer['id']) {
-    $authorized = true;
-} elseif (in_array($orderNumber, $sessionWhitelist, true)) {
-    $authorized = true;
-} elseif ($mobileIn !== '' && hash_equals((string)$order['ship_mobile'], $mobileIn)) {
-    $authorized = true;
+if ($order) {
+    if ($customer && !empty($order['customer_id']) && (int)$order['customer_id'] === (int)$customer['id']) {
+        $authorized = true;
+    } elseif (in_array($orderNumber, $sessionWhitelist, true)) {
+        $authorized = true;
+    } elseif ($mobileIn !== '' && hash_equals((string)$order['ship_mobile'], $mobileIn)) {
+        $authorized = true;
+    }
 }
 
 if (!$authorized) {

@@ -141,7 +141,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             jcPushOrderConfirm($orderNumber);
             redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
         } catch (Exception $e) {
-            $pdo->rollBack();
+            // Guard against rolling back a transaction that was already
+            // committed. After commit() the post-commit steps (notifications,
+            // RogerPay API call, etc.) run OUTSIDE the transaction, so an
+            // exception from any of them must not trigger rollBack() — that
+            // would throw "There is no active transaction" and surface as a
+            // 500 to the customer even though their order was placed.
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
             // Never expose the raw PDO/exception message to the end user — it
             // can leak table/column names, constraint details, and SQL fragments
             // that help an attacker reconnoitre the schema. Log it server-side
