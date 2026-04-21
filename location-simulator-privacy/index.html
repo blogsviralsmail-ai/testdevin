@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Location Simulator Pro</title>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+           max-width: 820px; margin: 40px auto; padding: 0 20px;
+           color: #111; line-height: 1.55; }
+    h1 { border-bottom: 2px solid #00bcd4; padding-bottom: 8px; }
+    h2 { margin-top: 32px; color: #1a237e; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+    .meta { color: #555; font-size: 0.95em; margin-bottom: 24px; }
+    ul { margin: 8px 0 16px 20px; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy — Location Simulator Pro</h1>
+  <p class="meta">
+    Effective date: 20 April 2026 &middot;
+    Contact: <a href="mailto:blogsviralsmail@gmail.com">blogsviralsmail@gmail.com</a>
+  </p>
+
+  <p>
+    This Privacy Policy explains how the Android application
+    <strong>Location Simulator Pro</strong> (package
+    <code>com.blogsvirals.locationsimulator</code>, published by
+    <strong>Blogs Virals</strong>, hereafter &ldquo;we&rdquo;, &ldquo;us&rdquo;,
+    or &ldquo;the app&rdquo;) handles your data.
+  </p>
+
+  <h2>1. Summary</h2>
+  <ul>
+    <li>The app is designed for developers, QA engineers and power users who want to
+        simulate GPS location for testing and educational purposes.</li>
+    <li><strong>We do not sell your data.</strong></li>
+    <li>Location data that you configure inside the app stays on your device.</li>
+    <li>The only network calls the app makes are to public mapping services
+        (OpenStreetMap tiles, Nominatim search and OSRM routing) for addresses
+        and routes you explicitly request.</li>
+    <li>If you enable Firebase Analytics / Crashlytics (shipped disabled by
+        default for new accounts), anonymous crash and usage statistics may be
+        sent to Google.</li>
+  </ul>
+
+  <h2>2. Data we collect</h2>
+  <h3>2.1 Data stored on your device only</h3>
+  <ul>
+    <li>Saved places (name, latitude, longitude, optional notes).</li>
+    <li>Profiles (name, default speed, default location).</li>
+    <li>Simulation history for the last 30 days (mode, timestamp, coordinates, speed).</li>
+    <li>App preferences (PIN hash for App Lock, UI theme settings).</li>
+  </ul>
+  <p>This data is written to the app&rsquo;s private Room SQLite database and
+  DataStore preferences file inside Android&rsquo;s sandbox. It is never uploaded
+  to our servers.</p>
+
+  <h3>2.2 Data sent to third-party mapping services</h3>
+  <p>When you search for an address, pick a destination or compute a driving
+  route, the app sends the query or coordinates to the following free public
+  services:</p>
+  <ul>
+    <li><strong>Nominatim (OpenStreetMap)</strong> &mdash;
+        <a href="https://operations.osmfoundation.org/policies/nominatim/">usage policy</a>.</li>
+    <li><strong>OSRM router</strong> &mdash;
+        <a href="https://router.project-osrm.org/">router.project-osrm.org</a>.</li>
+    <li><strong>OSM tile servers</strong> for map imagery.</li>
+  </ul>
+  <p>These services may log standard web request metadata (IP address, user
+  agent, query) according to their own privacy policies. We do not operate these
+  services.</p>
+
+  <h3>2.3 Firebase (optional)</h3>
+  <p>The app ships with the Firebase SDK so that developers can later enable:</p>
+  <ul>
+    <li><strong>Analytics</strong> &mdash; anonymous usage counters.</li>
+    <li><strong>Crashlytics</strong> &mdash; anonymized crash reports (stack trace, device
+        model, OS version). No personal data is included.</li>
+    <li><strong>Remote Config</strong> &mdash; fetches feature flags from Google.</li>
+  </ul>
+  <p>In the v1.0.0 default build these are disabled in code unless you link a
+  real <code>google-services.json</code>. When enabled, the data handling follows
+  <a href="https://firebase.google.com/support/privacy">Firebase&rsquo;s privacy documentation</a>.</p>
+
+  <h3>2.4 AdMob (optional)</h3>
+  <p>The app includes Google AdMob to optionally show non-personalised banner
+  advertisements. AdMob may collect advertising identifiers, coarse location and
+  device information as described in
+  <a href="https://support.google.com/admob/answer/6128543">Google&rsquo;s AdMob policy</a>.
+  Ads are turned off in the v1.0.0 build by default; the publisher may enable
+  them in a later update.</p>
+
+  <h2>3. How we use the data</h2>
+  <ul>
+    <li>To render the map, search results and routes you requested.</li>
+    <li>To let you recall saved places / profiles and your 30-day simulation history.</li>
+    <li>To keep your app locked with a PIN if you enabled App Lock (the PIN is
+        stored as an irreversible SHA-256 hash).</li>
+  </ul>
+
+  <h2>4. Permissions</h2>
+  <p>The app requests the following Android permissions:</p>
+  <ul>
+    <li><code>ACCESS_FINE_LOCATION</code> &amp; <code>ACCESS_COARSE_LOCATION</code>
+        &mdash; required to register as a mock location provider.</li>
+    <li><code>ACCESS_BACKGROUND_LOCATION</code> &amp;
+        <code>FOREGROUND_SERVICE_LOCATION</code> &mdash; so the simulation keeps
+        running when the screen is off, under a persistent notification.</li>
+    <li><code>ACCESS_MOCK_LOCATION</code> &mdash; to provide fake locations via
+        Android&rsquo;s standard mock provider API.</li>
+    <li><code>POST_NOTIFICATIONS</code> &mdash; to show the foreground-service notification.</li>
+    <li><code>INTERNET</code> &amp; <code>ACCESS_NETWORK_STATE</code> &mdash; for
+        map tiles, search and routing.</li>
+    <li><code>SYSTEM_ALERT_WINDOW</code> &mdash; to draw the floating joystick overlay.</li>
+    <li><code>USE_BIOMETRIC</code> &mdash; optional biometric unlock for App Lock.</li>
+    <li><code>VIBRATE</code> &mdash; haptic feedback on joystick/teleport.</li>
+  </ul>
+
+  <h2>5. Data retention &amp; deletion</h2>
+  <ul>
+    <li>Saved places and profiles remain until you delete them or uninstall the app.</li>
+    <li>Simulation history auto-expires at 30 days; you can also clear it any
+        time from <em>Settings &rarr; Clear history</em>.</li>
+    <li>Uninstalling the app removes all locally-stored data.</li>
+    <li>If Firebase is enabled, you can request deletion of your Crashlytics
+        data by emailing us at <a href="mailto:blogsviralsmail@gmail.com">blogsviralsmail@gmail.com</a>.</li>
+  </ul>
+
+  <h2>6. Children&rsquo;s privacy</h2>
+  <p>The app is intended for users aged 18 and above. We do not knowingly collect
+  data from children under 13 (or 16 in the EEA). If you believe a child has
+  submitted information, contact us and we will delete it.</p>
+
+  <h2>7. Security</h2>
+  <p>All network traffic uses HTTPS. The local database lives in Android&rsquo;s
+  private app storage. PINs for the App Lock feature are stored as one-way
+  SHA-256 hashes and never leave the device. However, no mobile app can be
+  guaranteed 100% secure.</p>
+
+  <h2>8. Changes to this policy</h2>
+  <p>If we materially change this policy we will update the &ldquo;Effective
+  date&rdquo; above and announce the change in the Play Store release notes.</p>
+
+  <h2>9. Contact</h2>
+  <p>
+    Publisher: Blogs Virals<br />
+    Email: <a href="mailto:blogsviralsmail@gmail.com">blogsviralsmail@gmail.com</a><br />
+    Country of operation: India
+  </p>
+</body>
+</html>
