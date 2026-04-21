@@ -29,6 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             setFlash('success', count($ids) . ' order(s) updated to ' . $bulk . '.');
         } elseif ($bulk === 'delete') {
+            // Reverse any credited commissions BEFORE delete — ON DELETE CASCADE
+            // would otherwise wipe agent_commissions rows without returning the
+            // money from the agent wallet.
+            foreach ($ids as $oid) {
+                $oid = (int)$oid;
+                $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE order_id = ? AND status = 'pending'")->execute([$oid]);
+                reverseCommissionForOrder($oid);
+            }
             $pdo->prepare("DELETE FROM orders WHERE id IN ($ph)")->execute($ids);
             setFlash('success', count($ids) . ' order(s) deleted.');
         }

@@ -260,7 +260,14 @@ function reverseCommissionForOrder($orderId) {
             // walletDebit: subtract from lifetime_earned (the credit is being
             // invalidated) and do NOT bump lifetime_paid. All three counters
             // change in one transaction — if the DB fails, nothing drifts.
-            walletDebit($o['agent_id'], $amt, 'commission_reversal', (int)$row['id'], 'Reversal: order ' . $o['order_number'], -$amt, 0);
+            $debited = walletDebit($o['agent_id'], $amt, 'commission_reversal', (int)$row['id'], 'Reversal: order ' . $o['order_number'], -$amt, 0);
+            if (!$debited) {
+                // Insufficient wallet balance (agent already withdrew). Leave the
+                // commission in 'credited' state so admin can see the outstanding
+                // reversal and chase the recovery manually.
+                error_log('[commission-reversal] walletDebit failed for commission #' . $row['id'] . ' (order ' . $o['order_number'] . ', amount ' . $amt . ')');
+                continue;
+            }
         }
         $pdo->prepare("UPDATE agent_commissions SET status = 'cancelled' WHERE id = ?")->execute([$row['id']]);
         $reversed = true;
