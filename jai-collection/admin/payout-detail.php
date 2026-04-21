@@ -15,22 +15,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $admin = currentAdmin();
 
+    // Each state transition uses a conditional UPDATE (WHERE status = 'expected')
+    // and checks rowCount() so that a crafted/stale POST can't double-apply a
+    // transition. The UI only shows buttons for valid transitions, but we never
+    // rely on that — e.g. without this guard, rejecting an already-paid payout
+    // would re-credit the agent's wallet (financial double-spend).
+
     if ($action === 'approve') {
-        $pdo->prepare("UPDATE payouts SET status = 'approved', admin_note = ?, processed_by = ?, processed_at = NOW() WHERE id = ?")
-            ->execute([sanitize($_POST['admin_note'] ?? ''), $admin['id'], $id]);
-        setFlash('success', 'Payout approved. Upload payment screenshot once transferred to mark paid.');
+        $upd = $pdo->prepare("UPDATE payouts SET status = 'approved', admin_note = ?, processed_by = ?, processed_at = NOW() WHERE id = ? AND status = 'pending'");
+        $upd->execute([sanitize($_POST['admin_note'] ?? ''), $admin['id'], $id]);
+        if ($upd->rowCount() === 0) {
+            setFlash('error', 'This payout can no longer be approved (status has changed).');
+        } else {
+            setFlash('success', 'Payout approved. Upload payment screenshot once transferred to mark paid.');
+        }
         redirect('payout-detail.php?id=' . $id);
     }
 
     if ($action === 'reject') {
-        $pdo->prepare("UPDATE payouts SET status = 'rejected', admin_note = ?, processed_by = ?, processed_at = NOW() WHERE id = ?")
-            ->execute([sanitize($_POST['admin_note'] ?? ''), $admin['id'], $id]);
-        setFlash('info', 'Payout rejected. Agent wallet refunded.');
-        // Refund wallet (credit back debited amount)
-        walletCredit($payout['agent_id'], $payout['amount'], 'payout_refund', $id, 'Payout #' . $id . ' rejected, amount refunded');
-        // Reduce lifetime_paid that walletCredit increased lifetime_earned - fix counters
-        $pdo->prepare("UPDATE agents SET lifetime_paid = lifetime_paid - ?, lifetime_earned = lifetime_earned - ? WHERE id = ?")
-            ->execute([$payout['amount'], $payout['amount'], $payout['agent_id']]);
+        // Only refund when we actually flip pending -> rejected. If the payout
+        // was already paid/approved/rejected, do nothing (no second refund).
+        $upd = $pdo->prepare("UPDATE payouts SET status = 'rejected', admin_note = ?, processed_by = ?, processed_at = NOW() WHERE id = ? AND status = 'pending'");
+        $upd->execute([sanitize($_POST['admin_note'] ?? ''), $admin['id'], $id]);
+        if ($upd->rowCount() === 0) {
+            setFlash('error', 'This payout can no longer be rejected (status has changed).');
+        } else {
+            walletCredit($payout['agent_id'], $payout['amount'], 'payout_refund', $id, 'Payout #' . $id . ' rejected, amount refunded');
+            // walletCredit() bumps lifetime_earned and walletDebit() (used when the
+            // payout was requested) bumped lifetime_paid. A refund is neither a
+            // real payout nor new earnings, so undo both counter increments.
+            $pdo->prepare("UPDATE agents SET lifetime_paid = GREATEST(lifetime_paid - ?, 0), lifetime_earned = GREATEST(lifetime_earned - ?, 0) WHERE id = ?")
+                ->execute([$payout['amount'], $payout['amount'], $payout['agent_id']]);
+            setFlash('info', 'Payout rejected. Agent wallet refunded.');
+        }
         redirect('payout-detail.php?id=' . $id);
     }
 
@@ -50,10 +67,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $pdo->prepare("UPDATE payouts SET status = 'paid', utr_number = ?, admin_note = ?, screenshot = ?, processed_by = ?, processed_at = NOW() WHERE id = ?")
-            ->execute([$utr, $note, $screenshot, $admin['id'], $id]);
-
-        setFlash('success', 'Payout marked as PAID. Agent has been notified.');
+        // Only transition pending/approved -> paid. Blocks re-marking an already
+        // paid or rejected payout as paid (which would overwrite the UTR and
+        // could mask a prior paid record).
+        $upd = $pdo->prepare("UPDATE payouts SET status = 'paid', utr_number = ?, admin_note = ?, screenshot = ?, processed_by = ?, processed_at = NOW() WHERE id = ? AND status IN ('pending','approved')");
+        $upd->execute([$utr, $note, $screenshot, $admin['id'], $id]);
+        if ($upd->rowCount() === 0) {
+            setFlash('error', 'This payout can no longer be marked paid (status has changed).');
+        } else {
+            setFlash('success', 'Payout marked as PAID. Agent has been notified.');
+        }
         redirect('payout-detail.php?id=' . $id);
     }
 }

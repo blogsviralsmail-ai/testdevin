@@ -136,7 +136,12 @@ function rogerpayMarkOrderPaid($orderNumber, $paymentRef, $raw = null) {
 
 function rogerpayMarkOrderFailed($orderNumber, $raw = null) {
     $pdo = getPDO();
-    $stmt = $pdo->prepare("UPDATE orders SET payment_status = 'failed', payment_raw = ?, updated_at = NOW() WHERE order_number = ?");
+    // Never flip an already-paid order back to 'failed'. Late/out-of-order
+    // callbacks, gateway retries, or a user re-hitting the failure URL after
+    // a successful webhook must not mask a real payment. We only record the
+    // raw payload on already-paid orders for auditability, without touching
+    // payment_status.
+    $stmt = $pdo->prepare("UPDATE orders SET payment_status = 'failed', payment_raw = ?, updated_at = NOW() WHERE order_number = ? AND payment_status != 'paid'");
     $stmt->execute([$raw ? json_encode($raw) : null, $orderNumber]);
     return true;
 }

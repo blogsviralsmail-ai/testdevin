@@ -2,12 +2,22 @@
 $pageTitle = 'Dashboard';
 require_once __DIR__ . '/_header.php';
 $pdo = getPDO();
-$aid = $agent['id'];
+$aid = (int)$agent['id'];
+
+// Use prepared statements (consistent with the rest of the codebase) rather
+// than interpolating $aid into the SQL. $aid is cast to int above for an extra
+// layer of defense, but the prepared statements are the primary guard.
+$ordersStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE agent_id = ?");
+$ordersStmt->execute([$aid]);
+$deliveredStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE agent_id = ? AND status = 'delivered'");
+$deliveredStmt->execute([$aid]);
+$pendingCommStmt = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM agent_commissions WHERE agent_id = ? AND status = 'pending'");
+$pendingCommStmt->execute([$aid]);
 
 $stats = [
-    'orders' => (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE agent_id = $aid")->fetchColumn(),
-    'delivered' => (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE agent_id = $aid AND status = 'delivered'")->fetchColumn(),
-    'pending_comm' => (float)$pdo->query("SELECT COALESCE(SUM(amount),0) FROM agent_commissions WHERE agent_id = $aid AND status = 'pending'")->fetchColumn(),
+    'orders' => (int)$ordersStmt->fetchColumn(),
+    'delivered' => (int)$deliveredStmt->fetchColumn(),
+    'pending_comm' => (float)$pendingCommStmt->fetchColumn(),
     'earned' => (float)($agent['lifetime_earned'] ?? 0),
     'paid' => (float)($agent['lifetime_paid'] ?? 0),
     'wallet' => (float)($agent['wallet_balance'] ?? 0),
