@@ -1,0 +1,92 @@
+/* Jai Collection - Admin / Agent Panel */
+body.jc-admin-body {
+    margin: 0;
+    background: #f0f2f5;
+    display: flex;
+    min-height: 100vh;
+}
+
+.jc-admin-sidebar {
+    width: 240px;
+    background: #0d2d66;
+    color: #fff;
+    flex-shrink: 0;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+}
+.jc-admin-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.jc-admin-logo img { height: 44px; background: #fff; border-radius: 8px; padding: 4px; }
+.jc-admin-logo-text { font-size: 14px; font-weight: 600; line-height: 1.2; }
+.jc-admin-logo-text span { font-size: 11px; font-weight: 400; color: #a8b8d8; }
+
+.jc-admin-nav { padding: 8px 0; }
+.jc-admin-nav a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    color: #c0cbe0;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    transition: background .15s, color .15s;
+}
+.jc-admin-nav a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.jc-admin-nav a.active {
+    background: rgba(242, 103, 34, 0.15);
+    color: #fff;
+    border-left-color: #f26722;
+}
+.jc-admin-nav a i { width: 20px; text-align: center; }
+
+.jc-admin-main {
+    margin-left: 240px;
+    flex: 1;
+    min-width: 0;
+}
+.jc-admin-topbar {
+    background: #fff;
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+.jc-admin-content { padding: 24px; }
+
+.jc-admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.jc-admin-stat {
+    background: #fff;
+    padding: 18px;
+    border-radius: 10px;
+    border-left: 4px solid #f26722;
+}
+.jc-admin-stat .jc-stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .5px; }
+.jc-admin-stat .jc-stat-value { font-size: 24px; font-weight: 700; color: #0d2d66; margin-top: 4px; }
+.jc-admin-stat.green { border-color: #2a9d2a; }
+.jc-admin-stat.blue { border-color: #1a4fa0; }
+.jc-admin-stat.red { border-color: #e53935; }
+.jc-admin-stat.yellow { border-color: #f5a623; }
+
+.jc-admin-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
+.jc-admin-actions h2 { margin: 0; color: #0d2d66; font-size: 20px; }
+
+@media (max-width: 768px) {
+    .jc-admin-sidebar { width: 60px; }
+    .jc-admin-sidebar .jc-admin-nav a span { display: none; }
+    .jc-admin-sidebar .jc-admin-logo-text { display: none; }
+    .jc-admin-main { margin-left: 60px; }
+}
+
+.jc-admin-content table.jc-table { background: #fff; border-radius: 10px; overflow: hidden; }
+.jc-admin-content .jc-panel { background: #fff; border-radius: 10px; }

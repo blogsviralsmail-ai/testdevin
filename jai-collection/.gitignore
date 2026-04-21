@@ -1,0 +1,15 @@
+# Runtime-uploaded content (kept empty in repo via .gitkeep)
+uploads/products/*
+uploads/payouts/*
+!uploads/products/.gitkeep
+!uploads/payouts/.gitkeep
+!uploads/logo/.gitkeep
+!uploads/logo/jai-collection-logo.png
+!uploads/placeholders/.gitkeep
+!uploads/placeholders/placeholder.svg
+
+# Config overrides
+includes/config.local.php
+
+# Installer lock
+install.lock
