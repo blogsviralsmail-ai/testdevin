@@ -123,8 +123,14 @@ function rogerpayMarkOrderPaid($orderNumber, $paymentRef, $raw = null) {
     $row = $stmt->fetch();
     if (!$row) return false;
     $orderId = (int)$row['id'];
-    $pdo->prepare("UPDATE orders SET payment_status = 'paid', payment_ref = ?, payment_raw = ?, status = 'confirmed', updated_at = NOW() WHERE id = ?")
+    // Always record the paid payment_status + latest ref/raw (idempotent on retries).
+    $pdo->prepare("UPDATE orders SET payment_status = 'paid', payment_ref = ?, payment_raw = ?, updated_at = NOW() WHERE id = ?")
         ->execute([$paymentRef, $raw ? json_encode($raw) : null, $orderId]);
+    // Only advance fulfillment status to 'confirmed' if the order is still pending.
+    // Otherwise a duplicate webhook/callback would regress a packed/shipped/delivered
+    // order back to 'confirmed', or resurrect a cancelled/returned one.
+    $pdo->prepare("UPDATE orders SET status = 'confirmed' WHERE id = ? AND status = 'pending'")
+        ->execute([$orderId]);
     return $orderId;
 }
 

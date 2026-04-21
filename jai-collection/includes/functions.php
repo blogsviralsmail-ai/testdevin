@@ -250,28 +250,36 @@ function reverseCommissionForOrder($orderId) {
     return $reversed;
 }
 
-// Credit commission when order is confirmed/delivered (per setting)
+// Credit commission when order is confirmed/delivered (per setting).
+// Calls walletCredit() FIRST and only marks the commission row 'credited' after
+// the wallet credit succeeds. Earlier versions marked the row 'credited' before
+// the wallet credit, so if walletCredit() failed, the commission was stuck
+// 'credited' forever (the idempotency check at the top short-circuited every
+// retry) but the agent's wallet was never updated.
 function creditCommissionForOrder($orderId) {
     $pdo = getPDO();
     $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
     $stmt->execute([$orderId]);
     $order = $stmt->fetch();
     if (!$order || empty($order['agent_id'])) return false;
-    // Check not already credited
     $check = $pdo->prepare("SELECT * FROM agent_commissions WHERE order_id = ? AND agent_id = ?");
     $check->execute([$orderId, $order['agent_id']]);
     $existing = $check->fetch();
     if ($existing && $existing['status'] === 'credited') return true;
     $amount = (float)$order['agent_commission_amount'];
     if ($amount <= 0) return false;
+    // Ensure a commission row exists in 'pending' state so walletCredit() has
+    // a ref_id to point to, but do NOT flip it to 'credited' yet.
     if ($existing) {
-        $pdo->prepare("UPDATE agent_commissions SET status = 'credited', credited_at = NOW() WHERE id = ?")
-            ->execute([$existing['id']]);
-        $commId = $existing['id'];
+        $commId = (int)$existing['id'];
     } else {
-        $pdo->prepare("INSERT INTO agent_commissions (agent_id, order_id, commission_percent, order_subtotal, amount, status, credited_at) VALUES (?, ?, ?, ?, ?, 'credited', NOW())")
+        $pdo->prepare("INSERT INTO agent_commissions (agent_id, order_id, commission_percent, order_subtotal, amount, status) VALUES (?, ?, ?, ?, ?, 'pending')")
             ->execute([$order['agent_id'], $orderId, $order['agent_commission_percent'], $order['subtotal'], $amount]);
-        $commId = $pdo->lastInsertId();
+        $commId = (int)$pdo->lastInsertId();
     }
-    return walletCredit($order['agent_id'], $amount, 'commission', $commId, 'Commission for order ' . $order['order_number']);
+    $credited = walletCredit($order['agent_id'], $amount, 'commission', $commId, 'Commission for order ' . $order['order_number']);
+    if (!$credited) return false;
+    $pdo->prepare("UPDATE agent_commissions SET status = 'credited', credited_at = NOW() WHERE id = ?")
+        ->execute([$commId]);
+    return true;
 }

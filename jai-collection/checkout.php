@@ -107,8 +107,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: ' . $res['redirect_url']);
                     exit;
                 }
-                setFlash('error', 'Payment gateway unavailable. Please try COD.');
-                redirect(SITE_URL . '/checkout.php');
+                // Order is already committed and cart is already cleared at this point,
+                // so redirecting back to /checkout.php would bounce to an empty /cart.php
+                // and the user would lose sight of their order. Send them to the order
+                // success page instead so they can see the order number, contact support,
+                // or retry payment.
+                setFlash('error', 'Payment gateway unavailable. Your order has been placed — please contact support or retry payment from your orders page.');
+                redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
             }
 
             redirect(SITE_URL . '/order-success.php?order=' . urlencode($orderNumber));
