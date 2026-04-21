@@ -90,10 +90,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ci['qty'],
                     $ci['line_total'],
                 ]);
-                // Decrement stock
+                // Decrement stock. For variant products we also resync the
+                // aggregated products.stock from the sum of variant stocks,
+                // mirroring admin/stock.php so the low-stock dashboards and
+                // listing pages (admin/index.php, admin/stock.php) don't show
+                // stale values for variant products after customer purchases.
                 if ($ci['variant']) {
                     $pdo->prepare("UPDATE product_variants SET stock = GREATEST(0, stock - ?) WHERE id = ?")
                         ->execute([$ci['qty'], $ci['variant']['id']]);
+                    $sumStmt = $pdo->prepare("SELECT COALESCE(SUM(stock), 0) FROM product_variants WHERE product_id = ?");
+                    $sumStmt->execute([$ci['product']['id']]);
+                    $pdo->prepare("UPDATE products SET stock = ? WHERE id = ?")
+                        ->execute([(int)$sumStmt->fetchColumn(), $ci['product']['id']]);
                 } else {
                     $pdo->prepare("UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?")
                         ->execute([$ci['qty'], $ci['product']['id']]);

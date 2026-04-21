@@ -8,19 +8,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrfVerify();
     $mobile = sanitize($_POST['mobile'] ?? '');
     $password = $_POST['password'] ?? '';
-    $stmt = getPDO()->prepare("SELECT * FROM agents WHERE (mobile = ? OR email = ?) LIMIT 1");
+    // Match admin/login.php: only match active accounts in the query itself
+    // so wrong-password vs suspended/inactive return the same "Invalid
+    // credentials" response, avoiding an information leak about which
+    // mobile/email corresponds to a real account.
+    $stmt = getPDO()->prepare("SELECT * FROM agents WHERE (mobile = ? OR email = ?) AND status = 'active' LIMIT 1");
     $stmt->execute([$mobile, $mobile]);
     $u = $stmt->fetch();
     if ($u && password_verify($password, $u['password'])) {
-        if ($u['status'] === 'suspended') { $error = 'Your account has been suspended. Please contact admin.'; }
-        elseif ($u['status'] === 'inactive') { $error = 'Your account is inactive. Please contact admin.'; }
-        else {
-            $_SESSION['agent'] = ['id' => $u['id'], 'name' => $u['name'], 'mobile' => $u['mobile'], 'referral_code' => $u['referral_code']];
-            redirect('dashboard.php');
-        }
-    } else {
-        $error = 'Invalid credentials.';
+        $_SESSION['agent'] = ['id' => $u['id'], 'name' => $u['name'], 'mobile' => $u['mobile'], 'referral_code' => $u['referral_code']];
+        redirect('dashboard.php');
     }
+    $error = 'Invalid credentials.';
 }
 $logoUrl = SITE_URL . '/uploads/logo/jai-collection-logo.png';
 ?>

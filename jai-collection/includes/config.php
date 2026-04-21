@@ -265,7 +265,23 @@ function captureAgentRef() {
     if (!empty($_GET['ref'])) {
         $code = preg_replace('/[^A-Za-z0-9_-]/', '', $_GET['ref']);
         if ($code) {
-            setcookie('jc_ref', $code, time() + 60 * 60 * 24 * 30, '/');
+            // Secure: only send over HTTPS when the current request is HTTPS,
+            // so attackers on plain HTTP can't intercept or overwrite the
+            // referral code. HttpOnly blocks JS access (commissions can't be
+            // reassigned via XSS). SameSite=Lax still lets the cookie ride on
+            // top-level cross-site navigations — e.g. an agent shares
+            // https://jaicollection.in/?ref=XYZ on WhatsApp and the click
+            // through still attributes the order correctly.
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+                || (($_SERVER['SERVER_PORT'] ?? '') === '443');
+            setcookie('jc_ref', $code, [
+                'expires' => time() + 60 * 60 * 24 * 30,
+                'path' => '/',
+                'secure' => $isHttps,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
             $_COOKIE['jc_ref'] = $code;
         }
     }

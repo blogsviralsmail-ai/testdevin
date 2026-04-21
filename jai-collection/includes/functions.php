@@ -133,18 +133,29 @@ function cartResolved() {
         $p = getProductById($it['product_id']);
         if (!$p || $p['status'] !== 'active') continue;
         $v = !empty($it['variant_id']) ? getVariantById($it['variant_id']) : null;
+        // Cap line quantity at the currently-available stock so a customer
+        // can't oversell a product by placing a huge qty in the cart and
+        // waiting for other orders to deplete stock. Per-variant stock is
+        // authoritative when the product has variants; otherwise fall back
+        // to products.stock. A qty of 0 drops the line entirely.
+        $available = (int)(($v !== null ? $v['stock'] : ($p['stock'] ?? 0)));
+        if ($available < 0) $available = 0;
+        $qty = min((int)$it['qty'], $available);
+        if ($qty <= 0) continue;
         $price = productEffectivePrice($p, $v);
-        $line = $price * $it['qty'];
+        $line = $price * $qty;
         $resolved[] = [
             'key' => $key,
             'product' => $p,
             'variant' => $v,
-            'qty' => (int)$it['qty'],
+            'qty' => $qty,
             'price' => $price,
             'line_total' => $line,
+            'available' => $available,
+            'capped' => $qty < (int)$it['qty'],
         ];
         $subtotal += $line;
-        $count += (int)$it['qty'];
+        $count += $qty;
     }
     return ['items' => $resolved, 'subtotal' => $subtotal, 'count' => $count];
 }
