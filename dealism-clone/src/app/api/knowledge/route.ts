@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiRequireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateEmbedding } from "@/lib/openai";
-import { assertSafeExternalUrl } from "@/lib/url-safety";
+import { assertSafeExternalUrl, safeFetch } from "@/lib/url-safety";
 
 const MAX_HTML_BYTES = 2 * 1024 * 1024; // 2 MB
 const FETCH_TIMEOUT_MS = 10_000;
@@ -22,14 +22,16 @@ export async function POST(req: NextRequest) {
     let content = rawContent;
     if (sourceType === "url" && sourceUrl && !content) {
       try {
-        const safeUrl = await assertSafeExternalUrl(sourceUrl);
+        const validated = await assertSafeExternalUrl(sourceUrl);
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
         let html: string;
         try {
-          const res = await fetch(safeUrl.toString(), {
+          // safeFetch pins the TCP connection to the already-validated IP,
+          // closing the DNS-rebinding TOCTOU window between our lookup and
+          // the actual HTTP connect.
+          const res = await safeFetch(validated, {
             signal: controller.signal,
-            redirect: "error", // don't follow redirects — they can escape the SSRF check
             headers: { "user-agent": "DealismClone-KnowledgeFetcher/1.0" },
           });
           if (!res.ok) throw new Error(`Upstream ${res.status}`);

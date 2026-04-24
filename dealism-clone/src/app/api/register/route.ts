@@ -15,13 +15,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = schema.parse(body);
 
-    const allowSignups = await getSetting("allow_signups");
+    const [allowSignups, quotaSetting] = await Promise.all([
+      getSetting("allow_signups"),
+      getSetting("default_trial_quota"),
+    ]);
     if (allowSignups === "false") {
       return NextResponse.json(
         { error: "Registration is currently closed. Contact the administrator." },
         { status: 403 }
       );
     }
+
+    const parsedQuota = quotaSetting ? parseInt(quotaSetting, 10) : NaN;
+    const conversationsQuota = Number.isFinite(parsedQuota) && parsedQuota > 0 ? parsedQuota : 100;
 
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) return NextResponse.json({ error: "Email already registered" }, { status: 400 });
@@ -38,7 +44,7 @@ export async function POST(req: NextRequest) {
         role: "user",
         plan: "trial",
         trialEndsAt: trialEnd,
-        conversationsQuota: 100,
+        conversationsQuota,
       },
     });
 

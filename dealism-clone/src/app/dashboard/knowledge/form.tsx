@@ -76,7 +76,7 @@ export function KnowledgeForm({ agents }: { agents: Agent[] }) {
           )}
           <div>
             <Label>Content</Label>
-            <Textarea rows={6} required value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Paste FAQs, policies, product info..." />
+            <Textarea rows={6} required={mode !== "url"} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder={mode === "url" ? "Leave blank to auto-scrape the URL" : "Paste FAQs, policies, product info..."} />
           </div>
           <Button type="submit" variant="primary" disabled={loading} className="w-full">
             {loading ? "Saving..." : "Add to knowledge base"}
