@@ -76,10 +76,17 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
     if (connection === "close") {
       const code = (lastDisconnect?.error as Boom)?.output?.statusCode;
       sockets.delete(channelId);
-      await prisma.channel.update({
-        where: { id: channelId },
-        data: { status: "disconnected", qrCode: null },
-      });
+      // If the channel row was deleted while the socket was still open,
+      // this update throws P2025. Swallow it so Baileys' EventEmitter
+      // doesn't turn it into an unhandled rejection and crash the process.
+      try {
+        await prisma.channel.update({
+          where: { id: channelId },
+          data: { status: "disconnected", qrCode: null },
+        });
+      } catch {
+        // channel was deleted — nothing to update
+      }
       const wasIntentional = intentionalStops.delete(channelId);
       if (!wasIntentional && code !== DisconnectReason.loggedOut) {
         setTimeout(() => startChannel(channelId).catch(() => {}), 3000);
@@ -111,6 +118,7 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
         where: { channelId, contactNumber, status: { not: "closed" } },
         orderBy: { lastMessageAt: "desc" },
       });
+      let convoIsNew = false;
       if (!convo) {
         convo = await prisma.conversation.create({
           data: {
@@ -121,6 +129,7 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
             contactNumber,
           },
         });
+        convoIsNew = true;
       }
 
       await prisma.message.create({
@@ -159,10 +168,15 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
         where: { id: convo.id },
         data: { lastMessageAt: new Date() },
       });
-      await prisma.user.update({
-        where: { id: ch.userId },
-        data: { conversationsUsed: { increment: 1 } },
-      });
+      // Per FAQ / pricing, one conversation = one customer in a 24h window
+      // regardless of message count. Only count the quota on the first AI
+      // reply of a freshly created conversation, not on every subsequent turn.
+      if (convoIsNew) {
+        await prisma.user.update({
+          where: { id: ch.userId },
+          data: { conversationsUsed: { increment: 1 } },
+        });
+      }
       await sock.sendMessage(remoteJid, { text: reply }).catch(() => {});
 
       // Auto-learn: store conversation snippet as knowledge (lightweight self-learning)

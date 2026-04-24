@@ -71,7 +71,9 @@ export async function getSession() {
 
 export async function requireUser() {
   const session = await getSession();
-  if (!session?.user) redirect("/login");
+  // Also check id because a deleted user keeps session.user (email/name)
+  // until the JWT expires; only the id is dropped by our jwt callback.
+  if (!session?.user || !(session.user as { id?: string }).id) redirect("/login");
   return session.user as { id: string; email: string; name?: string | null; role: string };
 }
 
@@ -84,7 +86,8 @@ export async function requireAdmin() {
 // For API routes — throw so the route can handle with 401/403
 export async function apiRequireUser() {
   const session = await getSession();
-  if (!session?.user) throw new Error("Unauthorized");
+  // Require id too — see requireUser() above.
+  if (!session?.user || !(session.user as { id?: string }).id) throw new Error("Unauthorized");
   return session.user as { id: string; email: string; name?: string | null; role: string };
 }
 
