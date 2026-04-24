@@ -14,9 +14,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const user = await apiRequireUser();
     await assertOwn(user.id, params.id);
     const body = await req.json();
+    if (body.agentId) {
+      const agent = await prisma.agent.findUnique({ where: { id: body.agentId } });
+      if (!agent || agent.userId !== user.id) {
+        return NextResponse.json({ error: "Invalid agent" }, { status: 400 });
+      }
+    }
     const ch = await prisma.channel.update({
       where: { id: params.id },
-      data: { name: body.name, agentId: body.agentId },
+      data: { name: body.name, agentId: body.agentId ?? null },
     });
     return NextResponse.json({ channel: ch });
   } catch (err: unknown) {

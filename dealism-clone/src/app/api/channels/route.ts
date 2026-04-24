@@ -6,6 +6,12 @@ export async function POST(req: NextRequest) {
   try {
     const user = await apiRequireUser();
     const body = await req.json();
+    if (body.agentId) {
+      const agent = await prisma.agent.findUnique({ where: { id: body.agentId } });
+      if (!agent || agent.userId !== user.id) {
+        return NextResponse.json({ error: "Invalid agent" }, { status: 400 });
+      }
+    }
     const channel = await prisma.channel.create({
       data: {
         userId: user.id,

@@ -131,7 +131,15 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
         continue;
       }
 
-      if (!convo.isAutoReply) continue;
+      if (!convo.isAutoReply) {
+        // Manual-reply mode: bubble the conversation to the top so the human
+        // operator sees the new incoming message in the dashboard.
+        await prisma.conversation.update({
+          where: { id: convo.id },
+          data: { lastMessageAt: new Date() },
+        });
+        continue;
+      }
 
       const reply = await generateAgentReply({
         agentId: ch.agentId,
