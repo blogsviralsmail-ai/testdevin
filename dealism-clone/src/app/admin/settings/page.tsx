@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 import { SettingsForm } from "./form";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
+  // Defense-in-depth: the admin layout already guards this route, but the
+  // page also loads sensitive API keys (OpenAI, Razorpay) so we re-check here
+  // in case the layout wrapping ever changes.
+  await requireAdmin();
   const settings = await prisma.setting.findMany();
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s.value]));
   return (

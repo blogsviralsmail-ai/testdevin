@@ -34,6 +34,11 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
   const channel = await prisma.channel.findUnique({ where: { id: channelId } });
   if (!channel) return { ok: false, error: "Channel not found" };
 
+  // Clear any leftover stop flag from a previous session — stopChannel
+  // adds one unconditionally even when no socket was running, which would
+  // otherwise suppress auto-reconnect on the first transient drop.
+  intentionalStops.delete(channelId);
+
   const authDir = path.join(AUTH_ROOT, channelId);
   fs.mkdirSync(authDir, { recursive: true });
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
