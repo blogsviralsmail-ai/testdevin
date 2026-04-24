@@ -32,7 +32,9 @@ function LoginInner() {
       toast.error("Invalid email or password");
       return;
     }
-    const callbackUrl = params.get("callbackUrl") || "/dashboard";
+    // Only allow same-origin relative paths to avoid open-redirect phishing.
+    const raw = params.get("callbackUrl") || "/dashboard";
+    const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
     toast.success("Welcome back!");
     router.push(callbackUrl);
     router.refresh();

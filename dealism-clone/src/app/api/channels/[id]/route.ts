@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     const ch = await prisma.channel.update({
       where: { id: params.id },
-      data: { name: body.name, agentId: body.agentId ?? null },
+      data: { name: body.name, agentId: body.agentId || null },
     });
     return NextResponse.json({ channel: ch });
   } catch (err: unknown) {
