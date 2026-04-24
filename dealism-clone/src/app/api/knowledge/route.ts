@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiRequireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateEmbedding } from "@/lib/openai";
+import { assertSafeExternalUrl } from "@/lib/url-safety";
+
+const MAX_HTML_BYTES = 2 * 1024 * 1024; // 2 MB
+const FETCH_TIMEOUT_MS = 10_000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,8 +22,23 @@ export async function POST(req: NextRequest) {
     let content = rawContent;
     if (sourceType === "url" && sourceUrl && !content) {
       try {
-        const res = await fetch(sourceUrl);
-        const html = await res.text();
+        const safeUrl = await assertSafeExternalUrl(sourceUrl);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        let html: string;
+        try {
+          const res = await fetch(safeUrl.toString(), {
+            signal: controller.signal,
+            redirect: "error", // don't follow redirects — they can escape the SSRF check
+            headers: { "user-agent": "DealismClone-KnowledgeFetcher/1.0" },
+          });
+          if (!res.ok) throw new Error(`Upstream ${res.status}`);
+          const buf = await res.arrayBuffer();
+          if (buf.byteLength > MAX_HTML_BYTES) throw new Error("Response too large");
+          html = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+        } finally {
+          clearTimeout(timer);
+        }
         content = html
           .replace(/<script[\s\S]*?<\/script>/gi, "")
           .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -27,8 +46,9 @@ export async function POST(req: NextRequest) {
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, 8000);
-      } catch {
-        return NextResponse.json({ error: "Failed to fetch URL" }, { status: 400 });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to fetch URL";
+        return NextResponse.json({ error: msg }, { status: 400 });
       }
     }
 

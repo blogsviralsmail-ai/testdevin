@@ -4,8 +4,14 @@ import { prisma } from "@/lib/prisma";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await apiRequireAdmin();
+    const admin = await apiRequireAdmin();
     const body = await req.json();
+    if (admin.id === params.id && body.role && body.role !== "admin") {
+      return NextResponse.json(
+        { error: "Cannot demote your own account" },
+        { status: 400 }
+      );
+    }
     const user = await prisma.user.update({
       where: { id: params.id },
       data: {
@@ -22,7 +28,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await apiRequireAdmin();
+    const admin = await apiRequireAdmin();
+    if (admin.id === params.id) {
+      return NextResponse.json(
+        { error: "Cannot delete your own account" },
+        { status: 400 }
+      );
+    }
     await prisma.user.delete({ where: { id: params.id } });
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {

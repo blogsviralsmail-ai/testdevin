@@ -75,6 +75,12 @@ ${kbContext}`;
 
   const model = agent.model || (await getOpenAIModel());
 
+  // recentMessages already includes the just-saved user turn; only append it
+  // explicitly if the DB fetch didn't pick it up (e.g. future caller that
+  // hasn't persisted it yet). This avoids sending the same message twice.
+  const last = recentMessages[recentMessages.length - 1];
+  const alreadyIncluded = last && last.role === "user" && last.content === userMessage;
+
   try {
     const completion = await client.chat.completions.create({
       model,
@@ -85,7 +91,7 @@ ${kbContext}`;
           role: m.role as "user" | "assistant" | "system",
           content: m.content,
         })),
-        { role: "user", content: userMessage },
+        ...(alreadyIncluded ? [] : [{ role: "user" as const, content: userMessage }]),
       ],
     });
     return completion.choices[0]?.message?.content ?? "Sorry, I couldn't generate a reply.";
