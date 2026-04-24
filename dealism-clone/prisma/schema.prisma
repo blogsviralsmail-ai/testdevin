@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  role          String    @default("user") // "user" | "admin"
+  plan          String    @default("trial") // "trial" | "monthly_basic" | "monthly_pro" | "annual" | "enterprise"
+  trialEndsAt   DateTime?
+  conversationsUsed Int   @default(0)
+  conversationsQuota Int  @default(100)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  agents        Agent[]
+  channels      Channel[]
+  conversations Conversation[]
+  knowledgeItems KnowledgeItem[]
+}
+
+model Agent {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  description   String?
+  systemPrompt  String   // Agent personality / instructions
+  tone          String?  // "professional" | "friendly" | "casual"
+  language      String   @default("en")
+  isActive      Boolean  @default(true)
+  model         String   @default("gpt-4o-mini")
+  temperature   Float    @default(0.7)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channels      Channel[]
+  conversations Conversation[]
+  knowledgeItems KnowledgeItem[]
+}
+
+model Channel {
+  id            String   @id @default(cuid())
+  userId        String
+  agentId       String?
+  type          String   // "whatsapp" | "instagram" | "webchat"
+  name          String
+  phoneNumber   String?
+  status        String   @default("disconnected") // "connected" | "disconnected" | "connecting"
+  sessionData   String?  // encrypted Baileys session
+  qrCode        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent         Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  conversations Conversation[]
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  userId        String
+  agentId       String?
+  channelId     String?
+  contactName   String?
+  contactNumber String?
+  contactAvatar String?
+  status        String   @default("active") // "active" | "closed" | "needs_human"
+  lastMessageAt DateTime @default(now())
+  isAutoReply   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent         Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  channel       Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  messages      Message[]
+}
+
+model Message {
+  id              String   @id @default(cuid())
+  conversationId  String
+  role            String   // "user" | "assistant" | "system"
+  content         String
+  attachmentUrl   String?
+  metadata        String?  // JSON string
+  createdAt       DateTime @default(now())
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model KnowledgeItem {
+  id          String   @id @default(cuid())
+  userId      String
+  agentId     String?
+  title       String
+  content     String
+  sourceType  String   // "text" | "url" | "file" | "faq"
+  sourceUrl   String?
+  embedding   String?  // JSON array of floats
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent       Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  category  String   @default("general") // "api" | "general" | "pricing" | "branding"
+  updatedAt DateTime @updatedAt
+}
+
+model Plan {
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  priceMonthly        Float
+  priceAnnual         Float?
+  conversationsQuota  Int
+  features            String   // JSON array
+  isPopular           Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  sortOrder           Int      @default(0)
+  createdAt           DateTime @default(now())
+}
