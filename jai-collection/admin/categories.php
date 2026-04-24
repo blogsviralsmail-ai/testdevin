@@ -24,14 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $image = $edit['image'] ?? null;
         if (!empty($_FILES['image']['tmp_name'])) {
-            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','webp','gif'])) {
-                $fn = 'cat_' . time() . '_' . generateRandomString(6) . '.' . $ext;
-                $dest = UPLOAD_DIR . '/products/' . $fn;
-                if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
-                move_uploaded_file($_FILES['image']['tmp_name'], $dest);
-                $image = $fn;
-            }
+            $newFn = uploadImageFile($_FILES['image'], 'products', 'cat');
+            if ($newFn) { $image = $newFn; }
         }
 
         if ($id) {

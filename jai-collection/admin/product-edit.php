@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $categoryId = (int)$_POST['category_id'] ?: null;
         $sku = sanitize($_POST['sku']);
+        $barcode = sanitize($_POST['barcode'] ?? '');
         $short = sanitize($_POST['short_description']);
         $desc = sanitize($_POST['description']);
         $price = (float)$_POST['price'];
@@ -41,42 +42,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sortOrder = (int)$_POST['sort_order'];
         $status = $_POST['status'] === 'active' ? 'active' : 'inactive';
 
-        // Main image upload
+        // Main image upload — check return value of move_uploaded_file via the
+        // helper so the DB row doesn't end up pointing at a file that was
+        // never saved (manifested as "image dikhai nahi deti" when the uploads
+        // dir was not writable by the php-fpm user).
         $image = $product['image'] ?? null;
         if (!empty($_FILES['image']['tmp_name'])) {
-            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','webp','gif'])) {
-                $fn = 'prod_' . time() . '_' . generateRandomString(6) . '.' . $ext;
-                $dest = UPLOAD_DIR . '/products/' . $fn;
-                if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
-                move_uploaded_file($_FILES['image']['tmp_name'], $dest);
-                $image = $fn;
-            }
+            $newFn = uploadImageFile($_FILES['image'], 'products', 'prod');
+            if ($newFn) { $image = $newFn; }
         }
 
         if ($id) {
-            $pdo->prepare("UPDATE products SET category_id=?, name=?, slug=?, sku=?, short_description=?, description=?, image=?, price=?, compare_price=?, cost_price=?, stock=?, has_variants=?, is_featured=?, is_hot=?, sort_order=?, status=? WHERE id=?")
-                ->execute([$categoryId, $name, $slug, $sku, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $isHot, $sortOrder, $status, $id]);
+            $pdo->prepare("UPDATE products SET category_id=?, name=?, slug=?, sku=?, barcode=?, short_description=?, description=?, image=?, price=?, compare_price=?, cost_price=?, stock=?, has_variants=?, is_featured=?, is_hot=?, sort_order=?, status=? WHERE id=?")
+                ->execute([$categoryId, $name, $slug, $sku, $barcode, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $isHot, $sortOrder, $status, $id]);
         } else {
-            $pdo->prepare("INSERT INTO products (category_id, name, slug, sku, short_description, description, image, price, compare_price, cost_price, stock, has_variants, is_featured, is_hot, sort_order, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-                ->execute([$categoryId, $name, $slug, $sku, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $isHot, $sortOrder, $status]);
+            $pdo->prepare("INSERT INTO products (category_id, name, slug, sku, barcode, short_description, description, image, price, compare_price, cost_price, stock, has_variants, is_featured, is_hot, sort_order, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+                ->execute([$categoryId, $name, $slug, $sku, $barcode, $short, $desc, $image, $price, $comparePrice, $costPrice, $stock, $hasVariants, $isFeatured, $isHot, $sortOrder, $status]);
             $id = (int)$pdo->lastInsertId();
         }
 
-        // Gallery upload
-        if (!empty($_FILES['gallery']['tmp_name'])) {
+        // Gallery upload (multiple) — same helper, rebuild per-file $_FILES array
+        $gallerySaved = 0;
+        if (!empty($_FILES['gallery']['tmp_name']) && is_array($_FILES['gallery']['tmp_name'])) {
             foreach ($_FILES['gallery']['tmp_name'] as $i => $tmp) {
                 if (!$tmp) continue;
-                $ext = strtolower(pathinfo($_FILES['gallery']['name'][$i], PATHINFO_EXTENSION));
-                if (!in_array($ext, ['jpg','jpeg','png','webp','gif'])) continue;
-                $fn = 'prod_' . time() . '_' . generateRandomString(6) . '.' . $ext;
-                $dest = UPLOAD_DIR . '/products/' . $fn;
-                if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
-                move_uploaded_file($tmp, $dest);
-                $pdo->prepare("INSERT INTO product_images (product_id, image) VALUES (?, ?)")->execute([$id, $fn]);
+                $one = [
+                    'name'     => $_FILES['gallery']['name'][$i]     ?? '',
+                    'type'     => $_FILES['gallery']['type'][$i]     ?? '',
+                    'tmp_name' => $tmp,
+                    'error'    => $_FILES['gallery']['error'][$i]    ?? UPLOAD_ERR_OK,
+                    'size'     => $_FILES['gallery']['size'][$i]     ?? 0,
+                ];
+                $newFn = uploadImageFile($one, 'products', 'prod');
+                if ($newFn) {
+                    $pdo->prepare("INSERT INTO product_images (product_id, image) VALUES (?, ?)")->execute([$id, $newFn]);
+                    $gallerySaved++;
+                }
             }
         }
-        setFlash('success', 'Product saved.');
+        setFlash('success', 'Product saved' . ($gallerySaved ? " (+{$gallerySaved} gallery image" . ($gallerySaved === 1 ? '' : 's') . ')' : '') . '.');
         redirect('product-edit.php?id=' . $id);
     }
 
@@ -136,6 +140,21 @@ $variants = $id ? getProductVariants($id) : [];
             </select>
         </div>
         <div class="jc-form-group"><label>SKU</label><input class="jc-input" name="sku" value="<?php echo e($product['sku'] ?? ''); ?>"></div>
+    </div>
+    <div class="jc-row">
+        <div class="jc-form-group">
+            <label>Barcode <span style="color:#888;font-size:12px;">(leave empty to use SKU)</span></label>
+            <input class="jc-input" name="barcode" id="barcode-input" value="<?php echo e($product['barcode'] ?? ''); ?>" placeholder="e.g. 8901234567890">
+        </div>
+        <div class="jc-form-group">
+            <label>Barcode Preview</label>
+            <div style="display:flex;align-items:center;gap:12px;padding:6px 10px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;min-height:60px;">
+                <svg id="barcode-preview" style="flex:1;max-width:260px;"></svg>
+                <?php if ($product): ?>
+                    <a href="product-barcode.php?id=<?php echo (int)$product['id']; ?>" target="_blank" class="jc-btn jc-btn-outline jc-btn-sm"><i class="fas fa-print"></i> Print</a>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
     <div class="jc-form-group"><label>Short Description</label><input class="jc-input" name="short_description" value="<?php echo e($product['short_description'] ?? ''); ?>"></div>
     <div class="jc-form-group"><label>Description</label><textarea class="jc-textarea" name="description" rows="5"><?php echo e($product['description'] ?? ''); ?></textarea></div>
@@ -247,5 +266,27 @@ $variants = $id ? getProductVariants($id) : [];
     </table>
 </div>
 <?php endif; ?>
+
+<!-- JsBarcode: client-side Code128 render so the admin can eyeball + print
+     barcodes without a server-side image library. CDN is only loaded in admin. -->
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script>
+(function(){
+    const svg   = document.getElementById('barcode-preview');
+    const input = document.getElementById('barcode-input');
+    const sku   = document.querySelector('input[name="sku"]');
+    if (!svg || !input) return;
+    function render() {
+        const val = (input.value || (sku ? sku.value : '') || '').trim();
+        if (!val) { svg.innerHTML = ''; return; }
+        try {
+            JsBarcode(svg, val, { format: 'CODE128', width: 2, height: 48, margin: 0, fontSize: 12 });
+        } catch (e) { svg.innerHTML = ''; }
+    }
+    input.addEventListener('input', render);
+    if (sku) sku.addEventListener('input', render);
+    render();
+})();
+</script>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

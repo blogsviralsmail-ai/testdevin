@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(200) NOT NULL,
     slug VARCHAR(220) NOT NULL UNIQUE,
     sku VARCHAR(50),
+    barcode VARCHAR(64) NULL,
     short_description VARCHAR(500),
     description TEXT,
     image VARCHAR(255),              -- primary image (relative path under /uploads/products/)

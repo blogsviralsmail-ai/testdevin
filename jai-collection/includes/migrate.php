@@ -21,8 +21,10 @@ function jcMigrate() {
         $log[] = "~ $table.$col";
     };
 
-    // Products: is_hot
+    // Products: is_hot + barcode (per-product printable barcode, defaults to
+    // SKU on render if empty so admins don't have to maintain it separately).
     $addCol('products', 'is_hot', "TINYINT(1) DEFAULT 0 AFTER is_featured");
+    $addCol('products', 'barcode', 'VARCHAR(64) NULL AFTER sku');
 
     // Customers: status widen to include suspended, add role-ish fields, reset fields
     $modifyCol('customers', 'status', "ENUM('active','inactive','suspended') DEFAULT 'active'");

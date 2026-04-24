@@ -75,14 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $screenshot = $payout['screenshot'];
         if (!empty($_FILES['screenshot']['tmp_name'])) {
-            $ext = strtolower(pathinfo($_FILES['screenshot']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','webp','pdf'])) {
-                $fn = 'payout_' . $id . '_' . time() . '.' . $ext;
-                $dest = UPLOAD_DIR . '/payouts/' . $fn;
-                if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
-                move_uploaded_file($_FILES['screenshot']['tmp_name'], $dest);
-                $screenshot = $fn;
-            }
+            $newFn = uploadImageFile($_FILES['screenshot'], 'payouts', 'payout_' . $id, ['jpg','jpeg','png','webp','pdf']);
+            if ($newFn) { $screenshot = $newFn; }
         }
 
         // Only transition pending/approved -> paid. Blocks re-marking an already

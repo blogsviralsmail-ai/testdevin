@@ -34,29 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($secretFields as $f) {
         if (array_key_exists($f, $_POST)) { setSetting($f, trim((string)$_POST[$f])); }
     }
-    // Logo upload
+    // Logo upload — No SVG (SVG can embed <script>/onload handlers that execute
+    // when a user navigates directly to /uploads/logo/logo_*.svg, stored XSS).
     if (!empty($_FILES['logo']['tmp_name'])) {
-        $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-        // No SVG — SVG can embed <script> / onload handlers that execute when
-        // a user navigates directly to /uploads/logo/logo_*.svg (stored XSS).
-        if (in_array($ext, ['jpg','jpeg','png','webp'])) {
-            $fn = 'logo_' . time() . '.' . $ext;
-            $dest = UPLOAD_DIR . '/logo/' . $fn;
-            if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
-            move_uploaded_file($_FILES['logo']['tmp_name'], $dest);
-            setSetting('logo_url', '/uploads/logo/' . $fn);
-        }
+        $newFn = uploadImageFile($_FILES['logo'], 'logo', 'logo', ['jpg','jpeg','png','webp']);
+        if ($newFn) { setSetting('logo_url', '/uploads/logo/' . $newFn); }
     }
     if (!empty($_FILES['favicon']['tmp_name'])) {
-        $ext = strtolower(pathinfo($_FILES['favicon']['name'], PATHINFO_EXTENSION));
-        // No SVG here either — same stored-XSS risk as the logo upload above.
-        if (in_array($ext, ['ico','png','jpg','jpeg','webp'])) {
-            $fn = 'favicon_' . time() . '.' . $ext;
-            $dest = UPLOAD_DIR . '/logo/' . $fn;
-            if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
-            move_uploaded_file($_FILES['favicon']['tmp_name'], $dest);
-            setSetting('favicon_url', '/uploads/logo/' . $fn);
-        }
+        $newFn = uploadImageFile($_FILES['favicon'], 'logo', 'favicon', ['ico','png','jpg','jpeg','webp']);
+        if ($newFn) { setSetting('favicon_url', '/uploads/logo/' . $newFn); }
     }
     // Toggles
     setSetting('cod_enabled', isset($_POST['cod_enabled']) ? '1' : '0');

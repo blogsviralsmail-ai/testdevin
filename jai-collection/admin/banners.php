@@ -17,24 +17,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id) {
             $r = $pdo->prepare("SELECT image FROM banners WHERE id = ?"); $r->execute([$id]); $image = ($r->fetch() ?: [])['image'] ?? null;
         }
+        // Use the return-value-checking helper so we never INSERT a banner row
+        // pointing at a file that didn't actually land on disk (the case that
+        // caused "banner add ho raha hai par website par dikhai nahi de raha").
         if (!empty($_FILES['image']['tmp_name'])) {
-            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','webp'])) {
-                $fn = 'banner_' . time() . '_' . generateRandomString(5) . '.' . $ext;
-                $dest = UPLOAD_DIR . '/products/' . $fn;
-                if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0755, true);
-                move_uploaded_file($_FILES['image']['tmp_name'], $dest);
-                $image = $fn;
-            }
+            $newFn = uploadImageFile($_FILES['image'], 'products', 'banner', ['jpg','jpeg','png','webp']);
+            if ($newFn) { $image = $newFn; }
         }
         if ($id) {
             $pdo->prepare("UPDATE banners SET title=?, subtitle=?, image=?, link=?, sort_order=?, status=? WHERE id=?")
                 ->execute([$title, $subtitle, $image, $link, $sort, $status, $id]);
+            setFlash('success', 'Banner updated.');
         } elseif ($image) {
             $pdo->prepare("INSERT INTO banners (title,subtitle,image,link,sort_order,status) VALUES (?,?,?,?,?,?)")
                 ->execute([$title, $subtitle, $image, $link, $sort, $status]);
+            setFlash('success', 'Banner added.');
+        } else {
+            // New banner submit without a successful image upload — tell the
+            // admin explicitly rather than silently ignoring the submit.
+            setFlash('error', 'Banner not saved: image upload failed or image missing.');
         }
-        setFlash('success', 'Banner saved.');
         redirect('banners.php');
     }
     if ($a === 'delete') {

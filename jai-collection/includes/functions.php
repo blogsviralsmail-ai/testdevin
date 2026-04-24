@@ -106,6 +106,48 @@ function productImageUrl($imagePath) {
     return UPLOAD_URL . '/products/' . $imagePath;
 }
 
+// uploadImageFile($_FILES['image'], 'products', 'prod') -> filename|false
+// Validates extension, generates unique filename, ensures target dir exists,
+// runs move_uploaded_file() and **checks the return value**. Previously call
+// sites ignored the return value and wrote the filename to the DB regardless
+// of whether the file was actually saved (e.g. when /uploads/ was not writable
+// by the php-fpm user — which was the root cause of "image upload hoti hai
+// par dikhai nahi deti" reports). On failure a generic $error is appended to
+// setFlash('error', …) so the admin sees something went wrong.
+function uploadImageFile($fileArr, $subdir = 'products', $prefix = 'prod',
+                         $allowedExt = ['jpg','jpeg','png','webp','gif']) {
+    if (empty($fileArr) || empty($fileArr['tmp_name']) || !is_uploaded_file($fileArr['tmp_name'])) {
+        return false;
+    }
+    if (($fileArr['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        error_log('[upload] PHP upload error code ' . $fileArr['error'] . ' for ' . ($fileArr['name'] ?? '?'));
+        setFlash('error', 'Image upload failed (PHP error ' . (int)$fileArr['error'] . '). Please try again.');
+        return false;
+    }
+    $ext = strtolower(pathinfo($fileArr['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExt, true)) {
+        setFlash('error', 'Image type not allowed. Use: ' . implode(', ', $allowedExt));
+        return false;
+    }
+    $fn   = $prefix . '_' . time() . '_' . generateRandomString(6) . '.' . $ext;
+    $dest = UPLOAD_DIR . '/' . $subdir . '/' . $fn;
+    if (!is_dir(dirname($dest))) {
+        @mkdir(dirname($dest), 0755, true);
+    }
+    if (!is_writable(dirname($dest))) {
+        error_log('[upload] target dir not writable: ' . dirname($dest));
+        setFlash('error', 'Server upload folder not writable — contact admin.');
+        return false;
+    }
+    if (!@move_uploaded_file($fileArr['tmp_name'], $dest)) {
+        error_log('[upload] move_uploaded_file failed: ' . $fileArr['tmp_name'] . ' -> ' . $dest);
+        setFlash('error', 'Could not save uploaded file. Please try again.');
+        return false;
+    }
+    @chmod($dest, 0644);
+    return $fn;
+}
+
 function productEffectivePrice($product, $variant = null) {
     if ($variant && $variant['price'] !== null && $variant['price'] !== '') {
         return (float)$variant['price'];
