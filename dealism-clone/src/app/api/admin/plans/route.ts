@@ -6,23 +6,24 @@ export async function POST(req: NextRequest) {
   try {
     await apiRequireAdmin();
     const { plans } = await req.json();
-    // Clear and re-save — simplest approach
-    await prisma.plan.deleteMany();
-    for (const p of plans) {
-      await prisma.plan.create({
-        data: {
-          name: p.name,
-          slug: p.slug,
-          priceMonthly: p.priceMonthly,
-          priceAnnual: p.priceAnnual,
-          conversationsQuota: p.conversationsQuota,
-          features: p.features,
-          isPopular: !!p.isPopular,
-          sortOrder: p.sortOrder ?? 0,
-          isActive: true,
-        },
-      });
-    }
+    await prisma.$transaction(async (tx) => {
+      await tx.plan.deleteMany();
+      for (const p of plans) {
+        await tx.plan.create({
+          data: {
+            name: p.name,
+            slug: p.slug,
+            priceMonthly: p.priceMonthly,
+            priceAnnual: p.priceAnnual,
+            conversationsQuota: p.conversationsQuota,
+            features: p.features,
+            isPopular: !!p.isPopular,
+            sortOrder: p.sortOrder ?? 0,
+            isActive: true,
+          },
+        });
+      }
+    });
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Error" }, { status: 400 });

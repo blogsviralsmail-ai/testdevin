@@ -4,16 +4,17 @@ import { getOpenAIModel } from "./settings";
 
 interface RAGContext {
   agentId: string;
+  userId: string;
   query: string;
   topK?: number;
 }
 
-export async function retrieveRelevantKnowledge({ agentId, query, topK = 4 }: RAGContext) {
+export async function retrieveRelevantKnowledge({ agentId, userId, query, topK = 4 }: RAGContext) {
   const queryEmbedding = await generateEmbedding(query);
   if (!queryEmbedding) return [];
 
   const items = await prisma.knowledgeItem.findMany({
-    where: { OR: [{ agentId }, { agentId: null }] },
+    where: { userId, OR: [{ agentId }, { agentId: null }] },
   });
 
   const scored = items
@@ -55,7 +56,11 @@ export async function generateAgentReply(opts: {
   });
   recentMessages.reverse();
 
-  const relevantKnowledge = await retrieveRelevantKnowledge({ agentId, query: userMessage });
+  const relevantKnowledge = await retrieveRelevantKnowledge({
+    agentId,
+    userId: agent.userId,
+    query: userMessage,
+  });
   const kbContext = relevantKnowledge.length
     ? `\n\nRelevant knowledge base entries:\n${relevantKnowledge.map((k) => `- ${k.title}: ${k.content.slice(0, 500)}`).join("\n")}`
     : "";

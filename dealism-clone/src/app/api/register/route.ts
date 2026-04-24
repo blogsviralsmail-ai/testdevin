@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getSetting } from "@/lib/settings";
 
 const schema = z.object({
   email: z.string().email(),
@@ -13,6 +14,14 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = schema.parse(body);
+
+    const allowSignups = await getSetting("allow_signups");
+    if (allowSignups === "false") {
+      return NextResponse.json(
+        { error: "Registration is currently closed. Contact the administrator." },
+        { status: 403 }
+      );
+    }
 
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) return NextResponse.json({ error: "Email already registered" }, { status: 400 });
