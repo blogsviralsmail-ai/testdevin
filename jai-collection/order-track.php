@@ -43,7 +43,13 @@ require_once __DIR__ . '/includes/header.php';
 <div class="jc-panel" style="max-width:700px;">
     <form method="get" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
         <input class="jc-input" name="order" placeholder="Order number e.g. JC..." value="<?php echo e($orderNumber); ?>" style="flex:1 1 200px;">
-        <?php if (!$customer): ?>
+        <?php
+        // Show the mobile input when (a) no customer is logged in, or (b) a
+        // customer is logged in but the order they're tracking is a guest
+        // order (no customer_id match) — otherwise guest orders placed before
+        // they registered would be inaccessible ("Order not found" forever).
+        $needsMobile = !$customer || ($orderNumber && !$order);
+        if ($needsMobile): ?>
         <input class="jc-input" name="mobile" placeholder="Mobile used at checkout" value="<?php echo e($mobile); ?>" style="flex:1 1 180px;">
         <?php endif; ?>
         <button class="jc-btn jc-btn-primary" type="submit">Track</button>

@@ -29,6 +29,19 @@ if (!defined('SITE_URL')) {
         define('SITE_URL', 'https://jaicollection.in');
     }
 }
+
+// ====== Trusted canonical URL for security-sensitive emails ======
+// SITE_URL is derived from the request Host header so the app works on any
+// domain, but that also means an attacker can send a forged Host header to
+// /forgot-password.php and receive an email with a reset link pointing at
+// evil.com — password-reset poisoning. For anything that gets emailed out
+// (password reset, account verification, order tracking links) we use
+// SITE_URL_TRUSTED which is ONLY read from env/config, never from the
+// request. Set JC_SITE_URL_TRUSTED in your systemd/nginx env to override.
+if (!defined('SITE_URL_TRUSTED')) {
+    $trusted = getenv('JC_SITE_URL_TRUSTED') ?: getenv('JC_SITE_URL') ?: 'https://jaicollection.in';
+    define('SITE_URL_TRUSTED', rtrim($trusted, '/'));
+}
 define('SITE_NAME', 'Jai Collection');
 define('SITE_TAGLINE', 'Fashion. Home. Daily Essentials.');
 define('SITE_CURRENCY', 'INR');

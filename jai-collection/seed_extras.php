@@ -7,6 +7,12 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/migrate.php';
 
+// Gate seeding behind an admin session — this script creates demo accounts
+// with well-known passwords (customer@123) and writes to products/banners.
+// Public access would give anyone who hits the URL login-ready customer
+// accounts and the ability to mutate catalog data.
+requireAdmin();
+
 header('Content-Type: text/plain; charset=UTF-8');
 $pdo = getPDO();
 $log = [];

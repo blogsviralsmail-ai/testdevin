@@ -16,7 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $token = bin2hex(random_bytes(24));
             $pdo->prepare("UPDATE agents SET reset_token = ?, reset_expires_at = DATE_ADD(NOW(), INTERVAL 60 MINUTE) WHERE id = ?")
                 ->execute([$token, $a['id']]);
-            $link = SITE_URL . '/agent/reset-password.php?token=' . $token;
+            // SITE_URL_TRUSTED (not SITE_URL) — request Host header would let
+            // an attacker redirect the reset link at evil.com (password-reset
+            // poisoning). Trusted URL comes from env/hardcoded config only.
+            $link = SITE_URL_TRUSTED . '/agent/reset-password.php?token=' . $token;
             notifyPasswordReset($a['email'], $a['name'], $link);
         }
         $msg = 'If the account exists and has an email on file, a reset link has been sent.';

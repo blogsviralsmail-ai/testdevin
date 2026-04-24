@@ -16,7 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $token = bin2hex(random_bytes(24));
             $pdo->prepare("UPDATE customers SET reset_token = ?, reset_expires_at = DATE_ADD(NOW(), INTERVAL 60 MINUTE) WHERE id = ?")
                 ->execute([$token, $c['id']]);
-            $link = SITE_URL . '/account/reset-password.php?token=' . $token;
+            // SITE_URL_TRUSTED (not SITE_URL) — reset link must never use the
+            // request Host header, otherwise a forged Host → password-reset
+            // poisoning would leak the token to an attacker-controlled domain.
+            $link = SITE_URL_TRUSTED . '/account/reset-password.php?token=' . $token;
             notifyPasswordReset($c['email'], $c['name'], $link);
         }
         // Always show same message (do not leak which accounts exist)
