@@ -23,6 +23,9 @@ interface SocketEntry {
 }
 
 const sockets = new Map<string, SocketEntry>();
+// Tracks channels the operator explicitly asked to stop, so the close
+// handler doesn't schedule an auto-reconnect right after stopChannel().
+const intentionalStops = new Set<string>();
 const logger = pino({ level: "silent" });
 
 export async function startChannel(channelId: string): Promise<{ ok: boolean; error?: string }> {
@@ -72,7 +75,8 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
         where: { id: channelId },
         data: { status: "disconnected", qrCode: null },
       });
-      if (code !== DisconnectReason.loggedOut) {
+      const wasIntentional = intentionalStops.delete(channelId);
+      if (!wasIntentional && code !== DisconnectReason.loggedOut) {
         setTimeout(() => startChannel(channelId).catch(() => {}), 3000);
       }
     }
@@ -171,6 +175,7 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
 
 export async function stopChannel(channelId: string) {
   const entry = sockets.get(channelId);
+  intentionalStops.add(channelId);
   if (entry) {
     try {
       entry.sock.end(undefined);

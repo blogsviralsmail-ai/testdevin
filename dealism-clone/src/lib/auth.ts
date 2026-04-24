@@ -34,7 +34,24 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = (user as { id: string }).id;
         token.role = (user as { role: string }).role;
+        (token as { roleCheckedAt?: number }).roleCheckedAt = Date.now();
+        return token;
       }
+      // Refresh role from DB periodically so admin promote/demote and account
+      // deletion take effect without forcing the user to log out first.
+      const id = token.id as string | undefined;
+      if (!id) return token;
+      const checkedAt = (token as { roleCheckedAt?: number }).roleCheckedAt ?? 0;
+      if (Date.now() - checkedAt < 60_000) return token;
+      const fresh = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+      if (!fresh) {
+        // User was deleted — invalidate by dropping id/role so guards redirect to login.
+        delete (token as { id?: string }).id;
+        delete (token as { role?: string }).role;
+        return token;
+      }
+      token.role = fresh.role;
+      (token as { roleCheckedAt?: number }).roleCheckedAt = Date.now();
       return token;
     },
     async session({ session, token }) {
