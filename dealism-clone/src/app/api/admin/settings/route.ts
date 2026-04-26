@@ -44,7 +44,12 @@ export async function GET() {
   try {
     await apiRequireAdmin();
     const settings = await prisma.setting.findMany();
-    return NextResponse.json({ settings });
+    // Never return secret values to the browser. Replace with a sentinel
+    // so the form can show a "saved" hint without exposing the value.
+    const safe = settings.map((s) =>
+      SECRET_KEYS.has(s.key) ? { ...s, value: s.value ? "" : "", isSet: Boolean(s.value) } : s,
+    );
+    return NextResponse.json({ settings: safe });
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Error" }, { status: 400 });
   }

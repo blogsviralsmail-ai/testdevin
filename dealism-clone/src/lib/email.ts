@@ -48,25 +48,37 @@ async function sendRaw(input: SendInput): Promise<{ ok: boolean; reason?: string
   }
 }
 
+/** Escape user-supplied strings before interpolating into HTML email bodies. */
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function wrap(brandName: string, body: string): string {
+  const safeBrand = escapeHtml(brandName);
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111;">
-      <h1 style="font-size:22px;margin:0 0 16px;color:#ea580c;">${brandName}</h1>
+      <h1 style="font-size:22px;margin:0 0 16px;color:#ea580c;">${safeBrand}</h1>
       ${body}
       <hr style="margin:32px 0 16px;border:none;border-top:1px solid #eee;" />
-      <p style="font-size:12px;color:#888;margin:0;">Sent by ${brandName}. If you didn't expect this email, you can ignore it.</p>
+      <p style="font-size:12px;color:#888;margin:0;">Sent by ${safeBrand}. If you didn't expect this email, you can ignore it.</p>
     </div>
   `;
 }
 
 export async function sendWelcomeEmail(opts: { to: string; name?: string | null }) {
   const brandName = await getBrandName();
-  const greeting = opts.name ? `Hi ${opts.name},` : "Hi there,";
+  const safeBrand = escapeHtml(brandName);
+  const greeting = opts.name ? `Hi ${escapeHtml(opts.name)},` : "Hi there,";
   const html = wrap(
     brandName,
     `
       <p>${greeting}</p>
-      <p>Welcome to ${brandName}! Your account is ready. You can sign in to your dashboard and start building your AI sales agent.</p>
+      <p>Welcome to ${safeBrand}! Your account is ready. You can sign in to your dashboard and start building your AI sales agent.</p>
       <p>Get started:</p>
       <ol>
         <li>Create your first agent</li>

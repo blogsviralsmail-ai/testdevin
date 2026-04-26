@@ -21,6 +21,7 @@ export function DashboardSidebar({ isAdmin, userEmail }: SidebarProps) {
     { href: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen },
     { href: "/dashboard/channels", label: "Channels", icon: Smartphone },
     { href: "/dashboard/conversations", label: "Conversations", icon: MessageSquare },
+    { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ];
 

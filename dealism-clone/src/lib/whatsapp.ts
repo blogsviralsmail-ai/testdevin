@@ -209,6 +209,12 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
   return { ok: true };
 }
 
+/**
+ * Soft-stop: tear down the live socket and mark the row disconnected,
+ * but keep the Baileys auth directory on disk so reconnecting later is
+ * instant (no QR re-scan). This is what the dashboard "Disconnect"
+ * button calls.
+ */
 export async function stopChannel(channelId: string) {
   const entry = sockets.get(channelId);
   intentionalStops.add(channelId);
@@ -218,14 +224,32 @@ export async function stopChannel(channelId: string) {
     } catch {}
     sockets.delete(channelId);
   }
+  await prisma.channel.update({
+    where: { id: channelId },
+    data: { status: "disconnected", qrCode: null },
+  });
+}
+
+/**
+ * Hard-destroy: stop the socket AND wipe the auth directory + clear
+ * sessionData. Use only when the Channel row itself is being deleted,
+ * not for a routine pause / disconnect.
+ */
+export async function destroyChannel(channelId: string) {
+  await stopChannel(channelId);
   const authDir = path.join(AUTH_ROOT, channelId);
   if (fs.existsSync(authDir)) {
     fs.rmSync(authDir, { recursive: true, force: true });
   }
-  await prisma.channel.update({
-    where: { id: channelId },
-    data: { status: "disconnected", qrCode: null, sessionData: null },
-  });
+  // Best-effort — the row may already be deleted by the caller.
+  try {
+    await prisma.channel.update({
+      where: { id: channelId },
+      data: { sessionData: null },
+    });
+  } catch {
+    // row gone — nothing to do
+  }
 }
 
 export function getChannelQR(channelId: string): string | null {

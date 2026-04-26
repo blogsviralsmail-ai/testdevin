@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiRequireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stopChannel } from "@/lib/channels";
+import { destroyChannel } from "@/lib/channels";
 
 async function assertOwn(userId: string, id: string) {
   const ch = await prisma.channel.findUnique({ where: { id } });
@@ -34,7 +34,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   try {
     const user = await apiRequireUser();
     await assertOwn(user.id, params.id);
-    await stopChannel(params.id).catch(() => {});
+    await destroyChannel(params.id).catch(() => {});
     await prisma.channel.delete({ where: { id: params.id } });
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
