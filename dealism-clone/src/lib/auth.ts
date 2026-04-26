@@ -4,6 +4,18 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 
+/**
+ * Normalise email addresses to a canonical lowercase form before any
+ * lookup or write. Both SQLite and Postgres use case-sensitive string
+ * comparison by default, so without this `User@x.com` and `user@x.com`
+ * would create distinct rows even though the @unique constraint is
+ * meant to dedupe them. Trim whitespace too — copy/paste from email
+ * clients commonly leaks a trailing space.
+ */
+export function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
@@ -16,7 +28,9 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+        const user = await prisma.user.findUnique({
+          where: { email: normalizeEmail(credentials.email) },
+        });
         if (!user) return null;
         const valid = await bcrypt.compare(credentials.password, user.password);
         if (!valid) return null;

@@ -111,5 +111,12 @@ function isPrivateV6(ip: string): boolean {
     const v4 = lower.replace("::ffff:", "");
     return isPrivateV4(v4);
   }
+  // IPv4-compatible IPv6 (deprecated `::IPv4` form, RFC 4291). The WHATWG
+  // URL parser normalises e.g. `::127.0.0.1` to `::7f00:1` — none of the
+  // string-prefix checks above catch the hex form, so an attacker could
+  // reach loopback / private IPv4 ranges via this back-door. Treat the
+  // entire ::/96 prefix as private; legitimate public IPv6 traffic
+  // never lives there.
+  if (lower.startsWith("::") && !lower.includes(":ffff:")) return true;
   return false;
 }

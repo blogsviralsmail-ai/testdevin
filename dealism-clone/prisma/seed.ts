@@ -5,7 +5,9 @@ import "dotenv/config";
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = process.env.ADMIN_EMAIL || "admin@dealism.local";
+  // Lowercase to match the canonical form everywhere else (register, auth,
+  // invitations) so the @unique constraint actually dedupes.
+  const email = (process.env.ADMIN_EMAIL || "admin@dealism.local").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD || "admin123";
   const hashed = await bcrypt.hash(password, 10);
 

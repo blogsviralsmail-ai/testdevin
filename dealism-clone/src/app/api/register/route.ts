@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { normalizeEmail } from "@/lib/auth";
 import { getSetting } from "@/lib/settings";
 import { sendWelcomeEmail } from "@/lib/email";
 
@@ -14,7 +15,10 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const data = schema.parse(body);
+    const parsed = schema.parse(body);
+    // Canonical lowercase form so the @unique constraint actually
+    // dedupes "User@x.com" and "user@x.com".
+    const data = { ...parsed, email: normalizeEmail(parsed.email) };
 
     const [allowSignups, quotaSetting] = await Promise.all([
       getSetting("allow_signups"),

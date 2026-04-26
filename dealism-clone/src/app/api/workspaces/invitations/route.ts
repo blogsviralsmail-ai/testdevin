@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
-import { apiRequireUserWithWorkspace } from "@/lib/auth";
+import { apiRequireUserWithWorkspace, normalizeEmail } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageWorkspace } from "@/lib/workspace";
 import { sendWorkspaceInviteEmail } from "@/lib/email";
@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Only owners and admins can invite" }, { status: 403 });
     }
     const body = await req.json();
-    const { email, role } = schema.parse(body);
+    const parsed = schema.parse(body);
+    const email = normalizeEmail(parsed.email);
+    const role = parsed.role;
 
     // Resolve the trusted origin BEFORE creating any DB rows. If we can't
     // build a safe acceptUrl there's no point persisting the invitation —
@@ -72,17 +74,17 @@ export async function POST(req: NextRequest) {
     });
     let invitation;
     if (existing && existing.expiresAt > new Date()) {
-      // Re-inviting the same email — if the admin picked a different role
-      // this time, reflect that on the existing invitation row instead of
-      // silently keeping the stale role.
-      if (role && existing.role !== role) {
-        invitation = await prisma.invitation.update({
-          where: { id: existing.id },
-          data: { role },
-        });
-      } else {
-        invitation = existing;
-      }
+      // Re-inviting the same email — refresh expiry to the full TTL so
+      // the invitee always gets a fresh window (the prior row may have
+      // been near expiration), and reflect any new role the admin picked.
+      const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+      invitation = await prisma.invitation.update({
+        where: { id: existing.id },
+        data: {
+          role: role ?? existing.role,
+          expiresAt,
+        },
+      });
     } else {
       const token = randomBytes(TOKEN_BYTES).toString("hex");
       const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
