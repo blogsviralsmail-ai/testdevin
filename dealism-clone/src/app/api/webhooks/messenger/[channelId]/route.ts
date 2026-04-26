@@ -44,13 +44,17 @@ export async function POST(req: NextRequest, { params }: { params: { channelId: 
 
   const rawBody = await req.text();
 
-  // Meta App Secret Proof verification (X-Hub-Signature-256). Optional —
-  // only enforced if the admin saved an app_secret. We accept the
-  // payload either way because Meta sometimes doesn't sign older test
-  // messages, but log the bypass.
+  // Meta App Secret Proof verification (X-Hub-Signature-256). Only
+  // *required* once the admin has saved a messenger_app_secret — but
+  // when it IS set, we enforce strictly: a missing or malformed header
+  // is an outright reject, otherwise an attacker could simply omit the
+  // header to bypass HMAC verification.
   const sigHeader = req.headers.get("x-hub-signature-256") || "";
   const appSecretSetting = await prisma.setting.findUnique({ where: { key: "messenger_app_secret" } });
-  if (appSecretSetting?.value && sigHeader.startsWith("sha256=")) {
+  if (appSecretSetting?.value) {
+    if (!sigHeader.startsWith("sha256=")) {
+      return NextResponse.json({ error: "missing or malformed signature" }, { status: 400 });
+    }
     const expected =
       "sha256=" + crypto.createHmac("sha256", appSecretSetting.value).update(rawBody).digest("hex");
     if (
