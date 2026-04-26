@@ -118,7 +118,7 @@ export async function sendPasswordResetEmail(opts: { to: string; resetUrl: strin
     `
       <p>Click the button below to reset your password. This link expires in 1 hour.</p>
       <p style="margin:24px 0;">
-        <a href="${opts.resetUrl}" style="background:#ea580c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Reset password</a>
+        <a href="${escapeHtml(opts.resetUrl)}" style="background:#ea580c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Reset password</a>
       </p>
       <p style="font-size:12px;color:#666;">If you didn&rsquo;t request this, ignore this email — your password will stay the same.</p>
     `,

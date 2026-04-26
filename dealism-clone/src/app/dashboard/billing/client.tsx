@@ -80,10 +80,16 @@ export function BillingClient({ plan, razorpayConfigured }: PlanProps) {
     }
   }
 
-  const features = plan.features
-    .split("\n")
-    .map((f) => f.trim())
-    .filter(Boolean);
+  // Plans are stored with `features` as a JSON-stringified array (matches
+  // /price and the admin plan editor). Fall back to newline-split for any
+  // legacy rows that might still contain plain text.
+  let features: string[] = [];
+  try {
+    const parsed = JSON.parse(plan.features) as unknown;
+    if (Array.isArray(parsed)) features = parsed.map(String);
+  } catch {
+    features = plan.features.split("\n").map((f) => f.trim()).filter(Boolean);
+  }
 
   return (
     <>
