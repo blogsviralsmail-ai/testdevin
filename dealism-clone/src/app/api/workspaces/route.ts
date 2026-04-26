@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiRequireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeWorkspaceRole } from "@/lib/workspace";
 
 const createSchema = z.object({
   name: z.string().min(1).max(80),
@@ -28,7 +29,7 @@ export async function GET() {
       workspaces: memberships.map((m) => ({
         id: m.workspace.id,
         name: m.workspace.name,
-        role: m.role,
+        role: normalizeWorkspaceRole(m.role),
         ownerId: m.workspace.ownerId,
       })),
     });

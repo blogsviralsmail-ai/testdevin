@@ -26,8 +26,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const entries: Array<{ key: string; value: string; category?: string }> = body.settings ?? [];
     for (const e of entries) {
-      // Don't blank out an existing secret if the admin left the field empty.
-      if (SECRET_KEYS.has(e.key) && (e.value === "" || e.value == null)) continue;
+      // Skip empty submissions across the board. The form sends every
+      // field on every save (including non-secret ones it pre-fills from
+      // provider defaults), so accepting "" here would overwrite any
+      // value the admin had previously customised. Treat empty as
+      // "unchanged" — there is no UI to deliberately blank a setting,
+      // so we don't lose any functionality.
+      if (e.value === "" || e.value == null) continue;
       await prisma.setting.upsert({
         where: { key: e.key },
         update: { value: e.value, category: e.category ?? "general" },

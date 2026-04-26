@@ -80,7 +80,10 @@ if (databaseUrl.startsWith("file:")) {
   }
   const dest = join(stagingDir, "db.sqlite");
   if (hasBinary("sqlite3")) {
-    execFileSync("sqlite3", [resolved, `.backup '${dest}'`], { stdio: "inherit" });
+    // execFileSync passes args directly (no shell), so the dot-command
+    // is parsed by sqlite3 itself. Don't wrap `dest` in single quotes —
+    // they'd be treated as part of the path by sqlite3's parser.
+    execFileSync("sqlite3", [resolved, `.backup ${dest}`], { stdio: "inherit" });
     console.log(`[backup] sqlite3 .backup -> ${dest} (${statSync(dest).size} bytes)`);
   } else {
     copyFileSync(resolved, dest);

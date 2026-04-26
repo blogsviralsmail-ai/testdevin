@@ -13,6 +13,23 @@ import { prisma } from "./prisma";
 
 export type WorkspaceRole = "owner" | "admin" | "member";
 
+const WORKSPACE_ROLES: readonly WorkspaceRole[] = ["owner", "admin", "member"];
+
+/**
+ * Coerce a free-form Membership.role string (Prisma stores it as String,
+ * not enum) into a known WorkspaceRole. Anything unexpected — typo,
+ * future role added without a migration, manual DB edit — collapses to
+ * the most restrictive role so privileged routes never silently treat
+ * garbage as admin.
+ */
+export function normalizeWorkspaceRole(raw: string | null | undefined): WorkspaceRole {
+  if (!raw) return "member";
+  const lower = raw.toLowerCase();
+  return (WORKSPACE_ROLES as readonly string[]).includes(lower)
+    ? (lower as WorkspaceRole)
+    : "member";
+}
+
 export interface ActiveWorkspace {
   id: string;
   name: string;
@@ -78,7 +95,7 @@ export async function getActiveWorkspace(userId: string): Promise<ActiveWorkspac
         id: m.workspace.id,
         name: m.workspace.name,
         ownerId: m.workspace.ownerId,
-        role: m.role as WorkspaceRole,
+        role: normalizeWorkspaceRole(m.role),
       };
     }
     // Membership revoked — fall through to personal workspace.

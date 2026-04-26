@@ -14,14 +14,22 @@ const schema = z.object({
 const TOKEN_BYTES = 32;
 const INVITE_TTL_DAYS = 7;
 
-function publicAppUrl(req: NextRequest): string {
-  const fromEnv = process.env.NEXTAUTH_URL || process.env.APP_URL;
+/**
+ * Trusted public origin for invite emails.
+ *
+ * We deliberately do NOT fall back to the request's Host / X-Forwarded-Proto
+ * headers — those are attacker-controlled (Host header poisoning) and an
+ * authenticated workspace admin could otherwise craft a request that makes
+ * the server email a phishing acceptUrl to a victim. Falls back to the
+ * `public_app_url` Setting row so admins can override without redeploying.
+ */
+async function trustedPublicAppUrl(): Promise<string | null> {
+  const fromEnv = (process.env.NEXTAUTH_URL || process.env.APP_URL || "").trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  // Fall back to the request's own origin — works behind nginx as long as
-  // the proxy forwards the Host header.
-  const host = req.headers.get("host") ?? "localhost:3030";
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
+  const { getSetting } = await import("@/lib/settings");
+  const fromSetting = (await getSetting("public_app_url"))?.trim();
+  if (fromSetting) return fromSetting.replace(/\/$/, "");
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -76,7 +84,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const acceptUrl = `${publicAppUrl(req)}/invite/${invitation.token}`;
+    const origin = await trustedPublicAppUrl();
+    if (!origin) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot send invitation: NEXTAUTH_URL / APP_URL env or public_app_url setting must be configured.",
+        },
+        { status: 500 },
+      );
+    }
+    const acceptUrl = `${origin}/invite/${invitation.token}`;
     const inviterName = user.name?.trim() || user.email;
     void sendWorkspaceInviteEmail({
       to: email,
