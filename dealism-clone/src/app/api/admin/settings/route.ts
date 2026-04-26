@@ -2,12 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiRequireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Mirrors the SECRET_KEYS list in src/app/admin/settings/page.tsx.
+ * Empty submissions for these keys are skipped server-side so the
+ * admin can leave the input blank to preserve the existing value.
+ */
+const SECRET_KEYS = new Set<string>([
+  "ai_api_key",
+  "openai_api_key",
+  "embedding_api_key",
+  "razorpay_key_secret",
+  "razorpay_webhook_secret",
+  "telegram_default_bot_token",
+  "resend_api_key",
+  "backup_s3_secret_key",
+  "backup_s3_access_key",
+  "sentry_dsn",
+]);
+
 export async function POST(req: NextRequest) {
   try {
     await apiRequireAdmin();
     const body = await req.json();
     const entries: Array<{ key: string; value: string; category?: string }> = body.settings ?? [];
     for (const e of entries) {
+      // Don't blank out an existing secret if the admin left the field empty.
+      if (SECRET_KEYS.has(e.key) && (e.value === "" || e.value == null)) continue;
       await prisma.setting.upsert({
         where: { key: e.key },
         update: { value: e.value, category: e.category ?? "general" },

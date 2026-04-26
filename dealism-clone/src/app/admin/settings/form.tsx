@@ -26,36 +26,42 @@ export function SettingsForm({
   providers: ProviderInfo[];
 }) {
   // -------- AI / LLM ---------
+  // Helper: a saved secret is never echoed back to us; the page only sets a
+  // <key>__set flag. We use it to show "(saved)" placeholders so admins know
+  // they don't have to re-enter the key.
+  const isSet = (key: string) => initial[`${key}__set`] === "1";
+  const savedHint = (real: string) => isSet(real) ? "•••••• (saved — leave blank to keep)" : "";
+
   const [aiProvider, setAiProvider] = useState(initial.ai_provider || "openai");
-  const [aiKey, setAiKey] = useState(initial.ai_api_key || initial.openai_api_key || "");
+  const [aiKey, setAiKey] = useState("");
   const [aiBaseUrl, setAiBaseUrl] = useState(initial.ai_base_url || "");
   const [aiModel, setAiModel] = useState(initial.ai_model || initial.openai_model || "");
 
   // -------- Embeddings ---------
-  const [embKey, setEmbKey] = useState(initial.embedding_api_key || "");
+  const [embKey, setEmbKey] = useState("");
   const [embBaseUrl, setEmbBaseUrl] = useState(initial.embedding_base_url || "");
   const [embModel, setEmbModel] = useState(initial.embedding_model || "");
 
   // -------- Razorpay ---------
   const [razorpayKey, setRazorpayKey] = useState(initial.razorpay_key_id ?? "");
-  const [razorpaySecret, setRazorpaySecret] = useState(initial.razorpay_key_secret ?? "");
-  const [razorpayWebhookSecret, setRazorpayWebhookSecret] = useState(initial.razorpay_webhook_secret ?? "");
+  const [razorpaySecret, setRazorpaySecret] = useState("");
+  const [razorpayWebhookSecret, setRazorpayWebhookSecret] = useState("");
 
   // -------- Telegram ---------
-  const [telegramDefaultBotToken, setTelegramDefaultBotToken] = useState(initial.telegram_default_bot_token ?? "");
+  const [telegramDefaultBotToken, setTelegramDefaultBotToken] = useState("");
 
   // -------- Email (Resend) ---------
-  const [resendKey, setResendKey] = useState(initial.resend_api_key ?? "");
+  const [resendKey, setResendKey] = useState("");
   const [emailFrom, setEmailFrom] = useState(initial.email_from ?? "");
 
   // -------- Backups (S3) ---------
   const [s3Endpoint, setS3Endpoint] = useState(initial.backup_s3_endpoint ?? "");
   const [s3Bucket, setS3Bucket] = useState(initial.backup_s3_bucket ?? "");
-  const [s3AccessKey, setS3AccessKey] = useState(initial.backup_s3_access_key ?? "");
-  const [s3Secret, setS3Secret] = useState(initial.backup_s3_secret_key ?? "");
+  const [s3AccessKey, setS3AccessKey] = useState("");
+  const [s3Secret, setS3Secret] = useState("");
 
   // -------- Monitoring (Sentry) ---------
-  const [sentryDsn, setSentryDsn] = useState(initial.sentry_dsn ?? "");
+  const [sentryDsn, setSentryDsn] = useState("");
 
   // -------- Branding ---------
   const [brandName, setBrandName] = useState(initial.brand_name ?? "Dealism");
@@ -167,7 +173,7 @@ export function SettingsForm({
             <Label>API Key</Label>
             <Input
               type="password"
-              placeholder={provider?.apiKeyHint || "API key"}
+              placeholder={savedHint("ai_api_key") || provider?.apiKeyHint || "API key"}
               value={aiKey}
               onChange={(e) => setAiKey(e.target.value)}
             />
@@ -221,7 +227,7 @@ export function SettingsForm({
             <Label>Embedding API Key</Label>
             <Input
               type="password"
-              placeholder="sk-... (defaults to chat provider key)"
+              placeholder={savedHint("embedding_api_key") || "sk-... (defaults to chat provider key)"}
               value={embKey}
               onChange={(e) => setEmbKey(e.target.value)}
             />
@@ -257,13 +263,18 @@ export function SettingsForm({
           </div>
           <div>
             <Label>Key Secret</Label>
-            <Input type="password" value={razorpaySecret} onChange={(e) => setRazorpaySecret(e.target.value)} />
+            <Input
+              type="password"
+              placeholder={savedHint("razorpay_key_secret")}
+              value={razorpaySecret}
+              onChange={(e) => setRazorpaySecret(e.target.value)}
+            />
           </div>
           <div>
             <Label>Webhook Secret</Label>
             <Input
               type="password"
-              placeholder="(set after creating webhook in Razorpay dashboard)"
+              placeholder={savedHint("razorpay_webhook_secret") || "(set after creating webhook in Razorpay dashboard)"}
               value={razorpayWebhookSecret}
               onChange={(e) => setRazorpayWebhookSecret(e.target.value)}
             />
@@ -283,7 +294,7 @@ export function SettingsForm({
             <Label>Default Bot Token</Label>
             <Input
               type="password"
-              placeholder="123456:ABC-DEF1234ghIkl..."
+              placeholder={savedHint("telegram_default_bot_token") || "123456:ABC-DEF1234ghIkl..."}
               value={telegramDefaultBotToken}
               onChange={(e) => setTelegramDefaultBotToken(e.target.value)}
             />
@@ -301,7 +312,12 @@ export function SettingsForm({
         <CardContent className="space-y-4">
           <div>
             <Label>Resend API Key</Label>
-            <Input type="password" placeholder="re_..." value={resendKey} onChange={(e) => setResendKey(e.target.value)} />
+            <Input
+              type="password"
+              placeholder={savedHint("resend_api_key") || "re_..."}
+              value={resendKey}
+              onChange={(e) => setResendKey(e.target.value)}
+            />
           </div>
           <div>
             <Label>From Address</Label>
@@ -336,11 +352,21 @@ export function SettingsForm({
           </div>
           <div>
             <Label>Access Key</Label>
-            <Input value={s3AccessKey} onChange={(e) => setS3AccessKey(e.target.value)} />
+            <Input
+              type="password"
+              placeholder={savedHint("backup_s3_access_key")}
+              value={s3AccessKey}
+              onChange={(e) => setS3AccessKey(e.target.value)}
+            />
           </div>
           <div>
             <Label>Secret Key</Label>
-            <Input type="password" value={s3Secret} onChange={(e) => setS3Secret(e.target.value)} />
+            <Input
+              type="password"
+              placeholder={savedHint("backup_s3_secret_key")}
+              value={s3Secret}
+              onChange={(e) => setS3Secret(e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -354,7 +380,8 @@ export function SettingsForm({
           <div>
             <Label>Sentry DSN</Label>
             <Input
-              placeholder="https://xxx@xxx.ingest.sentry.io/xxx"
+              type="password"
+              placeholder={savedHint("sentry_dsn") || "https://xxx@xxx.ingest.sentry.io/xxx"}
               value={sentryDsn}
               onChange={(e) => setSentryDsn(e.target.value)}
             />

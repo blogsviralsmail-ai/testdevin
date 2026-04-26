@@ -26,7 +26,7 @@
  *   DATABASE_URL           Prisma connection string
  *   BAILEYS_AUTH_DIR       optional, defaults to ./baileys-auth
  */
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync, statSync, mkdtempSync, existsSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
@@ -70,11 +70,20 @@ if (databaseUrl.startsWith("file:")) {
   copyFileSync(resolved, join(stagingDir, "db.sqlite"));
   console.log(`[backup] copied SQLite DB (${statSync(resolved).size} bytes)`);
 } else if (databaseUrl.startsWith("postgres")) {
-  // Postgres — use pg_dump if available.
+  // Postgres — use pg_dump if available. Pass the connection string via
+  // argv (NOT a shell-interpolated string) so passwords containing $, `,
+  // \, or " can never be interpreted as shell metacharacters.
   try {
-    execSync(`pg_dump --no-owner --format=custom --file=${join(stagingDir, "db.dump")} "${databaseUrl}"`, {
-      stdio: "inherit",
-    });
+    execFileSync(
+      "pg_dump",
+      [
+        "--no-owner",
+        "--format=custom",
+        `--file=${join(stagingDir, "db.dump")}`,
+        databaseUrl,
+      ],
+      { stdio: "inherit" },
+    );
     console.log("[backup] pg_dump complete");
   } catch (err) {
     console.error("pg_dump failed — install postgresql-client (pg_dump) on this machine.");
@@ -88,7 +97,13 @@ if (databaseUrl.startsWith("file:")) {
 // 2. Baileys auth state
 const baileysDir = env("BAILEYS_AUTH_DIR", join(process.cwd(), "baileys-auth"));
 if (existsSync(baileysDir)) {
-  execSync(`tar -czf ${join(stagingDir, "baileys-auth.tar.gz")} -C ${join(baileysDir, "..")} ${basename(baileysDir)}`);
+  execFileSync("tar", [
+    "-czf",
+    join(stagingDir, "baileys-auth.tar.gz"),
+    "-C",
+    join(baileysDir, ".."),
+    basename(baileysDir),
+  ]);
   console.log("[backup] tarred baileys-auth/");
 } else {
   console.log("[backup] no baileys-auth/ directory; skipping");
@@ -98,7 +113,7 @@ if (existsSync(baileysDir)) {
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 const archiveName = `dealism-backup-${stamp}.tar.gz`;
 const archivePath = join(tmpdir(), archiveName);
-execSync(`tar -czf ${archivePath} -C ${stagingDir} .`);
+execFileSync("tar", ["-czf", archivePath, "-C", stagingDir, "."]);
 const archiveBytes = readFileSync(archivePath);
 console.log(`[backup] archive size: ${archiveBytes.length} bytes`);
 
