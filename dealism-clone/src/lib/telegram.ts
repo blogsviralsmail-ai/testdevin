@@ -273,6 +273,7 @@ async function handleUpdate(channelId: string, entry: BotEntry, update: TgUpdate
       .create({
         data: {
           userId: ch.userId,
+          workspaceId: ch.workspaceId,
           agentId: ch.agentId,
           title: `Auto-learned: ${msg.text.slice(0, 40)}`,
           content,
