@@ -50,7 +50,17 @@ export async function POST(req: NextRequest) {
     });
     let invitation;
     if (existing && existing.expiresAt > new Date()) {
-      invitation = existing;
+      // Re-inviting the same email — if the admin picked a different role
+      // this time, reflect that on the existing invitation row instead of
+      // silently keeping the stale role.
+      if (role && existing.role !== role) {
+        invitation = await prisma.invitation.update({
+          where: { id: existing.id },
+          data: { role },
+        });
+      } else {
+        invitation = existing;
+      }
     } else {
       const token = randomBytes(TOKEN_BYTES).toString("hex");
       const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);

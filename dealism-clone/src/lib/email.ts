@@ -48,6 +48,20 @@ async function sendRaw(input: SendInput): Promise<{ ok: boolean; reason?: string
   }
 }
 
+/**
+ * Resolve the public origin for absolute links in emails. Email clients
+ * have no base URL context, so all <a href> values must be absolute.
+ * Falls back to the configured app URL setting, then NEXTAUTH_URL/APP_URL,
+ * then a sane default.
+ */
+async function getPublicAppUrl(): Promise<string> {
+  const fromSetting = (await getSetting("public_app_url"))?.trim();
+  if (fromSetting) return fromSetting.replace(/\/$/, "");
+  const fromEnv = (process.env.NEXTAUTH_URL || process.env.APP_URL || "").trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  return "https://chatbot.kkhsmedia.com";
+}
+
 /** Escape user-supplied strings before interpolating into HTML email bodies. */
 function escapeHtml(input: string): string {
   return input
@@ -98,12 +112,13 @@ export async function sendQuotaWarningEmail(opts: {
   pct: number;
 }) {
   const brandName = await getBrandName();
+  const billingUrl = `${await getPublicAppUrl()}/dashboard/billing`;
   const html = wrap(
     brandName,
     `
       <p>You&rsquo;ve used <strong>${opts.used} / ${opts.quota}</strong> conversations (${opts.pct}%) this billing period.</p>
       <p>When you reach 100%, your AI will pause auto-replies until your quota resets or you upgrade your plan.</p>
-      <p><a href="/dashboard/billing" style="color:#ea580c;">Upgrade your plan →</a></p>
+      <p><a href="${escapeHtml(billingUrl)}" style="color:#ea580c;">Upgrade your plan &rarr;</a></p>
     `,
   );
   const subject =

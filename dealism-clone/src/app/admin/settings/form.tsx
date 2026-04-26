@@ -32,15 +32,30 @@ export function SettingsForm({
   const isSet = (key: string) => initial[`${key}__set`] === "1";
   const savedHint = (real: string) => isSet(real) ? "•••••• (saved — leave blank to keep)" : "";
 
-  const [aiProvider, setAiProvider] = useState(initial.ai_provider || "openai");
+  // Resolve sane defaults from the configured provider so non-OpenAI
+  // providers (e.g. DeepSeek, Groq) don't show empty base URL / model
+  // fields on first render — admins shouldn't have to flip the
+  // dropdown to "rehydrate" their saved configuration.
+  const initialProviderId = initial.ai_provider || "openai";
+  const initialProvider =
+    providers.find((p) => p.id === initialProviderId) ?? providers[0];
+  const [aiProvider, setAiProvider] = useState(initialProviderId);
   const [aiKey, setAiKey] = useState("");
-  const [aiBaseUrl, setAiBaseUrl] = useState(initial.ai_base_url || "");
-  const [aiModel, setAiModel] = useState(initial.ai_model || initial.openai_model || "");
+  const [aiBaseUrl, setAiBaseUrl] = useState(
+    initial.ai_base_url || initialProvider?.baseUrl || "",
+  );
+  const [aiModel, setAiModel] = useState(
+    initial.ai_model || initial.openai_model || initialProvider?.defaultModel || "",
+  );
 
   // -------- Embeddings ---------
   const [embKey, setEmbKey] = useState("");
-  const [embBaseUrl, setEmbBaseUrl] = useState(initial.embedding_base_url || "");
-  const [embModel, setEmbModel] = useState(initial.embedding_model || "");
+  const [embBaseUrl, setEmbBaseUrl] = useState(
+    initial.embedding_base_url || (initialProvider?.supportsEmbeddings ? initialProvider.baseUrl : "") || "",
+  );
+  const [embModel, setEmbModel] = useState(
+    initial.embedding_model || initialProvider?.defaultEmbeddingModel || "",
+  );
 
   // -------- Razorpay ---------
   const [razorpayKey, setRazorpayKey] = useState(initial.razorpay_key_id ?? "");

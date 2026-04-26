@@ -55,14 +55,24 @@ export async function POST(req: NextRequest) {
   const plan = await prisma.plan.findUnique({ where: { slug: planSlug } });
   if (!plan) return NextResponse.json({ ok: true, ignored: "unknown plan" });
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      plan: plan.slug,
-      conversationsQuota: plan.conversationsQuota,
-      conversationsUsed: 0,
-    },
-  });
+  // Apply upgrade. If the user no longer exists (P2025) we still respond
+  // 200 so Razorpay does NOT retry forever — the payment captured but
+  // we can't post-process it; an alert/log is better than infinite
+  // retries that will eventually disable the webhook.
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        plan: plan.slug,
+        conversationsQuota: plan.conversationsQuota,
+        conversationsUsed: 0,
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[billing/webhook] failed to apply upgrade for user=${userId} plan=${planSlug}: ${message}`);
+    return NextResponse.json({ ok: true, ignored: "user-update-failed" });
+  }
 
   return NextResponse.json({ ok: true });
 }
