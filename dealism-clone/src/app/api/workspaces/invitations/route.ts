@@ -41,6 +41,20 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, role } = schema.parse(body);
 
+    // Resolve the trusted origin BEFORE creating any DB rows. If we can't
+    // build a safe acceptUrl there's no point persisting the invitation —
+    // the admin would just see an error and be left with an orphan record.
+    const origin = await trustedPublicAppUrl();
+    if (!origin) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot send invitation: NEXTAUTH_URL / APP_URL env or public_app_url setting must be configured.",
+        },
+        { status: 500 },
+      );
+    }
+
     // Already a member?
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -84,16 +98,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const origin = await trustedPublicAppUrl();
-    if (!origin) {
-      return NextResponse.json(
-        {
-          error:
-            "Cannot send invitation: NEXTAUTH_URL / APP_URL env or public_app_url setting must be configured.",
-        },
-        { status: 500 },
-      );
-    }
     const acceptUrl = `${origin}/invite/${invitation.token}`;
     const inviterName = user.name?.trim() || user.email;
     void sendWorkspaceInviteEmail({

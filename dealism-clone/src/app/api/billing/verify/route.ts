@@ -52,7 +52,11 @@ export async function POST(req: NextRequest) {
     if (!notes.planSlug) {
       return NextResponse.json({ error: "order has no planSlug" }, { status: 400 });
     }
-    if (notes.userId && notes.userId !== user.id) {
+    // Reject orders that lack a userId note OR belong to a different user.
+    // The original `notes.userId && ...` left a hole: if a Razorpay-dashboard
+    // operator created an order without setting userId, any authenticated
+    // session that knew the orderId/paymentId/signature triplet could claim it.
+    if (!notes.userId || notes.userId !== user.id) {
       // Order belongs to a different user — refuse to upgrade.
       return NextResponse.json({ error: "order does not belong to user" }, { status: 403 });
     }
