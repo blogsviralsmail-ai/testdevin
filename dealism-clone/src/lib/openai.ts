@@ -1,20 +1,30 @@
-import OpenAI from "openai";
-import { getOpenAIKey } from "./settings";
+/**
+ * Backwards-compatible shim — the codebase originally only supported OpenAI.
+ * New code should import from "./llm" instead. We keep this module so that
+ * existing imports (and the embedding helper) keep working while the admin
+ * can now point the chat client at any OpenAI-compatible provider.
+ */
+import { getEmbeddingClient, getLLMClient } from "./llm";
 
-export async function getOpenAIClient(): Promise<OpenAI | null> {
-  const key = await getOpenAIKey();
-  if (!key) return null;
-  return new OpenAI({ apiKey: key });
+export async function getOpenAIClient() {
+  const result = await getLLMClient();
+  return result?.client ?? null;
 }
 
 export async function generateEmbedding(text: string): Promise<number[] | null> {
-  const client = await getOpenAIClient();
-  if (!client) return null;
-  const res = await client.embeddings.create({
-    model: "text-embedding-3-small",
-    input: text.slice(0, 8000),
-  });
-  return res.data[0]?.embedding ?? null;
+  const result = await getEmbeddingClient();
+  if (!result) return null;
+  try {
+    const res = await result.client.embeddings.create({
+      model: result.config.model,
+      input: text.slice(0, 8000),
+    });
+    return res.data[0]?.embedding ?? null;
+  } catch {
+    // Provider may not support embeddings (e.g. DeepSeek/Groq). Caller treats
+    // null as "skip RAG" and the system still works without semantic search.
+    return null;
+  }
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {

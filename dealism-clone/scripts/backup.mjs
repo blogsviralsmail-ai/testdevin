@@ -1,0 +1,120 @@
+#!/usr/bin/env node
+/**
+ * Daily backup script.
+ *
+ * Backs up:
+ *   - The SQLite DB file (or pg_dump output if Postgres is detected)
+ *   - The baileys-auth/ directory (WhatsApp session state — losing this
+ *     forces every channel to re-scan QR)
+ *
+ * Uploads a single .tar.gz to an S3-compatible bucket. Compatible with:
+ *   - AWS S3
+ *   - Wasabi (s3.<region>.wasabisys.com)
+ *   - Backblaze B2 (s3.<region>.backblazeb2.com)
+ *   - Cloudflare R2 (<account>.r2.cloudflarestorage.com)
+ *   - any custom S3-compatible endpoint
+ *
+ * Wire this up with cron / systemd timer:
+ *   0 3 * * *  cd /opt/dealism-clone && /usr/bin/node scripts/backup.mjs >> /var/log/dealism-backup.log 2>&1
+ *
+ * Required env (or Setting rows with the same keys):
+ *   BACKUP_S3_ENDPOINT     e.g. https://s3.eu-central-1.wasabisys.com
+ *   BACKUP_S3_BUCKET       e.g. dealism-backups
+ *   BACKUP_S3_ACCESS_KEY
+ *   BACKUP_S3_SECRET_KEY
+ *   BACKUP_S3_REGION       optional, defaults to "auto"
+ *   DATABASE_URL           Prisma connection string
+ *   BAILEYS_AUTH_DIR       optional, defaults to ./baileys-auth
+ */
+import { execSync } from "node:child_process";
+import { readFileSync, statSync, mkdtempSync, existsSync, copyFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, basename } from "node:path";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
+function env(key, fallback = "") {
+  return process.env[key] || fallback;
+}
+
+const endpoint = env("BACKUP_S3_ENDPOINT");
+const bucket = env("BACKUP_S3_BUCKET");
+const accessKey = env("BACKUP_S3_ACCESS_KEY");
+const secretKey = env("BACKUP_S3_SECRET_KEY");
+const region = env("BACKUP_S3_REGION", "auto");
+
+if (!endpoint || !bucket || !accessKey || !secretKey) {
+  console.error("Missing required env: BACKUP_S3_ENDPOINT, BACKUP_S3_BUCKET, BACKUP_S3_ACCESS_KEY, BACKUP_S3_SECRET_KEY");
+  process.exit(1);
+}
+
+const databaseUrl = env("DATABASE_URL");
+if (!databaseUrl) {
+  console.error("Missing DATABASE_URL");
+  process.exit(1);
+}
+
+const stagingDir = mkdtempSync(join(tmpdir(), "dealism-backup-"));
+console.log(`[backup] staging in ${stagingDir}`);
+
+// 1. DB snapshot
+if (databaseUrl.startsWith("file:")) {
+  // SQLite — just copy the file. Prisma already wraps writes in a single
+  // transaction; copying mid-write may produce a slightly stale but
+  // consistent snapshot thanks to SQLite's WAL.
+  const dbPath = databaseUrl.replace(/^file:/, "");
+  const resolved = dbPath.startsWith("/") ? dbPath : join(process.cwd(), "prisma", dbPath);
+  if (!existsSync(resolved)) {
+    console.error(`SQLite DB file not found at ${resolved}`);
+    process.exit(1);
+  }
+  copyFileSync(resolved, join(stagingDir, "db.sqlite"));
+  console.log(`[backup] copied SQLite DB (${statSync(resolved).size} bytes)`);
+} else if (databaseUrl.startsWith("postgres")) {
+  // Postgres — use pg_dump if available.
+  try {
+    execSync(`pg_dump --no-owner --format=custom --file=${join(stagingDir, "db.dump")} "${databaseUrl}"`, {
+      stdio: "inherit",
+    });
+    console.log("[backup] pg_dump complete");
+  } catch (err) {
+    console.error("pg_dump failed — install postgresql-client (pg_dump) on this machine.");
+    process.exit(1);
+  }
+} else {
+  console.error(`Unsupported DATABASE_URL scheme: ${databaseUrl.slice(0, 12)}…`);
+  process.exit(1);
+}
+
+// 2. Baileys auth state
+const baileysDir = env("BAILEYS_AUTH_DIR", join(process.cwd(), "baileys-auth"));
+if (existsSync(baileysDir)) {
+  execSync(`tar -czf ${join(stagingDir, "baileys-auth.tar.gz")} -C ${join(baileysDir, "..")} ${basename(baileysDir)}`);
+  console.log("[backup] tarred baileys-auth/");
+} else {
+  console.log("[backup] no baileys-auth/ directory; skipping");
+}
+
+// 3. Bundle into a single archive
+const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+const archiveName = `dealism-backup-${stamp}.tar.gz`;
+const archivePath = join(tmpdir(), archiveName);
+execSync(`tar -czf ${archivePath} -C ${stagingDir} .`);
+const archiveBytes = readFileSync(archivePath);
+console.log(`[backup] archive size: ${archiveBytes.length} bytes`);
+
+// 4. Upload
+const s3 = new S3Client({
+  endpoint,
+  region,
+  credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
+  forcePathStyle: true, // most S3-compatible providers need this
+});
+await s3.send(
+  new PutObjectCommand({
+    Bucket: bucket,
+    Key: `daily/${archiveName}`,
+    Body: archiveBytes,
+    ContentType: "application/gzip",
+  }),
+);
+console.log(`[backup] uploaded s3://${bucket}/daily/${archiveName}`);

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSetting } from "@/lib/settings";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const schema = z.object({
   email: z.string().email(),
@@ -60,6 +61,10 @@ export async function POST(req: NextRequest) {
         language: "en",
       },
     });
+
+    // Fire-and-forget welcome email — we don't want a slow Resend call to
+    // block registration, and email failures must never break signup.
+    void sendWelcomeEmail({ to: user.email, name: user.name }).catch(() => {});
 
     return NextResponse.json({ ok: true, userId: user.id });
   } catch (err: unknown) {

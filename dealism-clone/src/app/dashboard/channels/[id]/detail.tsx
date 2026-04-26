@@ -15,6 +15,8 @@ export function ChannelDetail({ channel, agents }: { channel: Channel & { agent:
   const [phone, setPhone] = useState(channel.phoneNumber);
   const [agentId, setAgentId] = useState(channel.agentId ?? "");
 
+  const isTelegram = channel.type === "telegram";
+
   const poll = useCallback(async () => {
     const res = await fetch(`/api/channels/${channel.id}/status`);
     if (res.ok) {
@@ -39,9 +41,12 @@ export function ChannelDetail({ channel, agents }: { channel: Channel & { agent:
   async function start() {
     const res = await fetch(`/api/channels/${channel.id}/start`, { method: "POST" });
     if (res.ok) {
-      toast.success("Starting... scan QR code");
+      toast.success(isTelegram ? "Connecting Telegram bot..." : "Starting... scan QR code");
       poll();
-    } else toast.error("Failed");
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Failed");
+    }
   }
 
   async function stop() {
@@ -79,7 +84,7 @@ export function ChannelDetail({ channel, agents }: { channel: Channel & { agent:
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>{channel.name}</CardTitle>
-            <CardDescription>WhatsApp channel</CardDescription>
+            <CardDescription>{isTelegram ? "Telegram bot channel" : "WhatsApp channel"}</CardDescription>
           </div>
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -105,7 +110,7 @@ export function ChannelDetail({ channel, agents }: { channel: Channel & { agent:
 
         {status !== "connected" ? (
           <div className="rounded-2xl border-2 border-dashed border-neutral-200 p-8 text-center">
-            {qrImage ? (
+            {!isTelegram && qrImage ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrImage} alt="WhatsApp QR code" className="mx-auto w-56 h-56" />
@@ -116,15 +121,25 @@ export function ChannelDetail({ channel, agents }: { channel: Channel & { agent:
               </>
             ) : (
               <>
-                <p className="text-neutral-600">Click below to generate your connection QR code.</p>
-                <Button variant="primary" onClick={start} className="mt-4">Start connection</Button>
+                <p className="text-neutral-600">
+                  {isTelegram
+                    ? "Click below to start polling Telegram for messages. Customers can DM your bot directly."
+                    : "Click below to generate your connection QR code."}
+                </p>
+                <Button variant="primary" onClick={start} className="mt-4">
+                  {isTelegram ? "Start bot" : "Start connection"}
+                </Button>
               </>
             )}
           </div>
         ) : (
           <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
             <h4 className="font-semibold text-green-900">Connected</h4>
-            {phone && <p className="mt-1 text-sm text-green-700">+{phone}</p>}
+            {phone && (
+              <p className="mt-1 text-sm text-green-700">
+                {isTelegram ? `@${phone} — share this link: https://t.me/${phone}` : `+${phone}`}
+              </p>
+            )}
             <Button variant="outline" onClick={stop} className="mt-4">Disconnect</Button>
           </div>
         )}

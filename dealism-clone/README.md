@@ -8,21 +8,26 @@ A **100% functional** clone of [dealism.ai](https://dealism.ai). AI sales agent 
 - Landing page (hero, features, pricing, testimonials, FAQ)
 - Pricing page (dynamic from DB)
 - Guides index
-- Sign-up / sign-in
+- Sign-up / sign-in (welcome email via Resend when configured)
 
 ### User Dashboard
 - Agents builder (no-code, prompt-based)
 - Knowledge base (text + URL scraping + auto embeddings)
-- Channels (WhatsApp via Baileys QR scan)
+- Channels — **WhatsApp** (Baileys QR scan) and **Telegram** (BotFather token)
 - Live conversations view (polling, send reply, auto-reply toggle)
-- Account settings, plan & usage tracking
+- Account settings, plan & usage tracking (auto email warning at 80%/100%)
 
 ### Admin Panel (accessible to role=admin)
-- **API Keys config UI** — OpenAI, Razorpay keys entered here, no code change needed
-- OpenAI connection test
+- **Multi-LLM provider switcher** — OpenAI, DeepSeek, xAI Grok, Groq, Mistral, OpenRouter, Together, Fireworks, Gemini, Cerebras, or any custom OpenAI-compatible endpoint (Ollama / vLLM / LocalAI)
+- Separate **embeddings** config (use a cheap chat provider + OpenAI text-embedding-3-small for cost optimisation)
+- Razorpay (Key + Secret + Webhook Secret)
+- Telegram default bot token
+- Email (Resend API key + From address)
+- S3-compatible backups (Wasabi / B2 / R2 / MinIO / AWS)
+- Sentry DSN
+- Branding (name, tagline)
 - Users management (promote/demote admin, delete, view usage)
 - Plans editor (edit pricing tiers shown on public /price)
-- Branding config (name, tagline)
 
 ### AI Engine
 - Retrieval-augmented generation (RAG) with OpenAI embeddings
@@ -36,6 +41,17 @@ A **100% functional** clone of [dealism.ai](https://dealism.ai). AI sales agent 
 - Auto-reply with AI
 - Live reply from dashboard (sends back out through WhatsApp)
 - Auth persistence per channel
+
+### Telegram
+- Bot token from [@BotFather](https://t.me/BotFather)
+- Long-poll based — no webhook server / public URL required
+- Auto-reply with AI, same RAG + KB pipeline as WhatsApp
+- Per-channel offset tracking so a restart doesn't replay old messages
+
+### Operational
+- **Background-job queue** (BullMQ + Redis, falls back to inline execution without Redis) — used for follow-up reminders & deferred work
+- **Daily backups** — SQL dump + Baileys auth state → S3-compatible bucket (`npm run backup`, cron-friendly)
+- **Error monitoring** — Sentry SDK initialised on the Node runtime when DSN is set
 
 ## 🚀 Quick start (local)
 
@@ -114,14 +130,31 @@ dealism-clone/
 ## 🌐 Deploying to production
 
 ### Switch to PostgreSQL
-In `prisma/schema.prisma`:
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+```bash
+npm run db:use-postgres            # rewrites prisma/schema.prisma in place
+DATABASE_URL="postgresql://..." npx prisma migrate dev --name init_postgres
+npm run db:seed
 ```
-Set `DATABASE_URL` to a Postgres URL, then run `npx prisma migrate deploy`.
+To move existing SQLite data into Postgres after the switch:
+```bash
+SQLITE_URL="file:./dev.db" POSTGRES_URL="postgresql://..." \
+  npm run db:migrate-data
+```
+
+### Daily backups
+```bash
+export BACKUP_S3_ENDPOINT=https://s3.eu-central-1.wasabisys.com
+export BACKUP_S3_BUCKET=dealism-backups
+export BACKUP_S3_ACCESS_KEY=...
+export BACKUP_S3_SECRET_KEY=...
+
+npm run backup
+# Cron daily at 3 AM:
+# 0 3 * * * cd /opt/dealism-clone && /usr/bin/npm run backup >> /var/log/dealism-backup.log 2>&1
+```
+
+### Background-job worker (Redis)
+Set `REDIS_URL=redis://localhost:6379` in `.env`. The worker runs in the same Node process by default; for horizontal scaling, run additional Node instances pointing at the same Redis.
 
 ### Deploy on a VPS (Hostinger / Contabo / DigitalOcean)
 ```bash

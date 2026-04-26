@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiRequireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stopChannel } from "@/lib/whatsapp";
+import { stopChannel } from "@/lib/channels";
 
 export async function POST(_: NextRequest, { params }: { params: { id: string } }) {
   try {

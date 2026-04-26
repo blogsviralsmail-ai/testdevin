@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
-import { getOpenAIClient, generateEmbedding, cosineSimilarity } from "./openai";
-import { getOpenAIModel } from "./settings";
+import { generateEmbedding, cosineSimilarity } from "./openai";
+import { getLLMClient } from "./llm";
 
 interface RAGContext {
   agentId: string;
@@ -41,10 +41,11 @@ export async function generateAgentReply(opts: {
 }): Promise<string> {
   const { agentId, conversationId, userMessage } = opts;
 
-  const client = await getOpenAIClient();
-  if (!client) {
-    return "⚠️ OpenAI API key not configured. Admin, please set it in Admin → Settings.";
+  const llm = await getLLMClient();
+  if (!llm) {
+    return "⚠️ AI provider not configured. Admin, please set provider + API key in Admin → Settings.";
   }
+  const { client, config } = llm;
 
   const agent = await prisma.agent.findUnique({ where: { id: agentId } });
   if (!agent) return "Agent not found.";
@@ -73,7 +74,8 @@ Keep replies short (1-3 sentences), conversational, and focused on moving the de
 If user asks something you don't know, politely ask for clarification or escalate to a human.
 ${kbContext}`;
 
-  const model = agent.model || (await getOpenAIModel());
+  // Per-agent model wins; otherwise fall back to the platform-wide default model.
+  const model = agent.model || config.model;
 
   // recentMessages already includes the just-saved user turn; only append it
   // explicitly if the DB fetch didn't pick it up (e.g. future caller that

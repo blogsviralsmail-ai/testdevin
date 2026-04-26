@@ -14,6 +14,7 @@ import pino from "pino";
 import { prisma } from "./prisma";
 import { generateAgentReply } from "./chat-engine";
 import { generateEmbedding } from "./openai";
+import { maybeSendQuotaWarning } from "./email";
 
 const AUTH_ROOT = path.resolve(process.cwd(), "baileys-auth");
 
@@ -172,10 +173,18 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
       // regardless of message count. Only count the quota on the first AI
       // reply of a freshly created conversation, not on every subsequent turn.
       if (convoIsNew) {
-        await prisma.user.update({
+        const updated = await prisma.user.update({
           where: { id: ch.userId },
           data: { conversationsUsed: { increment: 1 } },
         });
+        // Fire-and-forget quota warning at 80% / 100%. The helper dedupes
+        // per (userId, quota, threshold) via Setting rows.
+        void maybeSendQuotaWarning({
+          userId: updated.id,
+          email: updated.email,
+          used: updated.conversationsUsed,
+          quota: updated.conversationsQuota,
+        }).catch(() => {});
       }
       await sock.sendMessage(remoteJid, { text: reply }).catch(() => {});
 
