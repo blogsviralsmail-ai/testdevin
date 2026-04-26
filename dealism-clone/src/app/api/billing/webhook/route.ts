@@ -37,40 +37,72 @@ export async function POST(req: NextRequest) {
   }
 
   const order = (payload.payload as Record<string, unknown> | undefined)?.order as
-    | { entity?: { notes?: { userId?: string; planSlug?: string } } }
+    | { entity?: { id?: string; notes?: { userId?: string; planSlug?: string } } }
     | undefined;
   const payment = (payload.payload as Record<string, unknown> | undefined)?.payment as
-    | { entity?: { notes?: { userId?: string; planSlug?: string } } }
+    | {
+        entity?: {
+          id?: string;
+          order_id?: string;
+          notes?: { userId?: string; planSlug?: string };
+        };
+      }
     | undefined;
 
   const notes = order?.entity?.notes ?? payment?.entity?.notes ?? {};
   const userId = notes.userId;
   const planSlug = notes.planSlug;
+  const paymentId = payment?.entity?.id;
+  const orderId = payment?.entity?.order_id ?? order?.entity?.id;
 
   if (!userId || !planSlug) {
     // No notes — likely a subscription event we don't handle yet.
     return NextResponse.json({ ok: true, ignored: "no notes" });
   }
+  if (!paymentId || !orderId) {
+    // Without a paymentId we can't dedupe — refuse rather than risk
+    // applying twice on retry.
+    return NextResponse.json({ ok: true, ignored: "no payment id" });
+  }
 
   const plan = await prisma.plan.findUnique({ where: { slug: planSlug } });
   if (!plan) return NextResponse.json({ ok: true, ignored: "unknown plan" });
 
-  // Apply upgrade. If the user no longer exists (P2025) we still respond
-  // 200 so Razorpay does NOT retry forever — the payment captured but
-  // we can't post-process it; an alert/log is better than infinite
-  // retries that will eventually disable the webhook.
+  // Idempotency: Razorpay retries deliveries on timeouts, so the same
+  // paymentId can arrive multiple times. Apply the upgrade exactly once
+  // by inserting into ProcessedPayment first; the @unique constraint on
+  // paymentId means a retry hits P2002 and we short-circuit.
   try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        plan: plan.slug,
-        conversationsQuota: plan.conversationsQuota,
-        conversationsUsed: 0,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.processedPayment.create({
+        data: {
+          paymentId,
+          orderId,
+          userId,
+          planSlug: plan.slug,
+          source: "webhook",
+        },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          plan: plan.slug,
+          conversationsQuota: plan.conversationsQuota,
+          conversationsUsed: 0,
+        },
+      });
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[billing/webhook] failed to apply upgrade for user=${userId} plan=${planSlug}: ${message}`);
+    // P2002 = unique constraint on paymentId → already processed (e.g.
+    // /api/billing/verify beat us to it, or this is a delivery retry).
+    // Always respond 200 so Razorpay stops retrying.
+    if (message.includes("P2002")) {
+      return NextResponse.json({ ok: true, alreadyApplied: true });
+    }
+    console.error(
+      `[billing/webhook] failed to apply upgrade for user=${userId} plan=${planSlug}: ${message}`,
+    );
     return NextResponse.json({ ok: true, ignored: "user-update-failed" });
   }
 

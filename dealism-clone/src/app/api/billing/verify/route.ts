@@ -64,13 +64,40 @@ export async function POST(req: NextRequest) {
     const plan = await prisma.plan.findUnique({ where: { slug: notes.planSlug } });
     if (!plan) return NextResponse.json({ error: "plan not found" }, { status: 404 });
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        plan: plan.slug,
-        conversationsQuota: plan.conversationsQuota,
-        conversationsUsed: 0,
-      },
+    // Idempotency: each Razorpay paymentId is unique to a successful
+    // capture, so we record it on first apply. A replay (same body
+    // POSTed again, or the webhook racing this endpoint) finds the
+    // existing row and returns 200 without touching the user. Without
+    // this guard, every replay reset conversationsUsed to 0 →
+    // unlimited free conversations.
+    const already = await prisma.processedPayment.findUnique({
+      where: { paymentId },
+    });
+    if (already) {
+      return NextResponse.json({ ok: true, plan: plan.slug, alreadyApplied: true });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // create() with @unique on paymentId throws P2002 if a concurrent
+      // request (e.g. webhook delivery) raced us — we let that bubble
+      // up and the catch returns 400, which Razorpay will retry safely.
+      await tx.processedPayment.create({
+        data: {
+          paymentId,
+          orderId,
+          userId: user.id,
+          planSlug: plan.slug,
+          source: "verify",
+        },
+      });
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          plan: plan.slug,
+          conversationsQuota: plan.conversationsQuota,
+          conversationsUsed: 0,
+        },
+      });
     });
 
     return NextResponse.json({ ok: true, plan: plan.slug });

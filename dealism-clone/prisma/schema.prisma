@@ -204,3 +204,22 @@ model Plan {
   sortOrder           Int      @default(0)
   createdAt           DateTime @default(now())
 }
+
+/// Records every Razorpay payment we've already applied so retries
+/// (webhook re-deliveries, manual replays of /api/billing/verify)
+/// can't reset conversationsUsed or re-upgrade the same purchase.
+/// Keyed by paymentId because Razorpay re-uses orderId for retries
+/// of the same checkout but always issues a fresh paymentId on
+/// successful capture.
+model ProcessedPayment {
+  id          String   @id @default(cuid())
+  paymentId   String   @unique
+  orderId     String
+  userId      String
+  planSlug    String
+  source      String   // "verify" | "webhook"
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([userId])
+}
