@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import type { Agent } from "@prisma/client";
 
-type ChannelType = "whatsapp" | "telegram" | "messenger" | "line" | "viber";
+type ChannelType = "whatsapp" | "telegram" | "messenger" | "line" | "viber" | "discord";
 
 const TYPE_META: Record<ChannelType, { label: string; subtitle: string; defaultName: string }> = {
   whatsapp: { label: "WhatsApp", subtitle: "QR scan (Linked Devices)", defaultName: "My WhatsApp" },
@@ -16,6 +16,7 @@ const TYPE_META: Record<ChannelType, { label: string; subtitle: string; defaultN
   messenger: { label: "Messenger", subtitle: "Facebook Page (Meta Graph API)", defaultName: "My FB Page" },
   line: { label: "LINE", subtitle: "Messaging API channel", defaultName: "My LINE Bot" },
   viber: { label: "Viber", subtitle: "Public Account / Bot", defaultName: "My Viber Bot" },
+  discord: { label: "Discord", subtitle: "Bot via Discord Developer Portal", defaultName: "My Discord Bot" },
 };
 
 export function NewChannelForm({ agents }: { agents: Agent[] }) {
@@ -32,6 +33,7 @@ export function NewChannelForm({ agents }: { agents: Agent[] }) {
   const [lineAccessToken, setLineAccessToken] = useState("");
   const [lineSecret, setLineSecret] = useState("");
   const [viberAuthToken, setViberAuthToken] = useState("");
+  const [discordToken, setDiscordToken] = useState("");
 
   function changeType(t: ChannelType) {
     setType(t);
@@ -92,6 +94,14 @@ export function NewChannelForm({ agents }: { agents: Agent[] }) {
       }
       credPath = `/api/channels/${id}/credentials`;
       credBody = { authToken: viberAuthToken };
+    } else if (type === "discord") {
+      if (!discordToken) {
+        setLoading(false);
+        toast.error("Bot token required");
+        return;
+      }
+      credPath = `/api/channels/${id}/credentials`;
+      credBody = { token: discordToken };
     }
 
     if (credPath && credBody) {
@@ -223,6 +233,31 @@ export function NewChannelForm({ agents }: { agents: Agent[] }) {
               />
               <p className="mt-1 text-xs text-neutral-500">
                 From Viber Bot Admin Panel → your bot → Authentication token.
+              </p>
+            </div>
+          )}
+
+          {type === "discord" && (
+            <div>
+              <Label>Bot Token</Label>
+              <Input
+                type="password"
+                value={discordToken}
+                onChange={(e) => setDiscordToken(e.target.value)}
+                required
+              />
+              <p className="mt-1 text-xs text-neutral-500">
+                Create an app at{" "}
+                <a
+                  className="text-orange-600 underline"
+                  href="https://discord.com/developers/applications"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Discord Developer Portal
+                </a>
+                : Bot tab → Reset Token → paste. Enable “Message Content Intent” and invite
+                the bot to your server with Send Messages permission.
               </p>
             </div>
           )}

@@ -15,8 +15,9 @@ import { startTelegramChannel, stopTelegramChannel, sendTelegramMessage } from "
 import { startMessengerChannel, stopMessengerChannel, sendMessengerMessage } from "./messenger";
 import { startLineChannel, stopLineChannel, sendLineMessage } from "./line";
 import { startViberChannel, stopViberChannel, sendViberMessage } from "./viber";
+import { startDiscordChannel, stopDiscordChannel, sendDiscordMessage } from "./discord";
 
-export type ChannelType = "whatsapp" | "telegram" | "messenger" | "line" | "viber";
+export type ChannelType = "whatsapp" | "telegram" | "messenger" | "line" | "viber" | "discord";
 
 export const SUPPORTED_CHANNEL_TYPES: ChannelType[] = [
   "whatsapp",
@@ -24,6 +25,7 @@ export const SUPPORTED_CHANNEL_TYPES: ChannelType[] = [
   "messenger",
   "line",
   "viber",
+  "discord",
 ];
 
 async function getType(channelId: string): Promise<ChannelType | null> {
@@ -34,6 +36,7 @@ async function getType(channelId: string): Promise<ChannelType | null> {
     case "messenger":
     case "line":
     case "viber":
+    case "discord":
       return ch.type;
     default:
       return "whatsapp"; // legacy + explicit "whatsapp"
@@ -52,6 +55,8 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
       return startLineChannel(channelId);
     case "viber":
       return startViberChannel(channelId);
+    case "discord":
+      return startDiscordChannel(channelId);
     default:
       return startWhatsApp(channelId);
   }
@@ -69,6 +74,8 @@ export async function stopChannel(channelId: string): Promise<void> {
       return stopLineChannel(channelId);
     case "viber":
       return stopViberChannel(channelId);
+    case "discord":
+      return stopDiscordChannel(channelId);
     default:
       return stopWhatsApp(channelId);
   }
@@ -102,6 +109,8 @@ export async function sendChannelMessage(
       return sendLineMessage(channelId, to, text);
     case "viber":
       return sendViberMessage(channelId, to, text);
+    case "discord":
+      return sendDiscordMessage(channelId, to, text);
     default:
       return sendWhatsApp(channelId, to, text);
   }

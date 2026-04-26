@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { setMessengerCredentials } from "@/lib/messenger";
 import { setLineCredentials } from "@/lib/line";
 import { setViberCredentials } from "@/lib/viber";
+import { setDiscordBotToken } from "@/lib/discord";
 
 /**
  * Generic endpoint for saving credentials on a non-WhatsApp channel.
@@ -47,6 +48,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         return NextResponse.json({ error: "authToken required" }, { status: 400 });
       }
       await setViberCredentials(params.id, { authToken: body.authToken });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (ch.type === "discord") {
+      if (!body.token) {
+        return NextResponse.json({ error: "token required" }, { status: 400 });
+      }
+      await setDiscordBotToken(params.id, body.token);
       return NextResponse.json({ ok: true });
     }
 

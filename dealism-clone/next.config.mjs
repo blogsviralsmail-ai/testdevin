@@ -12,7 +12,26 @@ const nextConfig = {
       "@sentry/nextjs",
       "sharp",
       "libsignal",
+      "discord.js",
+      "@discordjs/ws",
+      "zlib-sync",
+      "bufferutil",
+      "utf-8-validate",
     ],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // discord.js + ws have several optional native deps that webpack
+      // tries to resolve even though they're guarded at runtime. Mark
+      // them as externals so the server bundle doesn't fail to build.
+      config.externals = [
+        ...(config.externals || []),
+        "zlib-sync",
+        "bufferutil",
+        "utf-8-validate",
+      ];
+    }
+    return config;
   },
 };
 
