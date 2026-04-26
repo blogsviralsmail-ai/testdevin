@@ -124,6 +124,7 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
         convo = await prisma.conversation.create({
           data: {
             userId: ch.userId,
+            workspaceId: ch.workspaceId,
             agentId: ch.agentId,
             channelId,
             contactName,
@@ -195,6 +196,7 @@ export async function startChannel(channelId: string): Promise<{ ok: boolean; er
         await prisma.knowledgeItem.create({
           data: {
             userId: ch.userId,
+            workspaceId: ch.workspaceId,
             agentId: ch.agentId,
             title: `Auto-learned: ${text.slice(0, 40)}`,
             content,

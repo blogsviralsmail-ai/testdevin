@@ -111,6 +111,32 @@ export async function sendQuotaWarningEmail(opts: {
   return sendRaw({ to: opts.to, subject, html });
 }
 
+export async function sendWorkspaceInviteEmail(opts: {
+  to: string;
+  inviterName: string;
+  workspaceName: string;
+  acceptUrl: string;
+}) {
+  const brandName = await getBrandName();
+  const safeInviter = escapeHtml(opts.inviterName);
+  const safeWs = escapeHtml(opts.workspaceName);
+  const html = wrap(
+    brandName,
+    `
+      <p>${safeInviter} has invited you to join the <strong>${safeWs}</strong> workspace on ${escapeHtml(brandName)}.</p>
+      <p style="margin:24px 0;">
+        <a href="${escapeHtml(opts.acceptUrl)}" style="background:#ea580c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Accept invitation</a>
+      </p>
+      <p style="font-size:12px;color:#666;">This invite expires in 7 days. If you weren&rsquo;t expecting this email you can safely ignore it.</p>
+    `,
+  );
+  return sendRaw({
+    to: opts.to,
+    subject: `${safeInviter} invited you to ${safeWs}`,
+    html,
+  });
+}
+
 export async function sendPasswordResetEmail(opts: { to: string; resetUrl: string }) {
   const brandName = await getBrandName();
   const html = wrap(

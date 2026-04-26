@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ArrowLeft } from "lucide-react";
 import { ChannelDetail } from "./detail";
@@ -8,15 +8,15 @@ import { ChannelDetail } from "./detail";
 export const dynamic = "force-dynamic";
 
 export default async function ChannelPage({ params }: { params: { id: string } }) {
-  const user = await requireUser();
+  const { workspace } = await requireUserWithWorkspace();
   const channel = await prisma.channel.findUnique({
     where: { id: params.id },
     include: { agent: true },
   });
   if (!channel) notFound();
-  if (channel.userId !== user.id) redirect("/dashboard/channels");
+  if (channel.workspaceId !== workspace.id) redirect("/dashboard/channels");
 
-  const agents = await prisma.agent.findMany({ where: { userId: user.id } });
+  const agents = await prisma.agent.findMany({ where: { workspaceId: workspace.id } });
 
   return (
     <div className="p-8 max-w-3xl">

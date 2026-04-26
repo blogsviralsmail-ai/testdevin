@@ -37,30 +37,47 @@ export async function POST(req: NextRequest) {
     const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + 7);
 
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        name: data.name,
-        password: hashed,
-        role: "user",
-        plan: "trial",
-        trialEndsAt: trialEnd,
-        conversationsQuota,
-      },
+    // Create user + personal workspace + default agent atomically. If
+    // anything fails we don't want a half-provisioned account.
+    const wsName = (data.name?.trim() || data.email.split("@")[0]) + "'s Workspace";
+    const { user, workspace } = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.create({
+        data: {
+          email: data.email,
+          name: data.name,
+          password: hashed,
+          role: "user",
+          plan: "trial",
+          trialEndsAt: trialEnd,
+          conversationsQuota,
+        },
+      });
+      const ws = await tx.workspace.create({
+        data: {
+          name: wsName,
+          ownerId: u.id,
+          memberships: { create: { userId: u.id, role: "owner" } },
+        },
+      });
+      await tx.user.update({
+        where: { id: u.id },
+        data: { activeWorkspaceId: ws.id },
+      });
+      await tx.agent.create({
+        data: {
+          userId: u.id,
+          workspaceId: ws.id,
+          name: "My Sales Agent",
+          description: "Default AI sales agent",
+          systemPrompt:
+            "You are a friendly, expert sales rep. You understand the business and help customers find what they need. You handle objections gracefully and keep conversations moving toward a sale.",
+          tone: "friendly",
+          language: "en",
+        },
+      });
+      return { user: u, workspace: ws };
     });
-
-    // Auto-seed a default agent
-    await prisma.agent.create({
-      data: {
-        userId: user.id,
-        name: "My Sales Agent",
-        description: "Default AI sales agent",
-        systemPrompt:
-          "You are a friendly, expert sales rep. You understand the business and help customers find what they need. You handle objections gracefully and keep conversations moving toward a sale.",
-        tone: "friendly",
-        language: "en",
-      },
-    });
+    void workspace; // keep variable name for clarity even if unused below
 
     // Fire-and-forget welcome email — we don't want a slow Resend call to
     // block registration, and email failures must never break signup.

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiRequireUser } from "@/lib/auth";
+import { apiRequireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { setMessengerCredentials } from "@/lib/messenger";
 import { setLineCredentials } from "@/lib/line";
@@ -14,9 +14,9 @@ import { setDiscordBotToken } from "@/lib/discord";
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await apiRequireUser();
+    const { workspace } = await apiRequireUserWithWorkspace();
     const ch = await prisma.channel.findUnique({ where: { id: params.id } });
-    if (!ch || ch.userId !== user.id) {
+    if (!ch || ch.workspaceId !== workspace.id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     const body = (await req.json()) as Record<string, string | undefined>;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,17 @@ import { Bot, MessageSquare, Smartphone, BookOpen, Plus, ArrowRight } from "luci
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const user = await requireUser();
+  const { user, workspace } = await requireUserWithWorkspace();
   const [agents, channels, conversations, knowledge, dbUser] = await Promise.all([
-    prisma.agent.count({ where: { userId: user.id } }),
-    prisma.channel.count({ where: { userId: user.id } }),
-    prisma.conversation.count({ where: { userId: user.id } }),
-    prisma.knowledgeItem.count({ where: { userId: user.id } }),
+    prisma.agent.count({ where: { workspaceId: workspace.id } }),
+    prisma.channel.count({ where: { workspaceId: workspace.id } }),
+    prisma.conversation.count({ where: { workspaceId: workspace.id } }),
+    prisma.knowledgeItem.count({ where: { workspaceId: workspace.id } }),
     prisma.user.findUnique({ where: { id: user.id } }),
   ]);
 
   const recentConvos = await prisma.conversation.findMany({
-    where: { userId: user.id },
+    where: { workspaceId: workspace.id },
     orderBy: { lastMessageAt: "desc" },
     take: 5,
     include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },

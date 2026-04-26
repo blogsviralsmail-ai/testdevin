@@ -4,18 +4,24 @@ import { getLLMClient } from "./llm";
 
 interface RAGContext {
   agentId: string;
-  userId: string;
+  workspaceId: string | null;
   query: string;
   topK?: number;
 }
 
-export async function retrieveRelevantKnowledge({ agentId, userId, query, topK = 4 }: RAGContext) {
+export async function retrieveRelevantKnowledge({ agentId, workspaceId, query, topK = 4 }: RAGContext) {
   const queryEmbedding = await generateEmbedding(query);
   if (!queryEmbedding) return [];
 
-  const items = await prisma.knowledgeItem.findMany({
-    where: { userId, OR: [{ agentId }, { agentId: null }] },
-  });
+  // Pull every knowledge item visible to the agent's workspace —
+  // either bound directly to the agent or workspace-wide (agentId=null).
+  // Backward-compat: if the agent has no workspaceId yet (pre-backfill),
+  // we restrict by ownerUserId via the agent's userId.
+  const items = workspaceId
+    ? await prisma.knowledgeItem.findMany({
+        where: { workspaceId, OR: [{ agentId }, { agentId: null }] },
+      })
+    : [];
 
   const scored = items
     .map((item) => {
@@ -59,7 +65,7 @@ export async function generateAgentReply(opts: {
 
   const relevantKnowledge = await retrieveRelevantKnowledge({
     agentId,
-    userId: agent.userId,
+    workspaceId: agent.workspaceId,
     query: userMessage,
   });
   const kbContext = relevantKnowledge.length

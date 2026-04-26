@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiRequireUser } from "@/lib/auth";
+import { apiRequireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { setTelegramBotToken } from "@/lib/telegram";
 
@@ -9,9 +9,9 @@ import { setTelegramBotToken } from "@/lib/telegram";
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await apiRequireUser();
+    const { workspace } = await apiRequireUserWithWorkspace();
     const ch = await prisma.channel.findUnique({ where: { id: params.id } });
-    if (!ch || ch.userId !== user.id) {
+    if (!ch || ch.workspaceId !== workspace.id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     if (ch.type !== "telegram") {

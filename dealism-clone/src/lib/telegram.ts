@@ -208,6 +208,7 @@ async function handleUpdate(channelId: string, entry: BotEntry, update: TgUpdate
     convo = await prisma.conversation.create({
       data: {
         userId: ch.userId,
+        workspaceId: ch.workspaceId,
         agentId: ch.agentId,
         channelId,
         contactName,

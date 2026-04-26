@@ -27,10 +27,20 @@
  *   BAILEYS_AUTH_DIR       optional, defaults to ./baileys-auth
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync, mkdtempSync, existsSync, copyFileSync } from "node:fs";
+import { readFileSync, statSync, mkdtempSync, existsSync, copyFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
+/** True when a binary is on PATH (best-effort, never throws). */
+function hasBinary(name) {
+  try {
+    execFileSync("which", [name], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function env(key, fallback = "") {
   return process.env[key] || fallback;
@@ -58,17 +68,27 @@ console.log(`[backup] staging in ${stagingDir}`);
 
 // 1. DB snapshot
 if (databaseUrl.startsWith("file:")) {
-  // SQLite — just copy the file. Prisma already wraps writes in a single
-  // transaction; copying mid-write may produce a slightly stale but
-  // consistent snapshot thanks to SQLite's WAL.
+  // SQLite — prefer the official `sqlite3 .backup` API which is
+  // WAL-aware and produces a guaranteed consistent snapshot. Falls back
+  // to a raw file copy when the sqlite3 CLI isn't installed (still safe
+  // for read-mostly DBs but may miss in-flight writes in the WAL).
   const dbPath = databaseUrl.replace(/^file:/, "");
   const resolved = dbPath.startsWith("/") ? dbPath : join(process.cwd(), "prisma", dbPath);
   if (!existsSync(resolved)) {
     console.error(`SQLite DB file not found at ${resolved}`);
     process.exit(1);
   }
-  copyFileSync(resolved, join(stagingDir, "db.sqlite"));
-  console.log(`[backup] copied SQLite DB (${statSync(resolved).size} bytes)`);
+  const dest = join(stagingDir, "db.sqlite");
+  if (hasBinary("sqlite3")) {
+    execFileSync("sqlite3", [resolved, `.backup '${dest}'`], { stdio: "inherit" });
+    console.log(`[backup] sqlite3 .backup -> ${dest} (${statSync(dest).size} bytes)`);
+  } else {
+    copyFileSync(resolved, dest);
+    console.warn(
+      `[backup] sqlite3 CLI not found; using copyFileSync fallback (may miss WAL). Install sqlite3 for safer backups.`,
+    );
+    console.log(`[backup] copied SQLite DB (${statSync(resolved).size} bytes)`);
+  }
 } else if (databaseUrl.startsWith("postgres")) {
   // Postgres — use pg_dump if available. Pass the connection string via
   // argv (NOT a shell-interpolated string) so passwords containing $, `,
@@ -133,3 +153,14 @@ await s3.send(
   }),
 );
 console.log(`[backup] uploaded s3://${bucket}/daily/${archiveName}`);
+
+// 5. Clean up. We let failures here log but not fail the run — the
+// upload already succeeded. Without this the /tmp staging dir + archive
+// would leak across every cron tick.
+try {
+  rmSync(stagingDir, { recursive: true, force: true });
+  rmSync(archivePath, { force: true });
+  console.log(`[backup] cleaned staging dir + archive`);
+} catch (err) {
+  console.warn(`[backup] cleanup warning: ${err instanceof Error ? err.message : err}`);
+}

@@ -7,6 +7,8 @@ import {
   Settings, LogOut, ShieldCheck, Users, CreditCard, Sliders
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n-provider";
+import { WorkspaceSwitcher } from "@/components/dashboard/workspace-switcher";
 
 interface SidebarProps {
   isAdmin?: boolean;
@@ -15,21 +17,23 @@ interface SidebarProps {
 
 export function DashboardSidebar({ isAdmin, userEmail }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useT();
   const links = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/agents", label: "Agents", icon: Bot },
-    { href: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen },
-    { href: "/dashboard/channels", label: "Channels", icon: Smartphone },
-    { href: "/dashboard/conversations", label: "Conversations", icon: MessageSquare },
-    { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: "/dashboard", label: t("dashboard.sidebar.overview"), icon: LayoutDashboard },
+    { href: "/dashboard/agents", label: t("dashboard.sidebar.agents"), icon: Bot },
+    { href: "/dashboard/knowledge", label: t("dashboard.sidebar.knowledge"), icon: BookOpen },
+    { href: "/dashboard/channels", label: t("dashboard.sidebar.channels"), icon: Smartphone },
+    { href: "/dashboard/conversations", label: t("dashboard.sidebar.conversations"), icon: MessageSquare },
+    { href: "/dashboard/team", label: t("dashboard.sidebar.team"), icon: Users },
+    { href: "/dashboard/billing", label: t("dashboard.sidebar.billing"), icon: CreditCard },
+    { href: "/dashboard/settings", label: t("dashboard.sidebar.settings"), icon: Settings },
   ];
 
   const adminLinks = [
-    { href: "/admin", label: "Admin", icon: ShieldCheck },
-    { href: "/admin/users", label: "Users", icon: Users },
-    { href: "/admin/plans", label: "Plans", icon: CreditCard },
-    { href: "/admin/settings", label: "API Keys", icon: Sliders },
+    { href: "/admin", label: t("admin.sidebar.dashboard"), icon: ShieldCheck },
+    { href: "/admin/users", label: t("admin.sidebar.users"), icon: Users },
+    { href: "/admin/plans", label: t("admin.sidebar.plans"), icon: CreditCard },
+    { href: "/admin/settings", label: t("admin.sidebar.settings"), icon: Sliders },
   ];
 
   return (
@@ -39,6 +43,10 @@ export function DashboardSidebar({ isAdmin, userEmail }: SidebarProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold">D</div>
           <span className="text-xl font-bold">Dealism</span>
         </Link>
+      </div>
+
+      <div className="px-4 pt-4">
+        <WorkspaceSwitcher />
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -90,7 +98,7 @@ export function DashboardSidebar({ isAdmin, userEmail }: SidebarProps) {
           className="flex items-center gap-2 text-sm text-neutral-700 hover:text-red-600"
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {t("common.signout")}
         </button>
       </div>
     </aside>

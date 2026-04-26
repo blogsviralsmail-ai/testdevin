@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,21 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const nextParam = params.get("next");
+  // Only follow same-origin relative paths to prevent open redirects.
+  const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/dashboard";
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(params.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +43,7 @@ export default function RegisterPage() {
     }
     await signIn("credentials", { email, password, redirect: false });
     toast.success("Welcome to Dealism! 🎉");
-    router.push("/dashboard");
+    router.push(next);
     router.refresh();
   }
 

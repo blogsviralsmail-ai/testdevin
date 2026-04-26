@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
+import { getLocale, getDict } from "@/lib/i18n";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 
@@ -14,10 +15,14 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = getLocale();
+  const dict = getDict(locale);
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang={locale} className={inter.variable}>
       <body className="font-sans antialiased bg-white text-neutral-900">
-        <Providers>{children}</Providers>
+        <Providers locale={locale} dict={dict}>
+          {children}
+        </Providers>
         <Toaster position="top-right" richColors />
       </body>
     </html>

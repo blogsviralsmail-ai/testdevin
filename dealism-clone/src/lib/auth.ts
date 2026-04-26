@@ -96,3 +96,22 @@ export async function apiRequireAdmin() {
   if (user.role !== "admin") throw new Error("Forbidden");
   return user;
 }
+
+/**
+ * Convenience helpers that combine auth + active-workspace lookup, so
+ * route handlers and server pages can scope queries to the correct
+ * workspace in one line.
+ */
+export async function requireUserWithWorkspace() {
+  const user = await requireUser();
+  const { getActiveWorkspace } = await import("./workspace");
+  const workspace = await getActiveWorkspace(user.id);
+  return { user, workspace };
+}
+
+export async function apiRequireUserWithWorkspace() {
+  const user = await apiRequireUser();
+  const { getActiveWorkspace } = await import("./workspace");
+  const workspace = await getActiveWorkspace(user.id);
+  return { user, workspace };
+}

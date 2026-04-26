@@ -17,6 +17,9 @@ model User {
   trialEndsAt   DateTime?
   conversationsUsed Int   @default(0)
   conversationsQuota Int  @default(100)
+  // Currently-selected workspace for the dashboard. Falls back to the
+  // user's personal workspace when null.
+  activeWorkspaceId String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -24,11 +27,65 @@ model User {
   channels      Channel[]
   conversations Conversation[]
   knowledgeItems KnowledgeItem[]
+  workspacesOwned Workspace[]   @relation("WorkspaceOwner")
+  memberships   Membership[]
+}
+
+// Team collaboration. Every user gets a personal workspace at signup;
+// owners can invite teammates with assigned roles. Resources (Agents,
+// Channels, KnowledgeItems, Conversations) belong to the workspace, so
+// when one teammate adds an Agent every other member can see/use it.
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String?  @unique
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User           @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  invitations Invitation[]
+  agents      Agent[]
+  channels    Channel[]
+  conversations Conversation[]
+  knowledgeItems KnowledgeItem[]
+}
+
+model Membership {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String   @default("member") // "owner" | "admin" | "member"
+  createdAt   DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model Invitation {
+  id          String   @id @default(cuid())
+  workspaceId String
+  email       String
+  role        String   @default("member")
+  token       String   @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  invitedById String
+  createdAt   DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([email])
 }
 
 model Agent {
   id            String   @id @default(cuid())
-  userId        String
+  userId        String   // Creator (kept for audit / personal workspace)
+  workspaceId   String?  // The workspace this resource belongs to.
   name          String
   description   String?
   systemPrompt  String   // Agent personality / instructions
@@ -40,17 +97,21 @@ model Agent {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   channels      Channel[]
   conversations Conversation[]
   knowledgeItems KnowledgeItem[]
+
+  @@index([workspaceId])
 }
 
 model Channel {
   id            String   @id @default(cuid())
-  userId        String
+  userId        String   // Creator
+  workspaceId   String?
   agentId       String?
-  type          String   // "whatsapp" | "instagram" | "webchat"
+  type          String   // "whatsapp" | "telegram" | "messenger" | "line" | "viber" | "discord"
   name          String
   phoneNumber   String?
   status        String   @default("disconnected") // "connected" | "disconnected" | "connecting"
@@ -59,14 +120,18 @@ model Channel {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agent         Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agent         Agent?     @relation(fields: [agentId], references: [id], onDelete: SetNull)
   conversations Conversation[]
+
+  @@index([workspaceId])
 }
 
 model Conversation {
   id            String   @id @default(cuid())
-  userId        String
+  userId        String   // Creator
+  workspaceId   String?
   agentId       String?
   channelId     String?
   contactName   String?
@@ -78,10 +143,13 @@ model Conversation {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agent         Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
-  channel       Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agent         Agent?     @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  channel       Channel?   @relation(fields: [channelId], references: [id], onDelete: SetNull)
   messages      Message[]
+
+  @@index([workspaceId])
 }
 
 model Message {
@@ -98,7 +166,8 @@ model Message {
 
 model KnowledgeItem {
   id          String   @id @default(cuid())
-  userId      String
+  userId      String   // Creator
+  workspaceId String?
   agentId     String?
   title       String
   content     String
@@ -107,8 +176,11 @@ model KnowledgeItem {
   embedding   String?  // JSON array of floats
   createdAt   DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agent       Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agent       Agent?     @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
 }
 
 model Setting {

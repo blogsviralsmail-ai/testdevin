@@ -35,6 +35,7 @@ export async function ingestIncoming(opts: {
     convo = await prisma.conversation.create({
       data: {
         userId: channel.userId,
+        workspaceId: channel.workspaceId,
         agentId: channel.agentId,
         channelId: channel.id,
         contactName: opts.contactName ?? opts.contactId,
@@ -100,6 +101,7 @@ export async function ingestIncoming(opts: {
       .create({
         data: {
           userId: channel.userId,
+          workspaceId: channel.workspaceId,
           agentId: channel.agentId,
           title: `Auto-learned: ${opts.text.slice(0, 40)}`,
           content,

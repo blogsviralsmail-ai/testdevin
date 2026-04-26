@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,9 +8,9 @@ import { Plus, Smartphone } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function ChannelsPage() {
-  const user = await requireUser();
+  const { workspace } = await requireUserWithWorkspace();
   const channels = await prisma.channel.findMany({
-    where: { userId: user.id },
+    where: { workspaceId: workspace.id },
     include: { agent: true },
     orderBy: { createdAt: "desc" },
   });

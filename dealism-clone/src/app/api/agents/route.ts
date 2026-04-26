@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { apiRequireUser } from "@/lib/auth";
+import { apiRequireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -13,9 +13,9 @@ const schema = z.object({
 
 export async function GET() {
   try {
-    const user = await apiRequireUser();
+    const { workspace } = await apiRequireUserWithWorkspace();
     const agents = await prisma.agent.findMany({
-      where: { userId: user.id },
+      where: { workspaceId: workspace.id },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json({ agents });
@@ -26,11 +26,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await apiRequireUser();
+    const { user, workspace } = await apiRequireUserWithWorkspace();
     const body = await req.json();
     const data = schema.parse(body);
     const agent = await prisma.agent.create({
-      data: { ...data, userId: user.id },
+      data: { ...data, userId: user.id, workspaceId: workspace.id },
     });
     return NextResponse.json({ agent });
   } catch (err: unknown) {

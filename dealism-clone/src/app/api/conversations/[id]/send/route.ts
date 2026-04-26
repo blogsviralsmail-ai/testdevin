@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiRequireUser } from "@/lib/auth";
+import { apiRequireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendChannelMessage } from "@/lib/channels";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await apiRequireUser();
+    const { workspace } = await apiRequireUserWithWorkspace();
     const convo = await prisma.conversation.findUnique({
       where: { id: params.id },
       include: { channel: true },
     });
-    if (!convo || convo.userId !== user.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!convo || convo.workspaceId !== workspace.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const { text } = await req.json();
     if (!text) return NextResponse.json({ error: "text required" }, { status: 400 });
 

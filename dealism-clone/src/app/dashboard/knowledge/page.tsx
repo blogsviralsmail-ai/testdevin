@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { KnowledgeForm } from "./form";
@@ -9,14 +9,17 @@ import { DeleteKnowledgeButton } from "./delete-button";
 export const dynamic = "force-dynamic";
 
 export default async function KnowledgePage() {
-  const user = await requireUser();
+  const { workspace } = await requireUserWithWorkspace();
   const [items, agents] = await Promise.all([
     prisma.knowledgeItem.findMany({
-      where: { userId: user.id },
+      where: { workspaceId: workspace.id },
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
-    prisma.agent.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } }),
+    prisma.agent.findMany({
+      where: { workspaceId: workspace.id },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return (

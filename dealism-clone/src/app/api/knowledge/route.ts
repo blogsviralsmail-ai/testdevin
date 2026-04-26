@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiRequireUser } from "@/lib/auth";
+import { apiRequireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateEmbedding } from "@/lib/openai";
 import { assertSafeExternalUrl, safeFetch } from "@/lib/url-safety";
@@ -9,7 +9,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await apiRequireUser();
+    const { user, workspace } = await apiRequireUserWithWorkspace();
     const body = await req.json();
     const { title, content: rawContent, sourceUrl, agentId, sourceType } = body as {
       title: string;
@@ -58,9 +58,17 @@ export async function POST(req: NextRequest) {
 
     const embedding = await generateEmbedding(content).catch(() => null);
 
+    if (agentId) {
+      const agent = await prisma.agent.findUnique({ where: { id: agentId } });
+      if (!agent || agent.workspaceId !== workspace.id) {
+        return NextResponse.json({ error: "Invalid agent" }, { status: 400 });
+      }
+    }
+
     const item = await prisma.knowledgeItem.create({
       data: {
         userId: user.id,
+        workspaceId: workspace.id,
         agentId: agentId || null,
         title,
         content,

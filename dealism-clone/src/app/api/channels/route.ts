@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiRequireUser } from "@/lib/auth";
+import { apiRequireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await apiRequireUser();
+    const { user, workspace } = await apiRequireUserWithWorkspace();
     const body = await req.json();
     if (body.agentId) {
+      // Validate the agent belongs to the active workspace (any teammate
+      // can attach a channel to any workspace agent).
       const agent = await prisma.agent.findUnique({ where: { id: body.agentId } });
-      if (!agent || agent.userId !== user.id) {
+      if (!agent || agent.workspaceId !== workspace.id) {
         return NextResponse.json({ error: "Invalid agent" }, { status: 400 });
       }
     }
     const channel = await prisma.channel.create({
       data: {
         userId: user.id,
+        workspaceId: workspace.id,
         name: body.name || "WhatsApp",
         type: body.type || "whatsapp",
         agentId: body.agentId || null,
@@ -28,8 +31,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const user = await apiRequireUser();
-    const channels = await prisma.channel.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" } });
+    const { workspace } = await apiRequireUserWithWorkspace();
+    const channels = await prisma.channel.findMany({
+      where: { workspaceId: workspace.id },
+      orderBy: { createdAt: "desc" },
+    });
     return NextResponse.json({ channels });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

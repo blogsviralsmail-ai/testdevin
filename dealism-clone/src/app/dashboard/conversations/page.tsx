@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireUserWithWorkspace } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
@@ -7,9 +7,9 @@ import { MessageSquare } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function ConversationsPage() {
-  const user = await requireUser();
+  const { workspace } = await requireUserWithWorkspace();
   const convos = await prisma.conversation.findMany({
-    where: { userId: user.id },
+    where: { workspaceId: workspace.id },
     orderBy: { lastMessageAt: "desc" },
     take: 100,
     include: {

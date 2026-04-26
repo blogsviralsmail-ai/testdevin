@@ -2,12 +2,15 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ProfileForm } from "./profile-form";
+import { LanguageForm } from "./language-form";
+import { getLocale, t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const user = await requireUser();
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+  const locale = getLocale();
 
   return (
     <div className="p-8 max-w-3xl">
@@ -25,6 +28,16 @@ export default async function SettingsPage() {
               initialName={dbUser?.name ?? ""}
               email={dbUser?.email ?? ""}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.language.label")}</CardTitle>
+            <CardDescription>{t("settings.language.help")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LanguageForm initialLocale={locale} />
           </CardContent>
         </Card>
 
