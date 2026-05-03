@@ -199,9 +199,11 @@ export default function LiveSlotsPage() {
     if (slot?.sourceType === 'youtube_url' && slot?.sourceUrl) {
       setVideoSource('youtube_url');
       setYoutubeUrl(slot.sourceUrl);
+      setGdriveUrl('');
     } else if (slot?.sourceType === 'cloud_gdrive' && slot?.sourceUrl) {
       setVideoSource('google_drive');
       setGdriveUrl(slot.sourceUrl);
+      setYoutubeUrl('');
     } else {
       setVideoSource(slot?.videoId ? 'uploaded' : 'uploaded');
       setYoutubeUrl('');
