@@ -301,14 +301,6 @@ export default function LiveSlotsPage() {
     setActionLoading(null);
   };
 
-  const openScheduleModal = (slot: Slot) => {
-    setShowScheduleModal(slot.id);
-    setScheduleForm({
-      scheduledStart: slot.scheduledStart ? new Date(slot.scheduledStart).toISOString().slice(0, 16) : '',
-      scheduledEnd: slot.scheduledEnd ? new Date(slot.scheduledEnd).toISOString().slice(0, 16) : '',
-    });
-  };
-
   const formatScheduleDate = (dateStr?: string) => {
     if (!dateStr) return null;
     try {
