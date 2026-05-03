@@ -214,7 +214,7 @@ export default function LiveSlotsPage() {
       } else if (srcType === 'youtube_url' && srcUrl) {
         // Use saved YouTube URL from DB
         await streamingAPI.youtubeUrl({ slotId, url: srcUrl, loop: true });
-      } else if (srcType === 'cloud_gdrive' && srcUrl) {
+      } else if ((srcType === 'cloud_gdrive' || srcType === 'gdrive') && srcUrl) {
         await streamingAPI.cloudStream({ slotId, cloudUrl: srcUrl, provider: 'gdrive', loop: true });
       } else if (srcType === 'playlist_queue') {
         // Playlist - need video IDs (not supported in direct start without modal)
@@ -789,7 +789,7 @@ export default function LiveSlotsPage() {
                 {/* Playlist Tab */}
                 {slotSourceTab[slot.id] === 'playlist' && (
                   <div className="text-xs text-tertiary p-2 surface-subtle rounded-lg">
-                    Playlist queue is available in the <strong>Start Stream</strong> modal. Click Start Stream to select multiple videos for queue playback.
+                    Playlist queue: Upload videos in the Videos page, then select them here to play in sequence. Use the uploaded video tab to assign individual videos.
                   </div>
                 )}
                 
