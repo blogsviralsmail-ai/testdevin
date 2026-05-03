@@ -235,13 +235,16 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
             }}
         )
 
-        # Background task: monitor FFmpeg fps, auto-downgrade if too slow, and auto-restart on end (loop)
+        # Background task: monitor FFmpeg fps/speed, auto-downgrade if too slow, and auto-restart on end (loop)
         async def _monitor_and_fallback():
-            """Watch FFmpeg stderr for fps. If fps < 10 for 30s, downgrade resolution.
+            """Watch FFmpeg stderr for fps and speed. Auto-downgrade resolution on:
+            1. Low fps (<15) for 3+ consecutive checks (~15s) - stream is stuttering
+            2. Low speed (<0.8x) for 3+ checks - encoding can't keep up with realtime
+            3. FFmpeg crash (non-zero exit) - immediate downgrade on restart
             When video ends (FFmpeg exits cleanly), get fresh URLs and restart for infinite loop."""
             import re
             try:
-                await asyncio.sleep(15)  # Give FFmpeg time to start
+                await asyncio.sleep(10)  # Give FFmpeg time to start
                 stream_info = active_streams.get(slot_id)
                 if not stream_info:
                     return
@@ -250,7 +253,60 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                     return
 
                 low_fps_count = 0
+                low_speed_count = 0
                 current_res = stream_info.get("resolution", chosen_res)
+
+                async def _downgrade_resolution(si, proc, reason: str):
+                    """Kill current FFmpeg and restart at next lower resolution.
+                    Returns (new_proc, new_res) or (None, current_res) if already at lowest."""
+                    nonlocal current_res, low_fps_count, low_speed_count
+                    cur_res = si.get("resolution", current_res)
+                    cur_idx = FALLBACK_CHAIN.index(cur_res) if cur_res in FALLBACK_CHAIN else 1
+                    next_idx = cur_idx + 1
+                    if next_idx >= len(FALLBACK_CHAIN):
+                        logger.warning(f"Slot {slot_id}: Already at lowest resolution {cur_res}, can't downgrade further")
+                        low_fps_count = 0
+                        low_speed_count = 0
+                        return None, cur_res
+
+                    next_res = FALLBACK_CHAIN[next_idx]
+                    logger.info(f"Slot {slot_id}: AUTO-DOWNGRADE {cur_res} -> {next_res} ({reason})")
+
+                    # Kill current process if still running
+                    if proc and proc.returncode is None:
+                        proc.kill()
+                        await proc.wait()
+
+                    new_h, new_vb, new_mr, new_bs = RESOLUTION_PRESETS[next_res]
+                    try:
+                        new_urls = _get_yt_format(yt_dlp, req.url, new_h)
+                        if not new_urls:
+                            new_urls = [si.get("video_url", video_url)]
+                    except Exception:
+                        new_urls = [si.get("video_url", video_url)]
+                    new_video = new_urls[0]
+                    new_audio = new_urls[1] if len(new_urls) >= 2 else None
+                    new_cmd = _build_ffmpeg_cmd(ffmpeg, new_video, new_audio, destination,
+                                                new_h, new_vb, new_mr, new_bs, loop=False)
+                    new_proc = await asyncio.create_subprocess_exec(
+                        *new_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                    )
+                    active_streams[slot_id] = {
+                        **si,
+                        "process": new_proc, "pid": new_proc.pid,
+                        "video_url": new_video,
+                        "resolution": next_res,
+                        "restart_count": si.get("restart_count", 0) + 1,
+                    }
+                    await db.slots.update_one(
+                        {"_id": ObjectId(req.slotId)},
+                        {"$set": {"streamProcessId": new_proc.pid, "currentResolution": next_res}}
+                    )
+                    logger.info(f"Slot {slot_id}: Restarted at {next_res} (pid={new_proc.pid})")
+                    current_res = next_res
+                    low_fps_count = 0
+                    low_speed_count = 0
+                    return new_proc, next_res
 
                 while True:
                     # Check if slot was stopped by user
@@ -265,11 +321,21 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                     # If process ended, handle restart for loop or cleanup
                     if proc.returncode is not None:
                         if req.loop:
-                            # Video ended, restart with fresh URLs for infinite loop
                             restart_count = si.get("restart_count", 0) + 1
-                            logger.info(f"Slot {slot_id}: Video ended, restarting (loop #{restart_count})")
-                            await asyncio.sleep(2)  # Brief pause before restart
                             cur_res = si.get("resolution", current_res)
+
+                            # If FFmpeg crashed (non-zero exit), try downgrading resolution
+                            if proc.returncode != 0 and restart_count >= 2:
+                                logger.warning(f"Slot {slot_id}: FFmpeg crashed (exit={proc.returncode}), attempting downgrade")
+                                new_proc, new_res = await _downgrade_resolution(si, proc, f"FFmpeg crash exit={proc.returncode}")
+                                if new_proc:
+                                    await asyncio.sleep(10)
+                                    continue
+                                # If can't downgrade further, restart at same res
+
+                            # Normal restart (video ended or first crash) - same resolution
+                            logger.info(f"Slot {slot_id}: Video ended/crashed, restarting (loop #{restart_count})")
+                            await asyncio.sleep(2)
                             r_h, r_vb, r_mr, r_bs = RESOLUTION_PRESETS.get(cur_res, RESOLUTION_PRESETS["720p"])
                             try:
                                 fresh_urls = _get_yt_format(yt_dlp, req.url, r_h)
@@ -296,7 +362,8 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                             )
                             logger.info(f"Slot {slot_id}: Restarted loop at {cur_res} (pid={new_proc.pid})")
                             low_fps_count = 0
-                            await asyncio.sleep(15)  # Let new process start
+                            low_speed_count = 0
+                            await asyncio.sleep(10)  # Let new process start
                             continue
                         else:
                             # Not looping, clean up
@@ -308,64 +375,43 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                             )
                             return
 
-                    # Read FFmpeg stderr for fps monitoring
+                    # Read FFmpeg stderr for fps/speed monitoring
                     try:
                         line = await asyncio.wait_for(proc.stderr.readline(), timeout=5)
                         if not line:
-                            # EOF - process likely ending, wait a moment and check returncode
                             await asyncio.sleep(1)
                             continue
                         text = line.decode("utf-8", errors="ignore")
+
+                        # Check fps
                         fps_match = re.search(r"fps=\s*([\d.]+)", text)
                         if fps_match:
                             fps = float(fps_match.group(1))
-                            if fps < 10 and fps > 0:
+                            if fps < 15 and fps > 0:
                                 low_fps_count += 1
-                                logger.warning(f"Slot {slot_id}: Low fps={fps:.1f} (count={low_fps_count})")
                             else:
-                                low_fps_count = 0  # Reset if fps recovered
+                                low_fps_count = max(0, low_fps_count - 1)  # Gradual recovery
 
-                            # If low fps persists for ~30 seconds (6 checks), downgrade
-                            if low_fps_count >= 6:
-                                current_res = si.get("resolution", "1080p")
-                                current_idx = FALLBACK_CHAIN.index(current_res) if current_res in FALLBACK_CHAIN else 1
-                                next_idx = current_idx + 1
-                                if next_idx < len(FALLBACK_CHAIN):
-                                    next_res = FALLBACK_CHAIN[next_idx]
-                                    logger.info(f"Slot {slot_id}: Auto-downgrading {current_res} -> {next_res} (fps too low)")
-                                    proc.kill()
-                                    await proc.wait()
-                                    new_h, new_vb, new_mr, new_bs = RESOLUTION_PRESETS[next_res]
-                                    try:
-                                        new_urls = _get_yt_format(yt_dlp, req.url, new_h)
-                                        if not new_urls:
-                                            new_urls = stream_urls
-                                    except Exception:
-                                        new_urls = stream_urls
-                                    new_video = new_urls[0]
-                                    new_audio = new_urls[1] if len(new_urls) >= 2 else None
-                                    new_cmd = _build_ffmpeg_cmd(ffmpeg, new_video, new_audio, destination,
-                                                                new_h, new_vb, new_mr, new_bs, loop=False)
-                                    new_proc = await asyncio.create_subprocess_exec(
-                                        *new_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-                                    )
-                                    active_streams[slot_id] = {
-                                        **si,
-                                        "process": new_proc, "pid": new_proc.pid,
-                                        "resolution": next_res,
-                                        "restart_count": si.get("restart_count", 0) + 1,
-                                    }
-                                    await db.slots.update_one(
-                                        {"_id": ObjectId(req.slotId)},
-                                        {"$set": {"streamProcessId": new_proc.pid, "currentResolution": next_res}}
-                                    )
-                                    logger.info(f"Slot {slot_id}: Restarted at {next_res} (pid={new_proc.pid})")
-                                    current_res = next_res
-                                    low_fps_count = 0
-                                    await asyncio.sleep(15)
-                                else:
-                                    logger.warning(f"Slot {slot_id}: Already at lowest resolution {current_res}")
-                                    low_fps_count = 0
+                        # Check speed (more reliable than fps for encoding performance)
+                        speed_match = re.search(r"speed=\s*([\d.]+)x", text)
+                        if speed_match:
+                            speed = float(speed_match.group(1))
+                            if speed < 0.8:
+                                low_speed_count += 1
+                                if low_speed_count <= 3:
+                                    logger.warning(f"Slot {slot_id}: Low speed={speed:.2f}x (count={low_speed_count})")
+                            else:
+                                low_speed_count = max(0, low_speed_count - 1)
+
+                        # Auto-downgrade: 3 checks of low fps (~15s) OR 3 checks of low speed
+                        should_downgrade = low_fps_count >= 3 or low_speed_count >= 3
+                        if should_downgrade:
+                            reason = f"low fps (count={low_fps_count})" if low_fps_count >= 3 else f"low speed (count={low_speed_count})"
+                            new_proc, new_res = await _downgrade_resolution(si, proc, reason)
+                            if new_proc:
+                                await asyncio.sleep(10)
+                            # If can't downgrade, reset counters and continue at current res
+
                     except asyncio.TimeoutError:
                         continue
                     except Exception as e:
