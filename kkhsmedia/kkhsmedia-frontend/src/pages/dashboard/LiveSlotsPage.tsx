@@ -643,25 +643,51 @@ export default function LiveSlotsPage() {
                 )}
               </div>
 
-              {/* Thumbnail + Schedule Row */}
-              <div className="grid grid-cols-2 gap-3 border-t pt-3">
-                <div>
-                  <label className="block text-xs font-medium text-secondary mb-1">Thumbnail</label>
-                  <input type="file" ref={formThumbRef} accept="image/*" className="hidden"
-                    onChange={e => setFormThumb(e.target.files?.[0] || null)} />
-                  <button type="button" onClick={() => formThumbRef.current?.click()}
-                    className="w-full px-3 py-2 rounded-lg border text-sm flex items-center gap-2 hover:bg-[rgb(var(--bg-muted))] truncate">
-                    <Image size={14} className="shrink-0" /> <span className="truncate">{formThumb ? formThumb.name : 'Upload (optional)'}</span>
-                  </button>
-                  {formThumb && (
-                    <button type="button" onClick={() => setFormThumb(null)} className="text-red-400 hover:text-red-600 text-xs mt-1">Remove</button>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-secondary mb-1">Schedule End</label>
-                  <input type="datetime-local" value={form.scheduledEnd} onChange={e => setForm({...form, scheduledEnd: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2" />
-                  <p className="text-xs text-tertiary mt-0.5">Empty = runs forever</p>
+              {/* Thumbnail */}
+              <div className="border-t pt-3">
+                <label className="block text-xs font-medium text-secondary mb-1">Thumbnail</label>
+                <input type="file" ref={formThumbRef} accept="image/*" className="hidden"
+                  onChange={e => setFormThumb(e.target.files?.[0] || null)} />
+                <button type="button" onClick={() => formThumbRef.current?.click()}
+                  className="w-full px-3 py-2 rounded-lg border text-sm flex items-center gap-2 hover:bg-[rgb(var(--bg-muted))] truncate">
+                  <Image size={14} className="shrink-0" /> <span className="truncate">{formThumb ? formThumb.name : 'Upload (optional)'}</span>
+                </button>
+                {formThumb && (
+                  <button type="button" onClick={() => setFormThumb(null)} className="text-red-400 hover:text-red-600 text-xs mt-1">Remove</button>
+                )}
+              </div>
+
+              {/* Stream Timing - Start Date & End Date */}
+              <div className="border-t pt-3">
+                <div className="flex items-center gap-1.5 font-medium text-sm text-primary mb-2"><Clock size={14} /> Stream Timing</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1">Start</label>
+                    <div className="flex gap-1 mb-1.5 surface-muted p-0.5 rounded-lg">
+                      <button type="button" onClick={() => setForm({...form, scheduledStart: ''})}
+                        className={`flex-1 py-1 px-2 rounded-md text-xs font-medium transition ${!form.scheduledStart ? 'bg-green-100 text-green-700 shadow-sm' : 'text-tertiary'}`}>
+                        Immediately
+                      </button>
+                      <button type="button" onClick={() => setForm({...form, scheduledStart: form.scheduledStart || new Date(Date.now() + 3600000).toISOString().slice(0, 16)})}
+                        className={`flex-1 py-1 px-2 rounded-md text-xs font-medium transition ${form.scheduledStart ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'text-tertiary'}`}>
+                        <Calendar size={11} className="inline mr-0.5" />Scheduled
+                      </button>
+                    </div>
+                    {form.scheduledStart ? (
+                      <input type="datetime-local" value={form.scheduledStart} onChange={e => setForm({...form, scheduledStart: e.target.value})}
+                        className="w-full px-2 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2" />
+                    ) : (
+                      <p className="text-xs text-green-600 mt-0.5">Stream turant start hoga</p>
+                    )}
+                  </div>
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1">End Date (optional)</label>
+                    <input type="datetime-local" value={form.scheduledEnd} onChange={e => setForm({...form, scheduledEnd: e.target.value})}
+                      className="w-full px-2 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2 mt-[29px]" />
+                    <p className="text-xs text-tertiary mt-0.5">{form.scheduledEnd ? `Auto-stop: ${new Date(form.scheduledEnd).toLocaleString('en-IN')}` : 'Khali chhodein = infinite loop'}</p>
+                  </div>
                 </div>
               </div>
 
