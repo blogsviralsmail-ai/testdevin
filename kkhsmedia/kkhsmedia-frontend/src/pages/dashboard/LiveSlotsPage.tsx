@@ -397,7 +397,7 @@ export default function LiveSlotsPage() {
 
   const getSourceLabel = (slot: Slot) => {
     if (slot.sourceType === 'youtube_url') return { label: 'YouTube URL', icon: <Youtube size={13} className="text-red-500" />, color: 'text-red-600' };
-    if (slot.sourceType === 'cloud_gdrive') return { label: 'Google Drive', icon: <HardDrive size={13} className="text-green-500" />, color: 'text-green-600' };
+    if (slot.sourceType === 'cloud_gdrive' || slot.sourceType === 'gdrive') return { label: 'Google Drive', icon: <HardDrive size={13} className="text-green-500" />, color: 'text-green-600' };
     if (slot.sourceType === 'playlist_queue') return { label: 'Playlist Queue', icon: <List size={13} className="text-purple-500" />, color: 'text-purple-600' };
     return null;
   };
