@@ -192,8 +192,8 @@ export default function LiveSlotsPage() {
 
     // Check if user chose "scheduled" mode - save schedule and don't start immediately
     const startMode = slotStartMode[slotId] || 'immediately';
-    const startDate = slotStartDate[slotId]?.trim();
-    const endDate = slotEndDate[slotId]?.trim();
+    const startDate = slotStartDate[slotId]?.trim() || (slot.scheduledStart ? new Date(slot.scheduledStart).toISOString().slice(0, 16) : '');
+    const endDate = slotEndDate[slotId]?.trim() || (slot.scheduledEnd ? new Date(slot.scheduledEnd).toISOString().slice(0, 16) : '');
 
     // If scheduled mode, save the schedule dates first
     if (startMode === 'scheduled' && startDate) {
