@@ -20,7 +20,7 @@ export default function LiveSlotsPage() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: '', platform: 'youtube', streamKey: '', streamUrl: '', videoId: '', scheduledStart: '', scheduledEnd: '', resolution: '1080p', sourceType: 'uploaded' as string, sourceUrl: '' });
+  const [form, setForm] = useState({ name: '', platform: 'youtube', streamKey: '', streamUrl: '', videoId: '', scheduledStart: '', scheduledEnd: '', resolution: '1080p', sourceType: 'uploaded' as string, sourceUrl: '', loop: true });
   const [saving, setSaving] = useState(false);
   const [createAndStart, setCreateAndStart] = useState(false);
   const [formThumb, setFormThumb] = useState<File | null>(null);
@@ -153,9 +153,9 @@ export default function LiveSlotsPage() {
       if (startImmediately && newSlotId) {
         try {
           if (form.sourceType === 'youtube_url' && form.sourceUrl.trim()) {
-            await streamingAPI.youtubeUrl({ slotId: newSlotId, url: form.sourceUrl.trim(), loop: true });
+            await streamingAPI.youtubeUrl({ slotId: newSlotId, url: form.sourceUrl.trim(), loop: form.loop });
           } else if (form.sourceType === 'gdrive' && form.sourceUrl.trim()) {
-            await streamingAPI.cloudStream({ slotId: newSlotId, cloudUrl: form.sourceUrl.trim(), provider: 'gdrive', loop: true });
+            await streamingAPI.cloudStream({ slotId: newSlotId, cloudUrl: form.sourceUrl.trim(), provider: 'gdrive', loop: form.loop });
           } else if (form.videoId) {
             await slotsAPI.startStream(newSlotId);
           }
@@ -166,7 +166,7 @@ export default function LiveSlotsPage() {
       }
       
       setShowAdd(false);
-      setForm({ name: '', platform: 'youtube', streamKey: '', streamUrl: '', videoId: '', scheduledStart: '', scheduledEnd: '', resolution: '1080p', sourceType: 'uploaded', sourceUrl: '' });
+      setForm({ name: '', platform: 'youtube', streamKey: '', streamUrl: '', videoId: '', scheduledStart: '', scheduledEnd: '', resolution: '1080p', sourceType: 'uploaded', sourceUrl: '', loop: true });
       setFormThumb(null);
       loadData();
     } catch (err: unknown) {
@@ -194,11 +194,20 @@ export default function LiveSlotsPage() {
     const slot = slots.find(s => s.id === slotId);
     setShowStreamModal(slotId);
     setStreamThumb(null);
-    setStreamEndDate('');
-    setVideoSource(slot?.videoId ? 'uploaded' : 'uploaded');
-    setYoutubeUrl('');
+    setStreamEndDate(slot?.scheduledEnd ? new Date(slot.scheduledEnd).toISOString().slice(0, 16) : '');
+    // Pre-fill source type and URL from slot data so user doesn't have to re-enter
+    if (slot?.sourceType === 'youtube_url' && slot?.sourceUrl) {
+      setVideoSource('youtube_url');
+      setYoutubeUrl(slot.sourceUrl);
+    } else if (slot?.sourceType === 'cloud_gdrive' && slot?.sourceUrl) {
+      setVideoSource('google_drive');
+      setGdriveUrl(slot.sourceUrl);
+    } else {
+      setVideoSource(slot?.videoId ? 'uploaded' : 'uploaded');
+      setYoutubeUrl('');
+      setGdriveUrl('');
+    }
     setYoutubeUrlInfo(null);
-    setGdriveUrl('');
     setPlaylistVideoIds([]);
     setStreamLoop(true);
   };
@@ -602,14 +611,42 @@ export default function LiveSlotsPage() {
                   </select>
                 )}
                 {form.sourceType === 'youtube_url' && (
-                  <input type="text" placeholder="https://youtube.com/watch?v=..."
-                    value={form.sourceUrl} onChange={e => setForm({...form, sourceUrl: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2" />
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input type="text" placeholder="https://youtube.com/watch?v=... or playlist URL"
+                        value={form.sourceUrl} onChange={e => setForm({...form, sourceUrl: e.target.value})}
+                        className="flex-1 px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2" />
+                      <button type="button" onClick={async () => { if (!form.sourceUrl.trim()) return; setYtUrlLoading(true); setYoutubeUrlInfo(null); try { const res = await streamingAPI.extractYoutubeInfo(form.sourceUrl); setYoutubeUrlInfo(res.data); } catch { setError('Failed to check YouTube URL'); } setYtUrlLoading(false); }}
+                        disabled={ytUrlLoading || !form.sourceUrl.trim()} className="px-3 py-2 rounded-lg bg-red-500 text-white text-xs disabled:opacity-50 flex items-center gap-1 shrink-0">
+                        {ytUrlLoading ? <RefreshCw size={14} className="animate-spin" /> : <ExternalLink size={14} />}
+                        {ytUrlLoading ? '...' : 'Check'}
+                      </button>
+                    </div>
+                    {youtubeUrlInfo && (
+                      <div className="flex items-center gap-3 p-2 surface-base rounded-lg border">
+                        {youtubeUrlInfo.thumbnail && <img src={youtubeUrlInfo.thumbnail} alt="" className="w-16 h-10 rounded object-cover" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{youtubeUrlInfo.title || 'YouTube Video'}</p>
+                          <p className="text-xs text-tertiary">{youtubeUrlInfo.type === 'playlist' ? `Playlist - ${youtubeUrlInfo.count || '?'} videos` : youtubeUrlInfo.duration || 'Video'}</p>
+                        </div>
+                      </div>
+                    )}
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={form.loop} onChange={e => setForm({...form, loop: e.target.checked})} className="rounded" />
+                      Loop video (repeat continuously)
+                    </label>
+                  </div>
                 )}
                 {form.sourceType === 'gdrive' && (
-                  <input type="text" placeholder="https://drive.google.com/file/d/..."
-                    value={form.sourceUrl} onChange={e => setForm({...form, sourceUrl: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2" />
+                  <div className="space-y-2">
+                    <input type="text" placeholder="https://drive.google.com/file/d/..."
+                      value={form.sourceUrl} onChange={e => setForm({...form, sourceUrl: e.target.value})}
+                      className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2" />
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={form.loop} onChange={e => setForm({...form, loop: e.target.checked})} className="rounded" />
+                      Loop video (repeat continuously)
+                    </label>
+                  </div>
                 )}
                 {form.sourceType === 'playlist' && (
                   <p className="text-xs text-tertiary p-2 surface-subtle rounded-lg">Playlist select after slot creation.</p>
