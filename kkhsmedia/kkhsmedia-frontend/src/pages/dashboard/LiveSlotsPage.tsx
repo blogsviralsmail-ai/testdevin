@@ -192,8 +192,11 @@ export default function LiveSlotsPage() {
 
     // Check if user chose "scheduled" mode - save schedule and don't start immediately
     const startMode = slotStartMode[slotId] || 'immediately';
-    const startDate = slotStartDate[slotId]?.trim() || (slot.scheduledStart ? new Date(slot.scheduledStart).toISOString().slice(0, 16) : '');
-    const endDate = slotEndDate[slotId]?.trim() || (slot.scheduledEnd ? new Date(slot.scheduledEnd).toISOString().slice(0, 16) : '');
+    const userStartDate = slotStartDate[slotId]?.trim() || '';
+    const userEndDate = slotEndDate[slotId]?.trim() || '';
+    // For scheduled mode: fall back to DB dates; for immediately mode: only use explicit user input
+    const startDate = userStartDate || (slot.scheduledStart ? toLocalDatetimeValue(slot.scheduledStart) : '');
+    const endDate = userEndDate || (startMode === 'scheduled' && slot.scheduledEnd ? toLocalDatetimeValue(slot.scheduledEnd) : '');
 
     // If scheduled mode, save the schedule dates first
     if (startMode === 'scheduled' && startDate) {
@@ -218,9 +221,9 @@ export default function LiveSlotsPage() {
     setActionLoading(slotId);
     setError(null);
     try {
-      // Save end date if user set one (for auto-stop)
-      if (endDate) {
-        await slotsAPI.update(slotId, { scheduledEnd: new Date(endDate).toISOString() });
+      // Save end date if user explicitly set one (for auto-stop) - only use user input, not stale DB dates
+      if (userEndDate) {
+        await slotsAPI.update(slotId, { scheduledEnd: new Date(userEndDate).toISOString() });
       }
       // Upload thumbnail if one was selected for this slot
       const thumb = slotThumbs[slotId];
@@ -299,6 +302,14 @@ export default function LiveSlotsPage() {
       setError(msg);
     }
     setActionLoading(null);
+  };
+
+  // Convert ISO date string to local datetime-local input value
+  const toLocalDatetimeValue = (isoStr: string): string => {
+    const d = new Date(isoStr);
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
   };
 
   const formatScheduleDate = (dateStr?: string) => {
@@ -779,7 +790,7 @@ export default function LiveSlotsPage() {
                         </button>
                       </div>
                       {slotStartMode[slot.id] === 'scheduled' && (
-                        <input type="datetime-local" value={slotStartDate[slot.id] || (slot.scheduledStart ? new Date(slot.scheduledStart).toISOString().slice(0, 16) : '')}
+                        <input type="datetime-local" value={slotStartDate[slot.id] || (slot.scheduledStart ? toLocalDatetimeValue(slot.scheduledStart) : '')}
                           onChange={e => setSlotStartDate(prev => ({...prev, [slot.id]: e.target.value}))}
                           className="w-full px-2 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2" />
                       )}
@@ -790,7 +801,7 @@ export default function LiveSlotsPage() {
                     {/* End Date */}
                     <div>
                       <label className="block text-xs font-medium text-secondary mb-1">End Date (optional)</label>
-                      <input type="datetime-local" value={slotEndDate[slot.id] || (slot.scheduledEnd ? new Date(slot.scheduledEnd).toISOString().slice(0, 16) : '')}
+                      <input type="datetime-local" value={slotEndDate[slot.id] || (slot.scheduledEnd ? toLocalDatetimeValue(slot.scheduledEnd) : '')}
                         onChange={e => setSlotEndDate(prev => ({...prev, [slot.id]: e.target.value}))}
                         className="w-full px-2 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2 mt-[29px]" />
                       <p className="text-xs text-tertiary mt-0.5">{slotEndDate[slot.id] || slot.scheduledEnd ? `Auto-stop: ${formatScheduleDate(slotEndDate[slot.id] ? new Date(slotEndDate[slot.id]).toISOString() : slot.scheduledEnd) || ''}` : 'Khali chhodein = infinite loop'}</p>
