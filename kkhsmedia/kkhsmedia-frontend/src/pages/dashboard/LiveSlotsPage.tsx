@@ -158,6 +158,7 @@ export default function LiveSlotsPage() {
       setShowAdd(false);
       setForm({ name: '', platform: 'youtube', streamKey: '', streamUrl: '', videoId: '', scheduledStart: '', scheduledEnd: '', resolution: '1080p', sourceType: 'uploaded', sourceUrl: '', loop: true });
       setFormThumb(null);
+      setYoutubeUrlInfo(null);
       loadData();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to create slot';
@@ -212,7 +213,7 @@ export default function LiveSlotsPage() {
         await slotsAPI.update(slotId, { sourceType: 'youtube_url', sourceUrl: inlineYtUrl });
         await streamingAPI.youtubeUrl({ slotId, url: inlineYtUrl, loop: true });
       } else if (activeTab === 'gdrive' && inlineGdriveUrl) {
-        await slotsAPI.update(slotId, { sourceType: 'cloud_gdrive', sourceUrl: inlineGdriveUrl });
+        await slotsAPI.update(slotId, { sourceType: 'gdrive', sourceUrl: inlineGdriveUrl });
         await streamingAPI.cloudStream({ slotId, cloudUrl: inlineGdriveUrl, provider: 'gdrive', loop: true });
       } else if (srcType === 'youtube_url' && srcUrl) {
         // Use saved YouTube URL from DB (no tab actively selected)
