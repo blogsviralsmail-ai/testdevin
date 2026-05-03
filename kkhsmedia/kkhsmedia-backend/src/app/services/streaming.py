@@ -132,6 +132,7 @@ async def start_ffmpeg_stream(
     stream_key: str,
     rtmp_url: str,
     platform: str,
+    quality_idx: int = 0,
 ) -> Optional[int]:
     """Start an FFmpeg process to stream a video in loop."""
 
@@ -179,9 +180,8 @@ async def start_ffmpeg_stream(
         # With -c:v copy, some MP4 files fail to loop because FFmpeg
         # cannot seek back to the start properly, causing the stream
         # to stop after one playthrough (~video duration).
-        # Use quality level from active_streams if set (for downgrade restarts)
-        quality_idx = 0  # Default: 1080p quality
-        quality = UPLOADED_QUALITY_CHAIN[quality_idx]
+        # Use quality level passed by caller (watchdog preserves downgraded level)
+        quality = UPLOADED_QUALITY_CHAIN[min(quality_idx, len(UPLOADED_QUALITY_CHAIN) - 1)]
         cmd = [
             ffmpeg,
             "-re",
@@ -463,11 +463,11 @@ async def _stream_watchdog(slot_id: str):
                     stream_key=info["stream_key"],
                     rtmp_url=info["rtmp_url"],
                     platform=info["platform"],
+                    quality_idx=quality_idx,
                 )
                 if new_pid:
                     if slot_id in active_streams:
                         active_streams[slot_id]["restart_count"] = restart_count + 1
-                        active_streams[slot_id]["quality_idx"] = quality_idx  # Preserve quality level
                     await db.slots.update_one(
                         {"_id": bson.ObjectId(slot_id)},
                         {"$set": {"streamProcessId": new_pid, "updatedAt": datetime.utcnow()}}
