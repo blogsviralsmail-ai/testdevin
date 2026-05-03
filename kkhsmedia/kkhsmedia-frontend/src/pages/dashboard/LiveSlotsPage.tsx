@@ -42,6 +42,10 @@ export default function LiveSlotsPage() {
   const [slotSourceTab, setSlotSourceTab] = useState<Record<string, string>>({});
   const [slotYtUrl, setSlotYtUrl] = useState<Record<string, string>>({});
   const [slotGdriveUrl, setSlotGdriveUrl] = useState<Record<string, string>>({});
+  // Per-slot inline schedule: start mode (immediately/scheduled) and end date
+  const [slotStartMode, setSlotStartMode] = useState<Record<string, 'immediately' | 'scheduled'>>({});
+  const [slotStartDate, setSlotStartDate] = useState<Record<string, string>>({});
+  const [slotEndDate, setSlotEndDate] = useState<Record<string, string>>({});
   // Simulcast (multi-platform) state
   const [showSimulcast, setShowSimulcast] = useState(false);
   const [simulcastDests, setSimulcastDests] = useState<{platform: string; streamKey: string; rtmpUrl: string}[]>([
@@ -185,9 +189,39 @@ export default function LiveSlotsPage() {
   const handleDirectStart = async (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
     if (!slot) return;
+
+    // Check if user chose "scheduled" mode - save schedule and don't start immediately
+    const startMode = slotStartMode[slotId] || 'immediately';
+    const startDate = slotStartDate[slotId]?.trim();
+    const endDate = slotEndDate[slotId]?.trim();
+
+    // If scheduled mode, save the schedule dates first
+    if (startMode === 'scheduled' && startDate) {
+      setActionLoading(slotId);
+      setError(null);
+      try {
+        const update: Record<string, unknown> = {
+          scheduledStart: new Date(startDate).toISOString(),
+        };
+        if (endDate) update.scheduledEnd = new Date(endDate).toISOString();
+        await slotsAPI.update(slotId, update);
+        loadData();
+        setError(null);
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to save schedule';
+        setError(msg);
+      }
+      setActionLoading(null);
+      return; // Don't start immediately - scheduler will handle it
+    }
+
     setActionLoading(slotId);
     setError(null);
     try {
+      // Save end date if user set one (for auto-stop)
+      if (endDate) {
+        await slotsAPI.update(slotId, { scheduledEnd: new Date(endDate).toISOString() });
+      }
       // Upload thumbnail if one was selected for this slot
       const thumb = slotThumbs[slotId];
       if (thumb) {
@@ -708,8 +742,46 @@ export default function LiveSlotsPage() {
                 )}
               </div>
 
-              {/* Schedule Info */}
-              {(slot.scheduledStart || slot.scheduledEnd) && (
+              {/* Inline Start/End Date - shown when not streaming */}
+              {slot.status === 'active' && !slot.isStreaming && (
+                <div className="mt-3 p-3 surface-muted rounded-lg border">
+                  <div className="flex items-center gap-1.5 font-medium text-sm text-primary mb-2"><Clock size={14} /> Stream Timing</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Start Date */}
+                    <div>
+                      <label className="block text-xs font-medium text-secondary mb-1">Start</label>
+                      <div className="flex gap-1 mb-1.5 surface-base p-0.5 rounded-lg border">
+                        <button type="button" onClick={() => setSlotStartMode(prev => ({...prev, [slot.id]: 'immediately'}))}
+                          className={`flex-1 py-1 px-2 rounded-md text-xs font-medium transition ${(slotStartMode[slot.id] || 'immediately') === 'immediately' ? 'bg-green-100 text-green-700 shadow-sm' : 'text-tertiary'}`}>
+                          Immediately
+                        </button>
+                        <button type="button" onClick={() => setSlotStartMode(prev => ({...prev, [slot.id]: 'scheduled'}))}
+                          className={`flex-1 py-1 px-2 rounded-md text-xs font-medium transition ${slotStartMode[slot.id] === 'scheduled' ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'text-tertiary'}`}>
+                          <Calendar size={11} className="inline mr-0.5" />Scheduled
+                        </button>
+                      </div>
+                      {slotStartMode[slot.id] === 'scheduled' && (
+                        <input type="datetime-local" value={slotStartDate[slot.id] || (slot.scheduledStart ? new Date(slot.scheduledStart).toISOString().slice(0, 16) : '')}
+                          onChange={e => setSlotStartDate(prev => ({...prev, [slot.id]: e.target.value}))}
+                          className="w-full px-2 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2" />
+                      )}
+                      {(slotStartMode[slot.id] || 'immediately') === 'immediately' && (
+                        <p className="text-xs text-green-600 mt-0.5">Stream turant start hoga</p>
+                      )}
+                    </div>
+                    {/* End Date */}
+                    <div>
+                      <label className="block text-xs font-medium text-secondary mb-1">End Date (optional)</label>
+                      <input type="datetime-local" value={slotEndDate[slot.id] || (slot.scheduledEnd ? new Date(slot.scheduledEnd).toISOString().slice(0, 16) : '')}
+                        onChange={e => setSlotEndDate(prev => ({...prev, [slot.id]: e.target.value}))}
+                        className="w-full px-2 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2 mt-[29px]" />
+                      <p className="text-xs text-tertiary mt-0.5">{slotEndDate[slot.id] || slot.scheduledEnd ? `Auto-stop: ${formatScheduleDate(slotEndDate[slot.id] ? new Date(slotEndDate[slot.id]).toISOString() : slot.scheduledEnd) || ''}` : 'Khali chhodein = infinite loop'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Schedule Info - shown when streaming */}
+              {slot.isStreaming && (slot.scheduledStart || slot.scheduledEnd) && (
                 <div className="mt-3 p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-xs">
                   <div className="flex items-center gap-1.5 font-medium text-indigo-700 mb-1"><Clock size={13} /> Schedule</div>
                   <div className="grid grid-cols-2 gap-2 text-indigo-600">
@@ -717,7 +789,7 @@ export default function LiveSlotsPage() {
                     {slot.scheduledEnd && (
                       <div className="flex items-center gap-1">
                         End: {formatScheduleDate(slot.scheduledEnd)}
-                        {slot.isStreaming && <span className="ml-1 px-1.5 py-0.5 bg-indigo-100 rounded text-indigo-800 font-medium">{getTimeRemaining(slot.scheduledEnd)}</span>}
+                        <span className="ml-1 px-1.5 py-0.5 bg-indigo-100 rounded text-indigo-800 font-medium">{getTimeRemaining(slot.scheduledEnd)}</span>
                       </div>
                     )}
                   </div>
@@ -832,20 +904,17 @@ export default function LiveSlotsPage() {
               )}
               <div className="mt-4 flex gap-2 flex-wrap">
                 {slot.status === 'active' && !slot.isStreaming && (
-                  <button onClick={() => handleDirectStart(slot.id)} disabled={actionLoading === slot.id}
-                    className="px-3 py-1.5 rounded-lg text-white text-sm flex items-center gap-1.5 disabled:opacity-50" style={{ backgroundColor: '#22c55e' }}>
-                    <Play size={14} /> {actionLoading === slot.id ? 'Starting...' : 'Start Stream'}
+                  <button onClick={() => handleDirectStart(slot.id)} disabled={actionLoading === slot.id || (slotStartMode[slot.id] === 'scheduled' && !slotStartDate[slot.id]?.trim() && !slot.scheduledStart)}
+                    className={`px-3 py-1.5 rounded-lg text-white text-sm flex items-center gap-1.5 disabled:opacity-50 ${slotStartMode[slot.id] === 'scheduled' ? '' : ''}`}
+                    style={{ backgroundColor: slotStartMode[slot.id] === 'scheduled' ? '#6366f1' : '#22c55e' }}>
+                    {slotStartMode[slot.id] === 'scheduled' ? <Calendar size={14} /> : <Play size={14} />}
+                    {actionLoading === slot.id ? 'Saving...' : slotStartMode[slot.id] === 'scheduled' ? 'Save Schedule' : 'Start Stream'}
                   </button>
                 )}
                 {slot.isStreaming && (
                   <button onClick={() => handleStopStream(slot.id)} disabled={actionLoading === slot.id}
                     className="px-3 py-1.5 rounded-lg text-white text-sm flex items-center gap-1.5 bg-red-500 disabled:opacity-50">
                     <Square size={14} /> {actionLoading === slot.id ? 'Stopping...' : 'Stop Stream'}
-                  </button>
-                )}
-                {slot.status === 'active' && !slot.isStreaming && (
-                  <button onClick={() => openScheduleModal(slot)} className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1.5 text-indigo-600 hover:bg-indigo-50">
-                    <Calendar size={14} /> Schedule
                   </button>
                 )}
                 {/* Recording buttons - only when streaming */}
