@@ -171,7 +171,7 @@ export default function LiveSlotsPage() {
     setActionLoading(slotId);
     setError(null);
     try {
-      await slotsAPI.update(slotId, { videoId: videoId || null });
+      await slotsAPI.update(slotId, { videoId: videoId || null, sourceType: 'uploaded', sourceUrl: '' });
       loadData();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to assign video';
@@ -204,7 +204,10 @@ export default function LiveSlotsPage() {
       const inlineGdriveUrl = slotGdriveUrl[slotId]?.trim();
       const activeTab = slotSourceTab[slotId];
 
-      if (activeTab === 'youtube_url' && inlineYtUrl) {
+      // If user explicitly selected the uploaded video tab, use uploaded video
+      if (activeTab === 'uploaded' || (!activeTab && !srcType) || (!activeTab && srcType === 'uploaded')) {
+        await slotsAPI.startStream(slotId);
+      } else if (activeTab === 'youtube_url' && inlineYtUrl) {
         // User typed a YT URL in the card - save it first, then stream
         await slotsAPI.update(slotId, { sourceType: 'youtube_url', sourceUrl: inlineYtUrl });
         await streamingAPI.youtubeUrl({ slotId, url: inlineYtUrl, loop: true });
@@ -212,7 +215,7 @@ export default function LiveSlotsPage() {
         await slotsAPI.update(slotId, { sourceType: 'cloud_gdrive', sourceUrl: inlineGdriveUrl });
         await streamingAPI.cloudStream({ slotId, cloudUrl: inlineGdriveUrl, provider: 'gdrive', loop: true });
       } else if (srcType === 'youtube_url' && srcUrl) {
-        // Use saved YouTube URL from DB
+        // Use saved YouTube URL from DB (no tab actively selected)
         await streamingAPI.youtubeUrl({ slotId, url: srcUrl, loop: true });
       } else if ((srcType === 'cloud_gdrive' || srcType === 'gdrive') && srcUrl) {
         await streamingAPI.cloudStream({ slotId, cloudUrl: srcUrl, provider: 'gdrive', loop: true });
