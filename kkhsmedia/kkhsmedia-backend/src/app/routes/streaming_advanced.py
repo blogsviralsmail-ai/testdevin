@@ -56,9 +56,11 @@ def _clean_env() -> dict:
 
 def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
     """Get stream URLs from yt-dlp with height cap. Uses cookies for YouTube bot challenge bypass."""
+    # Always require mp4/m4a to ensure H.264 video (needed for -c:v copy into FLV/RTMP).
+    # VP9/webm would crash FFmpeg with "Video codec vp9 is not supported in the 'flv' mux".
     fmt = (
         f"bestvideo[ext=mp4][height<={max_height}]+bestaudio[ext=m4a]/"
-        f"bestvideo[height<={max_height}]+bestaudio/"
+        f"bestvideo[ext=mp4][height<={max_height}]+bestaudio[ext=m4a]/"
         f"best[ext=mp4][height<={max_height}]/best[ext=mp4]/best"
     )
     # Common args: ensure deno JS runtime is used for YouTube bot challenge
