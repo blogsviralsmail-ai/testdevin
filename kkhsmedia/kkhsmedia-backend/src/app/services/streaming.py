@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 # Store active FFmpeg processes
 active_streams: dict = {}
 
+# Resolution presets for uploaded video streams (bitrate, maxrate, bufsize)
+UPLOADED_QUALITY_CHAIN = [
+    {"name": "1080p", "vbitrate": "4500k", "maxrate": "5000k", "bufsize": "8000k"},
+    {"name": "720p",  "vbitrate": "2500k", "maxrate": "3000k", "bufsize": "5000k"},
+    {"name": "480p",  "vbitrate": "1200k", "maxrate": "1500k", "bufsize": "2500k"},
+]
+
 # Cache for FFmpeg RTMP capability - None means unchecked
 _ffmpeg_rtmp_ok: Optional[bool] = None
 
@@ -125,6 +132,7 @@ async def start_ffmpeg_stream(
     stream_key: str,
     rtmp_url: str,
     platform: str,
+    quality_idx: int = 0,
 ) -> Optional[int]:
     """Start an FFmpeg process to stream a video in loop."""
 
@@ -172,6 +180,8 @@ async def start_ffmpeg_stream(
         # With -c:v copy, some MP4 files fail to loop because FFmpeg
         # cannot seek back to the start properly, causing the stream
         # to stop after one playthrough (~video duration).
+        # Use quality level passed by caller (watchdog preserves downgraded level)
+        quality = UPLOADED_QUALITY_CHAIN[min(quality_idx, len(UPLOADED_QUALITY_CHAIN) - 1)]
         cmd = [
             ffmpeg,
             "-re",
@@ -181,9 +191,9 @@ async def start_ffmpeg_stream(
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-tune", "zerolatency",
-            "-b:v", "4500k",
-            "-maxrate", "5000k",
-            "-bufsize", "8000k",
+            "-b:v", quality["vbitrate"],
+            "-maxrate", quality["maxrate"],
+            "-bufsize", quality["bufsize"],
             "-g", "60",
             "-keyint_min", "60",
             "-pix_fmt", "yuv420p",
@@ -213,6 +223,7 @@ async def start_ffmpeg_stream(
                 "rtmp_url": rtmp_url,
                 "started_at": datetime.utcnow().isoformat(),
                 "restart_count": 0,
+                "quality_idx": quality_idx,
             }
 
             # Start watchdog monitor for this stream (auto-restarts on crash)
@@ -221,6 +232,33 @@ async def start_ffmpeg_stream(
         except Exception as e:
             logger.error(f"FFmpeg start error for slot {slot_id}: {e}")
             return None
+
+
+def _build_uploaded_ffmpeg_cmd(ffmpeg: str, video_url: str, destination: str, quality_idx: int = 0) -> list:
+    """Build FFmpeg command for uploaded video with given quality level."""
+    quality = UPLOADED_QUALITY_CHAIN[min(quality_idx, len(UPLOADED_QUALITY_CHAIN) - 1)]
+    return [
+        ffmpeg,
+        "-re",
+        "-fflags", "+genpts+igndts",
+        "-stream_loop", "-1",
+        "-i", video_url,
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-tune", "zerolatency",
+        "-b:v", quality["vbitrate"],
+        "-maxrate", quality["maxrate"],
+        "-bufsize", quality["bufsize"],
+        "-g", "60",
+        "-keyint_min", "60",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-ar", "44100",
+        "-f", "flv",
+        "-flvflags", "no_duration_filesize",
+        destination,
+    ]
 
 
 async def _stream_watchdog(slot_id: str):
@@ -232,10 +270,17 @@ async def _stream_watchdog(slot_id: str):
 
     Also monitors RTMP connection health - detects CLOSE-WAIT/dead sockets
     where FFmpeg process is alive but YouTube has dropped the connection.
+
+    Auto-downgrade: If FFmpeg crashes repeatedly (3+ times at same quality),
+    automatically reduces quality (1080p -> 720p -> 480p) to maintain stability.
+    Also monitors FFmpeg speed metric - if encoding can't keep up (<0.8x for 3 checks),
+    auto-downgrades without waiting for a crash.
     """
     # Wait initial 10 seconds to detect early failures
     await asyncio.sleep(10)
     rtmp_dead_count = 0  # consecutive unhealthy checks
+    consecutive_crashes_at_quality = 0  # crashes at current quality level
+    low_speed_count = 0  # consecutive low speed readings
 
     while slot_id in active_streams:
         info = active_streams.get(slot_id)
@@ -254,8 +299,6 @@ async def _stream_watchdog(slot_id: str):
                 rtmp_dead_count += 1
                 logger.warning(f"Watchdog: Slot {slot_id} RTMP unhealthy (count={rtmp_dead_count}/3)")
                 if rtmp_dead_count >= 3:
-                    # RTMP connection is dead for 3 consecutive checks (~45s)
-                    # Kill the zombie FFmpeg and let restart logic handle it
                     logger.error(f"Watchdog: Slot {slot_id} RTMP connection dead, killing FFmpeg PID {pid}")
                     try:
                         proc.kill()
@@ -271,7 +314,65 @@ async def _stream_watchdog(slot_id: str):
                     await asyncio.sleep(15)
                     continue
             else:
-                rtmp_dead_count = 0  # Reset on healthy check
+                rtmp_dead_count = 0
+
+            # Monitor FFmpeg speed for uploaded video streams (detect encoding bottleneck)
+            source_type = info.get("source_type", "uploaded")
+            if source_type in ("uploaded", None) and proc.stderr:
+                try:
+                    line = await asyncio.wait_for(proc.stderr.readline(), timeout=2)
+                    if line:
+                        import re
+                        text = line.decode("utf-8", errors="ignore")
+                        speed_match = re.search(r"speed=\s*([\d.]+)x", text)
+                        if speed_match:
+                            speed = float(speed_match.group(1))
+                            if speed < 0.8:
+                                low_speed_count += 1
+                                if low_speed_count <= 3:
+                                    logger.warning(f"Watchdog: Slot {slot_id} low speed={speed:.2f}x (count={low_speed_count}/3)")
+                            else:
+                                low_speed_count = max(0, low_speed_count - 1)
+
+                            # Auto-downgrade on sustained low speed
+                            if low_speed_count >= 3:
+                                quality_idx = info.get("quality_idx", 0)
+                                if quality_idx < len(UPLOADED_QUALITY_CHAIN) - 1:
+                                    new_idx = quality_idx + 1
+                                    old_name = UPLOADED_QUALITY_CHAIN[quality_idx]["name"]
+                                    new_name = UPLOADED_QUALITY_CHAIN[new_idx]["name"]
+                                    logger.info(f"Watchdog: Slot {slot_id} AUTO-DOWNGRADE {old_name} -> {new_name} (low speed)")
+                                    proc.kill()
+                                    await proc.wait()
+                                    ffmpeg = _get_ffmpeg_path()
+                                    new_cmd = _build_uploaded_ffmpeg_cmd(ffmpeg, info["video_url"], info["destination"], new_idx)
+                                    new_proc = await asyncio.create_subprocess_exec(
+                                        *new_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                                    )
+                                    active_streams[slot_id] = {
+                                        **info,
+                                        "process": new_proc, "pid": new_proc.pid,
+                                        "quality_idx": new_idx,
+                                        "restart_count": info.get("restart_count", 0) + 1,
+                                    }
+                                    from app.database import get_db
+                                    import bson
+                                    db = get_db()
+                                    await db.slots.update_one(
+                                        {"_id": bson.ObjectId(slot_id)},
+                                        {"$set": {"streamProcessId": new_proc.pid, "currentResolution": new_name, "updatedAt": datetime.utcnow()}}
+                                    )
+                                    logger.info(f"Watchdog: Slot {slot_id} restarted at {new_name} (pid={new_proc.pid})")
+                                    low_speed_count = 0
+                                    consecutive_crashes_at_quality = 0
+                                    await asyncio.sleep(10)
+                                    continue
+                                else:
+                                    low_speed_count = 0  # Already at lowest
+                except asyncio.TimeoutError:
+                    pass
+                except Exception:
+                    pass
 
         # Check if process is still running
         if proc.returncode is not None:
@@ -314,11 +415,46 @@ async def _stream_watchdog(slot_id: str):
                 logger.error(f"Watchdog: Slot {slot_id} exceeded max restarts ({restart_count}), stopping")
                 break
 
-            # Restart the stream – delegate to start_ffmpeg_stream which
-            # holds the per-stream-key lock and does a pgrep guard.
-            logger.warning(f"Watchdog: FFmpeg crashed for slot {slot_id} (restart #{restart_count + 1}), restarting...")
+            # Track consecutive crashes at current quality for auto-downgrade
+            consecutive_crashes_at_quality += 1
+            quality_idx = info.get("quality_idx", 0)
 
-            await asyncio.sleep(3)  # Brief pause before restart
+            # If crashed 3+ times at same quality, try downgrading
+            if consecutive_crashes_at_quality >= 3 and quality_idx < len(UPLOADED_QUALITY_CHAIN) - 1:
+                new_idx = quality_idx + 1
+                old_name = UPLOADED_QUALITY_CHAIN[quality_idx]["name"]
+                new_name = UPLOADED_QUALITY_CHAIN[new_idx]["name"]
+                logger.info(f"Watchdog: Slot {slot_id} AUTO-DOWNGRADE {old_name} -> {new_name} (crashed {consecutive_crashes_at_quality}x)")
+                consecutive_crashes_at_quality = 0
+
+                await asyncio.sleep(3)
+                ffmpeg = _get_ffmpeg_path()
+                new_cmd = _build_uploaded_ffmpeg_cmd(ffmpeg, info["video_url"], info["destination"], new_idx)
+                try:
+                    new_proc = await asyncio.create_subprocess_exec(
+                        *new_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                    )
+                    active_streams[slot_id] = {
+                        **info,
+                        "process": new_proc, "pid": new_proc.pid,
+                        "quality_idx": new_idx,
+                        "restart_count": restart_count + 1,
+                    }
+                    await db.slots.update_one(
+                        {"_id": bson.ObjectId(slot_id)},
+                        {"$set": {"streamProcessId": new_proc.pid, "currentResolution": new_name, "updatedAt": datetime.utcnow()}}
+                    )
+                    logger.info(f"Watchdog: Restarted at {new_name} for slot {slot_id}, PID: {new_proc.pid}")
+                    low_speed_count = 0
+                    await asyncio.sleep(10)
+                    continue
+                except Exception as e:
+                    logger.error(f"Watchdog: Failed to restart at {new_name} for slot {slot_id}: {e}")
+
+            # Normal restart at same quality
+            logger.warning(f"Watchdog: FFmpeg crashed for slot {slot_id} (restart #{restart_count + 1}, quality={UPLOADED_QUALITY_CHAIN[quality_idx]['name']}), restarting...")
+
+            await asyncio.sleep(3)
 
             try:
                 new_pid = await start_ffmpeg_stream(
@@ -327,9 +463,9 @@ async def _stream_watchdog(slot_id: str):
                     stream_key=info["stream_key"],
                     rtmp_url=info["rtmp_url"],
                     platform=info["platform"],
+                    quality_idx=quality_idx,
                 )
                 if new_pid:
-                    # Update restart count in active_streams (start_ffmpeg_stream reset it to 0)
                     if slot_id in active_streams:
                         active_streams[slot_id]["restart_count"] = restart_count + 1
                     await db.slots.update_one(
