@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import subprocess
+import time
 from datetime import datetime
 from typing import Optional
 
@@ -16,6 +17,12 @@ from app.utils.auth import get_current_user, get_admin_user, serialize_doc, seri
 from app.services.streaming import _get_ffmpeg_path, active_streams, stop_ffmpeg_stream
 
 logger = logging.getLogger(__name__)
+# Ensure logger outputs to stdout so PM2 captures it
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s'))
+    logger.addHandler(_handler)
+    logger.setLevel(logging.DEBUG)
 router = APIRouter(prefix="/api/streaming", tags=["Advanced Streaming"])
 
 
@@ -191,20 +198,26 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
     # Try each resolution in fallback chain until one works
     chosen_res = FALLBACK_CHAIN[start_idx]
     stream_urls = []
+    print(f"[STREAM] Slot {slot_id_str}: Starting YouTube URL stream, trying from {FALLBACK_CHAIN[start_idx]}")
     for res_name in FALLBACK_CHAIN[start_idx:]:
         height, vbitrate, maxrate, bufsize = RESOLUTION_PRESETS[res_name]
         try:
+            print(f"[STREAM] Slot {slot_id_str}: Trying yt-dlp at {res_name} (height={height})")
             urls = _get_yt_format(yt_dlp, req.url, height)
             if urls:
                 stream_urls = urls
                 chosen_res = res_name
+                print(f"[STREAM] Slot {slot_id_str}: Got {len(urls)} URL(s) at {res_name}")
                 break
         except subprocess.TimeoutExpired:
+            print(f"[STREAM] Slot {slot_id_str}: yt-dlp timeout at {res_name}")
             continue
-        except Exception:
+        except Exception as e:
+            print(f"[STREAM] Slot {slot_id_str}: yt-dlp error at {res_name}: {e}")
             continue
 
     if not stream_urls:
+        print(f"[STREAM] Slot {slot_id_str}: FAILED - no stream URLs from YouTube")
         raise HTTPException(status_code=400, detail="Failed to get stream URL from YouTube")
 
     video_url = stream_urls[0]
@@ -217,9 +230,11 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                             height, vbitrate, maxrate, bufsize, loop=False)
 
     try:
+        print(f"[STREAM] Slot {slot_id_str}: Launching FFmpeg at {chosen_res} -> {destination[:50]}...")
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
+        print(f"[STREAM] Slot {slot_id_str}: FFmpeg started pid={process.pid}")
 
         slot_id = str(slot["_id"])
         active_streams[slot_id] = {
@@ -250,19 +265,35 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
             When video ends (FFmpeg exits cleanly), get fresh URLs and restart for infinite loop."""
             import re
             try:
+                print(f"[MONITOR] Slot {slot_id}: Monitor started, waiting 10s for FFmpeg warmup")
                 await asyncio.sleep(10)  # Give FFmpeg time to start
                 stream_info = active_streams.get(slot_id)
                 if not stream_info:
+                    print(f"[MONITOR] Slot {slot_id}: Not in active_streams, exiting monitor")
                     return
                 proc = stream_info.get("process")
-                if not proc or proc.returncode is not None:
+                if not proc:
+                    print(f"[MONITOR] Slot {slot_id}: No process found, exiting monitor")
                     return
+
+                # If FFmpeg already crashed in the first 10s, read stderr and log it
+                if proc.returncode is not None:
+                    stderr_data = b""
+                    try:
+                        stderr_data = await asyncio.wait_for(proc.stderr.read(4096), timeout=2)
+                    except Exception:
+                        pass
+                    stderr_text = stderr_data.decode(errors="replace") if stderr_data else "(no stderr)"
+                    print(f"[MONITOR] Slot {slot_id}: FFmpeg crashed early! exit={proc.returncode}, stderr={stderr_text[:500]}")
+                    # Don't return - fall through to the while loop to handle restart
 
                 low_fps_count = 0
                 low_speed_count = 0
                 current_res = stream_info.get("resolution", chosen_res)
                 consecutive_lowest_crashes = 0  # Track crashes at lowest quality
                 max_restarts = 200  # Hard cap on total restarts
+                url_refresh_interval = 3600  # Refresh YouTube URLs every 60 min (they expire ~2hrs)
+                last_url_refresh = time.monotonic()
 
                 async def _downgrade_resolution(si, proc, reason: str):
                     """Kill current FFmpeg and restart at next lower resolution.
@@ -342,6 +373,15 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                                 )
                                 return
 
+                            # Read FFmpeg stderr to understand why it crashed
+                            stderr_data = b""
+                            try:
+                                stderr_data = await asyncio.wait_for(proc.stderr.read(4096), timeout=2)
+                            except Exception:
+                                pass
+                            stderr_text = stderr_data.decode(errors="replace") if stderr_data else "(no stderr)"
+                            print(f"[MONITOR] Slot {slot_id}: FFmpeg exit={proc.returncode}, restart #{restart_count}, stderr={stderr_text[:300]}")
+
                             # If FFmpeg crashed (non-zero exit), try downgrading resolution
                             if proc.returncode != 0 and restart_count >= 2:
                                 logger.warning(f"Slot {slot_id}: FFmpeg crashed (exit={proc.returncode}), attempting downgrade")
@@ -398,6 +438,45 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                             )
                             return
 
+                    # Proactive URL refresh: restart FFmpeg with fresh URLs before they expire
+                    elapsed = time.monotonic() - last_url_refresh
+                    if elapsed >= url_refresh_interval and proc.returncode is None:
+                        print(f"[MONITOR] Slot {slot_id}: URL refresh after {int(elapsed)}s - getting fresh URLs")
+                        cur_res = si.get("resolution", current_res)
+                        r_h, r_vb, r_mr, r_bs = RESOLUTION_PRESETS.get(cur_res, RESOLUTION_PRESETS["720p"])
+                        try:
+                            fresh_urls = _get_yt_format(yt_dlp, req.url, r_h)
+                            if fresh_urls:
+                                # Kill old process and start with fresh URLs
+                                proc.kill()
+                                await proc.wait()
+                                f_video = fresh_urls[0]
+                                f_audio = fresh_urls[1] if len(fresh_urls) >= 2 else None
+                                new_cmd = _build_ffmpeg_cmd(ffmpeg, f_video, f_audio, destination,
+                                                            r_h, r_vb, r_mr, r_bs, loop=False)
+                                new_proc = await asyncio.create_subprocess_exec(
+                                    *new_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                                )
+                                restart_count = si.get("restart_count", 0) + 1
+                                active_streams[slot_id] = {
+                                    **si,
+                                    "process": new_proc, "pid": new_proc.pid,
+                                    "video_url": f_video,
+                                    "restart_count": restart_count,
+                                }
+                                await db.slots.update_one(
+                                    {"_id": ObjectId(req.slotId)},
+                                    {"$set": {"streamProcessId": new_proc.pid}}
+                                )
+                                last_url_refresh = time.monotonic()
+                                print(f"[MONITOR] Slot {slot_id}: URL refreshed, new pid={new_proc.pid}")
+                                await asyncio.sleep(10)
+                                continue
+                            else:
+                                print(f"[MONITOR] Slot {slot_id}: URL refresh failed (no URLs), will retry")
+                        except Exception as e:
+                            print(f"[MONITOR] Slot {slot_id}: URL refresh error: {e}")
+
                     # Read FFmpeg stderr for fps/speed monitoring
                     try:
                         line = await asyncio.wait_for(proc.stderr.readline(), timeout=5)
@@ -442,6 +521,8 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                         await asyncio.sleep(2)
                         continue
             except Exception as e:
+                import traceback
+                print(f"[MONITOR] Slot {slot_id}: Monitor CRASHED: {e}\n{traceback.format_exc()}")
                 logger.error(f"Fallback monitor crashed for slot {slot_id}: {e}")
 
         asyncio.create_task(_monitor_and_fallback())
