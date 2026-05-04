@@ -255,6 +255,8 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                 low_fps_count = 0
                 low_speed_count = 0
                 current_res = stream_info.get("resolution", chosen_res)
+                consecutive_lowest_crashes = 0  # Track crashes at lowest quality
+                max_restarts = 200  # Hard cap on total restarts
 
                 async def _downgrade_resolution(si, proc, reason: str):
                     """Kill current FFmpeg and restart at next lower resolution.
@@ -324,14 +326,29 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
                             restart_count = si.get("restart_count", 0) + 1
                             cur_res = si.get("resolution", current_res)
 
+                            # Hard cap on total restarts
+                            if restart_count >= max_restarts:
+                                logger.error(f"Slot {slot_id}: Exceeded max restarts ({max_restarts}), stopping")
+                                active_streams.pop(slot_id, None)
+                                await db.slots.update_one(
+                                    {"_id": ObjectId(req.slotId)},
+                                    {"$set": {"isStreaming": False, "streamProcessId": None}}
+                                )
+                                return
+
                             # If FFmpeg crashed (non-zero exit), try downgrading resolution
                             if proc.returncode != 0 and restart_count >= 2:
                                 logger.warning(f"Slot {slot_id}: FFmpeg crashed (exit={proc.returncode}), attempting downgrade")
                                 new_proc, new_res = await _downgrade_resolution(si, proc, f"FFmpeg crash exit={proc.returncode}")
                                 if new_proc:
+                                    consecutive_lowest_crashes = 0
                                     await asyncio.sleep(10)
                                     continue
-                                # If can't downgrade further, restart at same res
+                                # Can't downgrade further - use exponential backoff
+                                consecutive_lowest_crashes += 1
+                                backoff = min(30, 3 * consecutive_lowest_crashes)  # 3s, 6s, 9s... up to 30s
+                                logger.warning(f"Slot {slot_id}: At lowest res, crash #{consecutive_lowest_crashes}, waiting {backoff}s before restart")
+                                await asyncio.sleep(backoff)
 
                             # Normal restart (video ended or first crash) - same resolution
                             logger.info(f"Slot {slot_id}: Video ended/crashed, restarting (loop #{restart_count})")
