@@ -88,64 +88,40 @@ def _get_yt_format(yt_dlp: str, url: str, max_height: int) -> list:
 
 def _build_ffmpeg_cmd(ffmpeg: str, video_url: str, audio_url: str, destination: str,
                       height: int, vbitrate: str, maxrate: str, bufsize: str,
-                      loop: bool = True, copy_video: bool = True) -> list:
-    """Build FFmpeg command for given resolution.
-
-    copy_video=True (default): use -c:v copy to passthrough video without re-encoding.
-    This is ~90% less CPU than libx264 encoding. yt-dlp already provides the video
-    at the requested resolution so re-encoding is unnecessary for YouTube URL streams.
-    Falls back to re-encoding only if copy mode fails (caller handles retry).
-    """
+                      loop: bool = True) -> list:
+    """Build FFmpeg command for given resolution with libx264 ultrafast encoding."""
     loop_args = ["-stream_loop", "-1"] if loop else []
-    if copy_video:
-        # Video passthrough (no re-encoding) - minimal CPU
-        if audio_url:
-            return [
-                ffmpeg, "-re", *loop_args,
-                "-i", video_url, "-i", audio_url,
-                "-c:v", "copy",
-                "-c:a", "aac", "-b:a", "192k", "-ar", "44100",
-                "-f", "flv", "-flvflags", "no_duration_filesize",
-                destination,
-            ]
-        else:
-            return [
-                ffmpeg, "-re", *loop_args,
-                "-i", video_url,
-                "-c:v", "copy",
-                "-c:a", "aac", "-b:a", "192k", "-ar", "44100",
-                "-f", "flv", "-flvflags", "no_duration_filesize",
-                destination,
-            ]
+    # Re-encode with libx264 ultrafast for stable RTMP output.
+    # -c:v copy doesn't work reliably with YouTube HTTP streams because their
+    # chunky delivery causes timing issues with RTMP output.
+    # ultrafast preset minimizes CPU usage while ensuring smooth stream delivery.
+    vf = f"scale=-2:{height}"
+    if audio_url:
+        return [
+            ffmpeg, "-re", *loop_args,
+            "-i", video_url, "-i", audio_url,
+            "-vf", vf,
+            "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+            "-b:v", vbitrate, "-maxrate", maxrate, "-bufsize", bufsize,
+            "-g", "60", "-keyint_min", "60",
+            "-c:a", "aac", "-b:a", "192k", "-ar", "44100",
+            "-f", "flv", "-flvflags", "no_duration_filesize",
+            destination,
+        ]
     else:
-        # Full re-encoding with libx264 (CPU-heavy, used as fallback)
-        vf = f"scale=-2:{height}"
-        if audio_url:
-            return [
-                ffmpeg, "-re", *loop_args,
-                "-i", video_url, "-i", audio_url,
-                "-vf", vf,
-                "-pix_fmt", "yuv420p",
-                "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
-                "-b:v", vbitrate, "-maxrate", maxrate, "-bufsize", bufsize,
-                "-g", "60", "-keyint_min", "60",
-                "-c:a", "aac", "-b:a", "192k", "-ar", "44100",
-                "-f", "flv", "-flvflags", "no_duration_filesize",
-                destination,
-            ]
-        else:
-            return [
-                ffmpeg, "-re", *loop_args,
-                "-i", video_url,
-                "-vf", vf,
-                "-pix_fmt", "yuv420p",
-                "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
-                "-b:v", vbitrate, "-maxrate", maxrate, "-bufsize", bufsize,
-                "-g", "60", "-keyint_min", "60",
-                "-c:a", "aac", "-b:a", "192k", "-ar", "44100",
-                "-f", "flv", "-flvflags", "no_duration_filesize",
-                destination,
-            ]
+        return [
+            ffmpeg, "-re", *loop_args,
+            "-i", video_url,
+            "-vf", vf,
+            "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+            "-b:v", vbitrate, "-maxrate", maxrate, "-bufsize", bufsize,
+            "-g", "60", "-keyint_min", "60",
+            "-c:a", "aac", "-b:a", "192k", "-ar", "44100",
+            "-f", "flv", "-flvflags", "no_duration_filesize",
+            destination,
+        ]
 
 
 @router.post("/youtube-url")
@@ -164,13 +140,13 @@ async def stream_from_youtube_url(req: YTUrlStreamRequest, user=Depends(get_curr
         raise HTTPException(status_code=500, detail="yt-dlp not installed on server")
 
     # Determine target resolution from slot settings
-    slot_res = slot.get("resolution", "1080p")
+    slot_res = slot.get("resolution", "720p")
     if slot_res == "auto":
-        start_idx = 0  # Start from 4K, auto-downgrade
+        start_idx = 2  # Start from 720p for auto - safe for most servers with libx264 ultrafast
     elif slot_res in FALLBACK_CHAIN:
         start_idx = FALLBACK_CHAIN.index(slot_res)
     else:
-        start_idx = 1  # Default 1080p
+        start_idx = 2  # Default 720p - safe for 4-CPU servers
 
     # Build RTMP destination
     platform = slot.get("platform", "youtube")
