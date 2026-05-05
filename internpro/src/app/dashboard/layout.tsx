@@ -72,7 +72,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className={cn("fixed inset-y-0 left-0 z-30 bg-[#1e1b4b] transition-all duration-300 flex flex-col", sidebarOpen ? "w-64" : "w-20")}>
+      <aside
+        className="fixed inset-y-0 left-0 z-30 bg-[#1e1b4b] transition-all duration-300 flex flex-col"
+        style={{ width: sidebarOpen ? '256px' : '80px' }}
+      >
         <div className="p-4 flex items-center gap-3 border-b border-indigo-800">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shrink-0">IP</div>
           {sidebarOpen && <span className="text-xl font-bold text-white">InternPro</span>}
@@ -109,7 +112,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content */}
-      <div className={cn("flex-1 min-w-0 transition-all duration-300", sidebarOpen ? "ml-64" : "ml-20")}>
+      <div
+        className="flex-1 min-w-0 transition-all duration-300"
+        style={{ marginLeft: sidebarOpen ? '256px' : '80px' }}
+      >
         {/* Top Bar */}
         <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">
