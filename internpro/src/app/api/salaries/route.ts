@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { enrollmentId, month } = body;
 
-    if (!enrollmentId || !month || typeof month !== "string" || !/^\d{4}-\d{1,2}$/.test(month)) {
+    if (!enrollmentId || !month || typeof month !== "string" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
       return NextResponse.json({ error: "Enrollment ID and month (YYYY-MM) are required" }, { status: 400 });
     }
 

@@ -32,6 +32,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id } = await params;
+
+    if (session.role === "organization") {
+      const program = await prisma.program.findUnique({
+        where: { id },
+        include: { organization: true },
+      });
+      if (!program || program.organization.adminId !== session.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const body = await request.json();
     const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats, isPublished, thumbnail } = body;
 
@@ -48,12 +59,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (isPublished !== undefined) data.isPublished = isPublished;
     if (thumbnail !== undefined) data.thumbnail = thumbnail;
 
-    const program = await prisma.program.update({
+    const updatedProgram = await prisma.program.update({
       where: { id },
       data,
     });
 
-    return NextResponse.json(program);
+    return NextResponse.json(updatedProgram);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to update program";
     return NextResponse.json({ error: message }, { status: 500 });
