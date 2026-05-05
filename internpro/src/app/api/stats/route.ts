@@ -3,70 +3,74 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
 export async function GET() {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (session.role === "admin" || session.role === "organization") {
-      const [totalStudents, totalPrograms, totalBatches, activeEnrollments, totalCertificates, totalPayments] =
-        await Promise.all([
-          prisma.user.count({ where: { role: "student" } }),
-          prisma.program.count(),
-          prisma.batch.count(),
-          prisma.enrollment.count({ where: { status: { in: ["active", "approved"] } } }),
-          prisma.certificate.count(),
-          prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "completed", type: "fee" } }),
-        ]);
-
-      return NextResponse.json({
-        totalStudents,
-        totalPrograms,
-        totalBatches,
-        activeEnrollments,
-        totalCertificates,
-        totalRevenue: totalPayments._sum.amount || 0,
-      });
-    }
-
-    if (session.role === "student") {
-      const enrollments = await prisma.enrollment.findMany({
-        where: { studentId: session.id },
-        include: {
-          batch: { include: { program: true } },
-          attendances: true,
-          certificates: true,
-          _count: { select: { attendances: true } },
-        },
-      });
-
-      const totalTasks = await prisma.task.count({
-        where: {
-          batchId: { in: enrollments.map((e) => e.batchId) },
-        },
-      });
-
-      const completedTasks = await prisma.submission.count({
-        where: {
-          studentId: session.id,
-          status: { in: ["submitted", "approved"] },
-        },
-      });
-
-      return NextResponse.json({
-        totalEnrollments: enrollments.length,
-        activeEnrollments: enrollments.filter((e) => e.status === "active" || e.status === "approved").length,
-        totalAttendance: enrollments.reduce((sum, e) => sum + e.attendances.length, 0),
-        totalCertificates: enrollments.reduce((sum, e) => sum + e.certificates.length, 0),
-        totalTasks,
-        completedTasks,
-      });
-    }
-
-    return NextResponse.json({});
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to fetch stats";
-    return NextResponse.json({ error: message }, { status: 500 });
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  if (session.role === "student") {
+    const [enrollments, attendances, submissions, certificates] = await Promise.all([
+      prisma.enrollment.findMany({ where: { studentId: session.id } }),
+      prisma.attendance.count({ where: { userId: session.id, status: "present" } }),
+      prisma.submission.findMany({ where: { studentId: session.id } }),
+      prisma.certificate.count({ where: { enrollment: { studentId: session.id } } }),
+    ]);
+
+    const completedTasks = submissions.filter((s) => s.status === "reviewed").length;
+    const totalTasks = submissions.length;
+    const avgPercentage = submissions.filter((s) => s.percentage).reduce((acc, s) => acc + (s.percentage || 0), 0);
+    const completionPercentage = totalTasks > 0 ? Math.round(avgPercentage / totalTasks) : 0;
+
+    return NextResponse.json({
+      totalEnrollments: enrollments.length,
+      activeEnrollments: enrollments.filter((e) => e.status === "selected").length,
+      totalAttendance: attendances,
+      totalTasks,
+      completedTasks,
+      completionPercentage,
+      totalCertificates: certificates,
+    });
+  }
+
+  if (session.role === "teamleader") {
+    const batches = await prisma.batch.findMany({ where: { leaderId: session.id } });
+    const batchIds = batches.map((b) => b.id);
+    const [students, enrollments, submissions] = await Promise.all([
+      prisma.enrollment.count({ where: { batchId: { in: batchIds } } }),
+      prisma.enrollment.count({ where: { batchId: { in: batchIds }, status: "selected" } }),
+      prisma.submission.count({ where: { task: { batchId: { in: batchIds } }, status: "submitted" } }),
+    ]);
+
+    return NextResponse.json({
+      totalBatches: batches.length,
+      totalStudents: students,
+      activeEnrollments: enrollments,
+      completedTasks: submissions,
+    });
+  }
+
+  // Admin / Organization stats
+  const [students, programs, batches, pendingApps, interviews, selected, certificates, payments] = await Promise.all([
+    prisma.user.count({ where: { role: "student" } }),
+    prisma.program.count({ where: { isPublished: true } }),
+    prisma.batch.count({ where: { isActive: true } }),
+    prisma.enrollment.count({ where: { status: "applied" } }),
+    prisma.interview.count({ where: { status: "scheduled" } }),
+    prisma.enrollment.count({ where: { status: "selected" } }),
+    prisma.certificate.count(),
+    prisma.payment.findMany({ where: { status: "paid" } }),
+  ]);
+
+  const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+
+  return NextResponse.json({
+    totalStudents: students,
+    totalPrograms: programs,
+    totalBatches: batches,
+    pendingApplications: pendingApps,
+    scheduledInterviews: interviews,
+    selectedStudents: selected,
+    totalCertificates: certificates,
+    totalRevenue,
+  });
 }

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     where,
     include: {
       program: { select: { title: true, domain: true, mode: true } },
-      mentor: { select: { id: true, name: true, email: true } },
+      leader: { select: { id: true, name: true, email: true } },
       _count: { select: { enrollments: true, tasks: true, resources: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, programId, mentorId, startDate, endDate } = body;
+    const { name, programId, leaderId, startDate, endDate } = body;
 
     if (!name || !programId || !startDate || !endDate) {
       return NextResponse.json({ error: "Name, program, start date, and end date are required" }, { status: 400 });
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         programId,
-        mentorId: mentorId || null,
+        leaderId: leaderId || null,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
       },

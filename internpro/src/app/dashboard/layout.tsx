@@ -14,14 +14,20 @@ interface User {
 }
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "organization", "mentor", "student"] },
-  { href: "/dashboard/programs", label: "Programs", icon: "📚", roles: ["admin", "organization", "mentor"] },
-  { href: "/dashboard/students", label: "Students", icon: "👥", roles: ["admin", "organization", "mentor"] },
-  { href: "/dashboard/attendance", label: "Attendance", icon: "📅", roles: ["admin", "organization", "mentor", "student"] },
-  { href: "/dashboard/tasks", label: "Tasks", icon: "📝", roles: ["admin", "organization", "mentor", "student"] },
-  { href: "/dashboard/resources", label: "Resources", icon: "🎥", roles: ["admin", "organization", "mentor", "student"] },
+  { href: "/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/applications", label: "Applications", icon: "📋", roles: ["admin", "organization"] },
+  { href: "/dashboard/interviews", label: "Interviews", icon: "🎤", roles: ["admin", "organization"] },
+  { href: "/dashboard/programs", label: "Programs", icon: "📚", roles: ["admin", "organization", "teamleader"] },
+  { href: "/dashboard/students", label: "Students", icon: "👥", roles: ["admin", "organization", "teamleader"] },
+  { href: "/dashboard/attendance", label: "Attendance", icon: "📅", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/tasks", label: "Tasks", icon: "📝", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/reviews", label: "Review Tasks", icon: "✅", roles: ["teamleader", "admin"] },
+  { href: "/dashboard/resources", label: "Study Material", icon: "🎥", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/completion", label: "Completion", icon: "🎓", roles: ["admin", "organization", "teamleader"] },
   { href: "/dashboard/certificates", label: "Certificates", icon: "🏆", roles: ["admin", "organization", "student"] },
-  { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization", "student"] },
+  { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
+  { href: "/dashboard/documents", label: "My Documents", icon: "📄", roles: ["student"] },
+  { href: "/dashboard/offer-letter", label: "Offer Letter", icon: "📨", roles: ["student"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
 

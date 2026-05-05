@@ -16,8 +16,22 @@ export async function GET(request: NextRequest) {
 
   const resources = await prisma.resource.findMany({
     where,
-    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+    orderBy: [{ dayNumber: "asc" }, { order: "asc" }, { createdAt: "desc" }],
   });
+
+  // For students, filter resources based on current working day
+  if (session.role === "student") {
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { studentId: session.id, status: "selected" },
+    });
+    const currentDay = enrollment?.currentWorkDay || 0;
+
+    const filtered = resources.filter((r) => {
+      if (r.dayNumber && r.dayNumber > currentDay) return false;
+      return true;
+    });
+    return NextResponse.json(filtered);
+  }
 
   return NextResponse.json(resources);
 }
@@ -25,12 +39,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || !["admin", "organization", "mentor"].includes(session.role)) {
+    if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { batchId, title, type, url, order } = body;
+    const { batchId, title, type, url, dayNumber, order } = body;
 
     if (!batchId || !title || !url) {
       return NextResponse.json({ error: "Batch, title, and URL are required" }, { status: 400 });
@@ -42,6 +56,7 @@ export async function POST(request: NextRequest) {
         title,
         type: type || "video",
         url,
+        dayNumber: dayNumber ? parseInt(dayNumber) : null,
         order: parseInt(order || "0"),
       },
     });

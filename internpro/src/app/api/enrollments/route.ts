@@ -14,20 +14,26 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get("status");
 
   const where: Record<string, unknown> = {};
+  if (session.role === "student") {
+    where.studentId = session.id;
+  } else {
+    if (studentId) where.studentId = studentId;
+  }
   if (batchId) where.batchId = batchId;
-  if (studentId) where.studentId = studentId;
   if (status) where.status = status;
 
   const enrollments = await prisma.enrollment.findMany({
     where,
     include: {
-      student: { select: { id: true, name: true, email: true, phone: true, avatar: true } },
+      student: { select: { id: true, name: true, email: true, phone: true, avatar: true, collegeName: true, degree: true, year: true } },
       batch: {
         include: {
-          program: { select: { title: true, domain: true, feeType: true, feeAmount: true, stipendAmount: true } },
+          program: { select: { title: true, domain: true, feeType: true, feeAmount: true, stipendAmount: true, mode: true, duration: true } },
         },
       },
-      _count: { select: { attendances: true, certificates: true, payments: true } },
+      offerLetter: true,
+      experienceLetter: true,
+      _count: { select: { attendances: true, certificates: true, payments: true, interviews: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -43,28 +49,30 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { studentId, batchId } = body;
+    const { batchId } = body;
 
-    const useStudentId = (studentId && ["admin", "organization", "mentor"].includes(session.role)) ? studentId : session.id;
+    if (!batchId) {
+      return NextResponse.json({ error: "Batch ID is required" }, { status: 400 });
+    }
 
     const existing = await prisma.enrollment.findUnique({
-      where: { studentId_batchId: { studentId: useStudentId, batchId } },
+      where: { studentId_batchId: { studentId: session.id, batchId } },
     });
     if (existing) {
-      return NextResponse.json({ error: "Already enrolled in this batch" }, { status: 400 });
+      return NextResponse.json({ error: "Already applied for this program" }, { status: 400 });
     }
 
     const enrollment = await prisma.enrollment.create({
       data: {
-        studentId: useStudentId,
+        studentId: session.id,
         batchId,
-        status: session.role === "student" ? "pending" : "approved",
+        status: "applied",
       },
     });
 
     return NextResponse.json(enrollment, { status: 201 });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to enroll";
+    const message = error instanceof Error ? error.message : "Failed to apply";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

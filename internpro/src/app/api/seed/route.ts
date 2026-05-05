@@ -14,7 +14,7 @@ export async function POST() {
     }
 
     const adminPassword = await hashPassword("admin123");
-    const mentorPassword = await hashPassword("mentor123");
+    const leaderPassword = await hashPassword("leader123");
     const studentPassword = await hashPassword("student123");
 
     const admin = await prisma.user.create({
@@ -25,28 +25,48 @@ export async function POST() {
       data: { name: "Org Admin", email: "org@internpro.com", password: adminPassword, role: "organization", phone: "+91 8888888888" },
     });
 
-    const mentor = await prisma.user.create({
-      data: { name: "Rahul Sharma", email: "mentor@internpro.com", password: mentorPassword, role: "mentor", phone: "+91 7777777777" },
+    const leader = await prisma.user.create({
+      data: { name: "Rahul Sharma", email: "leader@internpro.com", password: leaderPassword, role: "teamleader", phone: "+91 7777777777" },
     });
 
     const student1 = await prisma.user.create({
-      data: { name: "Priya Singh", email: "student@internpro.com", password: studentPassword, role: "student", phone: "+91 6666666666" },
+      data: {
+        name: "Priya Singh", email: "student@internpro.com", password: studentPassword, role: "student",
+        phone: "+91 6666666666", collegeName: "IIT Delhi", degree: "B.Tech", year: "3rd",
+      },
     });
 
     const student2 = await prisma.user.create({
-      data: { name: "Amit Kumar", email: "amit@internpro.com", password: studentPassword, role: "student", phone: "+91 5555555555" },
+      data: {
+        name: "Amit Kumar", email: "amit@internpro.com", password: studentPassword, role: "student",
+        phone: "+91 5555555555", collegeName: "NIT Warangal", degree: "B.Tech", year: "4th",
+      },
     });
 
     const student3 = await prisma.user.create({
-      data: { name: "Neha Gupta", email: "neha@internpro.com", password: studentPassword, role: "student", phone: "+91 4444444444" },
+      data: {
+        name: "Neha Gupta", email: "neha@internpro.com", password: studentPassword, role: "student",
+        phone: "+91 4444444444", collegeName: "BITS Pilani", degree: "M.Tech", year: "2nd",
+      },
+    });
+
+    // Documents for students
+    await prisma.document.createMany({
+      data: [
+        { userId: student1.id, type: "resume", title: "Resume - Priya Singh", fileUrl: "/uploads/resume_priya.pdf", status: "approved" },
+        { userId: student1.id, type: "marksheet", title: "10th Marksheet", fileUrl: "/uploads/marksheet_priya.pdf", status: "approved" },
+        { userId: student2.id, type: "resume", title: "Resume - Amit Kumar", fileUrl: "/uploads/resume_amit.pdf", status: "pending" },
+        { userId: student3.id, type: "resume", title: "Resume - Neha Gupta", fileUrl: "/uploads/resume_neha.pdf", status: "pending" },
+        { userId: student3.id, type: "id_card", title: "College ID Card", fileUrl: "/uploads/id_neha.pdf", status: "pending" },
+      ],
     });
 
     const org = await prisma.organization.create({
       data: {
-        name: "TechSkill Academy",
-        type: "institute",
-        description: "Leading technology training institute offering industry-ready internship programs",
-        website: "https://techskillacademy.com",
+        name: "TechSkill Solutions",
+        type: "company",
+        description: "Leading technology company offering industry-ready internship programs",
+        website: "https://techskillsolutions.com",
         address: "123 Tech Park, Noida, UP",
         phone: "+91 8888888888",
         adminId: orgAdmin.id,
@@ -61,11 +81,14 @@ export async function POST() {
         domain: "web-dev",
         mode: "online",
         duration: 90,
-        feeType: "paid",
-        feeAmount: 4999,
-        stipendAmount: 0,
+        feeType: "stipend",
+        feeAmount: 0,
+        stipendAmount: 5000,
         maxSeats: 100,
         isPublished: true,
+        totalDays: 60,
+        weekoffs: "saturday,sunday",
+        workingHours: "10:00 AM - 6:00 PM",
         orgId: org.id,
       },
     });
@@ -83,6 +106,9 @@ export async function POST() {
         stipendAmount: 0,
         maxSeats: 200,
         isPublished: true,
+        totalDays: 40,
+        weekoffs: "sunday",
+        workingHours: "10:00 AM - 5:00 PM",
         orgId: org.id,
       },
     });
@@ -91,15 +117,18 @@ export async function POST() {
       data: {
         title: "Data Science & AI Internship",
         slug: "data-science-ai-internship",
-        description: "Hands-on data science internship with Python, ML, Deep Learning. Includes stipend for top performers.",
+        description: "Hands-on data science internship with Python, ML, Deep Learning.",
         domain: "data-science",
         mode: "hybrid",
         duration: 120,
-        feeType: "stipend",
-        feeAmount: 0,
-        stipendAmount: 5000,
+        feeType: "paid",
+        feeAmount: 4999,
+        stipendAmount: 0,
         maxSeats: 50,
         isPublished: true,
+        totalDays: 80,
+        weekoffs: "saturday,sunday",
+        workingHours: "9:00 AM - 5:00 PM",
         orgId: org.id,
       },
     });
@@ -108,7 +137,7 @@ export async function POST() {
       data: {
         name: "Batch 2025-A",
         programId: program1.id,
-        mentorId: mentor.id,
+        leaderId: leader.id,
         startDate: new Date("2025-05-01"),
         endDate: new Date("2025-07-30"),
       },
@@ -118,109 +147,216 @@ export async function POST() {
       data: {
         name: "DM Batch 1",
         programId: program2.id,
-        mentorId: mentor.id,
+        leaderId: leader.id,
         startDate: new Date("2025-05-15"),
         endDate: new Date("2025-07-15"),
       },
     });
 
-    const batch3 = await prisma.batch.create({
+    await prisma.batch.create({
       data: {
         name: "DS Batch 2025",
         programId: program3.id,
-        mentorId: mentor.id,
+        leaderId: leader.id,
         startDate: new Date("2025-06-01"),
         endDate: new Date("2025-09-30"),
       },
     });
 
+    // Student 1: selected (full flow done)
     const enrollment1 = await prisma.enrollment.create({
-      data: { studentId: student1.id, batchId: batch1.id, status: "active" },
+      data: {
+        studentId: student1.id, batchId: batch1.id, status: "selected",
+        salary: 5000, weekoffs: 2, paidLeaves: 2, workTiming: "10:00 AM - 6:00 PM",
+        joiningDate: new Date("2025-05-05"), feeType: "stipend", stipendAmount: 5000,
+        currentWorkDay: 5,
+      },
     });
 
+    // Student 2: interview scheduled
     const enrollment2 = await prisma.enrollment.create({
-      data: { studentId: student2.id, batchId: batch1.id, status: "active" },
+      data: { studentId: student2.id, batchId: batch1.id, status: "interview_scheduled" },
     });
 
-    const enrollment3 = await prisma.enrollment.create({
-      data: { studentId: student3.id, batchId: batch2.id, status: "active" },
-    });
-
+    // Student 3: just applied
     await prisma.enrollment.create({
-      data: { studentId: student1.id, batchId: batch3.id, status: "approved" },
+      data: { studentId: student3.id, batchId: batch2.id, status: "applied" },
     });
 
-    const today = new Date();
-    for (let i = 0; i < 15; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      if (date.getDay() === 0 || date.getDay() === 6) continue;
+    // Offer letter for selected student
+    await prisma.offerLetter.create({
+      data: {
+        enrollmentId: enrollment1.id,
+        letterNumber: "OL-2025-001",
+        htmlContent: "<h1>Offer Letter</h1><p>Dear Priya Singh, we are pleased to offer you...</p>",
+      },
+    });
 
-      await prisma.attendance.createMany({
-        data: [
-          { enrollmentId: enrollment1.id, userId: student1.id, date, status: i % 5 === 0 ? "absent" : "present", method: "online", checkIn: "09:00", checkOut: "17:00" },
-          { enrollmentId: enrollment2.id, userId: student2.id, date, status: i % 7 === 0 ? "late" : "present", method: "online", checkIn: i % 7 === 0 ? "10:30" : "09:15", checkOut: "17:00" },
-          { enrollmentId: enrollment3.id, userId: student3.id, date, status: "present", method: "qr", checkIn: "09:00", checkOut: "18:00" },
-        ],
+    // Interview for student 2
+    await prisma.interview.create({
+      data: {
+        enrollmentId: enrollment2.id,
+        scheduledAt: new Date("2025-05-10T10:00:00Z"),
+        duration: 30,
+        mode: "online",
+        meetLink: "https://meet.google.com/abc-defg-hij",
+        interviewerId: admin.id,
+        status: "scheduled",
+      },
+    });
+
+    // Employee card for student 1
+    await prisma.employeeCard.create({
+      data: {
+        userId: student1.id,
+        cardNumber: "EMP-2025-001",
+        designation: "Web Development Intern",
+        department: "Engineering",
+        validFrom: new Date("2025-05-05"),
+        validUntil: new Date("2025-07-30"),
+      },
+    });
+
+    // Day-based tasks for batch 1
+    const tasks = [];
+    for (let day = 1; day <= 10; day++) {
+      tasks.push({
+        batchId: batch1.id,
+        title: `Day ${day}: ${["HTML Basics", "CSS Fundamentals", "JavaScript Intro", "JS Functions", "DOM Manipulation", "React Setup", "Components & Props", "State Management", "API Integration", "Mini Project"][day - 1]}`,
+        description: `Complete Day ${day} learning materials and submit the task`,
+        type: "regular",
+        dayNumber: day,
+        maxPoints: 100,
+        order: day,
+        scope: "all",
+      });
+    }
+    await prisma.task.createMany({ data: tasks });
+
+    // An urgent task
+    await prisma.task.create({
+      data: {
+        batchId: batch1.id,
+        title: "URGENT: Fix Client Website Bug",
+        description: "A client reported a CSS bug on the homepage. Fix it and submit your solution.",
+        type: "urgent",
+        maxPoints: 100,
+        order: 100,
+        scope: "all",
+        isUrgent: true,
+      },
+    });
+
+    // Individual task for student 1
+    await prisma.task.create({
+      data: {
+        batchId: batch1.id,
+        title: "Extra: Advanced React Patterns",
+        description: "Research and implement advanced React patterns like HOC, Render Props",
+        type: "individual",
+        maxPoints: 100,
+        order: 101,
+        scope: "individual",
+        assignedTo: student1.id,
+      },
+    });
+
+    // Day-based resources for batch 1
+    const resources = [];
+    for (let day = 1; day <= 10; day++) {
+      resources.push({
+        batchId: batch1.id,
+        title: `Day ${day} - Video Lesson`,
+        type: "video",
+        url: `https://example.com/videos/day${day}.mp4`,
+        dayNumber: day,
+        order: day * 2 - 1,
+      });
+      resources.push({
+        batchId: batch1.id,
+        title: `Day ${day} - Study Material (PDF)`,
+        type: "pdf",
+        url: `https://example.com/materials/day${day}.pdf`,
+        dayNumber: day,
+        order: day * 2,
+      });
+    }
+    await prisma.resource.createMany({ data: resources });
+
+    // Attendance for student 1 (5 working days)
+    for (let i = 0; i < 5; i++) {
+      const date = new Date("2025-05-05");
+      date.setDate(date.getDate() + i);
+      await prisma.attendance.create({
+        data: {
+          enrollmentId: enrollment1.id,
+          userId: student1.id,
+          date,
+          status: i === 2 ? "leave" : "present",
+          workDay: i === 2 ? null : i + 1 - (i > 2 ? 1 : 0),
+          checkIn: "10:00",
+          checkOut: "18:00",
+        },
       });
     }
 
-    await prisma.task.createMany({
-      data: [
-        { batchId: batch1.id, title: "Setup Development Environment", description: "Install VS Code, Node.js, Git. Watch the setup video and submit a screenshot.", type: "regular", points: 10, order: 1 },
-        { batchId: batch1.id, title: "Build a Portfolio Website", description: "Create a personal portfolio using HTML & CSS. Must include About, Projects, and Contact sections.", type: "regular", points: 25, order: 2, dueDate: new Date("2025-05-20") },
-        { batchId: batch1.id, title: "JavaScript Mini Project", description: "Build a Todo App or Calculator using vanilla JavaScript.", type: "regular", points: 30, order: 3, dueDate: new Date("2025-06-01") },
-        { batchId: batch1.id, title: "URGENT: Client Logo Design Review", description: "Our client needs feedback on their new logo designs. Review the attached designs and submit your analysis report.", type: "urgent", points: 15, order: 4 },
-        { batchId: batch1.id, title: "React Basics Assessment", description: "Complete the React fundamentals quiz and build a simple counter app.", type: "assessment", points: 50, order: 5, dueDate: new Date("2025-06-15") },
-        { batchId: batch2.id, title: "SEO Audit Report", description: "Perform an SEO audit on any website and submit a detailed report.", type: "regular", points: 20, order: 1 },
-        { batchId: batch2.id, title: "Social Media Campaign Plan", description: "Create a 30-day social media content calendar for a hypothetical brand.", type: "regular", points: 30, order: 2 },
-      ],
-    });
-
-    await prisma.resource.createMany({
-      data: [
-        { batchId: batch1.id, title: "Week 1: HTML & CSS Fundamentals", type: "video", url: "https://www.youtube.com/watch?v=example1", order: 1 },
-        { batchId: batch1.id, title: "Week 2: JavaScript Basics", type: "video", url: "https://www.youtube.com/watch?v=example2", order: 2 },
-        { batchId: batch1.id, title: "Week 3: React Introduction", type: "video", url: "https://www.youtube.com/watch?v=example3", order: 3 },
-        { batchId: batch1.id, title: "HTML Cheat Sheet", type: "pdf", url: "https://htmlcheatsheet.com", order: 4 },
-        { batchId: batch1.id, title: "MDN Web Docs", type: "link", url: "https://developer.mozilla.org", order: 5 },
-        { batchId: batch2.id, title: "SEO Fundamentals Course", type: "video", url: "https://www.youtube.com/watch?v=example4", order: 1 },
-        { batchId: batch2.id, title: "Google Ads Guide", type: "pdf", url: "https://ads.google.com/guide", order: 2 },
-      ],
-    });
-
-    const tasks = await prisma.task.findMany({ where: { batchId: batch1.id }, take: 2 });
-    if (tasks.length >= 2) {
-      await prisma.submission.createMany({
-        data: [
-          { taskId: tasks[0].id, studentId: student1.id, content: "Completed setup. Screenshot attached.", status: "approved", grade: "A" },
-          { taskId: tasks[1].id, studentId: student1.id, content: "Portfolio link: https://priya-portfolio.netlify.app", status: "submitted" },
-          { taskId: tasks[0].id, studentId: student2.id, content: "All tools installed successfully.", status: "approved", grade: "A" },
-        ],
+    // Submissions for student 1
+    const allTasks = await prisma.task.findMany({ where: { batchId: batch1.id, dayNumber: { not: null } }, orderBy: { dayNumber: "asc" }, take: 4 });
+    for (const task of allTasks) {
+      await prisma.submission.create({
+        data: {
+          taskId: task.id,
+          studentId: student1.id,
+          content: `Completed ${task.title} - all exercises done`,
+          status: task.dayNumber && task.dayNumber <= 2 ? "reviewed" : "submitted",
+          percentage: task.dayNumber && task.dayNumber <= 2 ? (task.dayNumber === 1 ? 90 : 75) : null,
+          feedback: task.dayNumber && task.dayNumber <= 2 ? "Good work!" : null,
+          reviewedBy: task.dayNumber && task.dayNumber <= 2 ? leader.id : null,
+        },
       });
     }
 
-    await prisma.payment.createMany({
-      data: [
-        { enrollmentId: enrollment1.id, amount: 4999, type: "fee", status: "completed", method: "razorpay", description: "Full Stack Web Development - Course Fee" },
-        { enrollmentId: enrollment2.id, amount: 4999, type: "fee", status: "completed", method: "upi", description: "Full Stack Web Development - Course Fee" },
-      ],
-    });
-
-    await prisma.notification.createMany({
-      data: [
-        { userId: student1.id, title: "Welcome to InternPro!", message: "Your enrollment in Full Stack Web Development has been approved.", type: "success" },
-        { userId: student1.id, title: "New Task Assigned", message: "Setup Development Environment - Complete before the deadline.", type: "info" },
-        { userId: admin.id, title: "New Enrollment", message: "Priya Singh has enrolled in Full Stack Web Development.", type: "info" },
-        { userId: mentor.id, title: "New Student", message: "You have a new student in Batch 2025-A.", type: "info" },
-      ],
+    // Offer letter template
+    await prisma.offerLetterTemplate.create({
+      data: {
+        name: "Default Template",
+        htmlContent: `<div style="font-family: Arial; padding: 40px; max-width: 800px; margin: 0 auto;">
+<div style="text-align: center; margin-bottom: 30px;">
+<h1 style="color: #1e1b4b;">{{company_name}}</h1>
+<h2>OFFER LETTER</h2>
+<p>Ref: {{letter_number}} | Date: {{date}}</p>
+</div>
+<p>Dear <strong>{{student_name}}</strong>,</p>
+<p>We are pleased to offer you the position of <strong>Intern - {{program_name}}</strong> at {{company_name}}.</p>
+<h3>Terms & Conditions:</h3>
+<ul>
+<li><strong>Joining Date:</strong> {{joining_date}}</li>
+<li><strong>Duration:</strong> {{duration}} days</li>
+<li><strong>Stipend/Salary:</strong> ₹{{salary}}/month</li>
+<li><strong>Weekly Offs:</strong> {{weekoffs}} days</li>
+<li><strong>Paid Leaves:</strong> {{paid_leaves}} per month</li>
+<li><strong>Working Hours:</strong> {{work_timing}}</li>
+<li><strong>Mode:</strong> {{mode}}</li>
+</ul>
+<p>Please confirm your acceptance by joining on the mentioned date.</p>
+<br/>
+<p>Best Regards,<br/><strong>{{company_name}}</strong></p>
+</div>`,
+        isDefault: true,
+      },
     });
 
     return NextResponse.json({
-      message: "Seed data created successfully. Check Settings page for demo credentials.",
+      message: "Demo data loaded successfully",
+      credentials: {
+        admin: "admin@internpro.com / admin123",
+        organization: "org@internpro.com / admin123",
+        teamleader: "leader@internpro.com / leader123",
+        student: "student@internpro.com / student123",
+      },
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Seed failed";
+    const message = error instanceof Error ? error.message : "Failed to seed data";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

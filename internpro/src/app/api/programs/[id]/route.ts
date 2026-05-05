@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       organization: true,
       batches: {
         include: {
-          mentor: { select: { id: true, name: true, email: true } },
+          leader: { select: { id: true, name: true, email: true } },
           _count: { select: { enrollments: true, tasks: true, resources: true } },
         },
       },

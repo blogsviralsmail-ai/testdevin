@@ -38,7 +38,7 @@ export default function LoginPage() {
     const credentials: Record<string, { email: string; password: string }> = {
       admin: { email: "admin@internpro.com", password: "admin123" },
       organization: { email: "org@internpro.com", password: "admin123" },
-      mentor: { email: "mentor@internpro.com", password: "mentor123" },
+      teamleader: { email: "leader@internpro.com", password: "leader123" },
       student: { email: "student@internpro.com", password: "student123" },
     };
     const cred = credentials[role];
@@ -120,7 +120,7 @@ export default function LoginPage() {
           <div className="mt-6">
             <p className="text-sm text-gray-500 mb-3 text-center">Quick Demo Login:</p>
             <div className="grid grid-cols-2 gap-2">
-              {["admin", "organization", "mentor", "student"].map((role) => (
+              {["admin", "organization", "teamleader", "student"].map((role) => (
                 <button
                   key={role}
                   onClick={() => fillDemo(role)}

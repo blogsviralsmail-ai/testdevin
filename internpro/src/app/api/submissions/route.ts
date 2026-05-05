@@ -14,13 +14,17 @@ export async function GET(request: NextRequest) {
 
   const where: Record<string, unknown> = {};
   if (taskId) where.taskId = taskId;
-  if (studentId) where.studentId = studentId;
+  if (session.role === "student") {
+    where.studentId = session.id;
+  } else if (studentId) {
+    where.studentId = studentId;
+  }
 
   const submissions = await prisma.submission.findMany({
     where,
     include: {
       student: { select: { id: true, name: true, email: true } },
-      task: { select: { title: true, points: true } },
+      task: { select: { title: true, maxPoints: true, dayNumber: true, batch: { select: { name: true, program: { select: { title: true } } } } } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -50,8 +54,9 @@ export async function POST(request: NextRequest) {
         content: content || null,
         fileUrl: fileUrl || null,
         status: "submitted",
-        grade: null,
+        percentage: null,
         feedback: null,
+        reviewedBy: null,
       },
       create: {
         taskId,

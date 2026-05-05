@@ -7,8 +7,8 @@ const features = [
   { icon: "📝", title: "Task Management", desc: "Assign regular & urgent tasks. Students submit work reports. Auto grading system." },
   { icon: "🏆", title: "Auto Certificates", desc: "Generate certificates with QR verification. Offer letters, NOC, experience letters - all auto." },
   { icon: "💰", title: "Payment & Stipend", desc: "Collect fees via payment gateway. Auto-calculate stipends based on attendance." },
-  { icon: "👥", title: "Batch Management", desc: "Multiple batches per program. Assign mentors. Track progress per batch." },
-  { icon: "📊", title: "Analytics Dashboard", desc: "Real-time stats for admin, mentors, and students. Revenue, attendance, performance tracking." },
+  { icon: "👥", title: "Team Management", desc: "Assign team leaders. Track progress per batch. Review student work." },
+  { icon: "📊", title: "Analytics Dashboard", desc: "Real-time stats for admin, team leaders, and students. Revenue, attendance, performance tracking." },
 ];
 
 const stats = [

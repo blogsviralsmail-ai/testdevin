@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         batch: {
           include: {
             program: { include: { organization: true } },
-            mentor: true,
+            leader: true,
           },
         },
       },
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       programTitle: escapeHtml(program.title),
       programDomain: escapeHtml(program.domain),
       batchName: escapeHtml(batch.name),
-      mentorName: batch.mentor ? escapeHtml(batch.mentor.name) : null,
+      leaderName: batch.leader ? escapeHtml(batch.leader.name) : null,
     };
 
     const offerLetterHTML = `
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
           <tr><td>Duration</td><td>${program.duration} days</td></tr>
           <tr><td>Start Date</td><td>${formatDate(batch.startDate)}</td></tr>
           <tr><td>End Date</td><td>${formatDate(batch.endDate)}</td></tr>
-          ${esc.mentorName ? `<tr><td>Mentor</td><td>${esc.mentorName}</td></tr>` : ""}
+          ${esc.leaderName ? `<tr><td>Team Leader</td><td>${esc.leaderName}</td></tr>` : ""}
           <tr><td>Fee Type</td><td>${program.feeType === "free" ? "Free of Cost" : program.feeType === "paid" ? `Paid - ₹${program.feeAmount}` : `Stipend: ₹${program.stipendAmount}/month`}</td></tr>
         </table>
       </div>

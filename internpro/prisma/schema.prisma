@@ -19,18 +19,28 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  organization  Organization? @relation("OrgAdmin")
-  enrollments   Enrollment[]
-  submissions   Submission[]
-  mentorBatches Batch[]       @relation("BatchMentor")
-  notifications Notification[]
-  attendances   Attendance[]
+  // Student-specific profile fields
+  collegeName   String?
+  degree        String?
+  year          String?
+  address       String?
+  dob           DateTime?
+
+  organization    Organization? @relation("OrgAdmin")
+  enrollments     Enrollment[]
+  submissions     Submission[]
+  leaderBatches   Batch[]         @relation("BatchLeader")
+  notifications   Notification[]
+  attendances     Attendance[]
+  documents       Document[]
+  interviews      Interview[]
+  employeeCards   EmployeeCard[]
 }
 
 model Organization {
   id          String   @id @default(cuid())
   name        String
-  type        String   @default("institute")
+  type        String   @default("company")
   logo        String?
   description String?
   website     String?
@@ -59,6 +69,9 @@ model Program {
   maxSeats      Int      @default(50)
   thumbnail     String?
   isPublished   Boolean  @default(false)
+  totalDays     Int      @default(30)
+  weekoffs      String   @default("sunday")
+  workingHours  String?
   orgId         String
   organization  Organization @relation(fields: [orgId], references: [id])
   createdAt     DateTime @default(now())
@@ -72,8 +85,8 @@ model Batch {
   name        String
   programId   String
   program     Program  @relation(fields: [programId], references: [id])
-  mentorId    String?
-  mentor      User?    @relation("BatchMentor", fields: [mentorId], references: [id])
+  leaderId    String?
+  leader      User?    @relation("BatchLeader", fields: [leaderId], references: [id])
   startDate   DateTime
   endDate     DateTime
   isActive    Boolean  @default(true)
@@ -85,24 +98,123 @@ model Batch {
   resources   Resource[]
 }
 
+model Document {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  fileUrl   String
+  status    String   @default("pending")
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Interview {
+  id            String   @id @default(cuid())
+  enrollmentId  String
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id])
+  scheduledAt   DateTime
+  duration      Int      @default(30)
+  mode          String   @default("online")
+  meetLink      String?
+  location      String?
+  interviewerId String
+  interviewer   User     @relation(fields: [interviewerId], references: [id])
+  status        String   @default("scheduled")
+  feedback      String?
+  rating        Int?
+  result        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model Enrollment {
   id          String   @id @default(cuid())
   studentId   String
   student     User     @relation(fields: [studentId], references: [id])
   batchId     String
   batch       Batch    @relation(fields: [batchId], references: [id])
-  status      String   @default("pending")
+  status      String   @default("applied")
   enrolledAt  DateTime @default(now())
   completedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  attendances  Attendance[]
-  certificates Certificate[]
-  payments     Payment[]
-  salaries     Salary[]
+  // Selection details (filled by admin after interview)
+  salary        Float?
+  weekoffs      Int?
+  paidLeaves    Int?
+  workTiming    String?
+  joiningDate   DateTime?
+  feeType       String?
+  feeAmount     Float?
+  stipendAmount Float?
+
+  // Completion
+  teamLeaderCategory String?
+  teamLeaderRemarks  String?
+  adminApproved      Boolean  @default(false)
+  adminRemarks       String?
+
+  // Working day tracking
+  currentWorkDay Int      @default(0)
+
+  attendances    Attendance[]
+  certificates   Certificate[]
+  payments       Payment[]
+  salaries       Salary[]
+  interviews     Interview[]
+  offerLetter    OfferLetter?
+  experienceLetter ExperienceLetter?
 
   @@unique([studentId, batchId])
+}
+
+model OfferLetter {
+  id           String   @id @default(cuid())
+  enrollmentId String   @unique
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  letterNumber String   @unique
+  htmlContent  String?
+  templateId   String?
+  issuedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model OfferLetterTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  htmlContent String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ExperienceLetter {
+  id           String   @id @default(cuid())
+  enrollmentId String   @unique
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  letterNumber String   @unique
+  category     String
+  htmlContent  String?
+  issuedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model EmployeeCard {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  cardNumber  String   @unique
+  designation String
+  department  String?
+  validFrom   DateTime
+  validUntil  DateTime
+  photoUrl    String?
+  qrCode      String?
+  createdAt   DateTime @default(now())
 }
 
 model Attendance {
@@ -113,6 +225,7 @@ model Attendance {
   user         User     @relation(fields: [userId], references: [id])
   date         DateTime
   status       String   @default("present")
+  workDay      Int?
   checkIn      String?
   checkOut     String?
   method       String   @default("manual")
@@ -130,11 +243,15 @@ model Task {
   title       String
   description String?
   type        String   @default("regular")
+  dayNumber   Int?
   dueDate     DateTime?
-  points      Int      @default(10)
+  maxPoints   Int      @default(100)
   resources   String?
   isPublished Boolean  @default(true)
   order       Int      @default(0)
+  scope       String   @default("all")
+  assignedTo  String?
+  isUrgent    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -142,18 +259,19 @@ model Task {
 }
 
 model Submission {
-  id        String   @id @default(cuid())
-  taskId    String
-  task      Task     @relation(fields: [taskId], references: [id])
-  studentId String
-  student   User     @relation(fields: [studentId], references: [id])
-  content   String?
-  fileUrl   String?
-  grade     String?
-  feedback  String?
-  status    String   @default("submitted")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id])
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id])
+  content     String?
+  fileUrl     String?
+  percentage  Float?
+  feedback    String?
+  reviewedBy  String?
+  status      String   @default("submitted")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([taskId, studentId])
 }
@@ -204,16 +322,17 @@ model Salary {
 }
 
 model Resource {
-  id        String   @id @default(cuid())
-  batchId   String
-  batch     Batch    @relation(fields: [batchId], references: [id])
-  title     String
-  type      String   @default("video")
-  url       String
-  order     Int      @default(0)
-  isPublished Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  batchId     String
+  batch       Batch    @relation(fields: [batchId], references: [id])
+  title       String
+  type        String   @default("video")
+  url         String
+  dayNumber   Int?
+  order       Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Notification {

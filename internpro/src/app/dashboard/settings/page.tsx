@@ -76,7 +76,7 @@ export default function SettingsPage() {
             {[
               { role: "Admin", email: "admin@internpro.com", pass: "admin123" },
               { role: "Organization", email: "org@internpro.com", pass: "admin123" },
-              { role: "Mentor", email: "mentor@internpro.com", pass: "mentor123" },
+              { role: "Team Leader", email: "leader@internpro.com", pass: "leader123" },
               { role: "Student", email: "student@internpro.com", pass: "student123" },
             ].map((cred) => (
               <div key={cred.role} className="flex items-center gap-4 py-2 px-3 bg-gray-50 rounded-lg">

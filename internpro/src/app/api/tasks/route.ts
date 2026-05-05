@@ -10,9 +10,13 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const batchId = searchParams.get("batchId");
+  const dayNumber = searchParams.get("dayNumber");
+  const scope = searchParams.get("scope");
 
   const where: Record<string, unknown> = {};
   if (batchId) where.batchId = batchId;
+  if (dayNumber) where.dayNumber = parseInt(dayNumber);
+  if (scope) where.scope = scope;
 
   const tasks = await prisma.task.findMany({
     where,
@@ -20,8 +24,23 @@ export async function GET(request: NextRequest) {
       batch: { select: { name: true, program: { select: { title: true } } } },
       _count: { select: { submissions: true } },
     },
-    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+    orderBy: [{ dayNumber: "asc" }, { order: "asc" }, { createdAt: "desc" }],
   });
+
+  // For students, filter tasks based on their working day and individual assignments
+  if (session.role === "student") {
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { studentId: session.id, status: "selected" },
+    });
+    const currentDay = enrollment?.currentWorkDay || 0;
+
+    const filtered = tasks.filter((t) => {
+      if (t.scope === "individual" && t.assignedTo !== session.id) return false;
+      if (t.dayNumber && t.dayNumber > currentDay) return false;
+      return true;
+    });
+    return NextResponse.json(filtered);
+  }
 
   return NextResponse.json(tasks);
 }
@@ -29,12 +48,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || !["admin", "organization", "mentor"].includes(session.role)) {
+    if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { batchId, title, description, type, dueDate, points, resources, order } = body;
+    const { batchId, title, description, type, dayNumber, dueDate, maxPoints, resources, order, scope, assignedTo, isUrgent } = body;
 
     if (!batchId || !title) {
       return NextResponse.json({ error: "Batch and title are required" }, { status: 400 });
@@ -46,10 +65,14 @@ export async function POST(request: NextRequest) {
         title,
         description: description || null,
         type: type || "regular",
+        dayNumber: dayNumber ? parseInt(dayNumber) : null,
         dueDate: dueDate ? new Date(dueDate) : null,
-        points: parseInt(points || "10"),
+        maxPoints: parseInt(maxPoints || "100"),
         resources: resources || null,
         order: parseInt(order || "0"),
+        scope: scope || "all",
+        assignedTo: assignedTo || null,
+        isUrgent: isUrgent || false,
       },
     });
 

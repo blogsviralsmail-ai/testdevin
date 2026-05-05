@@ -7,6 +7,7 @@ interface Resource {
   title: string;
   type: string;
   url: string;
+  dayNumber: number | null;
   order: number;
   batchId: string;
 }
@@ -15,6 +16,11 @@ interface Batch {
   id: string;
   name: string;
   program: { title: string };
+}
+
+interface UserSession {
+  id: string;
+  role: string;
 }
 
 const typeIcons: Record<string, string> = {
@@ -27,16 +33,22 @@ const typeIcons: Record<string, string> = {
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [user, setUser] = useState<UserSession | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ batchId: "", title: "", type: "video", url: "", order: "0" });
+  const [form, setForm] = useState({ batchId: "", title: "", type: "video", url: "", dayNumber: "", order: "0" });
 
   const fetchData = useCallback(async () => {
-    const [resRes, batchesRes] = await Promise.all([
+    const [resRes, batchesRes, meRes] = await Promise.all([
       fetch("/api/resources"),
       fetch("/api/batches"),
+      fetch("/api/auth/me"),
     ]);
     if (resRes.ok) setResources(await resRes.json());
     if (batchesRes.ok) setBatches(await batchesRes.json());
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      setUser(meData.user);
+    }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -46,35 +58,69 @@ export default function ResourcesPage() {
     const res = await fetch("/api/resources", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        dayNumber: form.dayNumber ? parseInt(form.dayNumber) : undefined,
+      }),
     });
     if (res.ok) {
       setShowForm(false);
-      setForm({ batchId: "", title: "", type: "video", url: "", order: "0" });
+      setForm({ batchId: "", title: "", type: "video", url: "", dayNumber: "", order: "0" });
       fetchData();
     }
   };
 
-  const groupedByBatch: Record<string, Resource[]> = {};
+  const isStudent = user?.role === "student";
+
+  // Group resources by day number
+  const dayGroups: Record<string, Resource[]> = {};
+  const generalResources: Resource[] = [];
   resources.forEach((r) => {
-    if (!groupedByBatch[r.batchId]) groupedByBatch[r.batchId] = [];
-    groupedByBatch[r.batchId].push(r);
+    if (r.dayNumber) {
+      const key = `Day ${r.dayNumber}`;
+      if (!dayGroups[key]) dayGroups[key] = [];
+      dayGroups[key].push(r);
+    } else {
+      generalResources.push(r);
+    }
+  });
+
+  const sortedDays = Object.keys(dayGroups).sort((a, b) => {
+    const numA = parseInt(a.replace("Day ", ""));
+    const numB = parseInt(b.replace("Day ", ""));
+    return numA - numB;
   });
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Learning Resources</h1>
-          <p className="text-gray-600 text-sm">Pre-recorded videos, PDFs, and study materials</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isStudent ? "Study Material" : "Learning Resources"}
+          </h1>
+          <p className="text-gray-600 text-sm">
+            {isStudent
+              ? "Day-wise study materials — complete each day sequentially like office attendance"
+              : "Manage day-based pre-recorded videos and study materials"}
+          </p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
-          {showForm ? "Cancel" : "+ Add Resource"}
-        </button>
+        {!isStudent && (
+          <button onClick={() => setShowForm(!showForm)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+            {showForm ? "Cancel" : "+ Add Resource"}
+          </button>
+        )}
       </div>
 
-      {showForm && (
-        <form onSubmit={handleCreate} className="bg-white rounded-xl p-6 border border-gray-100 mb-6">
+      {/* Info Banner for Students */}
+      {isStudent && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm text-blue-800">
+          <strong>Note:</strong> Materials are unlocked day by day based on your working days. You cannot skip ahead — just like coming to office daily. If you were on leave, you will see the missed materials but your task will be for your current working day.
+        </div>
+      )}
+
+      {/* Add Resource Form (Admin/TeamLeader) */}
+      {showForm && !isStudent && (
+        <form onSubmit={handleCreate} className="bg-white rounded-xl p-6 border mb-6">
           <h2 className="text-lg font-semibold mb-4">Add New Resource</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -85,6 +131,10 @@ export default function ResourcesPage() {
                   <option key={b.id} value={b.id}>{b.program.title} - {b.name}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Day Number</label>
+              <input type="number" min="1" value={form.dayNumber} onChange={(e) => setForm({ ...form, dayNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 1, 2, 3..." />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
@@ -99,7 +149,7 @@ export default function ResourcesPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" required />
             </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
               <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://youtube.com/..." required />
             </div>
@@ -109,40 +159,62 @@ export default function ResourcesPage() {
       )}
 
       {resources.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 border border-gray-100 text-center">
+        <div className="bg-white rounded-xl p-12 border text-center">
           <p className="text-4xl mb-4">🎥</p>
-          <p className="text-gray-600">No resources yet. Add pre-recorded videos and study materials.</p>
+          <p className="text-gray-600">{isStudent ? "No study materials available yet." : "No resources yet. Add pre-recorded videos and study materials."}</p>
         </div>
       ) : (
-        Object.entries(groupedByBatch).map(([batchId, batchResources]) => {
-          const batch = batches.find((b) => b.id === batchId);
-          return (
-            <div key={batchId} className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                {batch ? `${batch.program.title} - ${batch.name}` : "Resources"}
-              </h2>
-              <div className="space-y-3">
-                {batchResources.sort((a, b) => a.order - b.order).map((resource, idx) => (
-                  <div key={resource.id} className="bg-white rounded-xl p-4 border border-gray-100 card-hover flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-xl shrink-0">
-                      {typeIcons[resource.type] || "📁"}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400 font-mono">#{idx + 1}</span>
+        <div className="space-y-6">
+          {/* Day-based Resources */}
+          {sortedDays.map((dayLabel) => (
+            <div key={dayLabel} className="bg-white rounded-xl border overflow-hidden">
+              <div className="bg-indigo-50 px-6 py-3 border-b">
+                <h2 className="text-base font-semibold text-indigo-900">{dayLabel}</h2>
+              </div>
+              <div className="divide-y">
+                {dayGroups[dayLabel].map((resource) => (
+                  <div key={resource.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{typeIcons[resource.type] || "📎"}</span>
+                      <div>
                         <h3 className="text-sm font-medium text-gray-900">{resource.title}</h3>
+                        <p className="text-xs text-gray-500 capitalize">{resource.type}</p>
                       </div>
-                      <span className="text-xs text-gray-500 capitalize">{resource.type}</span>
                     </div>
                     <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                      {resource.type === "video" ? "Watch" : "Open"} →
+                      Open →
                     </a>
                   </div>
                 ))}
               </div>
             </div>
-          );
-        })
+          ))}
+
+          {/* General Resources (no day number) */}
+          {generalResources.length > 0 && (
+            <div className="bg-white rounded-xl border overflow-hidden">
+              <div className="bg-gray-50 px-6 py-3 border-b">
+                <h2 className="text-base font-semibold text-gray-700">General Resources</h2>
+              </div>
+              <div className="divide-y">
+                {generalResources.map((resource) => (
+                  <div key={resource.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{typeIcons[resource.type] || "📎"}</span>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">{resource.title}</h3>
+                        <p className="text-xs text-gray-500 capitalize">{resource.type}</p>
+                      </div>
+                    </div>
+                    <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                      Open →
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
