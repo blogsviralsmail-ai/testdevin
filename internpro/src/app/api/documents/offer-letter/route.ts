@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { formatDate } from "@/lib/utils";
+import { formatDate, escapeHtml } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,12 +38,24 @@ export async function GET(request: NextRequest) {
     const { program } = batch;
     const { organization } = program;
 
+    const esc = {
+      studentName: escapeHtml(student.name),
+      orgName: escapeHtml(organization.name),
+      orgAddress: organization.address ? escapeHtml(organization.address) : null,
+      orgWebsite: organization.website ? escapeHtml(organization.website) : null,
+      orgPhone: organization.phone ? escapeHtml(organization.phone) : null,
+      programTitle: escapeHtml(program.title),
+      programDomain: escapeHtml(program.domain),
+      batchName: escapeHtml(batch.name),
+      mentorName: batch.mentor ? escapeHtml(batch.mentor.name) : null,
+    };
+
     const offerLetterHTML = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Offer Letter - ${student.name}</title>
+  <title>Offer Letter - ${esc.studentName}</title>
   <style>
     body { font-family: 'Georgia', serif; margin: 0; padding: 40px; color: #333; }
     .container { max-width: 800px; margin: 0 auto; border: 2px solid #1a365d; padding: 50px; }
@@ -67,10 +79,10 @@ export async function GET(request: NextRequest) {
 <body>
   <div class="container">
     <div class="header">
-      <h1>${organization.name}</h1>
-      ${organization.address ? `<p>${organization.address}</p>` : ""}
-      ${organization.website ? `<p>${organization.website}</p>` : ""}
-      ${organization.phone ? `<p>Phone: ${organization.phone}</p>` : ""}
+      <h1>${esc.orgName}</h1>
+      ${esc.orgAddress ? `<p>${esc.orgAddress}</p>` : ""}
+      ${esc.orgWebsite ? `<p>${esc.orgWebsite}</p>` : ""}
+      ${esc.orgPhone ? `<p>Phone: ${esc.orgPhone}</p>` : ""}
     </div>
 
     <div class="date">
@@ -81,22 +93,22 @@ export async function GET(request: NextRequest) {
     <div class="subject">INTERNSHIP OFFER LETTER</div>
 
     <div class="salutation">
-      <p>Dear <strong>${student.name}</strong>,</p>
+      <p>Dear <strong>${esc.studentName}</strong>,</p>
     </div>
 
     <div class="body">
-      <p>We are pleased to inform you that you have been selected for the <strong>${program.title}</strong> internship program at <strong>${organization.name}</strong>. We are confident that your skills and enthusiasm will be a valuable addition to our team.</p>
+      <p>We are pleased to inform you that you have been selected for the <strong>${esc.programTitle}</strong> internship program at <strong>${esc.orgName}</strong>. We are confident that your skills and enthusiasm will be a valuable addition to our team.</p>
 
       <div class="details">
         <table>
-          <tr><td>Program</td><td>${program.title}</td></tr>
-          <tr><td>Domain</td><td>${program.domain}</td></tr>
+          <tr><td>Program</td><td>${esc.programTitle}</td></tr>
+          <tr><td>Domain</td><td>${esc.programDomain}</td></tr>
           <tr><td>Mode</td><td>${program.mode === "online" ? "Online (Remote)" : program.mode === "offline" ? "Offline (On-site)" : "Hybrid"}</td></tr>
-          <tr><td>Batch</td><td>${batch.name}</td></tr>
+          <tr><td>Batch</td><td>${esc.batchName}</td></tr>
           <tr><td>Duration</td><td>${program.duration} days</td></tr>
           <tr><td>Start Date</td><td>${formatDate(batch.startDate)}</td></tr>
           <tr><td>End Date</td><td>${formatDate(batch.endDate)}</td></tr>
-          ${batch.mentor ? `<tr><td>Mentor</td><td>${batch.mentor.name}</td></tr>` : ""}
+          ${esc.mentorName ? `<tr><td>Mentor</td><td>${esc.mentorName}</td></tr>` : ""}
           <tr><td>Fee Type</td><td>${program.feeType === "free" ? "Free of Cost" : program.feeType === "paid" ? `Paid - ₹${program.feeAmount}` : `Stipend: ₹${program.stipendAmount}/month`}</td></tr>
         </table>
       </div>
@@ -114,7 +126,7 @@ export async function GET(request: NextRequest) {
     <div class="signature">
       <p>Best Regards,</p>
       <br/>
-      <p class="name">${organization.name}</p>
+      <p class="name">${esc.orgName}</p>
       <p>Internship Program Management</p>
       <div class="stamp">APPROVED</div>
     </div>

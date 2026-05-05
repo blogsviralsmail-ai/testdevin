@@ -2,6 +2,15 @@ export function cn(...classes: (string | boolean | undefined | null)[]): string 
   return classes.filter(Boolean).join(" ");
 }
 
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

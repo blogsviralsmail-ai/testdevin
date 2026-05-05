@@ -4,6 +4,10 @@ import { hashPassword } from "@/lib/auth";
 
 export async function POST() {
   try {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Seed endpoint is disabled in production" }, { status: 403 });
+    }
+
     const existingAdmin = await prisma.user.findUnique({ where: { email: "admin@internpro.com" } });
     if (existingAdmin) {
       return NextResponse.json({ message: "Seed data already exists" });
@@ -213,13 +217,7 @@ export async function POST() {
     });
 
     return NextResponse.json({
-      message: "Seed data created successfully",
-      credentials: {
-        admin: { email: "admin@internpro.com", password: "admin123" },
-        organization: { email: "org@internpro.com", password: "admin123" },
-        mentor: { email: "mentor@internpro.com", password: "mentor123" },
-        student: { email: "student@internpro.com", password: "student123" },
-      },
+      message: "Seed data created successfully. Check Settings page for demo credentials.",
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Seed failed";
