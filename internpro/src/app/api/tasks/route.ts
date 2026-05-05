@@ -29,8 +29,10 @@ export async function GET(request: NextRequest) {
 
   // For students, filter tasks based on their working day and individual assignments
   if (session.role === "student") {
+    const enrollmentWhere: Record<string, unknown> = { studentId: session.id, status: "selected" };
+    if (batchId) enrollmentWhere.batchId = batchId;
     const enrollment = await prisma.enrollment.findFirst({
-      where: { studentId: session.id, status: "selected" },
+      where: enrollmentWhere,
     });
     const currentDay = enrollment?.currentWorkDay || 0;
 

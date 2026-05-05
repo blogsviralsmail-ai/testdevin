@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { escapeHtml } from "@/lib/utils";
+import { escapeHtml, generateUniqueId } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -57,27 +57,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
     }
 
-    // Update enrollment with selection details
-    await prisma.enrollment.update({
-      where: { id: enrollmentId },
-      data: {
-        status: "selected",
-        salary: salary || 0,
-        weekoffs: weekoffs || 1,
-        paidLeaves: paidLeaves || 0,
-        workTiming: workTiming || "10:00 AM - 6:00 PM",
-        joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
-        feeType: feeType || "free",
-        feeAmount: feeAmount || 0,
-        stipendAmount: stipendAmount || 0,
-      },
-    });
-
-    // Get template
+    // Get template and org before transaction
     const template = await prisma.offerLetterTemplate.findFirst({ where: { isDefault: true } });
     const org = enrollment.batch.program.organization;
 
-    const letterNumber = `OL-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    const letterNumber = generateUniqueId("OL");
+    const cardNumber = generateUniqueId("EMP");
 
     let htmlContent = template?.htmlContent || "<h1>Offer Letter</h1>";
     htmlContent = htmlContent
@@ -94,37 +79,55 @@ export async function POST(request: NextRequest) {
       .replace(/\{\{work_timing\}\}/g, escapeHtml(workTiming || "10:00 AM - 6:00 PM"))
       .replace(/\{\{mode\}\}/g, escapeHtml(enrollment.batch.program.mode));
 
-    const offerLetter = await prisma.offerLetter.create({
-      data: {
-        enrollmentId,
-        letterNumber,
-        htmlContent,
-        templateId: template?.id,
-      },
-    });
-
-    // Update interview record status
     const interview = await prisma.interview.findFirst({
       where: { enrollmentId },
     });
-    if (interview) {
-      await prisma.interview.update({
-        where: { id: interview.id },
-        data: { status: "completed", result: "selected" },
-      });
-    }
 
-    // Auto-generate employee card
-    const cardNumber = `EMP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
-    await prisma.employeeCard.create({
-      data: {
-        userId: enrollment.studentId,
-        cardNumber,
-        designation: `${enrollment.batch.program.title} Intern`,
-        department: enrollment.batch.program.domain,
-        validFrom: joiningDate ? new Date(joiningDate) : new Date(),
-        validUntil: enrollment.batch.endDate,
-      },
+    // All DB writes in a single transaction for atomicity
+    const offerLetter = await prisma.$transaction(async (tx) => {
+      await tx.enrollment.update({
+        where: { id: enrollmentId },
+        data: {
+          status: "selected",
+          salary: salary || 0,
+          weekoffs: weekoffs || 1,
+          paidLeaves: paidLeaves || 0,
+          workTiming: workTiming || "10:00 AM - 6:00 PM",
+          joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
+          feeType: feeType || "free",
+          feeAmount: feeAmount || 0,
+          stipendAmount: stipendAmount || 0,
+        },
+      });
+
+      const letter = await tx.offerLetter.create({
+        data: {
+          enrollmentId,
+          letterNumber,
+          htmlContent,
+          templateId: template?.id,
+        },
+      });
+
+      if (interview) {
+        await tx.interview.update({
+          where: { id: interview.id },
+          data: { status: "completed", result: "selected" },
+        });
+      }
+
+      await tx.employeeCard.create({
+        data: {
+          userId: enrollment.studentId,
+          cardNumber,
+          designation: `${enrollment.batch.program.title} Intern`,
+          department: enrollment.batch.program.domain,
+          validFrom: joiningDate ? new Date(joiningDate) : new Date(),
+          validUntil: enrollment.batch.endDate,
+        },
+      });
+
+      return letter;
     });
 
     return NextResponse.json(offerLetter, { status: 201 });

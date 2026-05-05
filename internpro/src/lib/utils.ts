@@ -47,6 +47,18 @@ export function generateCertNumber(): string {
   return `IP-${year}-${random}`;
 }
 
+export function generateUniqueId(prefix: string): string {
+  const year = new Date().getFullYear();
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  const random = Array.from(bytes)
+    .map((b) => b.toString(36))
+    .join("")
+    .substring(0, 8)
+    .toUpperCase();
+  return `${prefix}-${year}-${random}`;
+}
+
 export function getInitials(name: string): string {
   return name
     .split(" ")

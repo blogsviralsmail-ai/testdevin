@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { escapeHtml } from "@/lib/utils";
+import { escapeHtml, generateUniqueId } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -61,18 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Team leader must categorize the student first" }, { status: 400 });
     }
 
-    // Update enrollment
-    await prisma.enrollment.update({
-      where: { id: enrollmentId },
-      data: {
-        status: "completed",
-        adminApproved: true,
-        adminRemarks: adminRemarks || null,
-        completedAt: new Date(),
-      },
-    });
-
-    const letterNumber = `EXP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    const letterNumber = generateUniqueId("EXP");
     const org = enrollment.batch.program.organization;
 
     const safeOrgName = escapeHtml(org.name);
@@ -103,13 +92,26 @@ ${safeRemarks ? `<li><strong>Remarks:</strong> ${safeRemarks}</li>` : ""}
 <p>Authorized Signatory<br/><strong>${safeOrgName}</strong></p>
 </div>`;
 
-    const letter = await prisma.experienceLetter.create({
-      data: {
-        enrollmentId,
-        letterNumber,
-        category: enrollment.teamLeaderCategory,
-        htmlContent,
-      },
+    // Enrollment update + letter creation in a single transaction
+    const letter = await prisma.$transaction(async (tx) => {
+      await tx.enrollment.update({
+        where: { id: enrollmentId },
+        data: {
+          status: "completed",
+          adminApproved: true,
+          adminRemarks: adminRemarks || null,
+          completedAt: new Date(),
+        },
+      });
+
+      return tx.experienceLetter.create({
+        data: {
+          enrollmentId,
+          letterNumber,
+          category: enrollment.teamLeaderCategory!,
+          htmlContent,
+        },
+      });
     });
 
     return NextResponse.json(letter, { status: 201 });
