@@ -40,6 +40,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { enrollmentId, month } = body;
 
+    if (!enrollmentId || !month || typeof month !== "string" || !/^\d{4}-\d{1,2}$/.test(month)) {
+      return NextResponse.json({ error: "Enrollment ID and month (YYYY-MM) are required" }, { status: 400 });
+    }
+
     const enrollment = await prisma.enrollment.findUnique({
       where: { id: enrollmentId },
       include: {

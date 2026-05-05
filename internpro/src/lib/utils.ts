@@ -37,7 +37,13 @@ export function formatCurrency(amount: number): string {
 
 export function generateCertNumber(): string {
   const year = new Date().getFullYear();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const random = Array.from(bytes)
+    .map((b) => b.toString(36))
+    .join("")
+    .substring(0, 12)
+    .toUpperCase();
   return `IP-${year}-${random}`;
 }
 

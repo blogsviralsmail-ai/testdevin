@@ -59,18 +59,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
     }
 
-    const certNumber = generateCertNumber();
-
-    const certificate = await prisma.certificate.create({
-      data: {
-        enrollmentId,
-        certNumber,
-        type: type || "completion",
-        studentName: enrollment.student.name,
-        programName: enrollment.batch.program.title,
-        orgName: enrollment.batch.program.organization.name,
-      },
-    });
+    let certificate;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const certNumber = generateCertNumber();
+        certificate = await prisma.certificate.create({
+          data: {
+            enrollmentId,
+            certNumber,
+            type: type || "completion",
+            studentName: enrollment.student.name,
+            programName: enrollment.batch.program.title,
+            orgName: enrollment.batch.program.organization.name,
+          },
+        });
+        break;
+      } catch (err: unknown) {
+        const isPrismaUnique = err instanceof Error && "code" in err && (err as Record<string, unknown>).code === "P2002";
+        if (!isPrismaUnique || attempt === 4) throw err;
+      }
+    }
 
     return NextResponse.json(certificate, { status: 201 });
   } catch (error: unknown) {

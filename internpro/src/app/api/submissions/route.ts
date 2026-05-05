@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
         content: content || null,
         fileUrl: fileUrl || null,
         status: "submitted",
+        grade: null,
+        feedback: null,
       },
       create: {
         taskId,
