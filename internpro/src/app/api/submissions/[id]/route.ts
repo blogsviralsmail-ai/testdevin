@@ -15,9 +15,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const submission = await prisma.submission.update({
       where: { id },
       data: {
-        grade: body.grade || undefined,
-        feedback: body.feedback || undefined,
-        status: body.status || undefined,
+        grade: body.grade !== undefined ? (body.grade || null) : undefined,
+        feedback: body.feedback !== undefined ? (body.feedback || null) : undefined,
+        status: body.status !== undefined ? body.status : undefined,
       },
     });
 

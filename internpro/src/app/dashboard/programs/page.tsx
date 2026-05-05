@@ -21,9 +21,10 @@ interface Program {
 export default function ProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     title: "", description: "", domain: "web-dev", mode: "online", duration: "90",
-    feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", orgId: "",
+    feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50",
   });
 
   const fetchPrograms = useCallback(async () => {
@@ -35,21 +36,19 @@ export default function ProgramsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const orgRes = await fetch("/api/programs");
-    const existingPrograms = await orgRes.json();
-    let orgId = form.orgId;
-    if (!orgId && existingPrograms.length > 0) {
-      orgId = existingPrograms[0].organization?.id || existingPrograms[0].orgId;
-    }
+    setError("");
     const res = await fetch("/api/programs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, orgId }),
+      body: JSON.stringify(form),
     });
     if (res.ok) {
       setShowForm(false);
-      setForm({ title: "", description: "", domain: "web-dev", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", orgId: "" });
+      setForm({ title: "", description: "", domain: "web-dev", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50" });
       fetchPrograms();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to create program");
     }
   };
 
@@ -77,6 +76,7 @@ export default function ProgramsPage() {
       {showForm && (
         <form onSubmit={handleCreate} className="bg-white rounded-xl p-6 border border-gray-100 mb-6">
           <h2 className="text-lg font-semibold mb-4">Create New Program</h2>
+          {error && <p className="text-red-600 text-sm mb-4 bg-red-50 p-2 rounded">{error}</p>}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>

@@ -32,7 +32,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats, orgId } = body;
+    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats } = body;
+    let { orgId } = body;
+
+    if (!orgId) {
+      const org = await prisma.organization.findFirst({ where: { adminId: session.id } });
+      if (org) orgId = org.id;
+    }
 
     if (!title || !domain || !duration || !orgId) {
       return NextResponse.json({ error: "Title, domain, duration, and organization are required" }, { status: 400 });
