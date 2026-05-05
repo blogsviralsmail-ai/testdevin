@@ -4,6 +4,11 @@ import { getSession } from "@/lib/auth";
 import { generateCertNumber } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const enrollmentId = searchParams.get("enrollmentId");
   const certNumber = searchParams.get("certNumber");
