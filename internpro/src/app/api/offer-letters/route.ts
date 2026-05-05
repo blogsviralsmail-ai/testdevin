@@ -103,6 +103,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Update interview record status
+    const interview = await prisma.interview.findFirst({
+      where: { enrollmentId },
+    });
+    if (interview) {
+      await prisma.interview.update({
+        where: { id: interview.id },
+        data: { status: "completed", result: "selected" },
+      });
+    }
+
     // Auto-generate employee card
     const cardNumber = `EMP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     await prisma.employeeCard.create({
