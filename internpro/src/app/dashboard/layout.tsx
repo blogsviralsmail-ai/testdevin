@@ -109,7 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content */}
-      <div className={cn("flex-1 transition-all duration-300", sidebarOpen ? "ml-64" : "ml-20")}>
+      <div className={cn("flex-1 min-w-0 transition-all duration-300", sidebarOpen ? "ml-64" : "ml-20")}>
         {/* Top Bar */}
         <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">
@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page Content */}
-        <main className="p-6">{children}</main>
+        <main className="p-6 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

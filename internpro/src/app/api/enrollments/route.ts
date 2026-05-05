@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { studentId, batchId } = body;
 
-    const useStudentId = studentId || session.id;
+    const useStudentId = (studentId && ["admin", "organization", "mentor"].includes(session.role)) ? studentId : session.id;
 
     const existing = await prisma.enrollment.findUnique({
       where: { studentId_batchId: { studentId: useStudentId, batchId } },

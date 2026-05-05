@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const { user, token } = await loginUser(email, password);
 
-    const response = NextResponse.json({ user, token });
+    const response = NextResponse.json({ user });
     response.cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
