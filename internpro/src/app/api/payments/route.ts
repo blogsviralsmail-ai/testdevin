@@ -40,10 +40,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { enrollmentId, amount, type, method, description } = body;
 
+    if (!enrollmentId || amount === undefined || amount === null) {
+      return NextResponse.json({ error: "Enrollment ID and amount are required" }, { status: 400 });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount)) {
+      return NextResponse.json({ error: "Amount must be a valid number" }, { status: 400 });
+    }
+
     const payment = await prisma.payment.create({
       data: {
         enrollmentId,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         type: type || "fee",
         method: method || null,
         description: description || null,

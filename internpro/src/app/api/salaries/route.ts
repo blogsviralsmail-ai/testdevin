@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       return aDate.getMonth() + 1 === mon && aDate.getFullYear() === year && (a.status === "present" || a.status === "late");
     }).length;
 
-    const stipendPerDay = enrollment.batch.program.stipendAmount / 30;
+    const stipendPerDay = enrollment.batch.program.stipendAmount / daysInMonth;
     const calculatedAmount = Math.round(stipendPerDay * presentDays);
 
     const salary = await prisma.salary.upsert({
