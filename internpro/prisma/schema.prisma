@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  password      String
+  role          String    @default("student")
+  avatar        String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organization  Organization? @relation("OrgAdmin")
+  enrollments   Enrollment[]
+  submissions   Submission[]
+  mentorBatches Batch[]       @relation("BatchMentor")
+  notifications Notification[]
+  attendances   Attendance[]
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   @default("institute")
+  logo        String?
+  description String?
+  website     String?
+  address     String?
+  phone       String?
+  adminId     String   @unique
+  admin       User     @relation("OrgAdmin", fields: [adminId], references: [id])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  programs    Program[]
+}
+
+model Program {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  description   String?
+  domain        String
+  mode          String   @default("online")
+  duration      Int
+  feeType       String   @default("free")
+  feeAmount     Float    @default(0)
+  stipendAmount Float    @default(0)
+  maxSeats      Int      @default(50)
+  thumbnail     String?
+  isPublished   Boolean  @default(false)
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  batches       Batch[]
+}
+
+model Batch {
+  id          String   @id @default(cuid())
+  name        String
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id])
+  mentorId    String?
+  mentor      User?    @relation("BatchMentor", fields: [mentorId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments Enrollment[]
+  tasks       Task[]
+  resources   Resource[]
+}
+
+model Enrollment {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id])
+  batchId     String
+  batch       Batch    @relation(fields: [batchId], references: [id])
+  status      String   @default("pending")
+  enrolledAt  DateTime @default(now())
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attendances  Attendance[]
+  certificates Certificate[]
+  payments     Payment[]
+  salaries     Salary[]
+
+  @@unique([studentId, batchId])
+}
+
+model Attendance {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  date         DateTime
+  status       String   @default("present")
+  checkIn      String?
+  checkOut     String?
+  method       String   @default("manual")
+  ipAddress    String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  @@unique([enrollmentId, date])
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  batchId     String
+  batch       Batch    @relation(fields: [batchId], references: [id])
+  title       String
+  description String?
+  type        String   @default("regular")
+  dueDate     DateTime?
+  points      Int      @default(10)
+  resources   String?
+  isPublished Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  submissions Submission[]
+}
+
+model Submission {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id])
+  content   String?
+  fileUrl   String?
+  grade     String?
+  feedback  String?
+  status    String   @default("submitted")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([taskId, studentId])
+}
+
+model Certificate {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  certNumber   String   @unique
+  type         String   @default("completion")
+  studentName  String
+  programName  String
+  orgName      String
+  issueDate    DateTime @default(now())
+  qrCode       String?
+  templateData String?
+  createdAt    DateTime @default(now())
+}
+
+model Payment {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  amount       Float
+  type         String   @default("fee")
+  status       String   @default("pending")
+  paymentId    String?
+  method       String?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Salary {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  month        String
+  amount       Float
+  attendanceDays Int
+  totalDays    Int
+  status       String   @default("pending")
+  paidAt       DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([enrollmentId, month])
+}
+
+model Resource {
+  id        String   @id @default(cuid())
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id])
+  title     String
+  type      String   @default("video")
+  url       String
+  order     Int      @default(0)
+  isPublished Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String   @default("info")
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
