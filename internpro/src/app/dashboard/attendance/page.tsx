@@ -29,7 +29,7 @@ export default function AttendancePage() {
   const fetchData = useCallback(async () => {
     const [attRes, enrollRes] = await Promise.all([
       fetch(`/api/attendance?date=${selectedDate}`),
-      fetch("/api/enrollments?status=active"),
+      fetch("/api/enrollments?status=selected"),
     ]);
     if (attRes.ok) setRecords(await attRes.json());
     if (enrollRes.ok) setEnrollments(await enrollRes.json());

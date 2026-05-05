@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return NextResponse.json({ error: "Only admin can approve experience letters" }, { status: 401 });
+    if (!session || !["admin", "organization"].includes(session.role)) {
+      return NextResponse.json({ error: "Only admin or organization can approve experience letters" }, { status: 401 });
     }
 
     const body = await request.json();

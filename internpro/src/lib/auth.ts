@@ -3,7 +3,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "internpro-secret";
+function getJwtSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("NEXTAUTH_SECRET environment variable is required");
+  return secret;
+}
+const JWT_SECRET: string = getJwtSecret();
 
 export interface SessionUser {
   id: string;

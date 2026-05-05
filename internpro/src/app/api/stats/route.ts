@@ -58,7 +58,7 @@ export async function GET() {
     prisma.interview.count({ where: { status: "scheduled" } }),
     prisma.enrollment.count({ where: { status: "selected" } }),
     prisma.certificate.count(),
-    prisma.payment.findMany({ where: { status: "paid" } }),
+    prisma.payment.findMany({ where: { status: "completed" } }),
   ]);
 
   const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
