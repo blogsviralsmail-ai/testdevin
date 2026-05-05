@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { escapeHtml } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -80,18 +81,18 @@ export async function POST(request: NextRequest) {
 
     let htmlContent = template?.htmlContent || "<h1>Offer Letter</h1>";
     htmlContent = htmlContent
-      .replace(/\{\{company_name\}\}/g, org.name)
-      .replace(/\{\{student_name\}\}/g, enrollment.student.name)
-      .replace(/\{\{program_name\}\}/g, enrollment.batch.program.title)
-      .replace(/\{\{letter_number\}\}/g, letterNumber)
+      .replace(/\{\{company_name\}\}/g, escapeHtml(org.name))
+      .replace(/\{\{student_name\}\}/g, escapeHtml(enrollment.student.name))
+      .replace(/\{\{program_name\}\}/g, escapeHtml(enrollment.batch.program.title))
+      .replace(/\{\{letter_number\}\}/g, escapeHtml(letterNumber))
       .replace(/\{\{date\}\}/g, new Date().toLocaleDateString("en-IN"))
       .replace(/\{\{joining_date\}\}/g, joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN"))
       .replace(/\{\{duration\}\}/g, String(enrollment.batch.program.duration))
       .replace(/\{\{salary\}\}/g, String(salary || 0))
       .replace(/\{\{weekoffs\}\}/g, String(weekoffs || 1))
       .replace(/\{\{paid_leaves\}\}/g, String(paidLeaves || 0))
-      .replace(/\{\{work_timing\}\}/g, workTiming || "10:00 AM - 6:00 PM")
-      .replace(/\{\{mode\}\}/g, enrollment.batch.program.mode);
+      .replace(/\{\{work_timing\}\}/g, escapeHtml(workTiming || "10:00 AM - 6:00 PM"))
+      .replace(/\{\{mode\}\}/g, escapeHtml(enrollment.batch.program.mode));
 
     const offerLetter = await prisma.offerLetter.create({
       data: {

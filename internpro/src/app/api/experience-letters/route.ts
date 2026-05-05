@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { escapeHtml } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -74,26 +75,32 @@ export async function POST(request: NextRequest) {
     const letterNumber = `EXP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     const org = enrollment.batch.program.organization;
 
+    const safeOrgName = escapeHtml(org.name);
+    const safeStudentName = escapeHtml(enrollment.student.name);
+    const safeProgramTitle = escapeHtml(enrollment.batch.program.title);
+    const safeCategory = escapeHtml(enrollment.teamLeaderCategory);
+    const safeRemarks = enrollment.teamLeaderRemarks ? escapeHtml(enrollment.teamLeaderRemarks) : "";
+
     const htmlContent = `<div style="font-family: Arial; padding: 40px; max-width: 800px; margin: 0 auto;">
 <div style="text-align: center; margin-bottom: 30px;">
-<h1 style="color: #1e1b4b;">${org.name}</h1>
+<h1 style="color: #1e1b4b;">${safeOrgName}</h1>
 <h2>EXPERIENCE / COMPLETION LETTER</h2>
 <p>Ref: ${letterNumber} | Date: ${new Date().toLocaleDateString("en-IN")}</p>
 </div>
 <p>To Whom It May Concern,</p>
-<p>This is to certify that <strong>${enrollment.student.name}</strong> has successfully completed the 
-<strong>${enrollment.batch.program.title}</strong> internship program at ${org.name}.</p>
+<p>This is to certify that <strong>${safeStudentName}</strong> has successfully completed the 
+<strong>${safeProgramTitle}</strong> internship program at ${safeOrgName}.</p>
 <h3>Details:</h3>
 <ul>
-<li><strong>Program:</strong> ${enrollment.batch.program.title}</li>
+<li><strong>Program:</strong> ${safeProgramTitle}</li>
 <li><strong>Duration:</strong> ${enrollment.batch.program.duration} days</li>
 <li><strong>Period:</strong> ${enrollment.batch.startDate.toLocaleDateString("en-IN")} to ${new Date().toLocaleDateString("en-IN")}</li>
-<li><strong>Performance Category:</strong> ${enrollment.teamLeaderCategory}</li>
-${enrollment.teamLeaderRemarks ? `<li><strong>Remarks:</strong> ${enrollment.teamLeaderRemarks}</li>` : ""}
+<li><strong>Performance Category:</strong> ${safeCategory}</li>
+${safeRemarks ? `<li><strong>Remarks:</strong> ${safeRemarks}</li>` : ""}
 </ul>
-<p>We wish ${enrollment.student.name} all the best in their future endeavors.</p>
+<p>We wish ${safeStudentName} all the best in their future endeavors.</p>
 <br/>
-<p>Authorized Signatory<br/><strong>${org.name}</strong></p>
+<p>Authorized Signatory<br/><strong>${safeOrgName}</strong></p>
 </div>`;
 
     const letter = await prisma.experienceLetter.create({
