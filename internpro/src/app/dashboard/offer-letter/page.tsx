@@ -93,8 +93,7 @@ export default function OfferLetterPage() {
       <div>
         <button onClick={() => setViewing(null)} className="mb-4 text-indigo-600 hover:underline text-sm">← Back to Letters</button>
         <div className="bg-white rounded-xl p-8 border shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Offer Letter — {viewing.letterNumber}</h2>
+          <div className="flex justify-end mb-4">
             <button onClick={() => handlePrint(viewing.htmlContent || "", viewing.letterNumber)}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
               Print / Download PDF
@@ -111,8 +110,7 @@ export default function OfferLetterPage() {
       <div>
         <button onClick={() => setViewingExp(null)} className="mb-4 text-indigo-600 hover:underline text-sm">← Back to Letters</button>
         <div className="bg-white rounded-xl p-8 border shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Experience Letter — {viewingExp.letterNumber}</h2>
+          <div className="flex justify-end mb-4">
             <button onClick={() => handlePrint(viewingExp.htmlContent || "", viewingExp.letterNumber)}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
               Print / Download PDF

@@ -306,7 +306,7 @@ export default function CompletionPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
-              <h2 className="text-lg font-bold text-gray-900">Experience Letter — {viewingLetter.studentName}</h2>
+              <h2 className="text-lg font-bold text-gray-900">Experience Letter</h2>
               <div className="flex gap-2">
                 <button onClick={() => {
                   const w = window.open("", "_blank");
