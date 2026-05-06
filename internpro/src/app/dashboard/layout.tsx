@@ -60,35 +60,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     checkAuth();
   }, [checkAuth]);
 
-  // Auto attendance for students on any dashboard page
+  // Auto attendance for students — login time = checkIn, last activity = checkOut
   useEffect(() => {
     if (user?.role === "student") {
       const today = new Date().toISOString().split("T")[0];
       const key = `auto_attendance_${today}`;
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+
       if (!sessionStorage.getItem(key)) {
-        const now = new Date();
-        const checkIn = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+        // First visit today = login time (checkIn)
         fetch("/api/attendance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ date: today, status: "present", method: "auto", checkIn }),
-        }).then(() => sessionStorage.setItem(key, "1")).catch(() => {});
+          body: JSON.stringify({ date: today, status: "present", method: "auto", checkIn: timeStr }),
+        }).then(() => sessionStorage.setItem(key, timeStr)).catch(() => {});
       }
 
-      // Update checkout time periodically to track work hours
+      // Update checkOut on every page load/navigation (last activity time)
       const updateCheckout = () => {
-        const now = new Date();
-        const checkOut = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+        const n = new Date();
+        const co = `${n.getHours().toString().padStart(2, "0")}:${n.getMinutes().toString().padStart(2, "0")}`;
         fetch("/api/attendance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ date: today, status: "present", method: "auto", checkOut }),
+          body: JSON.stringify({ date: today, status: "present", method: "auto", checkOut: co }),
         }).catch(() => {});
       };
-      const interval = setInterval(updateCheckout, 5 * 60 * 1000); // every 5 min
+      // Update checkout immediately (current page load = activity)
+      updateCheckout();
+      // Also update on tab visibility change and before leaving
+      const onVisibility = () => { if (document.visibilityState === "hidden") updateCheckout(); };
+      document.addEventListener("visibilitychange", onVisibility);
       window.addEventListener("beforeunload", updateCheckout);
+      // Periodic update every 2 minutes
+      const interval = setInterval(updateCheckout, 2 * 60 * 1000);
       return () => {
         clearInterval(interval);
+        document.removeEventListener("visibilitychange", onVisibility);
         window.removeEventListener("beforeunload", updateCheckout);
       };
     }

@@ -29,16 +29,27 @@ export default function CompletionPage() {
   const [categoryForm, setCategoryForm] = useState({ category: "good", remarks: "" });
   const [approveRemarks, setApproveRemarks] = useState("");
   const [filter, setFilter] = useState("all");
+  const [expLetters, setExpLetters] = useState<Record<string, { letterNumber: string; htmlContent: string | null; category: string; issuedAt: string }>>({});
+  const [viewingLetter, setViewingLetter] = useState<{ letterNumber: string; htmlContent: string | null; studentName: string } | null>(null);
 
   const fetchData = useCallback(async () => {
-    const [enrollRes, meRes] = await Promise.all([
+    const [enrollRes, meRes, expRes] = await Promise.all([
       fetch("/api/enrollments"),
       fetch("/api/auth/me"),
+      fetch("/api/experience-letters"),
     ]);
     if (enrollRes.ok) setEnrollments(await enrollRes.json());
     if (meRes.ok) {
       const meData = await meRes.json();
       setUser(meData.user);
+    }
+    if (expRes.ok) {
+      const letters = await expRes.json();
+      const map: Record<string, { letterNumber: string; htmlContent: string | null; category: string; issuedAt: string }> = {};
+      for (const l of letters) {
+        map[l.enrollmentId] = { letterNumber: l.letterNumber, htmlContent: l.htmlContent, category: l.category, issuedAt: l.issuedAt || l.createdAt };
+      }
+      setExpLetters(map);
     }
   }, []);
 
@@ -275,10 +286,46 @@ export default function CompletionPage() {
                       {enrollment.teamLeaderCategory ? "Approve & Complete" : "Direct Approve"}
                     </button>
                   )}
+                  {enrollment.status === "completed" && expLetters[enrollment.id] && (
+                    <button
+                      onClick={() => setViewingLetter({ letterNumber: expLetters[enrollment.id].letterNumber, htmlContent: expLetters[enrollment.id].htmlContent, studentName: enrollment.student.name })}
+                      className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-xs hover:bg-indigo-200"
+                    >
+                      View Experience Letter
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Experience Letter View Modal */}
+      {viewingLetter && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
+              <h2 className="text-lg font-bold text-gray-900">Experience Letter — {viewingLetter.studentName}</h2>
+              <div className="flex gap-2">
+                <button onClick={() => {
+                  const w = window.open("", "_blank");
+                  if (w) {
+                    w.document.write(`<html><head><title>${viewingLetter.letterNumber}</title><style>body{font-family:system-ui;padding:20px;max-width:800px;margin:0 auto;}@media print{body{padding:10px;}}</style></head><body>${viewingLetter.htmlContent}<script>window.onload=function(){window.print();}</script></body></html>`);
+                    w.document.close();
+                  }
+                }} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs hover:bg-indigo-700">Print / PDF</button>
+                <button onClick={() => setViewingLetter(null)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200">Close</button>
+              </div>
+            </div>
+            <div className="p-6">
+              {viewingLetter.htmlContent ? (
+                <div dangerouslySetInnerHTML={{ __html: viewingLetter.htmlContent }} />
+              ) : (
+                <p className="text-gray-500 text-center py-8">Letter content not available</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
