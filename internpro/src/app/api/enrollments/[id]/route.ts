@@ -13,7 +13,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const { status, teamLeaderCategory, teamLeaderRemarks, adminRemarks,
       salary, weekoffs, paidLeaves, workTiming, joiningDate,
-      feeType, feeAmount, stipendAmount } = body;
+      feeType, feeAmount, stipendAmount, batchId } = body;
 
     const data: Record<string, unknown> = {};
 
@@ -40,6 +40,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (status === "completed") {
       data.completedAt = new Date();
+    }
+
+    if (session.role === "admin" && batchId) {
+      data.batchId = batchId;
     }
 
     const enrollment = await prisma.enrollment.update({

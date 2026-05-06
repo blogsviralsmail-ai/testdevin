@@ -60,6 +60,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     checkAuth();
   }, [checkAuth]);
 
+  // Auto attendance for students on any dashboard page
+  useEffect(() => {
+    if (user?.role === "student") {
+      const today = new Date().toISOString().split("T")[0];
+      const key = `auto_attendance_${today}`;
+      if (!sessionStorage.getItem(key)) {
+        const now = new Date();
+        const checkIn = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+        fetch("/api/attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: today, status: "present", method: "auto", checkIn }),
+        }).then(() => sessionStorage.setItem(key, "1")).catch(() => {});
+      }
+    }
+  }, [user]);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");

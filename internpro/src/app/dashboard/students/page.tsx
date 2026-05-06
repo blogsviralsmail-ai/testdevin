@@ -16,8 +16,14 @@ interface Enrollment {
   feeAmount: number | null;
   stipendAmount: number | null;
   student: { id: string; name: string; email: string; phone: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null };
-  batch: { program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number } };
+  batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number } };
   _count: { attendances: number; certificates: number; payments: number };
+}
+
+interface Batch {
+  id: string;
+  name: string;
+  program: { title: string };
 }
 
 export default function StudentsPage() {
@@ -27,10 +33,16 @@ export default function StudentsPage() {
   const [editForm, setEditForm] = useState({ status: "", remarks: "" });
   const [studentForm, setStudentForm] = useState({ name: "", email: "", phone: "", password: "", collegeName: "", degree: "", year: "", address: "" });
   const [editError, setEditError] = useState("");
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [transferModal, setTransferModal] = useState<Enrollment | null>(null);
 
   const fetchEnrollments = useCallback(async () => {
-    const res = await fetch("/api/enrollments");
+    const [res, batchRes] = await Promise.all([
+      fetch("/api/enrollments"),
+      fetch("/api/batches"),
+    ]);
     if (res.ok) setEnrollments(await res.json());
+    if (batchRes.ok) setBatches(await batchRes.json());
   }, []);
 
   useEffect(() => { fetchEnrollments(); }, [fetchEnrollments]);
@@ -88,6 +100,16 @@ export default function StudentsPage() {
 
   const generateOfferLetter = (enrollmentId: string) => {
     window.open(`/api/documents/offer-letter?enrollmentId=${enrollmentId}`, "_blank");
+  };
+
+  const handleTransfer = async (enrollmentId: string, newBatchId: string) => {
+    await fetch(`/api/enrollments/${enrollmentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId: newBatchId }),
+    });
+    setTransferModal(null);
+    fetchEnrollments();
   };
 
   const generateCertificate = async (enrollmentId: string) => {
@@ -230,6 +252,33 @@ export default function StudentsPage() {
         </div>
       )}
 
+      {/* Transfer Batch Modal */}
+      {transferModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Transfer Student to Another Batch</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              <span className="font-medium text-gray-900">{transferModal.student.name}</span> — Currently in {transferModal.batch.program.title} ({transferModal.batch.name})
+            </p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {batches.filter((b) => b.id !== transferModal.batch.id).map((batch) => (
+                <button key={batch.id} onClick={() => handleTransfer(transferModal.id, batch.id)}
+                  className="w-full flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-indigo-50 text-left">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{batch.program.title}</div>
+                    <div className="text-xs text-gray-500">{batch.name}</div>
+                  </div>
+                  <span className="text-xs text-indigo-600 font-medium">Transfer Here</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setTransferModal(null)} className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl p-12 border border-gray-100 text-center">
           <p className="text-4xl mb-4">👥</p>
@@ -325,6 +374,12 @@ export default function StudentsPage() {
                             <button onClick={() => generateCertificate(enrollment.id)}
                               className="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-100">
                               Certificate
+                            </button>
+                          )}
+                          {(enrollment.status === "active" || enrollment.status === "selected") && (
+                            <button onClick={() => setTransferModal(enrollment)}
+                              className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">
+                              Transfer Batch
                             </button>
                           )}
                           <button onClick={() => handleDelete(enrollment.id)}

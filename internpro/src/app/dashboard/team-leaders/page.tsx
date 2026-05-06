@@ -19,6 +19,13 @@ interface Batch {
   _count: { enrollments: number };
 }
 
+interface Enrollment {
+  id: string;
+  student: { id: string; name: string; email: string };
+  batch: { id: string; name: string; program: { title: string } };
+  status: string;
+}
+
 export default function TeamLeadersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -27,14 +34,18 @@ export default function TeamLeadersPage() {
   const [assignModal, setAssignModal] = useState<User | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [assignStudentModal, setAssignStudentModal] = useState<User | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
 
   const fetchData = useCallback(async () => {
-    const [usersRes, batchRes] = await Promise.all([
+    const [usersRes, batchRes, enrollRes] = await Promise.all([
       fetch("/api/users?role=teamleader"),
       fetch("/api/batches"),
+      fetch("/api/enrollments"),
     ]);
     if (usersRes.ok) setUsers(await usersRes.json());
     if (batchRes.ok) setBatches(await batchRes.json());
+    if (enrollRes.ok) setEnrollments(await enrollRes.json());
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -75,6 +86,15 @@ export default function TeamLeadersPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ teamLeaderId: leaderId }),
+    });
+    fetchData();
+  };
+
+  const handleTransferStudent = async (enrollmentId: string, newBatchId: string) => {
+    await fetch(`/api/enrollments/${enrollmentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId: newBatchId }),
     });
     fetchData();
   };
@@ -178,6 +198,47 @@ export default function TeamLeadersPage() {
         </div>
       )}
 
+      {/* Assign Students Modal */}
+      {assignStudentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Assign Students to {assignStudentModal.name}</h2>
+            <p className="text-xs text-gray-500 mb-4">Transfer students to {assignStudentModal.name}&apos;s assigned batches</p>
+            {(() => {
+              const tlBatches = getAssignedBatches(assignStudentModal.id);
+              if (tlBatches.length === 0) return <p className="text-sm text-red-600">No batches assigned to this TL. Assign a batch first.</p>;
+              const otherStudents = enrollments.filter((e) => (e.status === "active" || e.status === "selected") && !tlBatches.some((b) => b.id === e.batch.id));
+              return (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {otherStudents.length === 0 ? (
+                    <p className="text-sm text-gray-500">No students from other batches to transfer.</p>
+                  ) : (
+                    otherStudents.map((e) => (
+                      <div key={e.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{e.student.name}</div>
+                          <div className="text-xs text-gray-500">{e.batch.program.title} — {e.batch.name}</div>
+                        </div>
+                        <select onChange={(sel) => { if (sel.target.value) handleTransferStudent(e.id, sel.target.value); }}
+                          className="text-xs px-2 py-1 border rounded text-gray-900" defaultValue="">
+                          <option value="" disabled>Move to batch...</option>
+                          {tlBatches.map((b) => (
+                            <option key={b.id} value={b.id}>{b.program.title} — {b.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))
+                  )}
+                </div>
+              );
+            })()}
+            <button onClick={() => setAssignStudentModal(null)} className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Team Leaders List */}
       {users.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center border">
@@ -210,6 +271,10 @@ export default function TeamLeadersPage() {
                     <button onClick={() => setAssignModal(user)}
                       className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100">
                       Assign Batch
+                    </button>
+                    <button onClick={() => setAssignStudentModal(user)}
+                      className="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-100">
+                      Assign Students
                     </button>
                     <button onClick={() => { setEditUser(user); setEditForm({ name: user.name, email: user.email, phone: user.phone || "", password: "" }); }}
                       className="text-xs bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 border">

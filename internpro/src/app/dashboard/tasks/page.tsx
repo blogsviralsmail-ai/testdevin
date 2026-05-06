@@ -143,6 +143,18 @@ export default function TasksPage() {
     fetchData();
   };
 
+  const handleDeleteBatchTasks = async (batchId: string, batchLabel: string) => {
+    const batchTasks = tasks.filter((t) => t.batch.name === batchLabel || (batches.find((b) => b.id === batchId)?.name === t.batch.name));
+    if (!confirm(`Delete ALL ${batchTasks.length} tasks for this batch? This will also delete all submissions.`)) return;
+    for (const task of tasks.filter((t) => {
+      const b = batches.find((b) => b.id === batchId);
+      return b && `${t.batch.program.title} - ${t.batch.name}` === `${b.program.title} - ${b.name}`;
+    })) {
+      await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+    }
+    fetchData();
+  };
+
   const isStudent = user?.role === "student";
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const isTeamLeader = user?.role === "teamleader";
@@ -279,6 +291,28 @@ export default function TasksPage() {
           </div>
           <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">Create Task</button>
         </form>
+      )}
+
+      {/* Batch-level Delete */}
+      {(isAdmin || isTeamLeader) && batches.length > 0 && (
+        <div className="bg-white rounded-xl p-4 border mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Batch-wise Task Management</h3>
+          <div className="flex flex-wrap gap-2">
+            {batches.map((b) => {
+              const count = tasks.filter((t) => `${t.batch.program.title} - ${t.batch.name}` === `${b.program.title} - ${b.name}`).length;
+              return (
+                <div key={b.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-xs">
+                  <span className="text-gray-700">{b.program.title} - {b.name}</span>
+                  <span className="text-gray-400">({count} tasks)</span>
+                  {count > 0 && (
+                    <button onClick={() => handleDeleteBatchTasks(b.id, b.name)}
+                      className="text-red-600 hover:text-red-800 font-medium">Delete All</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Task List */}

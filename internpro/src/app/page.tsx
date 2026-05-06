@@ -14,6 +14,7 @@ interface Program {
   maxSeats: number;
   description: string | null;
   isPublished: boolean;
+  thumbnail: string | null;
   batches: { _count: { enrollments: number } }[];
   _count: { batches: number };
 }
@@ -189,6 +190,9 @@ export default function Home() {
                   {programs.map((program) => (
                     <div key={program.id} className="w-full flex-shrink-0 p-8 md:p-12">
                       <div className="flex flex-col md:flex-row items-center gap-8">
+                        {program.thumbnail && (
+                          <img src={program.thumbnail} alt={program.title} className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-xl shadow flex-shrink-0" />
+                        )}
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-4">
                             <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">{program.domain}</span>

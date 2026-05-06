@@ -14,6 +14,7 @@ interface Program {
   stipendAmount: number;
   maxSeats: number;
   isPublished: boolean;
+  thumbnail: string | null;
   organization: { name: string };
   batches: { id: string; name: string; isActive: boolean; _count: { enrollments: number } }[];
 }
@@ -24,8 +25,9 @@ export default function ProgramsPage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     title: "", description: "", domain: "web-dev", mode: "online", duration: "90",
-    feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50",
+    feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "",
   });
+  const [uploading, setUploading] = useState(false);
 
   const fetchPrograms = useCallback(async () => {
     const res = await fetch("/api/programs");
@@ -33,6 +35,18 @@ export default function ProgramsPage() {
   }, []);
 
   useEffect(() => { fetchPrograms(); }, [fetchPrograms]);
+
+  const handleThumbnailUpload = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    if (res.ok) {
+      const data = await res.json();
+      setForm((prev) => ({ ...prev, thumbnail: data.url }));
+    }
+    setUploading(false);
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +58,7 @@ export default function ProgramsPage() {
     });
     if (res.ok) {
       setShowForm(false);
-      setForm({ title: "", description: "", domain: "web-dev", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50" });
+      setForm({ title: "", description: "", domain: "web-dev", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "" });
       fetchPrograms();
     } else {
       const data = await res.json();
@@ -126,6 +140,13 @@ export default function ProgramsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Max Seats</label>
               <input type="number" value={form.maxSeats} onChange={(e) => setForm({ ...form, maxSeats: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail Photo</label>
+              <input type="file" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) handleThumbnailUpload(e.target.files[0]); }}
+                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+              {uploading && <p className="text-xs text-blue-600 mt-1">Uploading...</p>}
+              {form.thumbnail && <img src={form.thumbnail} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded" />}
+            </div>
           </div>
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -147,6 +168,9 @@ export default function ProgramsPage() {
             return (
               <div key={program.id} className="bg-white rounded-xl p-6 border border-gray-100 card-hover">
                 <div className="flex items-start justify-between">
+                  {program.thumbnail && (
+                    <img src={program.thumbnail} alt={program.title} className="w-16 h-16 object-cover rounded-lg mr-4 flex-shrink-0" />
+                  )}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-gray-900">{program.title}</h3>

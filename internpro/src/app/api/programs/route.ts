@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats } = body;
+    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats, thumbnail } = body;
     let { orgId } = body;
 
     if (!orgId) {
@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
         feeAmount: parseFloat(feeAmount || "0"),
         stipendAmount: parseFloat(stipendAmount || "0"),
         maxSeats: parseInt(maxSeats || "50"),
+        thumbnail: thumbnail || null,
         orgId,
       },
     });

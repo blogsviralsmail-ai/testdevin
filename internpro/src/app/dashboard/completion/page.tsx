@@ -267,12 +267,12 @@ export default function CompletionPage() {
                       Categorize
                     </button>
                   )}
-                  {isAdmin && enrollment.teamLeaderCategory && enrollment.status !== "completed" && (
+                  {isAdmin && enrollment.status !== "completed" && (
                     <button
                       onClick={() => { setApproveModal(enrollment); setApproveRemarks(""); }}
                       className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200"
                     >
-                      Approve & Complete
+                      {enrollment.teamLeaderCategory ? "Approve & Complete" : "Direct Approve"}
                     </button>
                   )}
                 </div>
