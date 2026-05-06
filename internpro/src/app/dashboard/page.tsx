@@ -85,12 +85,23 @@ export default function DashboardPage() {
 
   const cards = user?.role === "student" ? studentCards : user?.role === "teamleader" ? leaderCards : adminCards;
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg mx-auto mb-3">IP</div>
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome, {user?.name || "User"}!
+            Welcome, {user.name}!
           </h1>
           <p className="text-gray-600 text-sm mt-1">
             {user?.role === "student" ? "Track your internship progress" :
