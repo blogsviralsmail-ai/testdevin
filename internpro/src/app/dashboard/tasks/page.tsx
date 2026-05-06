@@ -137,6 +137,12 @@ export default function TasksPage() {
     return submissions.find((s) => s.taskId === taskId);
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm("Are you sure? This will delete the task and all its submissions.")) return;
+    await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+    fetchData();
+  };
+
   const isStudent = user?.role === "student";
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const isTeamLeader = user?.role === "teamleader";
@@ -314,6 +320,16 @@ export default function TasksPage() {
                       {!isStudent && <span>📄 {task._count.submissions} submissions</span>}
                     </div>
                   </div>
+
+                  {/* Admin/TL: Delete button */}
+                  {(isAdmin || isTeamLeader) && (
+                    <div className="ml-4 flex-shrink-0">
+                      <button onClick={() => handleDeleteTask(task.id)}
+                        className="text-xs px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200">
+                        Delete
+                      </button>
+                    </div>
+                  )}
 
                   {/* Student: Submit/Status */}
                   {isStudent && (

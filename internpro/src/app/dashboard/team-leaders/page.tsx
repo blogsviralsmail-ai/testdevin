@@ -74,7 +74,7 @@ export default function TeamLeadersPage() {
     await fetch(`/api/batches/${batchId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ leaderId }),
+      body: JSON.stringify({ teamLeaderId: leaderId }),
     });
     fetchData();
   };

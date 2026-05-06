@@ -132,6 +132,18 @@ export default function LetterTemplatesPage() {
         </button>
       </div>
 
+      {/* Type Tabs */}
+      <div className="flex gap-3 mb-6">
+        <button onClick={() => { setActiveTab("offer"); setShowAdd(false); setEditing(null); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "offer" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+          Offer Letter Templates
+        </button>
+        <button onClick={() => { setActiveTab("experience"); setShowAdd(false); setEditing(null); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "experience" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+          Experience Letter Templates
+        </button>
+      </div>
+
       {/* Available Placeholders */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
         <p className="text-sm font-medium text-blue-800 mb-2">Available Placeholders (auto-replace honge):</p>

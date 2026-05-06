@@ -1,4 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useEffect } from "react";
+
+interface Program {
+  id: string;
+  title: string;
+  domain: string;
+  mode: string;
+  duration: number;
+  feeType: string;
+  feeAmount: number | null;
+  maxSeats: number;
+  description: string | null;
+  isPublished: boolean;
+  batches: { _count: { enrollments: number } }[];
+  _count: { batches: number };
+}
 
 const features = [
   { icon: "📚", title: "Program Management", desc: "Create online/offline/hybrid internship programs with flexible pricing - Free, Paid, or Stipend." },
@@ -26,6 +44,23 @@ const pricing = [
 ];
 
 export default function Home() {
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/programs?published=true").then(r => r.ok ? r.json() : []).then(data => {
+      setPrograms(data);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (programs.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % programs.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [programs.length]);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
@@ -38,7 +73,7 @@ export default function Home() {
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-gray-600 hover:text-indigo-600 transition">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-indigo-600 transition">Pricing</a>
+              <a href="#openings" className="text-gray-600 hover:text-indigo-600 transition">Openings</a>
               <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition">How it Works</a>
             </div>
             <div className="flex items-center gap-3">
@@ -136,35 +171,65 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 px-4 bg-gray-50">
+      {/* Current Internship Openings */}
+      <section id="openings" className="py-20 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-xl text-gray-600">Start free, upgrade as you grow</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Current Internship Openings</h2>
+            <p className="text-xl text-gray-600">Apply now for ongoing internship programs</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {pricing.map((plan) => (
-              <div key={plan.name} className={`rounded-xl p-8 card-hover ${plan.highlighted ? "bg-indigo-600 text-white ring-4 ring-indigo-200 scale-105" : "bg-white border border-gray-200"}`}>
-                <h3 className={`text-lg font-semibold mb-2 ${plan.highlighted ? "text-indigo-100" : "text-gray-600"}`}>{plan.name}</h3>
-                <div className="flex items-end gap-1 mb-6">
-                  <span className={`text-4xl font-bold ${plan.highlighted ? "text-white" : "text-gray-900"}`}>{plan.price}</span>
-                  <span className={plan.highlighted ? "text-indigo-200" : "text-gray-500"}>{plan.period}</span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm">
-                      <span className={plan.highlighted ? "text-indigo-200" : "text-indigo-600"}>✓</span>
-                      <span>{f}</span>
-                    </li>
+          {programs.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No openings available right now. Check back soon!</p>
+            </div>
+          ) : (
+            <>
+              <div className="relative overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-lg mb-8">
+                <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
+                  {programs.map((program) => (
+                    <div key={program.id} className="w-full flex-shrink-0 p-8 md:p-12">
+                      <div className="flex flex-col md:flex-row items-center gap-8">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-4">
+                            <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">{program.domain}</span>
+                            <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">{program.mode}</span>
+                            <span className={`text-xs px-3 py-1 rounded-full font-medium ${program.feeType === "free" ? "bg-emerald-100 text-emerald-700" : program.feeType === "stipend" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>
+                              {program.feeType === "free" ? "Free" : program.feeType === "stipend" ? `Stipend: ₹${program.feeAmount}/mo` : `Fee: ₹${program.feeAmount}`}
+                            </span>
+                          </div>
+                          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">{program.title}</h3>
+                          {program.description && <p className="text-gray-600 mb-4">{program.description}</p>}
+                          <div className="flex items-center gap-6 text-sm text-gray-500">
+                            <span>⏱ {program.duration} days</span>
+                            <span>👥 {program.maxSeats - program.batches.reduce((sum, b) => sum + b._count.enrollments, 0)} seats left</span>
+                            <span>📦 {program._count.batches} batch(es)</span>
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <Link href="/register" className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-lg font-semibold hover:bg-indigo-700 transition shadow-lg">
+                            Apply Now
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </ul>
-                <Link href="/register" className={`block text-center py-3 px-6 rounded-lg font-semibold transition ${plan.highlighted ? "bg-white text-indigo-600 hover:bg-indigo-50" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
-                  Get Started
+                </div>
+                {programs.length > 1 && (
+                  <div className="flex justify-center gap-2 pb-6">
+                    {programs.map((_, i) => (
+                      <button key={i} onClick={() => setCurrentSlide(i)}
+                        className={`w-3 h-3 rounded-full transition ${i === currentSlide ? "bg-indigo-600" : "bg-gray-300"}`} />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="text-center">
+                <Link href="/register" className="text-indigo-600 font-semibold hover:text-indigo-700 transition text-lg">
+                  View All Openings →
                 </Link>
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       </section>
 

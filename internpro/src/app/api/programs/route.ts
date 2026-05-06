@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     include: {
       organization: { select: { name: true, logo: true } },
       batches: { select: { id: true, name: true, isActive: true, _count: { select: { enrollments: true } } } },
+      _count: { select: { batches: true } },
     },
     orderBy: { createdAt: "desc" },
   });

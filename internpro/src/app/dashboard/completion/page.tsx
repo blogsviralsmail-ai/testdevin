@@ -67,27 +67,22 @@ export default function CompletionPage() {
 
     // If TL hasn't categorized yet, auto-set as "good" before approving
     if (!approveModal.teamLeaderCategory) {
-      await fetch(`/api/enrollments/${enrollmentId}`, {
+      const catRes = await fetch(`/api/enrollments/${enrollmentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamLeaderCategory: "good", teamLeaderRemarks: "Auto-categorized by admin" }),
       });
+      if (!catRes.ok) {
+        alert("Failed to auto-categorize. Please try again.");
+        return;
+      }
     }
 
-    await fetch(`/api/enrollments/${enrollmentId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: "completed",
-        adminRemarks: approveRemarks,
-      }),
-    });
-
-    // Auto-generate experience letter
+    // Generate experience letter (this also updates enrollment to completed)
     const expRes = await fetch("/api/experience-letters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enrollmentId }),
+      body: JSON.stringify({ enrollmentId, adminRemarks: approveRemarks }),
     });
     if (!expRes.ok) {
       const data = await expRes.json();
