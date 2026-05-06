@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
 
   const where: Record<string, unknown> = {};
   if (enrollmentId) where.enrollmentId = enrollmentId;
+  // Students only see their own experience letters
+  if (session.role === "student") {
+    where.enrollment = { studentId: session.id };
+  }
 
   const letters = await prisma.experienceLetter.findMany({
     where,
