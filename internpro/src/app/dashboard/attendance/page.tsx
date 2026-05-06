@@ -201,13 +201,14 @@ export default function AttendancePage() {
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Check In</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Check Out</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Work Hours</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Method</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {records.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                       No attendance records for {formatDate(selectedDate)}
                     </td>
                   </tr>
@@ -226,6 +227,23 @@ export default function AttendancePage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{record.checkIn || "—"}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{record.checkOut || "—"}</td>
+                      <td className="px-6 py-4">
+                        {record.checkIn && record.checkOut ? (() => {
+                          const [inH, inM] = record.checkIn.split(":").map(Number);
+                          const [outH, outM] = record.checkOut.split(":").map(Number);
+                          const mins = (outH * 60 + outM) - (inH * 60 + inM);
+                          const hrs = Math.floor(mins / 60);
+                          const m = mins % 60;
+                          const label = mins < 240 ? "Half Day" : mins < 360 ? "Short Day" : "Full Day";
+                          const color = mins < 240 ? "text-orange-600" : mins < 360 ? "text-yellow-600" : "text-green-600";
+                          return (
+                            <div>
+                              <span className="text-sm text-gray-900">{hrs}h {m}m</span>
+                              <span className={`text-xs ml-1 font-medium ${color}`}>({label})</span>
+                            </div>
+                          );
+                        })() : <span className="text-xs text-gray-400">—</span>}
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`text-xs px-2 py-1 rounded-full ${record.method === "auto" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                           {record.method === "auto" ? "Auto" : "Manual"}

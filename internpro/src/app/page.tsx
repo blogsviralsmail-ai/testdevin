@@ -228,7 +228,7 @@ export default function Home() {
                 )}
               </div>
               <div className="text-center">
-                <Link href="/register" className="text-indigo-600 font-semibold hover:text-indigo-700 transition text-lg">
+                <Link href="/vacancies" className="text-indigo-600 font-semibold hover:text-indigo-700 transition text-lg">
                   View All Openings →
                 </Link>
               </div>

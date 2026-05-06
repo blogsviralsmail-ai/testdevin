@@ -23,6 +23,8 @@ interface Enrollment {
 interface Batch {
   id: string;
   name: string;
+  leaderId: string | null;
+  leader: { name: string } | null;
   program: { title: string };
 }
 
@@ -35,14 +37,17 @@ export default function StudentsPage() {
   const [editError, setEditError] = useState("");
   const [batches, setBatches] = useState<Batch[]>([]);
   const [transferModal, setTransferModal] = useState<Enrollment | null>(null);
+  const [teamLeaders, setTeamLeaders] = useState<{ id: string; name: string }[]>([]);
 
   const fetchEnrollments = useCallback(async () => {
-    const [res, batchRes] = await Promise.all([
+    const [res, batchRes, tlRes] = await Promise.all([
       fetch("/api/enrollments"),
       fetch("/api/batches"),
+      fetch("/api/users?role=teamleader"),
     ]);
     if (res.ok) setEnrollments(await res.json());
     if (batchRes.ok) setBatches(await batchRes.json());
+    if (tlRes.ok) setTeamLeaders(await tlRes.json());
   }, []);
 
   useEffect(() => { fetchEnrollments(); }, [fetchEnrollments]);
@@ -296,6 +301,7 @@ export default function StudentsPage() {
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Join Status</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Attendance</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Team Leader</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Actions</th>
                 </tr>
               </thead>
@@ -332,6 +338,32 @@ export default function StudentsPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">{enrollment._count.attendances} days</td>
+                      <td className="px-6 py-4">
+                        {(() => {
+                          const batch = batches.find((b) => b.id === enrollment.batch.id);
+                          const currentTL = batch?.leader?.name;
+                          return (
+                            <div>
+                              {currentTL && <div className="text-xs text-gray-700 font-medium mb-1">{currentTL}</div>}
+                              <select
+                                value={batch?.leaderId || ""}
+                                onChange={(e) => {
+                                  const tlBatches = batches.filter((b) => b.leaderId === e.target.value);
+                                  if (tlBatches.length > 0 && tlBatches[0].id !== enrollment.batch.id) {
+                                    handleTransfer(enrollment.id, tlBatches[0].id);
+                                  }
+                                }}
+                                className="text-xs px-1 py-0.5 border rounded text-gray-900 max-w-[120px]"
+                              >
+                                <option value="">No TL</option>
+                                {teamLeaders.map((tl) => (
+                                  <option key={tl.id} value={tl.id}>{tl.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })()}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-1 flex-wrap">
                           <button

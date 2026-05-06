@@ -139,7 +139,11 @@ export default function TasksPage() {
 
   const handleDeleteTask = async (taskId: string) => {
     if (!confirm("Are you sure? This will delete the task and all its submissions.")) return;
-    await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+    const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Delete failed" }));
+      alert("Error: " + (data.error || "Failed to delete task"));
+    }
     fetchData();
   };
 

@@ -74,6 +74,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           body: JSON.stringify({ date: today, status: "present", method: "auto", checkIn }),
         }).then(() => sessionStorage.setItem(key, "1")).catch(() => {});
       }
+
+      // Update checkout time periodically to track work hours
+      const updateCheckout = () => {
+        const now = new Date();
+        const checkOut = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+        fetch("/api/attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: today, status: "present", method: "auto", checkOut }),
+        }).catch(() => {});
+      };
+      const interval = setInterval(updateCheckout, 5 * 60 * 1000); // every 5 min
+      window.addEventListener("beforeunload", updateCheckout);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("beforeunload", updateCheckout);
+      };
     }
   }, [user]);
 

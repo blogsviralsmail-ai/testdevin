@@ -2,25 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
-const DEFAULT_EXP_TEMPLATE = `<div style="font-family: system-ui, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; border: 2px solid #1e1b4b; border-radius: 12px;">
-  <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px;">
-    <h1 style="color: #1e1b4b; font-size: 28px; margin: 0;">{{company_name}}</h1>
-    <p style="color: #64748b; margin: 4px 0;">{{company_address}}</p>
-    <h2 style="color: #374151; margin-top: 16px; font-size: 20px; letter-spacing: 2px;">EXPERIENCE / COMPLETION CERTIFICATE</h2>
+const DEFAULT_EXP_TEMPLATE = `<div style="font-family: 'Georgia', serif; max-width: 800px; margin: 0 auto; padding: 0; border: 1px solid #ccc;">
+  <!-- Letterhead -->
+  <div style="padding: 20px 40px; border-bottom: 3px solid #0000AA;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="width: 160px; vertical-align: middle;"><img src="/uploads/kkhs-logo.png" style="width: 150px; height: auto;" alt="Company Logo" /></td>
+        <td style="text-align: right; vertical-align: middle;">
+          <div style="font-weight: bold; color: #0000AA; font-size: 14px; line-height: 1.6;">
+            {{company_name}}<br/>
+            <span style="font-weight: normal; font-size: 12px; color: #333;">{{company_address}}</span><br/>
+            <span style="font-weight: normal; font-size: 12px; color: #333;">Mob: {{company_phone}} | Email: {{company_email}}</span>
+          </div>
+        </td>
+      </tr>
+    </table>
   </div>
-  <p style="color: #6b7280; font-size: 14px;"><strong>Ref No:</strong> {{letter_number}} &nbsp;&nbsp; <strong>Date:</strong> {{date}}</p>
-  <p style="color: #374151; margin-top: 24px; font-size: 16px;">To Whom It May Concern,</p>
-  <p style="color: #374151; line-height: 1.8; font-size: 15px;">This is to certify that <strong>{{student_name}}</strong> has successfully completed the <strong>{{program_name}}</strong> internship program at <strong>{{company_name}}</strong>.</p>
-  <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
-    <tr><td style="padding: 10px 14px; border: 1px solid #e5e7eb; background: #f9fafb; color: #6b7280; width: 40%;">Program</td><td style="padding: 10px 14px; border: 1px solid #e5e7eb; color: #111827;">{{program_name}}</td></tr>
-    <tr><td style="padding: 10px 14px; border: 1px solid #e5e7eb; background: #f9fafb; color: #6b7280;">Duration</td><td style="padding: 10px 14px; border: 1px solid #e5e7eb; color: #111827;">{{duration}} days</td></tr>
-    <tr><td style="padding: 10px 14px; border: 1px solid #e5e7eb; background: #f9fafb; color: #6b7280;">Period</td><td style="padding: 10px 14px; border: 1px solid #e5e7eb; color: #111827;">{{start_date}} to {{end_date}}</td></tr>
-    <tr><td style="padding: 10px 14px; border: 1px solid #e5e7eb; background: #f9fafb; color: #6b7280;">Performance</td><td style="padding: 10px 14px; border: 1px solid #e5e7eb; color: #111827; text-transform: capitalize;">{{category}}</td></tr>
-  </table>
-  <p style="color: #374151; line-height: 1.8; font-size: 15px;">During the internship, {{student_name}} demonstrated dedication and commitment. We wish them all the best in their future endeavors.</p>
-  <div style="margin-top: 60px;">
-    <p style="color: #374151; margin: 0;">Authorized Signatory</p>
-    <p style="color: #1e1b4b; font-weight: 700; margin: 4px 0;">{{company_name}}</p>
+  <!-- Body -->
+  <div style="padding: 30px 40px;">
+    <h2 style="text-align: center; color: #0000AA; font-size: 22px; letter-spacing: 2px; margin-bottom: 24px; text-decoration: underline;">EXPERIENCE / COMPLETION CERTIFICATE</h2>
+    <p style="color: #555; font-size: 13px;"><strong>Ref No:</strong> {{letter_number}} &nbsp;&nbsp;&nbsp; <strong>Date:</strong> {{date}}</p>
+    <p style="color: #222; margin-top: 24px; font-size: 15px;">To Whom It May Concern,</p>
+    <p style="color: #222; line-height: 1.8; font-size: 15px; text-align: justify;">This is to certify that <strong>{{student_name}}</strong> has successfully completed the <strong>{{program_name}}</strong> internship program at <strong>{{company_name}}</strong>.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <tr><td style="padding: 10px 14px; border: 1px solid #ddd; background: #f5f5f5; color: #555; width: 40%; font-size: 14px;">Program</td><td style="padding: 10px 14px; border: 1px solid #ddd; color: #111; font-size: 14px;">{{program_name}}</td></tr>
+      <tr><td style="padding: 10px 14px; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 14px;">Duration</td><td style="padding: 10px 14px; border: 1px solid #ddd; color: #111; font-size: 14px;">{{duration}} days</td></tr>
+      <tr><td style="padding: 10px 14px; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 14px;">Period</td><td style="padding: 10px 14px; border: 1px solid #ddd; color: #111; font-size: 14px;">{{start_date}} to {{end_date}}</td></tr>
+      <tr><td style="padding: 10px 14px; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 14px;">Performance</td><td style="padding: 10px 14px; border: 1px solid #ddd; color: #111; font-size: 14px; text-transform: capitalize;">{{category}}</td></tr>
+    </table>
+    <p style="color: #222; line-height: 1.8; font-size: 15px; text-align: justify;">During the internship period, {{student_name}} demonstrated sincerity, dedication, and a strong willingness to learn. We appreciate the contribution and wish them all the very best in their future professional endeavors.</p>
+    <div style="margin-top: 60px;">
+      <p style="color: #222; margin: 0; font-size: 14px;">For <strong>{{company_name}}</strong></p>
+      <div style="margin-top: 40px;">
+        <p style="color: #222; margin: 0; font-weight: bold; font-size: 14px;">Authorized Signatory</p>
+      </div>
+    </div>
+  </div>
+  <!-- Footer -->
+  <div style="padding: 10px 40px; border-top: 2px solid #0000AA; background: #f9f9f9; text-align: center;">
+    <p style="color: #888; font-size: 11px; margin: 0;">This is a computer-generated document. Verify at {{verify_url}}</p>
   </div>
 </div>`;
 
