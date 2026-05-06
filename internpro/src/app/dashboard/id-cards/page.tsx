@@ -84,36 +84,46 @@ export default function IDCardsPage() {
     if (!printWindow) return;
     printWindow.document.write(`<!DOCTYPE html><html><head><title>ID Card - ${card.user.name}</title>
 <style>
-  body { margin: 0; padding: 20px; font-family: system-ui, sans-serif; }
-  .card { width: 340px; border: 2px solid #1e1b4b; border-radius: 12px; overflow: hidden; margin: 0 auto; }
-  .card-header { background: linear-gradient(135deg, #4f46e5, #1e1b4b); color: white; padding: 16px; text-align: center; }
-  .card-header h2 { margin: 0; font-size: 18px; }
-  .card-header p { margin: 4px 0 0; font-size: 11px; opacity: 0.8; }
-  .card-body { padding: 20px; text-align: center; }
-  .photo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #4f46e5; margin: 0 auto 12px; object-fit: cover; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #6b7280; }
+  body { margin: 0; padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f0f0; }
+  .card { width: 350px; border-radius: 14px; overflow: hidden; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative; }
+  .card-top { background: #1a237e; padding: 18px 20px 14px; position: relative; }
+  .card-top::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #d32f2f; }
+  .logo-row { display: flex; align-items: center; gap: 10px; }
+  .logo-row img { height: 40px; background: white; padding: 3px; border-radius: 4px; }
+  .logo-row h2 { margin: 0; color: white; font-size: 16px; letter-spacing: 1.5px; font-weight: 700; }
+  .logo-row p { margin: 2px 0 0; color: rgba(255,255,255,0.7); font-size: 9px; }
+  .card-body { background: white; padding: 22px 20px; text-align: center; position: relative; }
+  .card-body::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(to bottom, #1a237e, #d32f2f); }
+  .card-body::after { content: ''; position: absolute; top: 0; right: 0; width: 6px; height: 100%; background: linear-gradient(to bottom, #d32f2f, #1a237e); }
+  .photo { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #1a237e; margin: 0 auto 12px; object-fit: cover; background: #e8eaf6; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #1a237e; overflow: hidden; }
   .photo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-  .name { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 4px; }
-  .designation { font-size: 13px; color: #4f46e5; font-weight: 600; margin-bottom: 12px; }
-  .info { font-size: 11px; color: #6b7280; margin: 4px 0; }
-  .card-footer { background: #f9fafb; padding: 12px; text-align: center; border-top: 1px solid #e5e7eb; }
-  .card-number { font-size: 12px; font-weight: 600; color: #1e1b4b; letter-spacing: 1px; }
-  .valid { font-size: 10px; color: #6b7280; margin-top: 4px; }
-  @media print { body { padding: 0; } }
+  .name { font-size: 20px; font-weight: 800; color: #1a237e; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
+  .designation { font-size: 13px; color: #d32f2f; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+  .info-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 5px 0; font-size: 11px; color: #555; }
+  .card-bottom { background: #1a237e; padding: 10px 20px; text-align: center; }
+  .card-number { font-size: 13px; font-weight: 700; color: white; letter-spacing: 2px; }
+  .valid { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; }
+  @media print { body { padding: 0; background: white; } .card { box-shadow: none; } }
 </style></head><body>
 <div class="card">
-  <div class="card-header">
-    <h2>${qrData.company || "InternPro"}</h2>
-    ${qrData.companyAddress ? `<p>${qrData.companyAddress}</p>` : ""}
+  <div class="card-top">
+    <div class="logo-row">
+      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" />
+      <div>
+        <h2>KKHS MEDIA PVT. LTD.</h2>
+        <p>190A Krishna Kunj, Kalwar Road, Jaipur 302012</p>
+      </div>
+    </div>
   </div>
   <div class="card-body">
     <div class="photo">${card.photoUrl ? `<img src="${card.photoUrl}" />` : "👤"}</div>
     <div class="name">${card.user.name}</div>
-    <div class="designation">${card.designation}${card.department ? ` — ${card.department}` : ""}</div>
-    <div class="info">${card.user.email}</div>
-    ${card.user.phone ? `<div class="info">${card.user.phone}</div>` : ""}
-    ${card.user.collegeName ? `<div class="info">${card.user.collegeName}</div>` : ""}
+    <div class="designation">${card.designation}${card.department ? ` | ${card.department}` : ""}</div>
+    <div class="info-row">📧 ${card.user.email}</div>
+    ${card.user.phone ? `<div class="info-row">📱 ${card.user.phone}</div>` : ""}
+    ${card.user.collegeName ? `<div class="info-row">🎓 ${card.user.collegeName}</div>` : ""}
   </div>
-  <div class="card-footer">
+  <div class="card-bottom">
     <div class="card-number">${card.cardNumber}</div>
     <div class="valid">Valid: ${new Date(card.validFrom).toLocaleDateString("en-IN")} — ${new Date(card.validUntil).toLocaleDateString("en-IN")}</div>
   </div>
@@ -182,24 +192,31 @@ export default function IDCardsPage() {
       {previewCard && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <div className="border-2 border-indigo-900 rounded-xl overflow-hidden">
-              <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 text-white p-4 text-center">
-                <h2 className="text-lg font-bold">
-                  {(() => { try { return (JSON.parse(previewCard.qrCode || "{}") as Record<string, string>).company; } catch { return "InternPro"; } })()}
-                </h2>
+            <div className="rounded-xl overflow-hidden shadow-lg">
+              <div className="bg-[#1a237e] p-4 relative">
+                <div className="flex items-center gap-3">
+                  <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-10 bg-white p-1 rounded" />
+                  <div>
+                    <h2 className="text-white font-bold text-sm tracking-wider">KKHS MEDIA PVT. LTD.</h2>
+                    <p className="text-white/60 text-[9px]">190A Krishna Kunj, Kalwar Road, Jaipur</p>
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-red-600"></div>
               </div>
-              <div className="p-6 text-center">
-                <div className="w-20 h-20 rounded-full border-3 border-indigo-600 mx-auto mb-3 bg-gray-200 flex items-center justify-center text-3xl overflow-hidden">
+              <div className="bg-white p-6 text-center relative">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-[#1a237e] to-red-600"></div>
+                <div className="absolute top-0 right-0 w-1.5 h-full bg-gradient-to-b from-red-600 to-[#1a237e]"></div>
+                <div className="w-24 h-24 rounded-full border-4 border-[#1a237e] mx-auto mb-3 bg-indigo-50 flex items-center justify-center text-4xl overflow-hidden">
                   {previewCard.photoUrl ? <img src={previewCard.photoUrl} className="w-full h-full object-cover rounded-full" alt="" /> : "👤"}
                 </div>
-                <div className="text-xl font-bold text-gray-900">{previewCard.user.name}</div>
-                <div className="text-sm text-indigo-600 font-semibold">{previewCard.designation}{previewCard.department ? ` — ${previewCard.department}` : ""}</div>
-                <div className="text-xs text-gray-500 mt-2">{previewCard.user.email}</div>
+                <div className="text-xl font-extrabold text-[#1a237e] uppercase tracking-wide">{previewCard.user.name}</div>
+                <div className="text-sm text-red-600 font-bold uppercase mt-1">{previewCard.designation}{previewCard.department ? ` | ${previewCard.department}` : ""}</div>
+                <div className="text-xs text-gray-500 mt-3">{previewCard.user.email}</div>
                 {previewCard.user.phone && <div className="text-xs text-gray-500">{previewCard.user.phone}</div>}
               </div>
-              <div className="bg-gray-50 p-3 text-center border-t">
-                <div className="text-xs font-semibold text-indigo-900 tracking-wider">{previewCard.cardNumber}</div>
-                <div className="text-[10px] text-gray-400">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} — {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
+              <div className="bg-[#1a237e] p-3 text-center">
+                <div className="text-xs font-bold text-white tracking-widest">{previewCard.cardNumber}</div>
+                <div className="text-[9px] text-white/60 mt-1">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} — {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
               </div>
             </div>
             <div className="flex gap-3 mt-4">
