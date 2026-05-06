@@ -55,8 +55,13 @@ export default function OfferLetterPage() {
       printWindow.document.write(`<!DOCTYPE html><html><head><title>${letterNumber}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 820px; margin: 0 auto; background: #f5f5f5; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-  .letter-wrap { background: white; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  @page { size: A4; margin: 0; }
+  body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; padding: 20px; margin: 0 auto; background: #e8e8e8; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  .letter-wrap { background: white; margin: 0 auto; }
+  .a4-page { width: 210mm; min-height: 297mm; margin: 0 auto 20px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; box-sizing: border-box; page-break-after: always; }
+  .a4-page:last-child { page-break-after: auto; }
+  .page-content { flex: 1; padding: 20px 36px 10px; }
+  .page-footer { flex-shrink: 0; }
   .btn-bar { text-align: center; margin-bottom: 15px; display: flex; gap: 10px; justify-content: center; }
   .btn-bar button { padding: 10px 28px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
   .btn-print { background: #0000AA; color: white; }
@@ -69,7 +74,8 @@ export default function OfferLetterPage() {
   @media print {
     .btn-bar { display: none !important; }
     body { padding: 0; margin: 0; background: white !important; }
-    .letter-wrap { box-shadow: none; padding: 10px 0 0; }
+    .letter-wrap { box-shadow: none; }
+    .a4-page { box-shadow: none; margin-bottom: 0; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
   }
 </style></head><body>

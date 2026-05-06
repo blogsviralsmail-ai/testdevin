@@ -128,46 +128,52 @@ export async function POST(request: NextRequest) {
   <p style="margin: 3px 0 0; font-size: 10px; color: #666;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com | GST: 08AAICK3853C1ZL</p>
 </div>`;
 
-      htmlContent = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background: white; color: #222; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-<style>@page { margin: 10mm 0; } .page-break { page-break-before: always; }</style>
-<!-- Page 1 -->
-${lhHtml}
+      htmlContent = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 0 auto; padding: 0; background: white; color: #222; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+<style>
+  @page { size: A4; margin: 0; }
+  @media print { .no-print { display: none !important; } }
+  .a4-page { width: 210mm; min-height: 297mm; padding: 0; margin: 0 auto; background: white; position: relative; box-sizing: border-box; display: flex; flex-direction: column; }
+  .page-content { flex: 1; padding: 18px 36px 10px; }
+  .page-footer { flex-shrink: 0; }
+</style>
 
-<div style="padding: 24px 40px 10px;">
-  <table style="width: 100%; margin-bottom: 16px;">
+<div class="a4-page">
+${lhHtml}
+<div class="page-content">
+  <table style="width: 100%; margin-bottom: 12px;">
     <tr>
-      <td style="font-size: 13px; color: #555;">Ref: <strong style="color: #222;">${letterNumber}</strong></td>
-      <td style="text-align: right; font-size: 13px; color: #555;">Date: <strong style="color: #222;">${todayFormatted}</strong></td>
+      <td style="font-size: 12px; color: #555;">Ref: <strong style="color: #222;">${letterNumber}</strong></td>
+      <td style="text-align: right; font-size: 12px; color: #555;">Date: <strong style="color: #222;">${todayFormatted}</strong></td>
     </tr>
   </table>
 
-  <div style="text-align: center; margin: 8px 0 22px;">
-    <h2 style="margin: 0; font-size: 26px; font-weight: 700; color: #0000AA; letter-spacing: 3px; text-transform: uppercase;">Experience Certificate</h2>
-    <div style="width: 60px; height: 3px; background: #d32f2f; margin: 8px auto 0;"></div>
+  <div style="text-align: center; margin: 4px 0 16px;">
+    <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: #0000AA; letter-spacing: 3px; text-transform: uppercase;">Experience Certificate</h2>
+    <div style="width: 60px; height: 3px; background: #d32f2f; margin: 6px auto 0;"></div>
   </div>
 
-  <p style="font-size: 14px; color: #333; margin: 18px 0 12px;"><strong>To Whom It May Concern,</strong></p>
+  <p style="font-size: 12.5px; color: #333; margin: 12px 0 8px;"><strong>To Whom It May Concern,</strong></p>
 
-  <p style="font-size: 14px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 14px;">
+  <p style="font-size: 12px; color: #333; line-height: 1.75; text-align: justify; margin: 0 0 10px;">
     This is to certify that <strong style="color: #0000AA;">${safeStudentName}</strong> was associated with <strong>${safeOrgName}</strong> as an intern under the <strong>${safeProgramTitle}</strong> program. The details of the engagement are summarized below:
   </p>
 
-  <table style="width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 13px; border: 1px solid #ddd;">
-    <tr style="background: #0000AA;"><td style="padding: 9px 14px; color: white; font-weight: 600; width: 200px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 9px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period of Internship</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Overall Performance</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong></td></tr>
-    ${safeRemarks ? `<tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Supervisor Remarks</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
+  <table style="width: 100%; border-collapse: collapse; margin: 0 0 12px; font-size: 11.5px; border: 1px solid #ddd;">
+    <tr style="background: #0000AA;"><td style="padding: 7px 12px; color: white; font-weight: 600; width: 190px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 7px 12px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
+    <tr><td style="padding: 6px 12px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 6px 12px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
+    <tr><td style="padding: 6px 12px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 6px 12px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
+    <tr><td style="padding: 6px 12px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period of Internship</td><td style="padding: 6px 12px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
+    <tr><td style="padding: 6px 12px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Overall Performance</td><td style="padding: 6px 12px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong></td></tr>
+    ${safeRemarks ? `<tr><td style="padding: 6px 12px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Supervisor Remarks</td><td style="padding: 6px 12px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
   </table>
 
-  <p style="font-size: 15px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Performance Summary</p>
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 12px;">
+  <p style="font-size: 13px; font-weight: 700; color: #0000AA; margin: 10px 0 4px;">Performance Summary</p>
+  <p style="font-size: 11.5px; color: #333; line-height: 1.7; text-align: justify; margin: 0 0 8px;">
     During the internship tenure, ${safeStudentName} demonstrated commendable professionalism, technical aptitude, and a proactive approach to learning. The intern consistently met assigned deadlines, exhibited strong problem-solving capabilities, and collaborated effectively with the team. The quality of work delivered was rated as <strong style="color: #0000AA;">${performanceLabel}</strong> by the supervising authority.
   </p>
 
-  <p style="font-size: 15px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Key Strengths Observed</p>
-  <ul style="font-size: 13px; color: #333; line-height: 1.8; margin: 0 0 12px; padding-left: 22px;">
+  <p style="font-size: 13px; font-weight: 700; color: #0000AA; margin: 10px 0 4px;">Key Strengths Observed</p>
+  <ul style="font-size: 11.5px; color: #333; line-height: 1.65; margin: 0 0 8px; padding-left: 20px;">
     <li>Strong understanding of core concepts related to the ${safeProgramTitle} domain.</li>
     <li>Ability to work independently as well as in a team environment.</li>
     <li>Excellent time management and adherence to project timelines.</li>
@@ -175,24 +181,21 @@ ${lhHtml}
     <li>Professional conduct and positive workplace attitude throughout the engagement.</li>
   </ul>
 
-  <p style="font-size: 15px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Recommendation</p>
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 14px;">
-    Based on the overall performance and conduct during the internship, we are pleased to recommend <strong style="color: #0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this internship will serve as a strong foundation for future career growth.
+  <p style="font-size: 13px; font-weight: 700; color: #0000AA; margin: 10px 0 4px;">Recommendation</p>
+  <p style="font-size: 11.5px; color: #333; line-height: 1.7; text-align: justify; margin: 0 0 10px;">
+    Based on the overall performance and conduct during the internship, we are pleased to recommend <strong style="color: #0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We wish ${safeStudentName} all the very best in future endeavours.
   </p>
 
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 18px;">
-    We wish ${safeStudentName} all the very best in future endeavours and are confident they will be a valuable asset to any organization.
-  </p>
-
-  <p style="margin: 28px 0 0; font-size: 13px; color: #333;">For &amp; on behalf of <strong style="color: #0000AA;">${safeOrgName}</strong>,</p>
-  <div style="margin-top: 12px;">
+  <p style="margin: 20px 0 0; font-size: 12px; color: #333;">For &amp; on behalf of <strong style="color: #0000AA;">${safeOrgName}</strong>,</p>
+  <div style="margin-top: 8px;">
     ${sigBlock}
-    <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 15px;">${signatoryName}</p>
-    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">${signatoryDesignation}</p>
-    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">${safeOrgName}</p>
+    <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 14px;">${signatoryName}</p>
+    <p style="margin: 2px 0 0; font-size: 11px; color: #555;">${signatoryDesignation}</p>
+    <p style="margin: 2px 0 0; font-size: 11px; color: #555;">${safeOrgName}</p>
   </div>
 </div>
-${ftHtml}
+<div class="page-footer">${ftHtml}</div>
+</div>
 </div>`;
     }
 
