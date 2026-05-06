@@ -40,18 +40,35 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
+    if (!session || !["admin", "organization", "teamleader", "student"].includes(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { enrollmentId, date, status, method, checkIn, checkOut, notes } = body;
+    let { enrollmentId } = body;
+    const { date, status, method, checkIn, checkOut, notes } = body;
+
+    // For students, auto-find their active enrollment
+    if (session.role === "student" && !enrollmentId) {
+      const enrollment = await prisma.enrollment.findFirst({
+        where: { studentId: session.id, status: { in: ["selected", "active"] } },
+      });
+      if (!enrollment) {
+        return NextResponse.json({ error: "No active enrollment found" }, { status: 404 });
+      }
+      enrollmentId = enrollment.id;
+    }
 
     const enrollment = await prisma.enrollment.findUnique({
       where: { id: enrollmentId },
     });
     if (!enrollment) {
       return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+    }
+
+    // Students can only mark their own attendance
+    if (session.role === "student" && enrollment.studentId !== session.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const attendanceDate = new Date(date || new Date().toISOString().split("T")[0]);

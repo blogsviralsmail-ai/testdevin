@@ -14,7 +14,7 @@ interface User {
 interface Batch {
   id: string;
   name: string;
-  teamLeaderId: string | null;
+  leaderId: string | null;
   program: { title: string };
   _count: { enrollments: number };
 }
@@ -80,7 +80,7 @@ export default function TeamLeadersPage() {
   };
 
   const getAssignedBatches = (userId: string) => {
-    return batches.filter((b) => b.teamLeaderId === userId);
+    return batches.filter((b) => b.leaderId === userId);
   };
 
   return (
@@ -149,10 +149,10 @@ export default function TeamLeadersPage() {
                     <div className="text-xs text-gray-500">{batch._count.enrollments} students</div>
                   </div>
                   <button
-                    onClick={() => handleAssignBatch(batch.id, batch.teamLeaderId === assignModal.id ? "" : assignModal.id)}
-                    className={`text-xs px-3 py-1 rounded ${batch.teamLeaderId === assignModal.id ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}
+                    onClick={() => handleAssignBatch(batch.id, batch.leaderId === assignModal.id ? "" : assignModal.id)}
+                    className={`text-xs px-3 py-1 rounded ${batch.leaderId === assignModal.id ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}
                   >
-                    {batch.teamLeaderId === assignModal.id ? "Assigned" : "Assign"}
+                    {batch.leaderId === assignModal.id ? "Assigned" : "Assign"}
                   </button>
                 </div>
               ))}

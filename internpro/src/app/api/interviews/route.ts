@@ -47,22 +47,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Enrollment ID and scheduled date are required" }, { status: 400 });
     }
 
-    // Update enrollment status
-    await prisma.enrollment.update({
-      where: { id: enrollmentId },
-      data: { status: "interview_scheduled" },
-    });
+    const interview = await prisma.$transaction(async (tx) => {
+      await tx.enrollment.update({
+        where: { id: enrollmentId },
+        data: { status: "interview_scheduled" },
+      });
 
-    const interview = await prisma.interview.create({
-      data: {
-        enrollmentId,
-        scheduledAt: new Date(scheduledAt),
-        duration: duration || 30,
-        mode: mode || "online",
-        meetLink: meetLink || null,
-        location: location || null,
-        interviewerId: session.id,
-      },
+      return tx.interview.create({
+        data: {
+          enrollmentId,
+          scheduledAt: new Date(scheduledAt),
+          duration: duration || 30,
+          mode: mode || "online",
+          meetLink: meetLink || null,
+          location: location || null,
+          interviewerId: session.id,
+        },
+      });
     });
 
     return NextResponse.json(interview, { status: 201 });

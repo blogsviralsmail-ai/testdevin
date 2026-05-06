@@ -101,7 +101,7 @@ export default function AttendancePage() {
 
   const isStudent = user?.role === "student";
   const todayStr = new Date().toISOString().split("T")[0];
-  const todayRecord = records.find(() => selectedDate === todayStr);
+  const todayRecord = isStudent && selectedDate === todayStr ? records[0] : undefined;
 
   return (
     <div>
