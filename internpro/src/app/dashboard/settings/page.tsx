@@ -233,6 +233,76 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Letterhead Settings (Admin Only) */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Letterhead Settings</h2>
+            <p className="text-sm text-gray-500 mb-4">Customize your letterhead — these details appear on offer letters, experience letters, and ID cards</p>
+            <div className="flex items-start gap-6 mb-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Letterhead Logo</label>
+                <input type="file" accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) { alert("File must be less than 5MB"); return; }
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    const res = await fetch("/api/upload", { method: "POST", body: formData });
+                    if (res.ok) {
+                      const data = await res.json();
+                      updateSetting("letterhead_logo", data.url);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                <p className="text-xs text-gray-400 mt-1">Upload company logo for letterhead. PNG/JPG, max 5MB.</p>
+              </div>
+              {settings.letterhead_logo && (
+                <div className="flex-shrink-0">
+                  <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                  <div className="border rounded-lg p-2 bg-gray-50">
+                    <img src={settings.letterhead_logo} alt="Logo" className="h-16 max-w-[200px] object-contain" />
+                  </div>
+                  <button onClick={() => updateSetting("letterhead_logo", "")}
+                    className="text-xs text-red-500 mt-1 hover:underline">Remove</button>
+                </div>
+              )}
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name (Letterhead)</label>
+                <input value={settings.letterhead_company_name || ""} onChange={(e) => updateSetting("letterhead_company_name", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media Private Limited" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+                <input value={settings.letterhead_address || ""} onChange={(e) => updateSetting("letterhead_address", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="190A Krishna Kunj, Kalwar Road, Jaipur" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input value={settings.letterhead_phone || ""} onChange={(e) => updateSetting("letterhead_phone", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="9782005500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input value={settings.letterhead_email || ""} onChange={(e) => updateSetting("letterhead_email", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="hari@kkhsmedia.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">GST Number</label>
+                <input value={settings.letterhead_gst || ""} onChange={(e) => updateSetting("letterhead_gst", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="08AAICK3853C1ZL" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <input value={settings.letterhead_website || ""} onChange={(e) => updateSetting("letterhead_website", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="www.kkhsmedia.com" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Notification Settings */}
         {isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
