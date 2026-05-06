@@ -98,79 +98,70 @@ export async function POST(request: NextRequest) {
         .replace(/\{\{performance\}\}/g, performanceLabel)
         .replace(/\{\{remarks\}\}/g, safeRemarks);
     } else {
-      htmlContent = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background: white;">
-<!-- Letterhead Header: Logo left, Company info right -->
-<table style="width: 100%; border-collapse: collapse; border-bottom: 3px solid #0000AA; padding-bottom: 10px; margin-bottom: 0;">
+      htmlContent = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background: white; color: #222;">
+<!-- Letterhead -->
+<table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
   <tr>
-    <td style="width: 120px; vertical-align: middle; padding: 15px 10px 15px 20px;">
-      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" style="height: 80px;" />
+    <td style="width: 100px; vertical-align: middle; padding: 18px 0 18px 30px;">
+      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" style="height: 70px; display: block;" />
     </td>
-    <td style="text-align: right; vertical-align: middle; padding: 15px 20px 15px 10px;">
-      <p style="margin: 0; font-size: 20px; font-weight: bold; color: #0000AA;">KKHS Media Private Limited</p>
-      <p style="margin: 3px 0 0; font-size: 10px; color: #555;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
-      <p style="margin: 2px 0 0; font-size: 10px; color: #555;">Mob: 9782005500 | Email: hari@kkhsmedia.com</p>
-      <p style="margin: 2px 0 0; font-size: 10px; color: #555;">GST: 08AAICK3853C1ZL</p>
+    <td style="text-align: right; vertical-align: middle; padding: 18px 30px 18px 10px;">
+      <p style="margin: 0; font-size: 22px; font-weight: 700; color: #0000AA; letter-spacing: 0.5px;">KKHS Media Private Limited</p>
+      <p style="margin: 4px 0 0; font-size: 10px; color: #666; line-height: 1.6;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+      <p style="margin: 1px 0 0; font-size: 10px; color: #666;">Phone: 9782005500 &nbsp;|&nbsp; Email: hari@kkhsmedia.com &nbsp;|&nbsp; GST: 08AAICK3853C1ZL</p>
     </td>
   </tr>
 </table>
+<div style="height: 3px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f);"></div>
 
-<!-- Body -->
-<div style="padding: 30px 40px 20px;">
-  <div style="text-align: right; margin-bottom: 15px;">
-    <p style="margin: 0; font-size: 12px; color: #555;">Ref: <strong>${letterNumber}</strong></p>
-    <p style="margin: 3px 0 0; font-size: 12px; color: #555;">Date: ${todayFormatted}</p>
-  </div>
-
-  <h2 style="text-align: center; color: #0000AA; font-size: 22px; margin: 20px 0; letter-spacing: 2px;">EXPERIENCE CERTIFICATE</h2>
-
-  <p style="font-size: 13px; color: #333; margin-top: 20px;">To Whom It May Concern,</p>
-
-  <p style="font-size: 13px; color: #333; line-height: 1.8; text-align: justify;">
-    This is to certify that <strong style="color: #0000AA;">${safeStudentName}</strong> has successfully completed the 
-    <strong>${safeProgramTitle}</strong> program at <strong>${safeOrgName}</strong>.
-  </p>
-
-  <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px;">
-    <tr style="background: #f5f7ff;">
-      <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; width: 170px; color: #0000AA;">Program</td>
-      <td style="padding: 8px 12px; border: 1px solid #ddd; color: #333;">${safeProgramTitle}</td>
-    </tr>
+<div style="padding: 28px 40px 20px;">
+  <table style="width: 100%; margin-bottom: 20px;">
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Duration</td>
-      <td style="padding: 8px 12px; border: 1px solid #ddd; color: #333;">${enrollment.batch.program.duration} Days</td>
+      <td style="font-size: 12px; color: #555;">Ref: <strong style="color: #222;">${letterNumber}</strong></td>
+      <td style="text-align: right; font-size: 12px; color: #555;">Date: <strong style="color: #222;">${todayFormatted}</strong></td>
     </tr>
-    <tr style="background: #f5f7ff;">
-      <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Period</td>
-      <td style="padding: 8px 12px; border: 1px solid #ddd; color: #333;">${startDateStr} to ${endDateStr}</td>
-    </tr>
-    <tr>
-      <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Performance</td>
-      <td style="padding: 8px 12px; border: 1px solid #ddd; color: #333;"><strong style="color: #0000AA;">${performanceLabel}</strong> (${safeCategory})</td>
-    </tr>
-    ${safeRemarks ? `<tr style="background: #f5f7ff;">
-      <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Remarks</td>
-      <td style="padding: 8px 12px; border: 1px solid #ddd; color: #333;">${safeRemarks}</td>
-    </tr>` : ""}
   </table>
 
-  <p style="font-size: 13px; color: #333; line-height: 1.8; text-align: justify;">
-    During the tenure, ${safeStudentName} demonstrated a high level of dedication, professionalism, and competence. 
-    We appreciate the contributions made and wish them all the very best in their future endeavors.
+  <div style="text-align: center; margin: 10px 0 25px;">
+    <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0000AA; letter-spacing: 3px; text-transform: uppercase;">Experience Certificate</h2>
+    <div style="width: 60px; height: 3px; background: #d32f2f; margin: 8px auto 0;"></div>
+  </div>
+
+  <p style="font-size: 13px; color: #333; margin: 20px 0 12px;">To Whom It May Concern,</p>
+
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
+    This is to certify that <strong style="color: #0000AA;">${safeStudentName}</strong> has successfully completed the 
+    <strong>${safeProgramTitle}</strong> internship program at <strong>${safeOrgName}</strong>. The details of the internship are as follows:
   </p>
 
-  <div style="margin-top: 50px;">
-    <p style="margin: 0; font-size: 13px; color: #333;">Warm Regards,</p>
-    <div style="margin-top: 35px;">
-      <p style="margin: 0; font-weight: bold; color: #0000AA; font-size: 14px;">Authorized Signatory</p>
-      <p style="margin: 3px 0 0; font-size: 12px; color: #555;">${safeOrgName}</p>
-    </div>
+  <table style="width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 13px; border: 1px solid #ddd;">
+    <tr style="background: #0000AA;"><td style="padding: 9px 14px; color: white; font-weight: 600; width: 180px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 9px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Performance</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong> (${safeCategory})</td></tr>
+    ${safeRemarks ? `<tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Remarks</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
+  </table>
+
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 8px;">
+    During the tenure, ${safeStudentName} demonstrated a high level of dedication, professionalism, and competence. We sincerely appreciate the valuable contributions made and wish them continued success in all future endeavors.
+  </p>
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
+    We recommend ${safeStudentName} for any suitable opportunity and are confident they will be an asset to any organization.
+  </p>
+
+  <p style="margin: 45px 0 0; font-size: 13px; color: #333;">Warm Regards,</p>
+  <div style="margin-top: 30px;">
+    <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 14px;">Authorized Signatory</p>
+    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">${safeOrgName}</p>
+    <p style="margin: 2px 0 0; font-size: 11px; color: #888;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
   </div>
 </div>
 
-<!-- Footer matching docx -->
-<div style="border-top: 2px solid #0000AA; padding: 8px 20px; text-align: center; margin-top: 20px;">
-  <p style="margin: 0; font-size: 8pt; font-weight: bold; color: #0000AA;">KKHS Media Private Limited</p>
-  <p style="margin: 2px 0 0; font-size: 7pt; color: #555;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Mob: 9782005500 | Email: hari@kkhsmedia.com</p>
+<div style="height: 2px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f); margin-top: 15px;"></div>
+<div style="padding: 8px 30px; text-align: center;">
+  <p style="margin: 0; font-size: 8pt; font-weight: 600; color: #0000AA;">KKHS Media Private Limited</p>
+  <p style="margin: 2px 0 0; font-size: 7pt; color: #777;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com</p>
 </div>
 </div>`;
     }

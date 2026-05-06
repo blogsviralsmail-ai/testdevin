@@ -27,6 +27,7 @@ const navItems = [
   { href: "/dashboard/certificates", label: "Certificates", icon: "🏆", roles: ["admin", "organization", "student"] },
   { href: "/dashboard/id-cards", label: "ID Cards", icon: "🪪", roles: ["admin", "organization", "student"] },
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
+  { href: "/dashboard/profile", label: "My Profile", icon: "👤", roles: ["student"] },
   { href: "/dashboard/documents", label: "My Documents", icon: "📄", roles: ["student"] },
   { href: "/dashboard/offer-letter", label: "My Letters", icon: "📨", roles: ["student"] },
   { href: "/dashboard/team-leaders", label: "Team Leaders", icon: "👔", roles: ["admin", "organization"] },
@@ -187,8 +188,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link href="/dashboard" className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-medium capitalize">
               {user.role} Dashboard
             </Link>
-            <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-              {user.name.split(" ").map((n) => n[0]).join("").substring(0, 2)}
+            <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+              {user.avatar ? (
+                <img src={user.avatar} className="w-full h-full object-cover" alt="" />
+              ) : (
+                user.name.split(" ").map((n) => n[0]).join("").substring(0, 2)
+              )}
             </div>
           </div>
         </header>

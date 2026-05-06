@@ -76,40 +76,50 @@ export default function IDCardsPage() {
     }
   };
 
+  // Portrait ID card: 50mm x 85mm = 189px x 321px at 96dpi
   const handlePrint = (card: EmployeeCard) => {
-    let qrData: Record<string, string> = { company: "InternPro", name: "", designation: "", cardNumber: "", email: "" };
-    try { qrData = JSON.parse(card.qrCode || "{}"); } catch { /* ignore */ }
-
+    const photoSrc = card.photoUrl || card.user.avatar || "";
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     printWindow.document.write(`<!DOCTYPE html><html><head><title>ID Card - ${card.user.name}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 15px; }
+  @page { size: 50mm 85mm; margin: 0; }
+  body { font-family: 'Segoe UI', 'Calibri', Arial, sans-serif; background: #e8e8e8; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 16px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
   .no-print { display: flex; gap: 10px; }
-  .no-print button { padding: 8px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .no-print button { padding: 10px 28px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
   .btn-print { background: #0000AA; color: white; }
   .btn-print:hover { background: #000088; }
   .btn-pdf { background: #d32f2f; color: white; }
   .btn-pdf:hover { background: #b71c1c; }
-  .card { width: 324px; height: 204px; border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15); position: relative; border: 1px solid #ccc; }
-  .card-header { background: #0000AA; height: 52px; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; }
+
+  .card { width: 189px; height: 321px; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; border: 1px solid #bbb; display: flex; flex-direction: column; }
+
+  .card-header { background: #0000AA; padding: 10px 8px 8px; text-align: center; position: relative; flex-shrink: 0; }
+  .card-header img { height: 32px; display: block; margin: 0 auto; }
+  .card-header .co-name { color: rgba(255,255,255,0.85); font-size: 6px; margin-top: 3px; letter-spacing: 0.8px; text-transform: uppercase; }
   .card-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #d32f2f; }
-  .card-header img { height: 30px; }
-  .card-header .co-name { color: white; font-size: 7px; margin-top: 2px; letter-spacing: 0.5px; opacity: 0.8; }
-  .card-content { display: flex; padding: 10px 14px; gap: 12px; height: 116px; }
-  .photo-col { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .photo-frame { width: 70px; height: 70px; border-radius: 6px; border: 2px solid #0000AA; overflow: hidden; background: #f0f0f8; display: flex; align-items: center; justify-content: center; }
+
+  .card-body { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 10px 6px; background: white; }
+  .photo-frame { width: 72px; height: 72px; border-radius: 50%; border: 2.5px solid #0000AA; overflow: hidden; background: #f0f0f8; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; flex-shrink: 0; }
   .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-frame .placeholder { font-size: 28px; color: #0000AA; }
-  .info-col { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-  .emp-name { font-size: 14px; font-weight: 800; color: #0000AA; text-transform: uppercase; line-height: 1.2; }
-  .emp-desg { font-size: 10px; color: #d32f2f; font-weight: 700; text-transform: uppercase; margin-top: 2px; }
-  .emp-info { font-size: 9px; color: #555; margin-top: 6px; line-height: 1.5; }
-  .card-footer { background: #0000AA; height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
-  .card-num { font-size: 9px; font-weight: 700; color: white; letter-spacing: 1px; }
-  .valid-txt { font-size: 8px; color: rgba(255,255,255,0.7); }
-  @media print { body { background: white; } .no-print { display: none !important; } .card { box-shadow: none; border: 1px solid #999; } }
+  .photo-frame .placeholder { font-size: 30px; color: #0000AA; }
+
+  .emp-name { font-size: 11px; font-weight: 800; color: #0000AA; text-transform: uppercase; text-align: center; line-height: 1.25; margin-bottom: 2px; word-break: break-word; }
+  .emp-desg { font-size: 8px; color: #d32f2f; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 4px; }
+  .emp-info { font-size: 7px; color: #555; text-align: center; line-height: 1.6; word-break: break-all; }
+  .divider { width: 50px; height: 1.5px; background: #0000AA; margin: 4px auto; opacity: 0.4; }
+
+  .card-footer { background: #0000AA; padding: 6px 8px; text-align: center; flex-shrink: 0; position: relative; }
+  .card-footer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: #d32f2f; }
+  .card-num { font-size: 7px; font-weight: 700; color: white; letter-spacing: 0.8px; }
+  .valid-txt { font-size: 6px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+  @media print {
+    body { background: white !important; min-height: auto; padding: 0; }
+    .no-print { display: none !important; }
+    .card { box-shadow: none; margin: 0; }
+  }
 </style></head><body>
 <div class="no-print">
   <button class="btn-print" onclick="window.print()">Print</button>
@@ -118,25 +128,22 @@ export default function IDCardsPage() {
 <div class="card">
   <div class="card-header">
     <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" />
-    <div class="co-name">KKHS MEDIA PVT. LTD.</div>
+    <div class="co-name">KKHS Media Private Limited</div>
   </div>
-  <div class="card-content">
-    <div class="photo-col">
-      <div class="photo-frame">${card.photoUrl ? `<img src="${card.photoUrl}" />` : `<span class="placeholder">👤</span>`}</div>
-    </div>
-    <div class="info-col">
-      <div class="emp-name">${card.user.name}</div>
-      <div class="emp-desg">${card.designation}${card.department ? ` | ${card.department}` : ""}</div>
-      <div class="emp-info">
-        ${card.user.email}<br/>
-        ${card.user.phone ? card.user.phone + "<br/>" : ""}
-        ${card.user.collegeName ? card.user.collegeName : ""}
-      </div>
+  <div class="card-body">
+    <div class="photo-frame">${photoSrc ? `<img src="${photoSrc}" />` : `<span class="placeholder">&#128100;</span>`}</div>
+    <div class="emp-name">${card.user.name}</div>
+    <div class="emp-desg">${card.designation}</div>
+    <div class="divider"></div>
+    <div class="emp-info">
+      ${card.department ? card.department + "<br/>" : ""}
+      ${card.user.email}<br/>
+      ${card.user.phone ? card.user.phone : ""}
     </div>
   </div>
   <div class="card-footer">
     <div class="card-num">${card.cardNumber}</div>
-    <div class="valid-txt">Valid: ${new Date(card.validFrom).toLocaleDateString("en-IN")} — ${new Date(card.validUntil).toLocaleDateString("en-IN")}</div>
+    <div class="valid-txt">Valid: ${new Date(card.validFrom).toLocaleDateString("en-IN")} - ${new Date(card.validUntil).toLocaleDateString("en-IN")}</div>
   </div>
 </div>
 </body></html>`);
@@ -198,39 +205,42 @@ export default function IDCardsPage() {
         </form>
       )}
 
-      {/* Preview Modal */}
+      {/* Preview Modal — Portrait 50x85mm */}
       {previewCard && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">ID Card Preview</h3>
-            {/* Standard card size preview */}
-            <div className="mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-300" style={{ width: "324px", height: "204px" }}>
-              {/* Header: Logo + small company name */}
-              <div className="bg-[#0000AA] h-[52px] flex flex-col items-center justify-center relative">
-                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-[30px]" />
-                <div className="text-white text-[7px] mt-0.5 tracking-wide opacity-80">KKHS MEDIA PVT. LTD.</div>
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-red-600"></div>
+            {/* Portrait card 189x321px = 50x85mm */}
+            <div className="mx-auto rounded-lg overflow-hidden shadow-lg border border-gray-300 flex flex-col" style={{ width: "189px", height: "321px" }}>
+              {/* Header */}
+              <div className="bg-[#0000AA] text-center pt-2.5 pb-2 px-2 relative flex-shrink-0">
+                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-8 mx-auto" />
+                <div className="text-white/85 text-[6px] mt-1 tracking-wider uppercase">KKHS Media Private Limited</div>
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d32f2f]"></div>
               </div>
-              {/* Content: Photo left, Info right */}
-              <div className="flex gap-3 p-2.5 bg-white" style={{ height: "116px" }}>
-                <div className="flex-shrink-0 flex items-center justify-center">
-                  <div className="w-[70px] h-[70px] rounded-md border-2 border-[#0000AA] overflow-hidden bg-blue-50 flex items-center justify-center">
-                    {previewCard.photoUrl ? <img src={previewCard.photoUrl} className="w-full h-full object-cover" alt="" /> : <span className="text-3xl">👤</span>}
-                  </div>
+              {/* Body */}
+              <div className="flex-1 flex flex-col items-center px-2.5 pt-2.5 pb-1.5 bg-white">
+                <div className="w-[72px] h-[72px] rounded-full border-[2.5px] border-[#0000AA] overflow-hidden bg-blue-50 flex items-center justify-center mb-1.5 flex-shrink-0">
+                  {(previewCard.photoUrl || previewCard.user.avatar) ? (
+                    <img src={previewCard.photoUrl || previewCard.user.avatar || ""} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    <span className="text-3xl">👤</span>
+                  )}
                 </div>
-                <div className="flex flex-col justify-center min-w-0">
-                  <div className="text-sm font-extrabold text-[#0000AA] uppercase leading-tight truncate">{previewCard.user.name}</div>
-                  <div className="text-[10px] text-red-600 font-bold uppercase mt-0.5">{previewCard.designation}{previewCard.department ? ` | ${previewCard.department}` : ""}</div>
-                  <div className="text-[9px] text-gray-500 mt-1.5 leading-relaxed">
-                    {previewCard.user.email}<br />
-                    {previewCard.user.phone && <>{previewCard.user.phone}<br /></>}
-                  </div>
+                <div className="text-[11px] font-extrabold text-[#0000AA] uppercase text-center leading-tight mb-0.5">{previewCard.user.name}</div>
+                <div className="text-[8px] text-[#d32f2f] font-bold uppercase text-center mb-1">{previewCard.designation}</div>
+                <div className="w-[50px] h-[1.5px] bg-[#0000AA]/40 mb-1"></div>
+                <div className="text-[7px] text-gray-500 text-center leading-relaxed break-all">
+                  {previewCard.department && <>{previewCard.department}<br /></>}
+                  {previewCard.user.email}<br />
+                  {previewCard.user.phone && <>{previewCard.user.phone}</>}
                 </div>
               </div>
               {/* Footer */}
-              <div className="bg-[#0000AA] h-[36px] flex items-center justify-between px-3.5">
-                <div className="text-[9px] font-bold text-white tracking-wider">{previewCard.cardNumber}</div>
-                <div className="text-[8px] text-white/70">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} — {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
+              <div className="bg-[#0000AA] text-center py-1.5 px-2 flex-shrink-0 relative">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#d32f2f]"></div>
+                <div className="text-[7px] font-bold text-white tracking-wider">{previewCard.cardNumber}</div>
+                <div className="text-[6px] text-white/70 mt-0.5">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} - {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
               </div>
             </div>
             <div className="flex gap-3 mt-4">
@@ -249,24 +259,24 @@ export default function IDCardsPage() {
           <p className="text-gray-600">{isStudent ? "Your ID card has not been generated yet." : "No ID cards generated yet."}</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
           {cards.map((card) => (
             <div key={card.id} className="bg-white rounded-xl border hover:shadow-md transition overflow-hidden">
-              <div className="bg-[#0000AA] text-white p-2.5 flex items-center justify-center gap-2 relative">
-                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-6" />
-                <span className="text-[9px] text-white/80">KKHS MEDIA PVT. LTD.</span>
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600"></div>
+              <div className="bg-[#0000AA] text-white py-2 px-3 flex items-center justify-center gap-2 relative">
+                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-5" />
+                <span className="text-[8px] text-white/80 uppercase tracking-wide">KKHS Media Pvt. Ltd.</span>
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#d32f2f]"></div>
               </div>
-              <div className="p-4 flex items-center gap-3">
-                <div className="w-14 h-14 rounded-md border-2 border-[#0000AA] flex-shrink-0 bg-blue-50 flex items-center justify-center text-2xl overflow-hidden">
-                  {card.photoUrl ? <img src={card.photoUrl} className="w-full h-full object-cover" alt="" /> : "👤"}
+              <div className="p-4 flex flex-col items-center text-center">
+                <div className="w-14 h-14 rounded-full border-2 border-[#0000AA] flex-shrink-0 bg-blue-50 flex items-center justify-center text-2xl overflow-hidden mb-2">
+                  {(card.photoUrl || card.user.avatar) ? (
+                    <img src={card.photoUrl || card.user.avatar || ""} className="w-full h-full object-cover" alt="" />
+                  ) : "👤"}
                 </div>
-                <div className="min-w-0">
-                  <div className="font-bold text-[#0000AA] text-sm uppercase truncate">{card.user.name}</div>
-                  <div className="text-[10px] text-red-600 font-bold uppercase">{card.designation}</div>
-                  {card.department && <div className="text-[10px] text-gray-500">{card.department}</div>}
-                  <div className="text-[9px] text-gray-400 mt-1">{card.cardNumber}</div>
-                </div>
+                <div className="font-bold text-[#0000AA] text-sm uppercase truncate w-full">{card.user.name}</div>
+                <div className="text-[10px] text-[#d32f2f] font-bold uppercase">{card.designation}</div>
+                {card.department && <div className="text-[10px] text-gray-500">{card.department}</div>}
+                <div className="text-[9px] text-gray-400 mt-1">{card.cardNumber}</div>
               </div>
               <div className="px-4 pb-3 flex gap-2">
                 <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-blue-50 text-[#0000AA] px-3 py-1.5 rounded-lg hover:bg-blue-100 font-medium">View</button>

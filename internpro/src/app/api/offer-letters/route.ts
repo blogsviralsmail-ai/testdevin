@@ -71,68 +71,74 @@ export async function POST(request: NextRequest) {
     const joiningDateFormatted = joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : todayDate;
     const feeLabel = body.feeType === "paid_by_student" ? "Training Fee" : body.feeType === "stipend" ? "Monthly Stipend" : "Free";
 
-    const defaultOfferHtml = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background: white;">
-<!-- Letterhead Header: Logo left, Company info right -->
-<table style="width: 100%; border-collapse: collapse; border-bottom: 3px solid #0000AA; padding-bottom: 10px; margin-bottom: 0;">
+    const defaultOfferHtml = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background: white; color: #222;">
+<!-- Letterhead -->
+<table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
   <tr>
-    <td style="width: 120px; vertical-align: middle; padding: 15px 10px 15px 20px;">
-      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" style="height: 80px;" />
+    <td style="width: 100px; vertical-align: middle; padding: 18px 0 18px 30px;">
+      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" style="height: 70px; display: block;" />
     </td>
-    <td style="text-align: right; vertical-align: middle; padding: 15px 20px 15px 10px;">
-      <p style="margin: 0; font-size: 20px; font-weight: bold; color: #0000AA;">KKHS Media Private Limited</p>
-      <p style="margin: 3px 0 0; font-size: 10px; color: #555;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
-      <p style="margin: 2px 0 0; font-size: 10px; color: #555;">Mob: 9782005500 | Email: hari@kkhsmedia.com</p>
-      <p style="margin: 2px 0 0; font-size: 10px; color: #555;">GST: 08AAICK3853C1ZL</p>
+    <td style="text-align: right; vertical-align: middle; padding: 18px 30px 18px 10px;">
+      <p style="margin: 0; font-size: 22px; font-weight: 700; color: #0000AA; letter-spacing: 0.5px;">KKHS Media Private Limited</p>
+      <p style="margin: 4px 0 0; font-size: 10px; color: #666; line-height: 1.6;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+      <p style="margin: 1px 0 0; font-size: 10px; color: #666;">Phone: 9782005500 &nbsp;|&nbsp; Email: hari@kkhsmedia.com &nbsp;|&nbsp; GST: 08AAICK3853C1ZL</p>
     </td>
   </tr>
 </table>
+<div style="height: 3px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f);"></div>
 
-<!-- Body -->
-<div style="padding: 30px 40px 20px;">
-  <div style="text-align: right; margin-bottom: 15px;">
-    <p style="margin: 0; font-size: 12px; color: #555;">Ref: <strong>{{letter_number}}</strong></p>
-    <p style="margin: 3px 0 0; font-size: 12px; color: #555;">Date: ${todayDate}</p>
-  </div>
-
-  <h2 style="text-align: center; color: #0000AA; font-size: 22px; margin: 20px 0; letter-spacing: 2px;">OFFER LETTER</h2>
-
-  <p style="font-size: 13px; color: #333; margin-top: 20px;">Dear <strong style="color: #0000AA;">{{student_name}}</strong>,</p>
-
-  <p style="font-size: 13px; color: #333; line-height: 1.8; text-align: justify;">
-    We are pleased to offer you the position of <strong>Intern</strong> in the <strong>{{program_name}}</strong> program at 
-    <strong>{{company_name}}</strong>. We are confident that your skills and enthusiasm will be valuable to our team.
-  </p>
-
-  <h3 style="color: #0000AA; margin-top: 20px; font-size: 14px;">Terms &amp; Conditions:</h3>
-  <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
-    <tr style="background: #f5f7ff;"><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; width: 170px; color: #0000AA;">Program</td><td style="padding: 8px 12px; border: 1px solid #ddd;">{{program_name}}</td></tr>
-    <tr><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Duration</td><td style="padding: 8px 12px; border: 1px solid #ddd;">{{duration}} Days</td></tr>
-    <tr style="background: #f5f7ff;"><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Joining Date</td><td style="padding: 8px 12px; border: 1px solid #ddd;">${joiningDateFormatted}</td></tr>
-    <tr><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Work Timing</td><td style="padding: 8px 12px; border: 1px solid #ddd;">{{work_timing}}</td></tr>
-    <tr style="background: #f5f7ff;"><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Mode</td><td style="padding: 8px 12px; border: 1px solid #ddd;">{{mode}}</td></tr>
-    <tr><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Stipend / Salary</td><td style="padding: 8px 12px; border: 1px solid #ddd;">₹{{salary}}/month</td></tr>
-    <tr style="background: #f5f7ff;"><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Weekly Off</td><td style="padding: 8px 12px; border: 1px solid #ddd;">{{weekoffs}} day(s)</td></tr>
-    <tr><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Paid Leaves</td><td style="padding: 8px 12px; border: 1px solid #ddd;">{{paid_leaves}} per month</td></tr>
-    <tr style="background: #f5f7ff;"><td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: bold; color: #0000AA;">Payment Type</td><td style="padding: 8px 12px; border: 1px solid #ddd;">${feeLabel}</td></tr>
+<div style="padding: 28px 40px 20px;">
+  <table style="width: 100%; margin-bottom: 20px;">
+    <tr>
+      <td style="font-size: 12px; color: #555;">Ref: <strong style="color: #222;">{{letter_number}}</strong></td>
+      <td style="text-align: right; font-size: 12px; color: #555;">Date: <strong style="color: #222;">${todayDate}</strong></td>
+    </tr>
   </table>
 
-  <p style="font-size: 13px; color: #333; line-height: 1.8; text-align: justify;">
-    Please confirm your acceptance of this offer by joining on the specified date. We look forward to having you on our team.
+  <div style="text-align: center; margin: 10px 0 25px;">
+    <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0000AA; letter-spacing: 3px; text-transform: uppercase;">Offer Letter</h2>
+    <div style="width: 60px; height: 3px; background: #d32f2f; margin: 8px auto 0;"></div>
+  </div>
+
+  <p style="font-size: 13px; color: #333; margin: 20px 0 8px;">Dear <strong style="color: #0000AA;">{{student_name}}</strong>,</p>
+
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
+    We are delighted to extend this offer of internship at <strong>{{company_name}}</strong>. Based on your application and evaluation, we are pleased to offer you a position in our <strong>{{program_name}}</strong> program. We believe your skills, dedication, and enthusiasm will make a meaningful contribution to our team.
   </p>
 
-  <div style="margin-top: 50px;">
-    <p style="margin: 0; font-size: 13px; color: #333;">Best Regards,</p>
-    <div style="margin-top: 35px;">
-      <p style="margin: 0; font-weight: bold; color: #0000AA; font-size: 14px;">HR Department</p>
-      <p style="margin: 3px 0 0; font-size: 12px; color: #555;">{{company_name}}</p>
-    </div>
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 20px 0 8px;">Terms &amp; Conditions</p>
+  <table style="width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 13px; border: 1px solid #ddd;">
+    <tr style="background: #0000AA;"><td style="padding: 9px 14px; color: white; font-weight: 600; width: 180px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 9px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{program_name}}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{duration}} Days</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Joining Date</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${joiningDateFormatted}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Work Timing</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{work_timing}}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Mode of Work</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{mode}}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Stipend / Salary</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;"><strong>&#8377;{{salary}}</strong> per month</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Weekly Off</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{weekoffs}} day(s)</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Paid Leaves</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{paid_leaves}} per month</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Payment Type</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${feeLabel}</td></tr>
+  </table>
+
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 8px;">
+    Please confirm your acceptance of this offer by reporting on the specified joining date. Kindly carry your original identification documents on the day of joining.
+  </p>
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
+    We are excited to welcome you to the {{company_name}} family and look forward to a productive association.
+  </p>
+
+  <p style="margin: 45px 0 0; font-size: 13px; color: #333;">Warm Regards,</p>
+  <div style="margin-top: 30px;">
+    <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 14px;">HR Department</p>
+    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">{{company_name}}</p>
+    <p style="margin: 2px 0 0; font-size: 11px; color: #888;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
   </div>
 </div>
 
-<!-- Footer matching docx -->
-<div style="border-top: 2px solid #0000AA; padding: 8px 20px; text-align: center; margin-top: 20px;">
-  <p style="margin: 0; font-size: 8pt; font-weight: bold; color: #0000AA;">KKHS Media Private Limited</p>
-  <p style="margin: 2px 0 0; font-size: 7pt; color: #555;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Mob: 9782005500 | Email: hari@kkhsmedia.com</p>
+<div style="height: 2px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f); margin-top: 15px;"></div>
+<div style="padding: 8px 30px; text-align: center;">
+  <p style="margin: 0; font-size: 8pt; font-weight: 600; color: #0000AA;">KKHS Media Private Limited</p>
+  <p style="margin: 2px 0 0; font-size: 7pt; color: #777;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com</p>
 </div>
 </div>`;
 

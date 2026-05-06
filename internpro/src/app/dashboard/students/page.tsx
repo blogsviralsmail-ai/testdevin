@@ -15,7 +15,7 @@ interface Enrollment {
   workTiming: string | null;
   feeAmount: number | null;
   stipendAmount: number | null;
-  student: { id: string; name: string; email: string; phone: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null };
+  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null };
   batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number } };
   _count: { attendances: number; certificates: number; payments: number };
 }
@@ -311,10 +311,19 @@ export default function StudentsPage() {
                   return (
                     <tr key={enrollment.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <div>
-                          <div className="font-medium text-gray-900 text-sm">{enrollment.student.name}</div>
-                          <div className="text-xs text-gray-500">{enrollment.student.email}</div>
-                          {enrollment.student.phone && <div className="text-xs text-gray-400">{enrollment.student.phone}</div>}
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-bold shrink-0 overflow-hidden">
+                            {enrollment.student.avatar ? (
+                              <img src={enrollment.student.avatar} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                              enrollment.student.name.split(" ").map(n => n[0]).join("").substring(0, 2)
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900 text-sm">{enrollment.student.name}</div>
+                            <div className="text-xs text-gray-500">{enrollment.student.email}</div>
+                            {enrollment.student.phone && <div className="text-xs text-gray-400">{enrollment.student.phone}</div>}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">

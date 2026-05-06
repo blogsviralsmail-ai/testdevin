@@ -54,7 +54,8 @@ export default function OfferLetterPage() {
     if (printWindow) {
       printWindow.document.write(`<!DOCTYPE html><html><head><title>${letterNumber}</title>
 <style>
-  body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 820px; margin: 0 auto; background: #f5f5f5; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 820px; margin: 0 auto; background: #f5f5f5; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
   .letter-wrap { background: white; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
   .btn-bar { text-align: center; margin-bottom: 15px; display: flex; gap: 10px; justify-content: center; }
   .btn-bar button { padding: 10px 28px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
@@ -62,7 +63,15 @@ export default function OfferLetterPage() {
   .btn-print:hover { background: #000088; }
   .btn-pdf { background: #d32f2f; color: white; }
   .btn-pdf:hover { background: #b71c1c; }
-  @media print { .btn-bar { display: none !important; } body { padding: 0; background: white; } .letter-wrap { box-shadow: none; padding: 0; } }
+  table { border-collapse: collapse; }
+  td, th { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  img { max-width: 100%; display: inline-block; }
+  @media print {
+    .btn-bar { display: none !important; }
+    body { padding: 0; margin: 0; background: white !important; }
+    .letter-wrap { box-shadow: none; padding: 10px 0 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  }
 </style></head><body>
 <div class="btn-bar"><button class="btn-print" onclick="window.print()">Print</button><button class="btn-pdf" onclick="window.print()">Download PDF</button></div>
 <div class="letter-wrap">${content}</div>
