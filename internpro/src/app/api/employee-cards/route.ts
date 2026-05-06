@@ -15,7 +15,7 @@ export async function GET() {
   const cards = await prisma.employeeCard.findMany({
     where,
     include: {
-      user: { select: { id: true, name: true, email: true, phone: true, avatar: true, collegeName: true, address: true } },
+      user: { select: { id: true, name: true, email: true, phone: true, avatar: true, collegeName: true, address: true, dob: true } },
     },
     orderBy: { createdAt: "desc" },
   });

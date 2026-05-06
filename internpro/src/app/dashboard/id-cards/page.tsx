@@ -11,7 +11,7 @@ interface EmployeeCard {
   validUntil: string;
   photoUrl: string | null;
   qrCode: string | null;
-  user: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; address: string | null };
+  user: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; address: string | null; dob: string | null };
 }
 
 interface Enrollment {
@@ -138,6 +138,8 @@ export default function IDCardsPage() {
     <div class="emp-info">
       ${card.user.email}<br/>
       ${card.user.phone ? card.user.phone + "<br/>" : ""}
+      ${card.user.dob ? "DOB: " + new Date(card.user.dob).toLocaleDateString("en-IN") + "<br/>" : ""}
+      ${card.user.collegeName ? card.user.collegeName + "<br/>" : ""}
       ${card.user.address ? card.user.address : ""}
     </div>
   </div>
@@ -233,6 +235,8 @@ export default function IDCardsPage() {
                 <div className="text-[8px] text-gray-600 text-center leading-snug break-words">
                   {previewCard.user.email}<br />
                   {previewCard.user.phone && <>{previewCard.user.phone}<br /></>}
+                  {previewCard.user.dob && <>DOB: {new Date(previewCard.user.dob).toLocaleDateString("en-IN")}<br /></>}
+                  {previewCard.user.collegeName && <>{previewCard.user.collegeName}<br /></>}
                   {previewCard.user.address && <>{previewCard.user.address}</>}
                 </div>
               </div>
