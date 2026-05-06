@@ -5,41 +5,34 @@ import { getSession } from "@/lib/auth";
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getSession();
-    if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
+    if (!session || !["admin", "organization"].includes(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     const body = await request.json();
-    const { status, teamLeaderCategory, teamLeaderRemarks, adminRemarks } = body;
+    const { name, htmlContent, isDefault } = body;
+
+    if (isDefault) {
+      await prisma.offerLetterTemplate.updateMany({
+        where: { isDefault: true },
+        data: { isDefault: false },
+      });
+    }
 
     const data: Record<string, unknown> = {};
+    if (name) data.name = name;
+    if (htmlContent) data.htmlContent = htmlContent;
+    if (isDefault !== undefined) data.isDefault = isDefault;
 
-    if (status) data.status = status;
-
-    // Team leader can categorize
-    if (session.role === "teamleader" && teamLeaderCategory) {
-      data.teamLeaderCategory = teamLeaderCategory;
-      if (teamLeaderRemarks) data.teamLeaderRemarks = teamLeaderRemarks;
-    }
-
-    // Admin can add remarks
-    if (session.role === "admin" && adminRemarks) {
-      data.adminRemarks = adminRemarks;
-    }
-
-    if (status === "completed") {
-      data.completedAt = new Date();
-    }
-
-    const enrollment = await prisma.enrollment.update({
+    const template = await prisma.offerLetterTemplate.update({
       where: { id },
       data,
     });
 
-    return NextResponse.json(enrollment);
+    return NextResponse.json(template);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to update enrollment";
+    const message = error instanceof Error ? error.message : "Failed to update template";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -52,12 +45,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     const { id } = await params;
-
-    await prisma.enrollment.delete({ where: { id } });
+    await prisma.offerLetterTemplate.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to delete enrollment";
+    const message = error instanceof Error ? error.message : "Failed to delete template";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

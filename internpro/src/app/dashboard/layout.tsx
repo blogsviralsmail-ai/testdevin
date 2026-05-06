@@ -27,7 +27,11 @@ const navItems = [
   { href: "/dashboard/certificates", label: "Certificates", icon: "🏆", roles: ["admin", "organization", "student"] },
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
   { href: "/dashboard/documents", label: "My Documents", icon: "📄", roles: ["student"] },
-  { href: "/dashboard/offer-letter", label: "Offer Letter", icon: "📨", roles: ["student"] },
+  { href: "/dashboard/offer-letter", label: "My Letters", icon: "📨", roles: ["student"] },
+  { href: "/dashboard/team-leaders", label: "Team Leaders", icon: "👔", roles: ["admin", "organization"] },
+  { href: "/dashboard/users", label: "User Management", icon: "🔑", roles: ["admin"] },
+  { href: "/dashboard/letter-templates", label: "Letter Designer", icon: "🎨", roles: ["admin", "organization"] },
+  { href: "/dashboard/support", label: "Support", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
 

@@ -20,22 +20,62 @@ interface Enrollment {
   batch: { name: string; program: { title: string } };
 }
 
+interface UserSession {
+  id: string;
+  role: string;
+}
+
 export default function AttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [user, setUser] = useState<UserSession | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [showMark, setShowMark] = useState(false);
+  const [autoCheckedIn, setAutoCheckedIn] = useState(false);
 
   const fetchData = useCallback(async () => {
-    const [attRes, enrollRes] = await Promise.all([
+    const [attRes, enrollRes, meRes] = await Promise.all([
       fetch(`/api/attendance?date=${selectedDate}`),
       fetch("/api/enrollments?status=selected"),
+      fetch("/api/auth/me"),
     ]);
     if (attRes.ok) setRecords(await attRes.json());
     if (enrollRes.ok) setEnrollments(await enrollRes.json());
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      setUser(meData.user);
+    }
   }, [selectedDate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Auto check-in for students when they access the page
+  useEffect(() => {
+    if (user?.role === "student" && !autoCheckedIn) {
+      autoCheckIn();
+    }
+  }, [user, autoCheckedIn]);
+
+  const autoCheckIn = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const checkIn = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+    
+    const res = await fetch("/api/attendance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: today,
+        status: "present",
+        method: "auto",
+        checkIn,
+      }),
+    });
+    if (res.ok) {
+      setAutoCheckedIn(true);
+      fetchData();
+    }
+  };
 
   const markAttendance = async (enrollmentId: string, status: string) => {
     const now = new Date();
@@ -59,27 +99,55 @@ export default function AttendancePage() {
     }
   };
 
+  const isStudent = user?.role === "student";
+  const todayStr = new Date().toISOString().split("T")[0];
+  const todayRecord = records.find(() => selectedDate === todayStr);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-          <p className="text-gray-600 text-sm">Track daily attendance for all students</p>
+          <p className="text-gray-600 text-sm">
+            {isStudent ? "Your attendance is auto-tracked when you open this page" : "Track daily attendance for all students"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm"
+            className="px-3 py-2 border rounded-lg text-sm text-gray-900"
           />
-          <button onClick={() => setShowMark(!showMark)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
-            {showMark ? "View Records" : "Mark Attendance"}
-          </button>
+          {!isStudent && (
+            <button onClick={() => setShowMark(!showMark)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+              {showMark ? "View Records" : "Mark Attendance"}
+            </button>
+          )}
         </div>
       </div>
 
-      {showMark ? (
+      {/* Auto Check-in Banner for Students */}
+      {isStudent && (
+        <div className={`rounded-xl p-4 mb-6 text-sm border ${autoCheckedIn ? "bg-green-50 border-green-200 text-green-800" : "bg-blue-50 border-blue-200 text-blue-800"}`}>
+          {autoCheckedIn ? (
+            <div className="flex items-center gap-2">
+              <span className="text-lg">✓</span>
+              <div>
+                <strong>Auto Check-in Done!</strong> — {todayStr === selectedDate ? "Today" : formatDate(selectedDate)} ka attendance mark ho gaya hai.
+                {todayRecord && <span className="ml-2">Check-in: {records[0]?.checkIn || "—"}</span>}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <strong>Auto Attendance:</strong> Jab aap dashboard kholte ho, aapki attendance automatically mark ho jaati hai.
+              Agar aap kaam kar rahe ho (tasks submit, resources dekh rahe ho) — sab track hota hai.
+            </div>
+          )}
+        </div>
+      )}
+
+      {!isStudent && showMark ? (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="p-4 bg-gray-50 flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">Mark Attendance - {formatDate(selectedDate)}</h2>
@@ -100,10 +168,10 @@ export default function AttendancePage() {
                       <div className="font-medium text-sm text-gray-900">{enrollment.student.name}</div>
                       <div className="text-xs text-gray-500">{enrollment.batch.program.title} - {enrollment.batch.name}</div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       {existing && (
                         <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(existing.status)}`}>
-                          {existing.status}
+                          {existing.status} {existing.method === "auto" ? "(Auto)" : ""}
                         </span>
                       )}
                       {["present", "absent", "late", "half-day", "leave"].map((s) => (
@@ -124,57 +192,53 @@ export default function AttendancePage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="p-4 bg-gray-50">
-            <h2 className="font-semibold text-gray-900">Attendance Records - {formatDate(selectedDate)}</h2>
-          </div>
-          {records.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No attendance records for this date</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Date</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Check In</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Check Out</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Method</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {records.length === 0 ? (
                   <tr>
-                    <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Check In</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Check Out</th>
-                    <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Method</th>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      No attendance records for {formatDate(selectedDate)}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {records.map((record) => (
+                ) : (
+                  records.map((record) => (
                     <tr key={record.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <div className="font-medium text-sm text-gray-900">{record.user.name}</div>
+                        <div className="font-medium text-gray-900 text-sm">{record.user.name}</div>
                         <div className="text-xs text-gray-500">{record.user.email}</div>
                       </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{formatDate(record.date)}</td>
                       <td className="px-6 py-4">
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(record.status)}`}>{record.status}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(record.status)}`}>
+                          {record.status}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{record.checkIn || "-"}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{record.checkOut || "-"}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 capitalize">{record.method}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{record.checkIn || "—"}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{record.checkOut || "—"}</td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2 py-1 rounded-full ${record.method === "auto" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
+                          {record.method === "auto" ? "Auto" : "Manual"}
+                        </span>
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
-
-      {/* Summary */}
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
-        {["present", "absent", "late", "half-day", "leave"].map((status) => {
-          const count = records.filter((r) => r.status === status).length;
-          return (
-            <div key={status} className="bg-white rounded-xl p-4 border border-gray-100 text-center">
-              <div className={`text-2xl font-bold ${status === "present" ? "text-green-600" : status === "absent" ? "text-red-600" : "text-yellow-600"}`}>{count}</div>
-              <div className="text-xs text-gray-500 capitalize mt-1">{status}</div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

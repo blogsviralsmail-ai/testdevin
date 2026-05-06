@@ -22,6 +22,7 @@ export default function InterviewsPage() {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectingId, setSelectingId] = useState<string | null>(null);
+  const [editMeetLink, setEditMeetLink] = useState<{ id: string; link: string } | null>(null);
   const [selectionForm, setSelectionForm] = useState({
     salary: "5000", weekoffs: "2", paidLeaves: "2",
     workTiming: "10:00 AM - 6:00 PM", joiningDate: "",
@@ -71,7 +72,18 @@ export default function InterviewsPage() {
     fetchInterviews();
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  const handleUpdateMeetLink = async () => {
+    if (!editMeetLink) return;
+    await fetch("/api/interviews", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: editMeetLink.id, meetLink: editMeetLink.link }),
+    });
+    setEditMeetLink(null);
+    fetchInterviews();
+  };
+
+  if (loading) return <div className="p-6 text-gray-700">Loading...</div>;
 
   return (
     <div>
@@ -82,60 +94,65 @@ export default function InterviewsPage() {
 
       {/* Selection Modal */}
       {selectingId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Select Candidate — Fill Details</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Select Candidate — Fill Details</h2>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Monthly Salary/Stipend (₹)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Salary/Stipend (₹)</label>
                   <input type="number" value={selectionForm.salary} onChange={(e) => setSelectionForm({...selectionForm, salary: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border" />
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Weekly Offs (days)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Offs (days)</label>
                   <input type="number" value={selectionForm.weekoffs} onChange={(e) => setSelectionForm({...selectionForm, weekoffs: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border" />
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Paid Leaves/month</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Paid Leaves/month</label>
                   <input type="number" value={selectionForm.paidLeaves} onChange={(e) => setSelectionForm({...selectionForm, paidLeaves: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border" />
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Work Timing</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Work Timing</label>
                   <input type="text" value={selectionForm.workTiming} onChange={(e) => setSelectionForm({...selectionForm, workTiming: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border" />
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Joining Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
                 <input type="date" value={selectionForm.joiningDate} onChange={(e) => setSelectionForm({...selectionForm, joiningDate: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border" />
+                  className="w-full px-3 py-2 rounded-lg border text-gray-900" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Fee Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fee Type</label>
                 <select value={selectionForm.feeType} onChange={(e) => setSelectionForm({...selectionForm, feeType: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border">
-                  <option value="free">Free</option>
-                  <option value="paid">Paid (Student pays)</option>
-                  <option value="stipend">Stipend (We pay student)</option>
+                  className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                  <option value="free">Free — No charge, no stipend</option>
+                  <option value="paid">Paid — Student pays fee to company</option>
+                  <option value="stipend">Stipend — Company pays student monthly</option>
                 </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {selectionForm.feeType === "free" && "Student ko koi paisa nahi dena na lena — completely free internship"}
+                  {selectionForm.feeType === "paid" && "Student company ko fee dega — training ke liye payment"}
+                  {selectionForm.feeType === "stipend" && "Company student ko monthly stipend/salary degi — as a salary/stipend"}
+                </p>
               </div>
               {selectionForm.feeType === "paid" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Fee Amount (₹)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fee Amount (₹) — Student will pay this</label>
                   <input type="number" value={selectionForm.feeAmount} onChange={(e) => setSelectionForm({...selectionForm, feeAmount: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border" />
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
               )}
               {selectionForm.feeType === "stipend" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Stipend Amount (₹/month)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stipend Amount (₹/month) — Company will pay student</label>
                   <input type="number" value={selectionForm.stipendAmount} onChange={(e) => setSelectionForm({...selectionForm, stipendAmount: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border" />
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
               )}
             </div>
@@ -144,6 +161,31 @@ export default function InterviewsPage() {
                 Select & Generate Offer Letter
               </button>
               <button onClick={() => setSelectingId(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Meet Link Modal */}
+      {editMeetLink && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Set Meeting Link</h2>
+            <p className="text-sm text-gray-600 mb-3">Student will see this link to join the interview.</p>
+            <input
+              type="url"
+              value={editMeetLink.link}
+              onChange={(e) => setEditMeetLink({ ...editMeetLink, link: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border text-gray-900 mb-4"
+              placeholder="https://meet.google.com/abc-xyz or Zoom link"
+            />
+            <div className="flex gap-3">
+              <button onClick={handleUpdateMeetLink} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                Save Link
+              </button>
+              <button onClick={() => setEditMeetLink(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -161,20 +203,37 @@ export default function InterviewsPage() {
             <div key={i.id} className="bg-white rounded-xl p-6 border">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">{i.enrollment.student.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{i.enrollment.student.name}</h3>
                   <p className="text-sm text-gray-600">{i.enrollment.student.email} | {i.enrollment.student.phone}</p>
                   <p className="text-sm text-gray-500">{i.enrollment.student.collegeName} — {i.enrollment.student.degree}</p>
                   <p className="text-sm text-indigo-600 font-medium mt-1">{i.enrollment.batch.program.title}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                     <span>📅 {new Date(i.scheduledAt).toLocaleString("en-IN")}</span>
                     <span>⏱ {i.duration} min</span>
                     <span>📍 {i.mode}</span>
                   </div>
-                  {i.meetLink && (
-                    <a href={i.meetLink} target="_blank" className="text-sm text-blue-600 hover:underline mt-1 inline-block">
-                      Join Meeting →
-                    </a>
-                  )}
+                  <div className="flex items-center gap-2 mt-2">
+                    {i.meetLink ? (
+                      <>
+                        <a href={i.meetLink} target="_blank" className="text-sm text-blue-600 hover:underline">
+                          Join Meeting →
+                        </a>
+                        {i.status === "scheduled" && (
+                          <button onClick={() => setEditMeetLink({ id: i.id, link: i.meetLink || "" })}
+                            className="text-xs text-gray-500 hover:text-indigo-600">
+                            (Edit Link)
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      i.status === "scheduled" && (
+                        <button onClick={() => setEditMeetLink({ id: i.id, link: "" })}
+                          className="text-sm text-indigo-600 hover:underline">
+                          + Add Meeting Link
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2 items-end">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${

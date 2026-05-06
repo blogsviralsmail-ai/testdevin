@@ -9,10 +9,11 @@ interface Enrollment {
   teamLeaderRemarks: string | null;
   adminApproved: boolean;
   adminRemarks: string | null;
+  completedAt: string | null;
   currentWorkDay: number;
-  student: { id: string; name: string; email: string; collegeName: string | null };
-  batch: { name: string; program: { title: string; duration: number; totalDays: number } };
-  experienceLetter: { id: string; letterNumber: string } | null;
+  student: { name: string; email: string };
+  batch: { name: string; program: { title: string; duration: number; domain: string } };
+  _count: { attendances: number; submissions: number; certificates: number };
 }
 
 interface UserSession {
@@ -20,21 +21,14 @@ interface UserSession {
   role: string;
 }
 
-const categories = [
-  { value: "excellent", label: "Excellent", color: "bg-green-100 text-green-700" },
-  { value: "good", label: "Good", color: "bg-blue-100 text-blue-700" },
-  { value: "average", label: "Average", color: "bg-yellow-100 text-yellow-700" },
-  { value: "below_average", label: "Below Average", color: "bg-orange-100 text-orange-700" },
-  { value: "poor", label: "Poor", color: "bg-red-100 text-red-700" },
-];
-
 export default function CompletionPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [user, setUser] = useState<UserSession | null>(null);
   const [categorizeModal, setCategorizeModal] = useState<Enrollment | null>(null);
   const [approveModal, setApproveModal] = useState<Enrollment | null>(null);
-  const [category, setCategory] = useState("");
-  const [remarks, setRemarks] = useState("");
+  const [categoryForm, setCategoryForm] = useState({ category: "good", remarks: "" });
+  const [approveRemarks, setApproveRemarks] = useState("");
+  const [filter, setFilter] = useState("all");
 
   const fetchData = useCallback(async () => {
     const [enrollRes, meRes] = await Promise.all([
@@ -50,52 +44,67 @@ export default function CompletionPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const isAdmin = user?.role === "admin" || user?.role === "organization";
+  const isTeamLeader = user?.role === "teamleader";
+
   const handleCategorize = async () => {
     if (!categorizeModal) return;
-    const res = await fetch(`/api/enrollments/${categorizeModal.id}`, {
+    await fetch(`/api/enrollments/${categorizeModal.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        teamLeaderCategory: category,
-        teamLeaderRemarks: remarks,
+        teamLeaderCategory: categoryForm.category,
+        teamLeaderRemarks: categoryForm.remarks,
       }),
     });
-    if (res.ok) {
-      setCategorizeModal(null);
-      setCategory("");
-      setRemarks("");
-      fetchData();
-    }
+    setCategorizeModal(null);
+    fetchData();
   };
 
   const handleApprove = async () => {
     if (!approveModal) return;
-    const res = await fetch("/api/experience-letters", {
+    await fetch(`/api/enrollments/${approveModal.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "completed",
+        adminRemarks: approveRemarks,
+      }),
+    });
+    setApproveModal(null);
+    setApproveRemarks("");
+
+    // Auto-generate experience letter
+    await fetch("/api/experience-letters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         enrollmentId: approveModal.id,
-        adminRemarks: remarks,
+        category: approveModal.teamLeaderCategory || "good",
       }),
     });
-    if (res.ok) {
-      setApproveModal(null);
-      setRemarks("");
-      fetchData();
-    }
+
+    fetchData();
   };
 
-  const isAdmin = user?.role === "admin" || user?.role === "organization";
-  const isTeamLeader = user?.role === "teamleader";
+  const eligibleEnrollments = enrollments.filter((e) => {
+    if (filter === "all") return e.status === "active" || e.status === "selected" || e.status === "completed";
+    if (filter === "pending_tl") return (e.status === "active" || e.status === "selected") && !e.teamLeaderCategory;
+    if (filter === "pending_admin") return e.teamLeaderCategory && !e.adminApproved && e.status !== "completed";
+    if (filter === "completed") return e.status === "completed";
+    return true;
+  });
 
-  // Filter enrollments that are selected (in progress) or completed
-  const eligible = enrollments.filter((e) => e.status === "selected" || e.status === "completed");
-  const needsCategorization = eligible.filter((e) => !e.teamLeaderCategory && e.status === "selected");
-  const categorized = eligible.filter((e) => e.teamLeaderCategory && !e.adminApproved && e.status !== "completed");
-  const completed = eligible.filter((e) => e.status === "completed");
-
-  const getCategoryInfo = (cat: string | null) => {
-    return categories.find((c) => c.value === cat) || { label: cat || "None", color: "bg-gray-100 text-gray-600" };
+  const getCategoryBadge = (cat: string | null) => {
+    if (!cat) return null;
+    const colors: Record<string, string> = {
+      excellent: "bg-green-100 text-green-700",
+      good: "bg-blue-100 text-blue-700",
+      average: "bg-yellow-100 text-yellow-700",
+      "below-average": "bg-orange-100 text-orange-700",
+      poor: "bg-red-100 text-red-700",
+    };
+    return colors[cat] || "bg-gray-100 text-gray-700";
   };
 
   return (
@@ -104,207 +113,165 @@ export default function CompletionPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Course Completion</h1>
           <p className="text-gray-600 text-sm">
-            {isTeamLeader ? "Categorize students and submit for admin approval" : "Review categorizations and approve for experience letter"}
+            {isTeamLeader ? "Categorize students based on their performance" :
+             isAdmin ? "Review TL categorization and approve for experience letter" :
+             "Your completion status and certificates"}
           </p>
-        </div>
-        <div className="flex gap-2">
-          <span className="text-xs px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">{needsCategorization.length} Pending</span>
-          <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700">{categorized.length} Awaiting Approval</span>
-          <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700">{completed.length} Completed</span>
         </div>
       </div>
 
-      {/* Needs Categorization (Team Leader) */}
-      {(isTeamLeader || isAdmin) && needsCategorization.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4 text-yellow-700">Needs Categorization</h2>
-          <div className="space-y-4">
-            {needsCategorization.map((enrollment) => (
-              <div key={enrollment.id} className="bg-white rounded-xl p-6 border border-yellow-200 hover:shadow-md transition">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{enrollment.student.name}</h3>
-                    <p className="text-sm text-gray-500">{enrollment.student.email}</p>
-                    <div className="flex gap-3 mt-2 text-xs text-gray-500">
-                      <span>📚 {enrollment.batch.program.title}</span>
-                      <span>📦 {enrollment.batch.name}</span>
-                      <span>📅 Day {enrollment.currentWorkDay} / {enrollment.batch.program.totalDays}</span>
-                    </div>
+      <div className="flex gap-2 mb-6 flex-wrap">
+        {[
+          { key: "all", label: "All" },
+          { key: "pending_tl", label: "Pending TL Review" },
+          { key: "pending_admin", label: "Pending Admin Approval" },
+          { key: "completed", label: "Completed" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setFilter(tab.key)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === tab.key ? "bg-indigo-600 text-white" : "bg-white text-gray-600 border hover:bg-gray-50"}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Categorize Modal */}
+      {categorizeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Categorize Student</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              <strong className="text-gray-900">{categorizeModal.student.name}</strong> — {categorizeModal.batch.program.title}
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Work Days: {categorizeModal.currentWorkDay}/{categorizeModal.batch.program.duration} | 
+              Attendance: {categorizeModal._count.attendances} days | 
+              Submissions: {categorizeModal._count.submissions}
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select value={categoryForm.category} onChange={(e) => setCategoryForm({ ...categoryForm, category: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                  <option value="excellent">Excellent (90%+ performance)</option>
+                  <option value="good">Good (70-89% performance)</option>
+                  <option value="average">Average (50-69% performance)</option>
+                  <option value="below-average">Below Average (30-49% performance)</option>
+                  <option value="poor">Poor (Below 30% performance)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Remarks (optional)</label>
+                <textarea value={categoryForm.remarks} onChange={(e) => setCategoryForm({ ...categoryForm, remarks: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={3}
+                  placeholder="Student ke baare mein kuch likhna ho..." />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={handleCategorize} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                Save Category
+              </button>
+              <button onClick={() => setCategorizeModal(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Approve Modal */}
+      {approveModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Approve Completion</h2>
+            <p className="text-sm text-gray-600 mb-2">
+              <strong className="text-gray-900">{approveModal.student.name}</strong> — {approveModal.batch.program.title}
+            </p>
+            <div className={`px-3 py-2 rounded-lg mb-4 text-sm ${getCategoryBadge(approveModal.teamLeaderCategory)}`}>
+              TL Category: <strong>{approveModal.teamLeaderCategory}</strong>
+              {approveModal.teamLeaderRemarks && <span className="ml-2">— {approveModal.teamLeaderRemarks}</span>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Admin Remarks (optional)</label>
+              <textarea value={approveRemarks} onChange={(e) => setApproveRemarks(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={3}
+                placeholder="Final remarks..." />
+            </div>
+            <p className="text-xs text-gray-500 mt-3">
+              Approve karne pe instantly Experience Letter generate ho jayega.
+            </p>
+            <div className="flex gap-3 mt-6">
+              <button onClick={handleApprove} className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Approve & Generate Experience Letter
+              </button>
+              <button onClick={() => setApproveModal(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {eligibleEnrollments.length === 0 ? (
+        <div className="bg-white rounded-xl p-12 text-center border">
+          <p className="text-4xl mb-4">🎓</p>
+          <p className="text-gray-600">No students in this category.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {eligibleEnrollments.map((enrollment) => (
+            <div key={enrollment.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">{enrollment.student.name}</h3>
+                  <p className="text-sm text-gray-600">{enrollment.student.email}</p>
+                  <p className="text-sm text-indigo-600 mt-1">{enrollment.batch.program.title} — {enrollment.batch.name}</p>
+                  <div className="flex gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                    <span>Working Day: {enrollment.currentWorkDay}/{enrollment.batch.program.duration}</span>
+                    <span>Attendance: {enrollment._count.attendances} days</span>
+                    <span>Tasks: {enrollment._count.submissions} submitted</span>
                   </div>
-                  {isTeamLeader && (
+                  <div className="flex gap-2 mt-3">
+                    {enrollment.teamLeaderCategory && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${getCategoryBadge(enrollment.teamLeaderCategory)}`}>
+                        TL: {enrollment.teamLeaderCategory}
+                      </span>
+                    )}
+                    {enrollment.adminApproved && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                        Admin Approved
+                      </span>
+                    )}
+                    {enrollment.status === "completed" && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                        Completed
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {(isTeamLeader || isAdmin) && !enrollment.teamLeaderCategory && enrollment.status !== "completed" && (
                     <button
-                      onClick={() => { setCategorizeModal(enrollment); setCategory(""); setRemarks(""); }}
-                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600 transition"
+                      onClick={() => { setCategorizeModal(enrollment); setCategoryForm({ category: "good", remarks: "" }); }}
+                      className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-xs hover:bg-yellow-200"
                     >
                       Categorize
                     </button>
                   )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Awaiting Admin Approval */}
-      {categorized.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4 text-blue-700">Awaiting Admin Approval</h2>
-          <div className="space-y-4">
-            {categorized.map((enrollment) => {
-              const catInfo = getCategoryInfo(enrollment.teamLeaderCategory);
-              return (
-                <div key={enrollment.id} className="bg-white rounded-xl p-6 border border-blue-200 hover:shadow-md transition">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{enrollment.student.name}</h3>
-                      <p className="text-sm text-gray-500">{enrollment.student.email}</p>
-                      <div className="flex gap-3 mt-2 text-xs flex-wrap">
-                        <span className="text-gray-500">📚 {enrollment.batch.program.title}</span>
-                        <span className={`px-2 py-0.5 rounded-full ${catInfo.color}`}>
-                          Category: {catInfo.label}
-                        </span>
-                      </div>
-                      {enrollment.teamLeaderRemarks && (
-                        <p className="text-sm text-gray-600 mt-2 italic">&quot;{enrollment.teamLeaderRemarks}&quot;</p>
-                      )}
-                    </div>
-                    {isAdmin && (
-                      <button
-                        onClick={() => { setApproveModal(enrollment); setRemarks(""); }}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition"
-                      >
-                        Approve & Generate Letter
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Completed */}
-      {completed.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4 text-green-700">Completed</h2>
-          <div className="space-y-4">
-            {completed.map((enrollment) => {
-              const catInfo = getCategoryInfo(enrollment.teamLeaderCategory);
-              return (
-                <div key={enrollment.id} className="bg-white rounded-xl p-6 border border-green-200">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{enrollment.student.name}</h3>
-                      <p className="text-sm text-gray-500">{enrollment.student.email}</p>
-                      <div className="flex gap-3 mt-2 text-xs flex-wrap">
-                        <span className="text-gray-500">📚 {enrollment.batch.program.title}</span>
-                        <span className={`px-2 py-0.5 rounded-full ${catInfo.color}`}>
-                          {catInfo.label}
-                        </span>
-                        {enrollment.experienceLetter && (
-                          <span className="text-green-600 font-medium">Experience Letter: {enrollment.experienceLetter.letterNumber}</span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">Completed</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {eligible.length === 0 && (
-        <div className="bg-white rounded-xl p-12 border text-center">
-          <p className="text-4xl mb-4">🎓</p>
-          <p className="text-gray-600">No students ready for completion review yet.</p>
-        </div>
-      )}
-
-      {/* Categorize Modal (Team Leader) */}
-      {categorizeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <h2 className="text-lg font-semibold mb-2">Categorize Student</h2>
-            <p className="text-sm text-gray-500 mb-4">{categorizeModal.student.name} — {categorizeModal.batch.program.title}</p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Performance Category</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map((cat) => (
+                  {isAdmin && enrollment.teamLeaderCategory && enrollment.status !== "completed" && (
                     <button
-                      key={cat.value}
-                      type="button"
-                      onClick={() => setCategory(cat.value)}
-                      className={`px-3 py-2 rounded-lg text-sm border transition ${
-                        category === cat.value ? "ring-2 ring-indigo-500 " + cat.color : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                      }`}
+                      onClick={() => { setApproveModal(enrollment); setApproveRemarks(""); }}
+                      className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200"
                     >
-                      {cat.label}
+                      Approve & Complete
                     </button>
-                  ))}
+                  )}
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
-                <textarea
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                  rows={3}
-                  placeholder="Your assessment of the student's performance..."
-                />
-              </div>
             </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setCategorizeModal(null)} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancel</button>
-              <button onClick={handleCategorize} disabled={!category} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
-                Submit Categorization
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Approve Modal (Admin) */}
-      {approveModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <h2 className="text-lg font-semibold mb-2">Approve & Generate Experience Letter</h2>
-            <p className="text-sm text-gray-500 mb-4">{approveModal.student.name} — {approveModal.batch.program.title}</p>
-
-            <div className="bg-blue-50 rounded-lg p-3 mb-4 text-sm">
-              <p><strong>Team Leader Category:</strong> {getCategoryInfo(approveModal.teamLeaderCategory).label}</p>
-              {approveModal.teamLeaderRemarks && <p className="mt-1"><strong>Remarks:</strong> {approveModal.teamLeaderRemarks}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Admin Remarks (optional)</label>
-              <textarea
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm"
-                rows={3}
-                placeholder="Any additional notes..."
-              />
-            </div>
-
-            <p className="text-sm text-green-700 mt-4 bg-green-50 p-3 rounded-lg">
-              Approving will mark the enrollment as &quot;completed&quot; and auto-generate an Experience Letter for the student.
-            </p>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setApproveModal(null)} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancel</button>
-              <button onClick={handleApprove} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">
-                Approve & Generate Letter
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       )}
     </div>

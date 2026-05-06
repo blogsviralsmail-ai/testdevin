@@ -20,12 +20,7 @@
   --sidebar-active: #4f46e5;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Force light mode for dashboard app */
 
 body {
   background: var(--background);

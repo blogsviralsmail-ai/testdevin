@@ -80,19 +80,19 @@ export default function ProgramsPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" required />
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
-              <select value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                {["web-dev", "app-dev", "data-science", "ai-ml", "marketing", "design", "content-writing", "graphic-design", "video-editing", "cyber-security", "other"].map((d) => (
+              <select value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                {["web-dev", "app-dev", "data-science", "ai-ml", "marketing", "design", "content-writing", "graphic-design", "video-editing", "cyber-security", "seo", "social-media", "cloud-computing", "devops", "blockchain", "iot", "robotics", "hr", "finance", "sales", "other"].map((d) => (
                   <option key={d} value={d}>{getDomainLabel(d)}</option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mode</label>
-              <select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+              <select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
                 <option value="online">Online</option>
                 <option value="offline">Offline</option>
                 <option value="hybrid">Hybrid</option>
@@ -100,14 +100,14 @@ export default function ProgramsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Duration (days)</label>
-              <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" required />
+              <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fee Type</label>
-              <select value={form.feeType} onChange={(e) => setForm({ ...form, feeType: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
-                <option value="free">Free</option>
-                <option value="paid">Paid (Student pays)</option>
-                <option value="stipend">Stipend (You pay student)</option>
+              <select value={form.feeType} onChange={(e) => setForm({ ...form, feeType: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                <option value="free">Free — No charge, no stipend</option>
+                <option value="paid">Paid — Student pays fee to company</option>
+                <option value="stipend">Stipend — Company pays student monthly</option>
               </select>
             </div>
             {form.feeType === "paid" && (

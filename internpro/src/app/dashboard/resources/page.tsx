@@ -28,6 +28,11 @@ const typeIcons: Record<string, string> = {
   pdf: "📄",
   link: "🔗",
   document: "📋",
+  image: "🖼️",
+  word: "📝",
+  excel: "📊",
+  ppt: "📑",
+  file: "📎",
 };
 
 export default function ResourcesPage() {
@@ -138,20 +143,26 @@ export default function ResourcesPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
                 <option value="video">Video (Pre-recorded)</option>
                 <option value="pdf">PDF Document</option>
                 <option value="link">External Link</option>
                 <option value="document">Document</option>
+                <option value="image">Image / Photo</option>
+                <option value="word">Word Document</option>
+                <option value="excel">Excel / Spreadsheet</option>
+                <option value="ppt">PowerPoint / PPT</option>
+                <option value="file">Other File (any format)</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" required />
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" required />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
-              <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://youtube.com/..." required />
+              <label className="block text-sm font-medium text-gray-700 mb-1">URL / File Link</label>
+              <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="YouTube/Drive/Dropbox link, or any file URL" required />
+              <p className="text-xs text-gray-500 mt-1">Koi bhi format ka file link — YouTube, Google Drive, Dropbox, direct URL</p>
             </div>
           </div>
           <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">Add Resource</button>

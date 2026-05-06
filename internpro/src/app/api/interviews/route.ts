@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, status, feedback, rating, result } = body;
+    const { id, status, feedback, rating, result, meetLink } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Interview ID is required" }, { status: 400 });
@@ -93,6 +93,7 @@ export async function PUT(request: NextRequest) {
         ...(feedback !== undefined && { feedback }),
         ...(rating !== undefined && { rating }),
         ...(result && { result }),
+        ...(meetLink !== undefined && { meetLink }),
       },
     });
 

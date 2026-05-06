@@ -80,6 +80,16 @@ export function getDomainLabel(domain: string): string {
     "graphic-design": "Graphic Design",
     "video-editing": "Video Editing",
     "cyber-security": "Cyber Security",
+    seo: "SEO",
+    "social-media": "Social Media Marketing",
+    "cloud-computing": "Cloud Computing",
+    devops: "DevOps",
+    blockchain: "Blockchain",
+    iot: "IoT (Internet of Things)",
+    robotics: "Robotics",
+    hr: "Human Resources",
+    finance: "Finance & Accounting",
+    sales: "Sales & Business Dev",
     other: "Other",
   };
   return labels[domain] || domain;
