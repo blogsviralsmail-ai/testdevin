@@ -115,88 +115,47 @@ export async function POST(request: NextRequest) {
       const lhEmail = sMap.letterhead_email || "hari@kkhsmedia.com";
       const lhGst = sMap.letterhead_gst || "08AAICK3853C1ZL";
 
-      const lhHtml = `<table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
-  <tr>
-    <td style="width: 100px; vertical-align: middle; padding: 14px 0 14px 28px;">
-      <img src="${lhLogo}" alt="${escapeHtml(lhCompany)}" style="height: 70px; display: block; object-fit: contain;" />
-    </td>
-    <td style="text-align: right; vertical-align: middle; padding: 14px 28px 14px 10px;">
-      <p style="margin: 0; font-size: 22px; font-weight: 700; color: #0000AA; letter-spacing: 0.5px;">${escapeHtml(lhCompany)}</p>
-      <p style="margin: 4px 0 0; font-size: 11px; color: #555; line-height: 1.5;">${escapeHtml(lhAddress)}</p>
-      <p style="margin: 2px 0 0; font-size: 11px; color: #555;">Phone: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; Email: ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p>
-    </td>
-  </tr>
+      const LH = `<table style="width:100%;border-collapse:collapse;margin:0;padding:0;"><tr><td style="width:60px;vertical-align:middle;padding:8px 0 8px 20px;"><img src="${lhLogo}" alt="${escapeHtml(lhCompany)}" style="height:50px;display:block;object-fit:contain;" /></td><td style="text-align:right;vertical-align:middle;padding:8px 20px 8px 8px;"><p style="margin:0;font-size:16px;font-weight:700;color:#0000AA;">${escapeHtml(lhCompany)}</p><p style="margin:2px 0 0;font-size:9px;color:#555;">${escapeHtml(lhAddress)}</p><p style="margin:1px 0 0;font-size:9px;color:#555;">Ph: ${escapeHtml(lhPhone)} | ${escapeHtml(lhEmail)} | GST: ${escapeHtml(lhGst)}</p></td></tr></table><div style="height:2px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);"></div>`;
+
+      const FT = `<div style="height:2px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);margin-top:6px;"></div><div style="padding:4px 20px;text-align:center;"><p style="margin:0;font-size:8px;font-weight:600;color:#0000AA;">${escapeHtml(lhCompany)}</p><p style="margin:1px 0 0;font-size:7px;color:#666;">${escapeHtml(lhAddress)} | Ph: ${escapeHtml(lhPhone)} | ${escapeHtml(lhEmail)} | GST: ${escapeHtml(lhGst)}</p></div>`;
+
+      htmlContent = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;margin:0 auto;padding:0;background:white;color:#222;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">
+<div style="width:210mm;min-height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;">
+${LH}
+<div style="flex:1;padding:8px 24px 4px;">
+<table style="width:100%;margin-bottom:4px;"><tr><td style="font-size:9px;color:#555;">Ref: <strong style="color:#222;">${letterNumber}</strong></td><td style="text-align:right;font-size:9px;color:#555;">Date: <strong style="color:#222;">${todayFormatted}</strong></td></tr></table>
+<div style="text-align:center;margin:2px 0 6px;"><h2 style="margin:0;font-size:15px;font-weight:700;color:#0000AA;letter-spacing:2px;text-transform:uppercase;">Experience Certificate</h2><div style="width:40px;height:2px;background:#d32f2f;margin:3px auto 0;"></div></div>
+<p style="font-size:9.5px;color:#333;margin:5px 0 3px;"><strong>To Whom It May Concern,</strong></p>
+<p style="font-size:9px;color:#333;line-height:1.45;text-align:justify;margin:0 0 4px;">This is to certify that <strong style="color:#0000AA;">${safeStudentName}</strong> was associated with <strong>${escapeHtml(lhCompany)}</strong> as an intern under the <strong>${safeProgramTitle}</strong> program. The details are summarized below:</p>
+<table style="width:100%;border-collapse:collapse;margin:0 0 5px;font-size:8.5px;border:1px solid #ddd;">
+<tr style="background:#0000AA;"><td style="padding:3px 8px;color:white;font-weight:600;width:140px;border:1px solid #0000AA;">Particulars</td><td style="padding:3px 8px;color:white;font-weight:600;border:1px solid #0000AA;">Details</td></tr>
+<tr><td style="padding:2px 8px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Program</td><td style="padding:2px 8px;border:1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
+<tr><td style="padding:2px 8px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Duration</td><td style="padding:2px 8px;border:1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
+<tr><td style="padding:2px 8px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Period</td><td style="padding:2px 8px;border:1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
+<tr><td style="padding:2px 8px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Performance</td><td style="padding:2px 8px;border:1px solid #e0e0e0;"><strong style="color:#0000AA;">${performanceLabel}</strong></td></tr>
+${safeRemarks ? `<tr><td style="padding:2px 8px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Remarks</td><td style="padding:2px 8px;border:1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
 </table>
-<div style="height: 3px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f);"></div>`;
-
-      const ftHtml = `<div style="height: 2px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f); margin-top: 8px;"></div>
-<div style="padding: 6px 28px; text-align: center;">
-  <p style="margin: 0; font-size: 9px; font-weight: 600; color: #0000AA;">${escapeHtml(lhCompany)}</p>
-  <p style="margin: 2px 0 0; font-size: 8px; color: #666;">${escapeHtml(lhAddress)} | Phone: ${escapeHtml(lhPhone)} | Email: ${escapeHtml(lhEmail)} | GST: ${escapeHtml(lhGst)}</p>
-</div>`;
-
-      const pgS = "width: 210mm; min-height: 297mm; padding: 0; margin: 0 auto; background: white; position: relative; box-sizing: border-box; display: flex; flex-direction: column;";
-
-      htmlContent = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 0 auto; padding: 0; background: white; color: #222; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-
-<div style="${pgS}">
-${lhHtml}
-<div style="flex: 1; padding: 14px 32px 8px;">
-  <table style="width: 100%; margin-bottom: 8px;">
-    <tr>
-      <td style="font-size: 10px; color: #555;">Ref: <strong style="color: #222;">${letterNumber}</strong></td>
-      <td style="text-align: right; font-size: 10px; color: #555;">Date: <strong style="color: #222;">${todayFormatted}</strong></td>
-    </tr>
-  </table>
-
-  <div style="text-align: center; margin: 2px 0 10px;">
-    <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #0000AA; letter-spacing: 3px; text-transform: uppercase;">Experience Certificate</h2>
-    <div style="width: 50px; height: 2px; background: #d32f2f; margin: 4px auto 0;"></div>
-  </div>
-
-  <p style="font-size: 11px; color: #333; margin: 8px 0 5px;"><strong>To Whom It May Concern,</strong></p>
-
-  <p style="font-size: 10.5px; color: #333; line-height: 1.6; text-align: justify; margin: 0 0 6px;">
-    This is to certify that <strong style="color: #0000AA;">${safeStudentName}</strong> was associated with <strong>${escapeHtml(lhCompany)}</strong> as an intern under the <strong>${safeProgramTitle}</strong> program. The details of the engagement are summarized below:
-  </p>
-
-  <table style="width: 100%; border-collapse: collapse; margin: 0 0 8px; font-size: 10px; border: 1px solid #ddd;">
-    <tr style="background: #0000AA;"><td style="padding: 5px 10px; color: white; font-weight: 600; width: 170px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 5px 10px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
-    <tr><td style="padding: 4px 10px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 4px 10px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
-    <tr><td style="padding: 4px 10px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 4px 10px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
-    <tr><td style="padding: 4px 10px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period</td><td style="padding: 4px 10px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
-    <tr><td style="padding: 4px 10px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Performance</td><td style="padding: 4px 10px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong></td></tr>
-    ${safeRemarks ? `<tr><td style="padding: 4px 10px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Remarks</td><td style="padding: 4px 10px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
-  </table>
-
-  <p style="font-size: 11.5px; font-weight: 700; color: #0000AA; margin: 6px 0 3px;">Performance Summary</p>
-  <p style="font-size: 10px; color: #333; line-height: 1.55; text-align: justify; margin: 0 0 5px;">
-    During the internship tenure, ${safeStudentName} demonstrated commendable professionalism, technical aptitude, and a proactive approach to learning. The intern consistently met assigned deadlines, exhibited strong problem-solving capabilities, and collaborated effectively with the team. The quality of work delivered was rated as <strong style="color: #0000AA;">${performanceLabel}</strong> by the supervising authority.
-  </p>
-
-  <p style="font-size: 11.5px; font-weight: 700; color: #0000AA; margin: 6px 0 3px;">Key Strengths Observed</p>
-  <ul style="font-size: 10px; color: #333; line-height: 1.5; margin: 0 0 5px; padding-left: 18px;">
-    <li>Strong understanding of core concepts related to the ${safeProgramTitle} domain.</li>
-    <li>Ability to work independently as well as in a team environment.</li>
-    <li>Excellent time management and adherence to project timelines.</li>
-    <li>Willingness to learn new technologies and adapt to changing requirements.</li>
-    <li>Professional conduct and positive workplace attitude throughout the engagement.</li>
-  </ul>
-
-  <p style="font-size: 11.5px; font-weight: 700; color: #0000AA; margin: 6px 0 3px;">Recommendation</p>
-  <p style="font-size: 10px; color: #333; line-height: 1.55; text-align: justify; margin: 0 0 8px;">
-    Based on the overall performance and conduct during the internship, we are pleased to recommend <strong style="color: #0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We wish ${safeStudentName} all the very best in future endeavours.
-  </p>
-
-  <p style="margin: 12px 0 0; font-size: 10.5px; color: #333;">For &amp; on behalf of <strong style="color: #0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
-  <div style="margin-top: 6px;">
-    ${sigBlock}
-    <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 12px;">${signatoryName}</p>
-    <p style="margin: 2px 0 0; font-size: 10px; color: #555;">${signatoryDesignation}</p>
-    <p style="margin: 2px 0 0; font-size: 10px; color: #555;">${escapeHtml(lhCompany)}</p>
-  </div>
+<p style="font-size:9.5px;font-weight:700;color:#0000AA;margin:4px 0 2px;">Performance Summary</p>
+<p style="font-size:8.5px;color:#333;line-height:1.45;text-align:justify;margin:0 0 4px;">During the internship, ${safeStudentName} demonstrated professionalism, technical aptitude, and a proactive approach to learning. The intern consistently met deadlines, exhibited strong problem-solving skills, and collaborated effectively with the team. Work quality was rated as <strong style="color:#0000AA;">${performanceLabel}</strong>.</p>
+<p style="font-size:9.5px;font-weight:700;color:#0000AA;margin:4px 0 2px;">Key Strengths Observed</p>
+<ul style="font-size:8.5px;color:#333;line-height:1.4;margin:0 0 4px;padding-left:14px;">
+<li>Strong understanding of core concepts in the ${safeProgramTitle} domain.</li>
+<li>Ability to work independently and in a team environment.</li>
+<li>Excellent time management and adherence to deadlines.</li>
+<li>Willingness to learn new technologies and adapt to requirements.</li>
+<li>Professional conduct and positive workplace attitude.</li>
+</ul>
+<p style="font-size:9.5px;font-weight:700;color:#0000AA;margin:4px 0 2px;">Recommendation</p>
+<p style="font-size:8.5px;color:#333;line-height:1.45;text-align:justify;margin:0 0 6px;">Based on overall performance, we recommend <strong style="color:#0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We wish ${safeStudentName} all the best in future endeavours.</p>
+<p style="margin:8px 0 0;font-size:9px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
+<div style="margin-top:4px;">
+${sigBlock}
+<p style="margin:0;font-weight:700;color:#0000AA;font-size:10px;">${signatoryName}</p>
+<p style="margin:1px 0 0;font-size:8.5px;color:#555;">${signatoryDesignation}</p>
+<p style="margin:1px 0 0;font-size:8.5px;color:#555;">${escapeHtml(lhCompany)}</p>
 </div>
-<div style="flex-shrink: 0;">${ftHtml}</div>
+</div>
+<div style="flex-shrink:0;">${FT}</div>
 </div>
 </div>`;
     }
