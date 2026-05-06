@@ -78,7 +78,7 @@ export default function IDCardsPage() {
 
   // Portrait ID card: 50mm x 85mm = 189px x 321px at 96dpi
   const handlePrint = (card: EmployeeCard) => {
-    const photoSrc = card.photoUrl || card.user.avatar || "";
+    const photoSrc = card.user.avatar || card.photoUrl || "";
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     printWindow.document.write(`<!DOCTYPE html><html><head><title>ID Card - ${card.user.name}</title>
@@ -221,8 +221,8 @@ export default function IDCardsPage() {
               {/* Body */}
               <div className="flex-1 flex flex-col items-center px-2.5 pt-2.5 pb-1.5 bg-white">
                 <div className="w-[72px] h-[72px] rounded-full border-[2.5px] border-[#0000AA] overflow-hidden bg-blue-50 flex items-center justify-center mb-1.5 flex-shrink-0">
-                  {(previewCard.photoUrl || previewCard.user.avatar) ? (
-                    <img src={previewCard.photoUrl || previewCard.user.avatar || ""} className="w-full h-full object-cover" alt="" />
+                  {(previewCard.user.avatar || previewCard.photoUrl) ? (
+                    <img src={previewCard.user.avatar || previewCard.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                   ) : (
                     <span className="text-3xl">👤</span>
                   )}
@@ -269,8 +269,8 @@ export default function IDCardsPage() {
               </div>
               <div className="p-4 flex flex-col items-center text-center">
                 <div className="w-14 h-14 rounded-full border-2 border-[#0000AA] flex-shrink-0 bg-blue-50 flex items-center justify-center text-2xl overflow-hidden mb-2">
-                  {(card.photoUrl || card.user.avatar) ? (
-                    <img src={card.photoUrl || card.user.avatar || ""} className="w-full h-full object-cover" alt="" />
+                  {(card.user.avatar || card.photoUrl) ? (
+                    <img src={card.user.avatar || card.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                   ) : "👤"}
                 </div>
                 <div className="font-bold text-[#0000AA] text-sm uppercase truncate w-full">{card.user.name}</div>

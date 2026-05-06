@@ -43,13 +43,31 @@ export default function ProfilePage() {
   }, []);
 
   const handlePhotoUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setMsg("File size must be less than 5MB");
+      setTimeout(() => setMsg(""), 4000);
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setMsg("Only JPG, PNG, GIF, WEBP images allowed");
+      setTimeout(() => setMsg(""), 4000);
+      return;
+    }
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
-    if (res.ok) {
+    setMsg("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: "Upload failed" }));
+        setMsg(errData.error || "Upload failed");
+        setUploading(false);
+        setTimeout(() => setMsg(""), 4000);
+        return;
+      }
       const data = await res.json();
-      // Update avatar in profile
       const updateRes = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -58,11 +76,15 @@ export default function ProfilePage() {
       if (updateRes.ok) {
         const updated = await updateRes.json();
         setProfile(updated);
-        setMsg("Photo updated!");
+        setMsg("Photo updated successfully! It will auto-sync to your ID card.");
+      } else {
+        setMsg("Photo uploaded but profile update failed. Try again.");
       }
+    } catch {
+      setMsg("Network error. Please try again.");
     }
     setUploading(false);
-    setTimeout(() => setMsg(""), 3000);
+    setTimeout(() => setMsg(""), 5000);
   };
 
   const handleSave = async (e: React.FormEvent) => {

@@ -127,41 +127,58 @@ export async function POST(request: NextRequest) {
     <div style="width: 60px; height: 3px; background: #d32f2f; margin: 8px auto 0;"></div>
   </div>
 
-  <p style="font-size: 13px; color: #333; margin: 20px 0 12px;">To Whom It May Concern,</p>
+  <p style="font-size: 13px; color: #333; margin: 20px 0 12px;"><strong>To Whom It May Concern,</strong></p>
 
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
-    This is to certify that <strong style="color: #0000AA;">${safeStudentName}</strong> has successfully completed the 
-    <strong>${safeProgramTitle}</strong> internship program at <strong>${safeOrgName}</strong>. The details of the internship are as follows:
+  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 12px;">
+    This is to certify that <strong style="color: #0000AA;">${safeStudentName}</strong> was associated with <strong>${safeOrgName}</strong> as an intern under the <strong>${safeProgramTitle}</strong> program. The details of the engagement are summarized below:
   </p>
 
-  <table style="width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 13px; border: 1px solid #ddd;">
-    <tr style="background: #0000AA;"><td style="padding: 9px 14px; color: white; font-weight: 600; width: 180px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 9px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Performance</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong> (${safeCategory})</td></tr>
-    ${safeRemarks ? `<tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Remarks</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
+  <table style="width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 12px; border: 1px solid #ddd;">
+    <tr style="background: #0000AA;"><td style="padding: 8px 14px; color: white; font-weight: 600; width: 180px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 8px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period of Internship</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Overall Performance</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong></td></tr>
+    ${safeRemarks ? `<tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Supervisor Remarks</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
   </table>
 
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 8px;">
-    During the tenure, ${safeStudentName} demonstrated a high level of dedication, professionalism, and competence. We sincerely appreciate the valuable contributions made and wish them continued success in all future endeavors.
-  </p>
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
-    We recommend ${safeStudentName} for any suitable opportunity and are confident they will be an asset to any organization.
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Performance Summary</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 10px;">
+    During the internship tenure, ${safeStudentName} demonstrated commendable professionalism, technical aptitude, and a proactive approach to learning. The intern consistently met assigned deadlines, exhibited strong problem-solving capabilities, and collaborated effectively with the team. The quality of work delivered was rated as <strong style="color: #0000AA;">${performanceLabel}</strong> by the supervising authority.
   </p>
 
-  <p style="margin: 45px 0 0; font-size: 13px; color: #333;">Warm Regards,</p>
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Key Strengths Observed</p>
+  <ul style="font-size: 12px; color: #333; line-height: 1.8; margin: 0 0 10px; padding-left: 20px;">
+    <li>Strong understanding of core concepts related to the ${safeProgramTitle} domain.</li>
+    <li>Ability to work independently as well as in a team environment.</li>
+    <li>Excellent time management and adherence to project timelines.</li>
+    <li>Willingness to learn new technologies and adapt to changing requirements.</li>
+    <li>Professional conduct and positive workplace attitude throughout the engagement.</li>
+  </ul>
+
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Recommendation</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 12px;">
+    Based on the overall performance and conduct during the internship, we are pleased to recommend <strong style="color: #0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this internship will serve as a strong foundation for future career growth.
+  </p>
+
+  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 16px;">
+    We wish ${safeStudentName} all the very best in future endeavours and are confident they will be a valuable asset to any organization.
+  </p>
+
+  <p style="margin: 30px 0 0; font-size: 12px; color: #333;">For &amp; on behalf of <strong style="color: #0000AA;">${safeOrgName}</strong>,</p>
   <div style="margin-top: 30px;">
     <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 14px;">Authorized Signatory</p>
-    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">${safeOrgName}</p>
-    <p style="margin: 2px 0 0; font-size: 11px; color: #888;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+    <p style="margin: 2px 0 0; font-size: 11px; color: #555;">HR Department</p>
+    <p style="margin: 2px 0 0; font-size: 10px; color: #888;">${safeOrgName}</p>
+    <p style="margin: 2px 0 0; font-size: 10px; color: #888;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
   </div>
 </div>
 
 <div style="height: 2px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f); margin-top: 15px;"></div>
 <div style="padding: 8px 30px; text-align: center;">
   <p style="margin: 0; font-size: 8pt; font-weight: 600; color: #0000AA;">KKHS Media Private Limited</p>
-  <p style="margin: 2px 0 0; font-size: 7pt; color: #777;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com</p>
+  <p style="margin: 2px 0 0; font-size: 7pt; color: #777;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com | GST: 08AAICK3853C1ZL</p>
+  <p style="margin: 2px 0 0; font-size: 6pt; color: #999;">This is a computer-generated document. No signature is required on the company&rsquo;s behalf.</p>
 </div>
 </div>`;
     }

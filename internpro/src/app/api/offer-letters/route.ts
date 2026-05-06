@@ -102,43 +102,102 @@ export async function POST(request: NextRequest) {
 
   <p style="font-size: 13px; color: #333; margin: 20px 0 8px;">Dear <strong style="color: #0000AA;">{{student_name}}</strong>,</p>
 
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
-    We are delighted to extend this offer of internship at <strong>{{company_name}}</strong>. Based on your application and evaluation, we are pleased to offer you a position in our <strong>{{program_name}}</strong> program. We believe your skills, dedication, and enthusiasm will make a meaningful contribution to our team.
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 12px;">
+    With reference to your application and subsequent discussions, we are pleased to offer you an internship position at <strong>{{company_name}}</strong> for the <strong>{{program_name}}</strong> program. This offer is subject to the terms and conditions outlined herein.
   </p>
 
-  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 20px 0 8px;">Terms &amp; Conditions</p>
-  <table style="width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 13px; border: 1px solid #ddd;">
-    <tr style="background: #0000AA;"><td style="padding: 9px 14px; color: white; font-weight: 600; width: 180px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 9px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{program_name}}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{duration}} Days</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Joining Date</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${joiningDateFormatted}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Work Timing</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{work_timing}}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Mode of Work</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{mode}}</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Stipend / Salary</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;"><strong>&#8377;{{salary}}</strong> per month</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Weekly Off</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{weekoffs}} day(s)</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Paid Leaves</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">{{paid_leaves}} per month</td></tr>
-    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Payment Type</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${feeLabel}</td></tr>
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 8px;">1. Position Details</p>
+  <table style="width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 12px; border: 1px solid #ddd;">
+    <tr style="background: #0000AA;"><td style="padding: 8px 14px; color: white; font-weight: 600; width: 180px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 8px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">{{program_name}}</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">{{duration}} Days</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Date of Joining</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${joiningDateFormatted}</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Work Timing</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">{{work_timing}}</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Mode of Work</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">{{mode}}</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Stipend / Compensation</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;"><strong>&#8377;{{salary}}</strong> per month</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Weekly Off</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">{{weekoffs}} day(s)</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Paid Leaves</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">{{paid_leaves}} per month</td></tr>
+    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Payment Type</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${feeLabel}</td></tr>
   </table>
 
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 8px;">
-    Please confirm your acceptance of this offer by reporting on the specified joining date. Kindly carry your original identification documents on the day of joining.
-  </p>
-  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 15px;">
-    We are excited to welcome you to the {{company_name}} family and look forward to a productive association.
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 6px;">2. Reporting &amp; Probation</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.8; text-align: justify; margin: 0 0 10px;">
+    You shall report to your designated Team Leader / Project Manager on the date of joining. The first <strong>7 working days</strong> shall be treated as a probationary period during which either party may terminate the engagement without notice. Post probation, a minimum notice period of <strong>7 days</strong> is required from either side.
   </p>
 
-  <p style="margin: 45px 0 0; font-size: 13px; color: #333;">Warm Regards,</p>
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 6px;">3. Code of Conduct</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.8; text-align: justify; margin: 0 0 4px;">You are expected to:</p>
+  <ul style="font-size: 12px; color: #333; line-height: 1.8; margin: 0 0 10px; padding-left: 20px;">
+    <li>Maintain professional behaviour and adhere to the company&rsquo;s workplace policies at all times.</li>
+    <li>Follow the prescribed work schedule and obtain prior approval for any leave or absence.</li>
+    <li>Complete all assigned tasks within stipulated deadlines with a quality-first approach.</li>
+    <li>Treat colleagues, clients, and stakeholders with respect and integrity.</li>
+    <li>Refrain from any activity that brings disrepute to the organization.</li>
+  </ul>
+
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 6px;">4. Confidentiality &amp; Non-Disclosure</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.8; text-align: justify; margin: 0 0 10px;">
+    During and after the tenure of your internship, you shall not disclose, publish, or otherwise reveal any proprietary information, trade secrets, business strategies, client data, source code, or any other confidential material belonging to {{company_name}} or its clients to any third party without prior written consent. Violation of this clause may result in immediate termination and legal action.
+  </p>
+
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 6px;">5. Intellectual Property</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.8; text-align: justify; margin: 0 0 10px;">
+    Any work, code, design, content, innovation, or creative output produced by you during the course of this internship shall be the sole intellectual property of {{company_name}}. You agree to assign all rights, title, and interest in such work to the company without any additional compensation.
+  </p>
+
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 6px;">6. Termination</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.8; text-align: justify; margin: 0 0 10px;">
+    The company reserves the right to terminate this internship at any time in case of misconduct, breach of confidentiality, poor performance, or violation of company policies. In such an event, no experience certificate or recommendation shall be issued. The intern may also resign by providing a written notice of <strong>7 days</strong>.
+  </p>
+
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 6px;">7. General Terms</p>
+  <ul style="font-size: 12px; color: #333; line-height: 1.8; margin: 0 0 10px; padding-left: 20px;">
+    <li>This offer is contingent upon the verification of your educational qualifications and identity documents.</li>
+    <li>The company may assign you to any project, team, or department as per business requirements.</li>
+    <li>Use of personal mobile phones during working hours is restricted to breaks only.</li>
+    <li>You shall not engage in any freelancing or competing business activity during the internship.</li>
+    <li>Any disputes arising shall be subject to the jurisdiction of courts in Jaipur, Rajasthan.</li>
+  </ul>
+
+  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 18px 0 6px;">8. Acceptance</p>
+  <p style="font-size: 12px; color: #333; line-height: 1.8; text-align: justify; margin: 0 0 12px;">
+    Please confirm your acceptance of this offer by reporting on the specified date of joining along with the following documents: <strong>Aadhar Card, PAN Card (if available), Passport-size photographs (2 copies), Educational certificates, and a signed copy of this offer letter.</strong>
+  </p>
+
+  <p style="font-size: 12px; color: #333; line-height: 1.8; text-align: justify; margin: 0 0 16px;">
+    We look forward to your association with {{company_name}} and wish you a rewarding internship experience.
+  </p>
+
+  <p style="margin: 30px 0 0; font-size: 12px; color: #333;">For &amp; on behalf of <strong style="color: #0000AA;">{{company_name}}</strong>,</p>
   <div style="margin-top: 30px;">
     <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 14px;">HR Department</p>
-    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">{{company_name}}</p>
-    <p style="margin: 2px 0 0; font-size: 11px; color: #888;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+    <p style="margin: 2px 0 0; font-size: 11px; color: #555;">{{company_name}}</p>
+    <p style="margin: 2px 0 0; font-size: 10px; color: #888;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+  </div>
+
+  <div style="margin-top: 40px; padding-top: 16px; border-top: 1px dashed #ccc;">
+    <p style="font-size: 12px; font-weight: 700; color: #0000AA; margin: 0 0 8px;">Intern&rsquo;s Acceptance</p>
+    <p style="font-size: 11px; color: #333; line-height: 1.7; margin: 0 0 20px;">
+      I, <strong>{{student_name}}</strong>, hereby accept the terms and conditions as stated above and agree to abide by the policies of {{company_name}} during the course of my internship.
+    </p>
+    <table style="width: 100%; font-size: 11px; color: #555;">
+      <tr>
+        <td style="width: 50%; padding: 4px 0;">Signature: ________________________</td>
+        <td style="width: 50%; padding: 4px 0;">Date: ________________________</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 0;">Name: {{student_name}}</td>
+        <td style="padding: 4px 0;"></td>
+      </tr>
+    </table>
   </div>
 </div>
 
 <div style="height: 2px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f); margin-top: 15px;"></div>
 <div style="padding: 8px 30px; text-align: center;">
   <p style="margin: 0; font-size: 8pt; font-weight: 600; color: #0000AA;">KKHS Media Private Limited</p>
-  <p style="margin: 2px 0 0; font-size: 7pt; color: #777;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com</p>
+  <p style="margin: 2px 0 0; font-size: 7pt; color: #777;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com | GST: 08AAICK3853C1ZL</p>
+  <p style="margin: 2px 0 0; font-size: 6pt; color: #999;">This is a computer-generated document. No signature is required on the company&rsquo;s behalf.</p>
 </div>
 </div>`;
 
