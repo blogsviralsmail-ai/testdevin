@@ -84,51 +84,61 @@ export default function IDCardsPage() {
     if (!printWindow) return;
     printWindow.document.write(`<!DOCTYPE html><html><head><title>ID Card - ${card.user.name}</title>
 <style>
-  body { margin: 0; padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f0f0; }
-  .card { width: 350px; border-radius: 14px; overflow: hidden; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative; }
-  .card-top { background: #1a237e; padding: 18px 20px 14px; position: relative; }
-  .card-top::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: #d32f2f; }
-  .logo-row { display: flex; align-items: center; gap: 10px; }
-  .logo-row img { height: 40px; background: white; padding: 3px; border-radius: 4px; }
-  .logo-row h2 { margin: 0; color: white; font-size: 16px; letter-spacing: 1.5px; font-weight: 700; }
-  .logo-row p { margin: 2px 0 0; color: rgba(255,255,255,0.7); font-size: 9px; }
-  .card-body { background: white; padding: 22px 20px; text-align: center; position: relative; }
-  .card-body::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(to bottom, #1a237e, #d32f2f); }
-  .card-body::after { content: ''; position: absolute; top: 0; right: 0; width: 6px; height: 100%; background: linear-gradient(to bottom, #d32f2f, #1a237e); }
-  .photo { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #1a237e; margin: 0 auto 12px; object-fit: cover; background: #e8eaf6; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #1a237e; overflow: hidden; }
-  .photo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-  .name { font-size: 20px; font-weight: 800; color: #1a237e; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
-  .designation { font-size: 13px; color: #d32f2f; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
-  .info-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 5px 0; font-size: 11px; color: #555; }
-  .card-bottom { background: #1a237e; padding: 10px 20px; text-align: center; }
-  .card-number { font-size: 13px; font-weight: 700; color: white; letter-spacing: 2px; }
-  .valid { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; }
-  @media print { body { padding: 0; background: white; } .card { box-shadow: none; } }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 15px; }
+  .no-print { display: flex; gap: 10px; }
+  .no-print button { padding: 8px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .btn-print { background: #0000AA; color: white; }
+  .btn-print:hover { background: #000088; }
+  .btn-pdf { background: #d32f2f; color: white; }
+  .btn-pdf:hover { background: #b71c1c; }
+  .card { width: 324px; height: 204px; border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15); position: relative; border: 1px solid #ccc; }
+  .card-header { background: #0000AA; height: 52px; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; }
+  .card-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #d32f2f; }
+  .card-header img { height: 30px; }
+  .card-header .co-name { color: white; font-size: 7px; margin-top: 2px; letter-spacing: 0.5px; opacity: 0.8; }
+  .card-content { display: flex; padding: 10px 14px; gap: 12px; height: 116px; }
+  .photo-col { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .photo-frame { width: 70px; height: 70px; border-radius: 6px; border: 2px solid #0000AA; overflow: hidden; background: #f0f0f8; display: flex; align-items: center; justify-content: center; }
+  .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-frame .placeholder { font-size: 28px; color: #0000AA; }
+  .info-col { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .emp-name { font-size: 14px; font-weight: 800; color: #0000AA; text-transform: uppercase; line-height: 1.2; }
+  .emp-desg { font-size: 10px; color: #d32f2f; font-weight: 700; text-transform: uppercase; margin-top: 2px; }
+  .emp-info { font-size: 9px; color: #555; margin-top: 6px; line-height: 1.5; }
+  .card-footer { background: #0000AA; height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .card-num { font-size: 9px; font-weight: 700; color: white; letter-spacing: 1px; }
+  .valid-txt { font-size: 8px; color: rgba(255,255,255,0.7); }
+  @media print { body { background: white; } .no-print { display: none !important; } .card { box-shadow: none; border: 1px solid #999; } }
 </style></head><body>
+<div class="no-print">
+  <button class="btn-print" onclick="window.print()">Print</button>
+  <button class="btn-pdf" onclick="window.print()">Download PDF</button>
+</div>
 <div class="card">
-  <div class="card-top">
-    <div class="logo-row">
-      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" />
-      <div>
-        <h2>KKHS MEDIA PVT. LTD.</h2>
-        <p>190A Krishna Kunj, Kalwar Road, Jaipur 302012</p>
+  <div class="card-header">
+    <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" />
+    <div class="co-name">KKHS MEDIA PVT. LTD.</div>
+  </div>
+  <div class="card-content">
+    <div class="photo-col">
+      <div class="photo-frame">${card.photoUrl ? `<img src="${card.photoUrl}" />` : `<span class="placeholder">👤</span>`}</div>
+    </div>
+    <div class="info-col">
+      <div class="emp-name">${card.user.name}</div>
+      <div class="emp-desg">${card.designation}${card.department ? ` | ${card.department}` : ""}</div>
+      <div class="emp-info">
+        ${card.user.email}<br/>
+        ${card.user.phone ? card.user.phone + "<br/>" : ""}
+        ${card.user.collegeName ? card.user.collegeName : ""}
       </div>
     </div>
   </div>
-  <div class="card-body">
-    <div class="photo">${card.photoUrl ? `<img src="${card.photoUrl}" />` : "👤"}</div>
-    <div class="name">${card.user.name}</div>
-    <div class="designation">${card.designation}${card.department ? ` | ${card.department}` : ""}</div>
-    <div class="info-row">📧 ${card.user.email}</div>
-    ${card.user.phone ? `<div class="info-row">📱 ${card.user.phone}</div>` : ""}
-    ${card.user.collegeName ? `<div class="info-row">🎓 ${card.user.collegeName}</div>` : ""}
-  </div>
-  <div class="card-bottom">
-    <div class="card-number">${card.cardNumber}</div>
-    <div class="valid">Valid: ${new Date(card.validFrom).toLocaleDateString("en-IN")} — ${new Date(card.validUntil).toLocaleDateString("en-IN")}</div>
+  <div class="card-footer">
+    <div class="card-num">${card.cardNumber}</div>
+    <div class="valid-txt">Valid: ${new Date(card.validFrom).toLocaleDateString("en-IN")} — ${new Date(card.validUntil).toLocaleDateString("en-IN")}</div>
   </div>
 </div>
-<script>window.onload = function() { window.print(); }</script>
 </body></html>`);
     printWindow.document.close();
   };
@@ -191,36 +201,41 @@ export default function IDCardsPage() {
       {/* Preview Modal */}
       {previewCard && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <div className="rounded-xl overflow-hidden shadow-lg">
-              <div className="bg-[#1a237e] p-4 relative">
-                <div className="flex items-center gap-3">
-                  <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-10 bg-white p-1 rounded" />
-                  <div>
-                    <h2 className="text-white font-bold text-sm tracking-wider">KKHS MEDIA PVT. LTD.</h2>
-                    <p className="text-white/60 text-[9px]">190A Krishna Kunj, Kalwar Road, Jaipur</p>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">ID Card Preview</h3>
+            {/* Standard card size preview */}
+            <div className="mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-300" style={{ width: "324px", height: "204px" }}>
+              {/* Header: Logo + small company name */}
+              <div className="bg-[#0000AA] h-[52px] flex flex-col items-center justify-center relative">
+                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-[30px]" />
+                <div className="text-white text-[7px] mt-0.5 tracking-wide opacity-80">KKHS MEDIA PVT. LTD.</div>
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-red-600"></div>
+              </div>
+              {/* Content: Photo left, Info right */}
+              <div className="flex gap-3 p-2.5 bg-white" style={{ height: "116px" }}>
+                <div className="flex-shrink-0 flex items-center justify-center">
+                  <div className="w-[70px] h-[70px] rounded-md border-2 border-[#0000AA] overflow-hidden bg-blue-50 flex items-center justify-center">
+                    {previewCard.photoUrl ? <img src={previewCard.photoUrl} className="w-full h-full object-cover" alt="" /> : <span className="text-3xl">👤</span>}
                   </div>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-red-600"></div>
-              </div>
-              <div className="bg-white p-6 text-center relative">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-[#1a237e] to-red-600"></div>
-                <div className="absolute top-0 right-0 w-1.5 h-full bg-gradient-to-b from-red-600 to-[#1a237e]"></div>
-                <div className="w-24 h-24 rounded-full border-4 border-[#1a237e] mx-auto mb-3 bg-indigo-50 flex items-center justify-center text-4xl overflow-hidden">
-                  {previewCard.photoUrl ? <img src={previewCard.photoUrl} className="w-full h-full object-cover rounded-full" alt="" /> : "👤"}
+                <div className="flex flex-col justify-center min-w-0">
+                  <div className="text-sm font-extrabold text-[#0000AA] uppercase leading-tight truncate">{previewCard.user.name}</div>
+                  <div className="text-[10px] text-red-600 font-bold uppercase mt-0.5">{previewCard.designation}{previewCard.department ? ` | ${previewCard.department}` : ""}</div>
+                  <div className="text-[9px] text-gray-500 mt-1.5 leading-relaxed">
+                    {previewCard.user.email}<br />
+                    {previewCard.user.phone && <>{previewCard.user.phone}<br /></>}
+                  </div>
                 </div>
-                <div className="text-xl font-extrabold text-[#1a237e] uppercase tracking-wide">{previewCard.user.name}</div>
-                <div className="text-sm text-red-600 font-bold uppercase mt-1">{previewCard.designation}{previewCard.department ? ` | ${previewCard.department}` : ""}</div>
-                <div className="text-xs text-gray-500 mt-3">{previewCard.user.email}</div>
-                {previewCard.user.phone && <div className="text-xs text-gray-500">{previewCard.user.phone}</div>}
               </div>
-              <div className="bg-[#1a237e] p-3 text-center">
-                <div className="text-xs font-bold text-white tracking-widest">{previewCard.cardNumber}</div>
-                <div className="text-[9px] text-white/60 mt-1">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} — {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
+              {/* Footer */}
+              <div className="bg-[#0000AA] h-[36px] flex items-center justify-between px-3.5">
+                <div className="text-[9px] font-bold text-white tracking-wider">{previewCard.cardNumber}</div>
+                <div className="text-[8px] text-white/70">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} — {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
               </div>
             </div>
             <div className="flex gap-3 mt-4">
-              <button onClick={() => handlePrint(previewCard)} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">Print</button>
+              <button onClick={() => handlePrint(previewCard)} className="flex-1 bg-[#0000AA] text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-900">Print</button>
+              <button onClick={() => handlePrint(previewCard)} className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Download PDF</button>
               <button onClick={() => setPreviewCard(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Close</button>
             </div>
           </div>
@@ -237,23 +252,25 @@ export default function IDCardsPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {cards.map((card) => (
             <div key={card.id} className="bg-white rounded-xl border hover:shadow-md transition overflow-hidden">
-              <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 text-white p-3 text-center">
-                <div className="text-sm font-bold">
-                  {(() => { try { return (JSON.parse(card.qrCode || "{}") as Record<string, string>).company; } catch { return "InternPro"; } })()}
+              <div className="bg-[#0000AA] text-white p-2.5 flex items-center justify-center gap-2 relative">
+                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-6" />
+                <span className="text-[9px] text-white/80">KKHS MEDIA PVT. LTD.</span>
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600"></div>
+              </div>
+              <div className="p-4 flex items-center gap-3">
+                <div className="w-14 h-14 rounded-md border-2 border-[#0000AA] flex-shrink-0 bg-blue-50 flex items-center justify-center text-2xl overflow-hidden">
+                  {card.photoUrl ? <img src={card.photoUrl} className="w-full h-full object-cover" alt="" /> : "👤"}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-[#0000AA] text-sm uppercase truncate">{card.user.name}</div>
+                  <div className="text-[10px] text-red-600 font-bold uppercase">{card.designation}</div>
+                  {card.department && <div className="text-[10px] text-gray-500">{card.department}</div>}
+                  <div className="text-[9px] text-gray-400 mt-1">{card.cardNumber}</div>
                 </div>
               </div>
-              <div className="p-4 text-center">
-                <div className="w-16 h-16 rounded-full border-2 border-indigo-600 mx-auto mb-2 bg-gray-200 flex items-center justify-center text-2xl overflow-hidden">
-                  {card.photoUrl ? <img src={card.photoUrl} className="w-full h-full object-cover rounded-full" alt="" /> : "👤"}
-                </div>
-                <div className="font-bold text-gray-900">{card.user.name}</div>
-                <div className="text-xs text-indigo-600 font-medium">{card.designation}</div>
-                {card.department && <div className="text-xs text-gray-500">{card.department}</div>}
-                <div className="text-[10px] text-gray-400 mt-2">{card.cardNumber}</div>
-              </div>
-              <div className="px-4 pb-4 flex gap-2">
-                <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100">View</button>
-                <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">Print</button>
+              <div className="px-4 pb-3 flex gap-2">
+                <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-blue-50 text-[#0000AA] px-3 py-1.5 rounded-lg hover:bg-blue-100 font-medium">View</button>
+                <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 font-medium">Print</button>
               </div>
             </div>
           ))}

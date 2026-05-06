@@ -52,12 +52,21 @@ export default function OfferLetterPage() {
   const handlePrint = (content: string, letterNumber: string) => {
     const printWindow = window.open("", "_blank");
     if (printWindow) {
-      printWindow.document.write(`
-        <html><head><title>${letterNumber}</title>
-        <style>body{font-family:system-ui,sans-serif;padding:40px;max-width:800px;margin:0 auto;}
-        @media print{body{padding:20px;}}</style></head>
-        <body>${content}<script>window.onload=function(){window.print();}</script></body></html>
-      `);
+      printWindow.document.write(`<!DOCTYPE html><html><head><title>${letterNumber}</title>
+<style>
+  body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 820px; margin: 0 auto; background: #f5f5f5; }
+  .letter-wrap { background: white; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .btn-bar { text-align: center; margin-bottom: 15px; display: flex; gap: 10px; justify-content: center; }
+  .btn-bar button { padding: 10px 28px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .btn-print { background: #0000AA; color: white; }
+  .btn-print:hover { background: #000088; }
+  .btn-pdf { background: #d32f2f; color: white; }
+  .btn-pdf:hover { background: #b71c1c; }
+  @media print { .btn-bar { display: none !important; } body { padding: 0; background: white; } .letter-wrap { box-shadow: none; padding: 0; } }
+</style></head><body>
+<div class="btn-bar"><button class="btn-print" onclick="window.print()">Print</button><button class="btn-pdf" onclick="window.print()">Download PDF</button></div>
+<div class="letter-wrap">${content}</div>
+</body></html>`);
       printWindow.document.close();
     }
   };
