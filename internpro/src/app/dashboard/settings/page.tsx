@@ -303,6 +303,72 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Letter Customization (Admin Only) */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Letter Customization</h2>
+            <p className="text-sm text-gray-500 mb-4">Customize fonts, colors, and content of offer/experience letters. Changes apply to newly generated letters.</p>
+            <div className="grid md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Body Font Size (px)</label>
+                <input type="number" min="7" max="14" step="0.5" value={settings.letter_font_size || "9"} onChange={(e) => updateSetting("letter_font_size", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
+                <p className="text-xs text-gray-400 mt-1">Default: 9px. Smaller = fits more on page.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Heading Font Size (px)</label>
+                <input type="number" min="10" max="20" step="0.5" value={settings.letter_heading_size || "16"} onChange={(e) => updateSetting("letter_heading_size", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
+                <p className="text-xs text-gray-400 mt-1">Default: 16px for main heading.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+                <div className="flex gap-2">
+                  <input type="color" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
+                    className="w-12 h-10 border rounded-lg cursor-pointer" />
+                  <input type="text" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
+                    className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#0000AA" />
+                </div>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Accent Color</label>
+                <div className="flex gap-2">
+                  <input type="color" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
+                    className="w-12 h-10 border rounded-lg cursor-pointer" />
+                  <input type="text" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
+                    className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#d32f2f" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Font Family</label>
+                <select value={settings.letter_font_family || "Calibri"} onChange={(e) => updateSetting("letter_font_family", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900">
+                  <option value="Calibri">Calibri (Default)</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Verdana">Verdana</option>
+                  <option value="Trebuchet MS">Trebuchet MS</option>
+                </select>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Offer Letter — Extra Terms (optional)</label>
+              <textarea value={settings.letter_offer_extra || ""} onChange={(e) => updateSetting("letter_offer_extra", e.target.value)}
+                rows={3} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Additional terms or company-specific policies to include in offer letters..." />
+              <p className="text-xs text-gray-400 mt-1">This text will appear as an additional section in offer letters.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Experience Letter — Extra Note (optional)</label>
+              <textarea value={settings.letter_exp_extra || ""} onChange={(e) => updateSetting("letter_exp_extra", e.target.value)}
+                rows={3} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Additional recommendation text or company-specific notes for experience letters..." />
+              <p className="text-xs text-gray-400 mt-1">This text will appear as an additional section in experience letters.</p>
+            </div>
+          </div>
+        )}
+
         {/* Notification Settings */}
         {isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
