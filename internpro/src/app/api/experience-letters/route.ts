@@ -67,6 +67,12 @@ export async function POST(request: NextRequest) {
 
     const letterNumber = generateUniqueId("EXP");
     const org = enrollment.batch.program.organization;
+    const allSettings = await prisma.setting.findMany();
+    const sMap: Record<string, string> = {};
+    allSettings.forEach((s) => { sMap[s.key] = s.value; });
+    const signatureUrl = sMap.admin_signature || "";
+    const signatoryName = escapeHtml(sMap.signatory_name || "HR Department");
+    const signatoryDesignation = escapeHtml(sMap.signatory_designation || "Authorized Signatory");
 
     const safeOrgName = escapeHtml(org.name);
     const safeStudentName = escapeHtml(enrollment.student.name);
@@ -98,57 +104,70 @@ export async function POST(request: NextRequest) {
         .replace(/\{\{performance\}\}/g, performanceLabel)
         .replace(/\{\{remarks\}\}/g, safeRemarks);
     } else {
-      htmlContent = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background: white; color: #222;">
-<!-- Letterhead -->
-<table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+      const sigBlock = signatureUrl
+        ? `<img src="${signatureUrl}" alt="Signature" style="height: 50px; display: block; margin-bottom: 4px; object-fit: contain;" />`
+        : `<div style="height: 50px; margin-bottom: 4px;"></div>`;
+
+      const lhHtml = `<table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
   <tr>
-    <td style="width: 100px; vertical-align: middle; padding: 18px 0 18px 30px;">
-      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" style="height: 70px; display: block;" />
+    <td style="width: 120px; vertical-align: middle; padding: 20px 0 20px 30px;">
+      <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" style="height: 90px; display: block; object-fit: contain;" />
     </td>
-    <td style="text-align: right; vertical-align: middle; padding: 18px 30px 18px 10px;">
-      <p style="margin: 0; font-size: 22px; font-weight: 700; color: #0000AA; letter-spacing: 0.5px;">KKHS Media Private Limited</p>
-      <p style="margin: 4px 0 0; font-size: 10px; color: #666; line-height: 1.6;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
-      <p style="margin: 1px 0 0; font-size: 10px; color: #666;">Phone: 9782005500 &nbsp;|&nbsp; Email: hari@kkhsmedia.com &nbsp;|&nbsp; GST: 08AAICK3853C1ZL</p>
+    <td style="text-align: right; vertical-align: middle; padding: 20px 30px 20px 10px;">
+      <p style="margin: 0; font-size: 28px; font-weight: 700; color: #0000AA; letter-spacing: 0.5px;">KKHS Media Private Limited</p>
+      <p style="margin: 6px 0 0; font-size: 14px; color: #555; line-height: 1.6;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+      <p style="margin: 3px 0 0; font-size: 14px; color: #555;">Phone: 9782005500 &nbsp;|&nbsp; Email: hari@kkhsmedia.com &nbsp;|&nbsp; GST: 08AAICK3853C1ZL</p>
     </td>
   </tr>
 </table>
-<div style="height: 3px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f);"></div>
+<div style="height: 4px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f);"></div>`;
 
-<div style="padding: 28px 40px 20px;">
-  <table style="width: 100%; margin-bottom: 20px;">
+      const ftHtml = `<div style="height: 3px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f); margin-top: 15px;"></div>
+<div style="padding: 10px 30px; text-align: center;">
+  <p style="margin: 0; font-size: 11px; font-weight: 600; color: #0000AA;">KKHS Media Private Limited</p>
+  <p style="margin: 3px 0 0; font-size: 10px; color: #666;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com | GST: 08AAICK3853C1ZL</p>
+</div>`;
+
+      htmlContent = `<div style="font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background: white; color: #222; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+<style>@page { margin: 10mm 0; } .page-break { page-break-before: always; }</style>
+<!-- Page 1 -->
+${lhHtml}
+
+<div style="padding: 24px 40px 10px;">
+  <table style="width: 100%; margin-bottom: 16px;">
     <tr>
-      <td style="font-size: 12px; color: #555;">Ref: <strong style="color: #222;">${letterNumber}</strong></td>
-      <td style="text-align: right; font-size: 12px; color: #555;">Date: <strong style="color: #222;">${todayFormatted}</strong></td>
+      <td style="font-size: 13px; color: #555;">Ref: <strong style="color: #222;">${letterNumber}</strong></td>
+      <td style="text-align: right; font-size: 13px; color: #555;">Date: <strong style="color: #222;">${todayFormatted}</strong></td>
     </tr>
   </table>
 
-  <div style="text-align: center; margin: 10px 0 25px;">
-    <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0000AA; letter-spacing: 3px; text-transform: uppercase;">Experience Certificate</h2>
+  <div style="text-align: center; margin: 8px 0 22px;">
+    <h2 style="margin: 0; font-size: 26px; font-weight: 700; color: #0000AA; letter-spacing: 3px; text-transform: uppercase;">Experience Certificate</h2>
     <div style="width: 60px; height: 3px; background: #d32f2f; margin: 8px auto 0;"></div>
   </div>
 
-  <p style="font-size: 13px; color: #333; margin: 20px 0 12px;"><strong>To Whom It May Concern,</strong></p>
+  <p style="font-size: 14px; color: #333; margin: 18px 0 12px;"><strong>To Whom It May Concern,</strong></p>
 
-  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 12px;">
+  <p style="font-size: 14px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 14px;">
     This is to certify that <strong style="color: #0000AA;">${safeStudentName}</strong> was associated with <strong>${safeOrgName}</strong> as an intern under the <strong>${safeProgramTitle}</strong> program. The details of the engagement are summarized below:
   </p>
 
-  <table style="width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 12px; border: 1px solid #ddd;">
-    <tr style="background: #0000AA;"><td style="padding: 8px 14px; color: white; font-weight: 600; width: 180px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 8px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
-    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
-    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
-    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period of Internship</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
-    <tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Overall Performance</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong></td></tr>
-    ${safeRemarks ? `<tr><td style="padding: 7px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Supervisor Remarks</td><td style="padding: 7px 14px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
+  <table style="width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 13px; border: 1px solid #ddd;">
+    <tr style="background: #0000AA;"><td style="padding: 9px 14px; color: white; font-weight: 600; width: 200px; border: 1px solid #0000AA;">Particulars</td><td style="padding: 9px 14px; color: white; font-weight: 600; border: 1px solid #0000AA;">Details</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Program</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Duration</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Period of Internship</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
+    <tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Overall Performance</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;"><strong style="color: #0000AA;">${performanceLabel}</strong></td></tr>
+    ${safeRemarks ? `<tr><td style="padding: 8px 14px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; background: #fafbff;">Supervisor Remarks</td><td style="padding: 8px 14px; border: 1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
   </table>
 
-  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Performance Summary</p>
-  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 10px;">
+  <p style="font-size: 15px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Performance Summary</p>
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 12px;">
     During the internship tenure, ${safeStudentName} demonstrated commendable professionalism, technical aptitude, and a proactive approach to learning. The intern consistently met assigned deadlines, exhibited strong problem-solving capabilities, and collaborated effectively with the team. The quality of work delivered was rated as <strong style="color: #0000AA;">${performanceLabel}</strong> by the supervising authority.
   </p>
 
-  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Key Strengths Observed</p>
-  <ul style="font-size: 12px; color: #333; line-height: 1.8; margin: 0 0 10px; padding-left: 20px;">
+  <p style="font-size: 15px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Key Strengths Observed</p>
+  <ul style="font-size: 13px; color: #333; line-height: 1.8; margin: 0 0 12px; padding-left: 22px;">
     <li>Strong understanding of core concepts related to the ${safeProgramTitle} domain.</li>
     <li>Ability to work independently as well as in a team environment.</li>
     <li>Excellent time management and adherence to project timelines.</li>
@@ -156,30 +175,24 @@ export async function POST(request: NextRequest) {
     <li>Professional conduct and positive workplace attitude throughout the engagement.</li>
   </ul>
 
-  <p style="font-size: 14px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Recommendation</p>
-  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 12px;">
+  <p style="font-size: 15px; font-weight: 700; color: #0000AA; margin: 16px 0 6px;">Recommendation</p>
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 14px;">
     Based on the overall performance and conduct during the internship, we are pleased to recommend <strong style="color: #0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this internship will serve as a strong foundation for future career growth.
   </p>
 
-  <p style="font-size: 12px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 16px;">
+  <p style="font-size: 13px; color: #333; line-height: 1.9; text-align: justify; margin: 0 0 18px;">
     We wish ${safeStudentName} all the very best in future endeavours and are confident they will be a valuable asset to any organization.
   </p>
 
-  <p style="margin: 30px 0 0; font-size: 12px; color: #333;">For &amp; on behalf of <strong style="color: #0000AA;">${safeOrgName}</strong>,</p>
-  <div style="margin-top: 30px;">
-    <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 14px;">Authorized Signatory</p>
-    <p style="margin: 2px 0 0; font-size: 11px; color: #555;">HR Department</p>
-    <p style="margin: 2px 0 0; font-size: 10px; color: #888;">${safeOrgName}</p>
-    <p style="margin: 2px 0 0; font-size: 10px; color: #888;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+  <p style="margin: 28px 0 0; font-size: 13px; color: #333;">For &amp; on behalf of <strong style="color: #0000AA;">${safeOrgName}</strong>,</p>
+  <div style="margin-top: 12px;">
+    ${sigBlock}
+    <p style="margin: 0; font-weight: 700; color: #0000AA; font-size: 15px;">${signatoryName}</p>
+    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">${signatoryDesignation}</p>
+    <p style="margin: 2px 0 0; font-size: 12px; color: #555;">${safeOrgName}</p>
   </div>
 </div>
-
-<div style="height: 2px; background: linear-gradient(90deg, #0000AA, #0000AA 70%, #d32f2f 70%, #d32f2f); margin-top: 15px;"></div>
-<div style="padding: 8px 30px; text-align: center;">
-  <p style="margin: 0; font-size: 8pt; font-weight: 600; color: #0000AA;">KKHS Media Private Limited</p>
-  <p style="margin: 2px 0 0; font-size: 7pt; color: #777;">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012 | Phone: 9782005500 | Email: hari@kkhsmedia.com | GST: 08AAICK3853C1ZL</p>
-  <p style="margin: 2px 0 0; font-size: 6pt; color: #999;">This is a computer-generated document. No signature is required on the company&rsquo;s behalf.</p>
-</div>
+${ftHtml}
 </div>`;
     }
 

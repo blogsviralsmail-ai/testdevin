@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [sigUploading, setSigUploading] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [meRes, settingsRes] = await Promise.all([
@@ -54,6 +55,21 @@ export default function SettingsPage() {
     });
     setSaving(false);
     setSaved(true);
+  };
+
+  const handleSignatureUpload = async (file: File) => {
+    if (file.size > 2 * 1024 * 1024) { alert("File must be less than 2MB"); return; }
+    setSigUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        updateSetting("admin_signature", data.url);
+      }
+    } catch { /* ignore */ }
+    setSigUploading(false);
   };
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
@@ -176,6 +192,44 @@ export default function SettingsPage() {
             <p className="text-xs text-gray-400 mt-3">
               Razorpay Dashboard se Key ID and Secret copy karo: https://dashboard.razorpay.com/app/keys
             </p>
+          </div>
+        )}
+
+        {/* Signature Settings (Admin Only) */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Authorized Signature</h2>
+            <p className="text-sm text-gray-500 mb-4">Upload your signature image — it will appear on offer letters and experience letters</p>
+            <div className="flex items-start gap-6">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Signature Image</label>
+                <input type="file" accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && handleSignatureUpload(e.target.files[0])}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                <p className="text-xs text-gray-400 mt-1">PNG with transparent background recommended. Max 2MB.</p>
+                {sigUploading && <p className="text-xs text-blue-600 mt-1">Uploading...</p>}
+              </div>
+              {settings.admin_signature && (
+                <div className="flex-shrink-0">
+                  <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                  <div className="border rounded-lg p-2 bg-gray-50">
+                    <img src={settings.admin_signature} alt="Signature" className="h-16 max-w-[200px] object-contain" />
+                  </div>
+                  <button onClick={() => updateSetting("admin_signature", "")}
+                    className="text-xs text-red-500 mt-1 hover:underline">Remove</button>
+                </div>
+              )}
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Name</label>
+              <input value={settings.signatory_name || ""} onChange={(e) => updateSetting("signatory_name", e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Hari Singh, Director" />
+            </div>
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Designation</label>
+              <input value={settings.signatory_designation || ""} onChange={(e) => updateSetting("signatory_designation", e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Managing Director" />
+            </div>
           </div>
         )}
 

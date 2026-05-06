@@ -11,7 +11,7 @@ interface EmployeeCard {
   validUntil: string;
   photoUrl: string | null;
   qrCode: string | null;
-  user: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null };
+  user: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; address: string | null };
 }
 
 interface Enrollment {
@@ -100,15 +100,15 @@ export default function IDCardsPage() {
   .card-header .co-name { color: rgba(255,255,255,0.85); font-size: 6px; margin-top: 3px; letter-spacing: 0.8px; text-transform: uppercase; }
   .card-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #d32f2f; }
 
-  .card-body { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 10px 6px; background: white; }
-  .photo-frame { width: 72px; height: 72px; border-radius: 50%; border: 2.5px solid #0000AA; overflow: hidden; background: #f0f0f8; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; flex-shrink: 0; }
+  .card-body { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 8px 4px; background: white; }
+  .photo-frame { width: 88px; height: 88px; border-radius: 50%; border: 2.5px solid #0000AA; overflow: hidden; background: #f0f0f8; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; flex-shrink: 0; }
   .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-frame .placeholder { font-size: 30px; color: #0000AA; }
+  .photo-frame .placeholder { font-size: 36px; color: #0000AA; }
 
   .emp-name { font-size: 11px; font-weight: 800; color: #0000AA; text-transform: uppercase; text-align: center; line-height: 1.25; margin-bottom: 2px; word-break: break-word; }
-  .emp-desg { font-size: 8px; color: #d32f2f; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 4px; }
-  .emp-info { font-size: 7px; color: #555; text-align: center; line-height: 1.6; word-break: break-all; }
-  .divider { width: 50px; height: 1.5px; background: #0000AA; margin: 4px auto; opacity: 0.4; }
+  .emp-desg { font-size: 8px; color: #d32f2f; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 3px; }
+  .emp-info { font-size: 8px; color: #444; text-align: center; line-height: 1.5; word-break: break-word; }
+  .divider { width: 50px; height: 1.5px; background: #0000AA; margin: 3px auto; opacity: 0.4; }
 
   .card-footer { background: #0000AA; padding: 6px 8px; text-align: center; flex-shrink: 0; position: relative; }
   .card-footer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: #d32f2f; }
@@ -136,9 +136,9 @@ export default function IDCardsPage() {
     <div class="emp-desg">${card.designation}</div>
     <div class="divider"></div>
     <div class="emp-info">
-      ${card.department ? card.department + "<br/>" : ""}
       ${card.user.email}<br/>
-      ${card.user.phone ? card.user.phone : ""}
+      ${card.user.phone ? card.user.phone + "<br/>" : ""}
+      ${card.user.address ? card.user.address : ""}
     </div>
   </div>
   <div class="card-footer">
@@ -219,21 +219,21 @@ export default function IDCardsPage() {
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d32f2f]"></div>
               </div>
               {/* Body */}
-              <div className="flex-1 flex flex-col items-center px-2.5 pt-2.5 pb-1.5 bg-white">
-                <div className="w-[72px] h-[72px] rounded-full border-[2.5px] border-[#0000AA] overflow-hidden bg-blue-50 flex items-center justify-center mb-1.5 flex-shrink-0">
+              <div className="flex-1 flex flex-col items-center px-2 pt-2 pb-1 bg-white">
+                <div className="w-[88px] h-[88px] rounded-full border-[2.5px] border-[#0000AA] overflow-hidden bg-blue-50 flex items-center justify-center mb-1 flex-shrink-0">
                   {(previewCard.user.avatar || previewCard.photoUrl) ? (
                     <img src={previewCard.user.avatar || previewCard.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                   ) : (
-                    <span className="text-3xl">👤</span>
+                    <span className="text-4xl">👤</span>
                   )}
                 </div>
                 <div className="text-[11px] font-extrabold text-[#0000AA] uppercase text-center leading-tight mb-0.5">{previewCard.user.name}</div>
                 <div className="text-[8px] text-[#d32f2f] font-bold uppercase text-center mb-1">{previewCard.designation}</div>
                 <div className="w-[50px] h-[1.5px] bg-[#0000AA]/40 mb-1"></div>
-                <div className="text-[7px] text-gray-500 text-center leading-relaxed break-all">
-                  {previewCard.department && <>{previewCard.department}<br /></>}
+                <div className="text-[8px] text-gray-600 text-center leading-snug break-words">
                   {previewCard.user.email}<br />
-                  {previewCard.user.phone && <>{previewCard.user.phone}</>}
+                  {previewCard.user.phone && <>{previewCard.user.phone}<br /></>}
+                  {previewCard.user.address && <>{previewCard.user.address}</>}
                 </div>
               </div>
               {/* Footer */}
@@ -275,7 +275,6 @@ export default function IDCardsPage() {
                 </div>
                 <div className="font-bold text-[#0000AA] text-sm uppercase truncate w-full">{card.user.name}</div>
                 <div className="text-[10px] text-[#d32f2f] font-bold uppercase">{card.designation}</div>
-                {card.department && <div className="text-[10px] text-gray-500">{card.department}</div>}
                 <div className="text-[9px] text-gray-400 mt-1">{card.cardNumber}</div>
               </div>
               <div className="px-4 pb-3 flex gap-2">

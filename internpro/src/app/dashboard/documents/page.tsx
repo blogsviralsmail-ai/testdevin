@@ -16,6 +16,7 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [fileUploading, setFileUploading] = useState(false);
   const [form, setForm] = useState({ type: "resume", title: "", fileUrl: "" });
 
   const fetchDocuments = useCallback(async () => {
@@ -26,6 +27,23 @@ export default function DocumentsPage() {
   }, []);
 
   useEffect(() => { fetchDocuments(); }, [fetchDocuments]);
+
+  const handleFileUpload = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) { alert("File must be less than 10MB"); return; }
+    setFileUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        setForm((prev) => ({ ...prev, fileUrl: data.url }));
+      } else {
+        alert("File upload failed. Try again.");
+      }
+    } catch { alert("Upload error. Please try again."); }
+    setFileUploading(false);
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,26 +80,44 @@ export default function DocumentsPage() {
       {/* Upload Form */}
       <div className="bg-white rounded-xl p-6 border mb-6">
         <h2 className="text-lg font-semibold mb-4">Upload New Document</h2>
-        <form onSubmit={handleUpload} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <select value={form.type} onChange={(e) => setForm({...form, type: e.target.value})}
-            className="px-3 py-2 rounded-lg border">
-            <option value="resume">Resume / CV</option>
-            <option value="marksheet">Marksheet</option>
-            <option value="id_card">ID Card</option>
-            <option value="photo">Passport Photo</option>
-            <option value="aadhar">Aadhar Card</option>
-            <option value="other">Other</option>
-          </select>
-          <input type="text" placeholder="Document Title" value={form.title}
-            onChange={(e) => setForm({...form, title: e.target.value})}
-            className="px-3 py-2 rounded-lg border" required />
-          <input type="url" placeholder="File URL (upload link)" value={form.fileUrl}
-            onChange={(e) => setForm({...form, fileUrl: e.target.value})}
-            className="px-3 py-2 rounded-lg border" required />
-          <button type="submit" disabled={uploading}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {uploading ? "Uploading..." : "Submit"}
-          </button>
+        <form onSubmit={handleUpload} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select value={form.type} onChange={(e) => setForm({...form, type: e.target.value})}
+              className="px-3 py-2 rounded-lg border text-sm">
+              <option value="resume">Resume / CV</option>
+              <option value="marksheet">Marksheet</option>
+              <option value="id_card">ID Card</option>
+              <option value="photo">Passport Photo</option>
+              <option value="aadhar">Aadhar Card</option>
+              <option value="pan">PAN Card</option>
+              <option value="certificate">Certificate</option>
+              <option value="other">Other</option>
+            </select>
+            <input type="text" placeholder="Document Title" value={form.title}
+              onChange={(e) => setForm({...form, title: e.target.value})}
+              className="px-3 py-2 rounded-lg border text-sm" required />
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Upload File</label>
+              <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                className="w-full px-3 py-1.5 rounded-lg border text-sm" />
+              <p className="text-xs text-gray-400 mt-0.5">PDF, Images, Docs — max 10MB</p>
+              {fileUploading && <p className="text-xs text-blue-600 mt-0.5">Uploading file...</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Or paste a URL</label>
+              <input type="url" placeholder="https://..." value={form.fileUrl}
+                onChange={(e) => setForm({...form, fileUrl: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg border text-sm" />
+            </div>
+            {form.fileUrl && <span className="text-xs text-green-600 mt-4">File ready</span>}
+            <button type="submit" disabled={uploading || !form.fileUrl}
+              className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm">
+              {uploading ? "Submitting..." : "Submit Document"}
+            </button>
+          </div>
         </form>
       </div>
 

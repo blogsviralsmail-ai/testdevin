@@ -17,13 +17,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    const allowedTypes = [
+      "image/jpeg", "image/png", "image/gif", "image/webp",
+      "application/pdf",
+      "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "text/plain", "application/zip",
+    ];
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Only image files (JPEG, PNG, GIF, WEBP) are allowed" }, { status: 400 });
+      return NextResponse.json({ error: "File type not supported. Allowed: Images, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, ZIP" }, { status: 400 });
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File size must be less than 5MB" }, { status: 400 });
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: "File size must be less than 10MB" }, { status: 400 });
     }
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");
