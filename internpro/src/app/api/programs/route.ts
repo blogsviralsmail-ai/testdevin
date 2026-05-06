@@ -36,7 +36,10 @@ export async function POST(request: NextRequest) {
     let { orgId } = body;
 
     if (!orgId) {
-      const org = await prisma.organization.findFirst({ where: { adminId: session.id } });
+      let org = await prisma.organization.findFirst({ where: { adminId: session.id } });
+      if (!org && session.role === "admin") {
+        org = await prisma.organization.findFirst();
+      }
       if (org) orgId = org.id;
     }
 
