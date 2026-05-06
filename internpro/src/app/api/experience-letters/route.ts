@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 <ul>
 <li><strong>Program:</strong> ${safeProgramTitle}</li>
 <li><strong>Duration:</strong> ${enrollment.batch.program.duration} days</li>
-<li><strong>Period:</strong> ${enrollment.batch.startDate.toLocaleDateString("en-IN")} to ${new Date().toLocaleDateString("en-IN")}</li>
+<li><strong>Period:</strong> ${enrollment.batch.startDate ? enrollment.batch.startDate.toLocaleDateString("en-IN") : "N/A"} to ${new Date().toLocaleDateString("en-IN")}</li>
 <li><strong>Performance Category:</strong> ${safeCategory}</li>
 ${safeRemarks ? `<li><strong>Remarks:</strong> ${safeRemarks}</li>` : ""}
 </ul>

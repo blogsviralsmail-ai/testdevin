@@ -187,6 +187,7 @@ model OfferLetter {
 model OfferLetterTemplate {
   id          String   @id @default(cuid())
   name        String
+  type        String   @default("offer")
   htmlContent String
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())

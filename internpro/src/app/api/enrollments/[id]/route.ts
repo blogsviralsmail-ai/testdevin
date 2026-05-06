@@ -11,21 +11,31 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
     const body = await request.json();
-    const { status, teamLeaderCategory, teamLeaderRemarks, adminRemarks } = body;
+    const { status, teamLeaderCategory, teamLeaderRemarks, adminRemarks,
+      salary, weekoffs, paidLeaves, workTiming, joiningDate,
+      feeType, feeAmount, stipendAmount } = body;
 
     const data: Record<string, unknown> = {};
 
     if (status) data.status = status;
 
-    // Team leader can categorize
-    if (session.role === "teamleader" && teamLeaderCategory) {
+    // Team leader or admin can categorize
+    if ((session.role === "teamleader" || session.role === "admin") && teamLeaderCategory) {
       data.teamLeaderCategory = teamLeaderCategory;
       if (teamLeaderRemarks) data.teamLeaderRemarks = teamLeaderRemarks;
     }
 
-    // Admin can add remarks
-    if (session.role === "admin" && adminRemarks) {
-      data.adminRemarks = adminRemarks;
+    // Admin can add remarks and edit enrollment details
+    if (session.role === "admin") {
+      if (adminRemarks) data.adminRemarks = adminRemarks;
+      if (salary !== undefined) data.salary = salary;
+      if (weekoffs !== undefined) data.weekoffs = weekoffs;
+      if (paidLeaves !== undefined) data.paidLeaves = paidLeaves;
+      if (workTiming !== undefined) data.workTiming = workTiming;
+      if (joiningDate !== undefined) data.joiningDate = new Date(joiningDate);
+      if (feeType !== undefined) data.feeType = feeType;
+      if (feeAmount !== undefined) data.feeAmount = feeAmount;
+      if (stipendAmount !== undefined) data.stipendAmount = stipendAmount;
     }
 
     if (status === "completed") {

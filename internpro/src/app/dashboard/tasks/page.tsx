@@ -36,6 +36,13 @@ interface Batch {
   program: { title: string };
 }
 
+interface StudentOption {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+}
+
 interface UserSession {
   id: string;
   role: string;
@@ -55,6 +62,10 @@ export default function TasksPage() {
     batchId: "", title: "", description: "", type: "regular",
     dayNumber: "", maxPoints: "100", scope: "all", assignedTo: "", isUrgent: false,
   });
+  const [studentSearch, setStudentSearch] = useState("");
+  const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const [selectedStudentName, setSelectedStudentName] = useState("");
 
   const fetchData = useCallback(async () => {
     const [tasksRes, batchesRes, meRes] = await Promise.all([
@@ -71,6 +82,21 @@ export default function TasksPage() {
 
     const subsRes = await fetch("/api/submissions");
     if (subsRes.ok) setSubmissions(await subsRes.json());
+  }, []);
+
+  const searchStudents = useCallback(async (query: string) => {
+    if (query.length < 1) { setStudentOptions([]); return; }
+    const res = await fetch(`/api/users?role=student`);
+    if (res.ok) {
+      const all: StudentOption[] = await res.json();
+      const q = query.toLowerCase();
+      setStudentOptions(all.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.email.toLowerCase().includes(q) ||
+        (s.phone && s.phone.includes(q))
+      ).slice(0, 10));
+      setShowStudentDropdown(true);
+    }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -196,9 +222,44 @@ export default function TasksPage() {
               </select>
             </div>
             {form.scope === "individual" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To (Student ID)</label>
-                <input value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Student ID" />
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assign To Student</label>
+                <input
+                  value={selectedStudentName || studentSearch}
+                  onChange={(e) => {
+                    setStudentSearch(e.target.value);
+                    setSelectedStudentName("");
+                    setForm({ ...form, assignedTo: "" });
+                    searchStudents(e.target.value);
+                  }}
+                  onFocus={() => { if (studentSearch.length >= 1) setShowStudentDropdown(true); }}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+                  placeholder="Type name, email or phone..."
+                />
+                {showStudentDropdown && studentOptions.length > 0 && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {studentOptions.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setForm({ ...form, assignedTo: s.id });
+                          setSelectedStudentName(`${s.name} (${s.email})`);
+                          setStudentSearch("");
+                          setShowStudentDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-indigo-50 text-sm border-b last:border-b-0"
+                      >
+                        <span className="font-medium text-gray-900">{s.name}</span>
+                        <span className="text-gray-500 ml-2">{s.email}</span>
+                        {s.phone && <span className="text-gray-400 ml-2">{s.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {form.assignedTo && (
+                  <p className="text-xs text-green-600 mt-1">Selected: {selectedStudentName}</p>
+                )}
               </div>
             )}
             <div className="flex items-center gap-3 mt-6">

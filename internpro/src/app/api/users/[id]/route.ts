@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -11,18 +12,25 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
     const body = await request.json();
-    const { name, email, phone, role } = body;
+    const { name, email, phone, password, collegeName, degree, year, address } = body;
 
     const data: Record<string, unknown> = {};
-    if (name) data.name = name;
-    if (email) data.email = email;
-    if (phone !== undefined) data.phone = phone || null;
-    if (role && session.role === "admin") data.role = role;
+    if (name !== undefined) data.name = name;
+    if (email !== undefined) data.email = email;
+    if (phone !== undefined) data.phone = phone;
+    if (collegeName !== undefined) data.collegeName = collegeName;
+    if (degree !== undefined) data.degree = degree;
+    if (year !== undefined) data.year = year;
+    if (address !== undefined) data.address = address;
+
+    if (password && password.trim()) {
+      data.password = await bcrypt.hash(password, 10);
+    }
 
     const user = await prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, phone: true, role: true, collegeName: true, degree: true, year: true, address: true },
     });
 
     return NextResponse.json(user);
@@ -40,11 +48,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     const { id } = await params;
-
-    if (id === session.id) {
-      return NextResponse.json({ error: "Cannot delete your own account" }, { status: 400 });
-    }
-
     await prisma.user.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

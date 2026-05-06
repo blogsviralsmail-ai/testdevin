@@ -26,7 +26,7 @@ export default function TeamLeadersPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [assignModal, setAssignModal] = useState<User | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
-  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "" });
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", password: "" });
 
   const fetchData = useCallback(async () => {
     const [usersRes, batchRes] = await Promise.all([
@@ -70,11 +70,11 @@ export default function TeamLeadersPage() {
     fetchData();
   };
 
-  const handleAssignBatch = async (batchId: string, teamLeaderId: string) => {
+  const handleAssignBatch = async (batchId: string, leaderId: string) => {
     await fetch(`/api/batches/${batchId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ teamLeaderId }),
+      body: JSON.stringify({ leaderId }),
     });
     fetchData();
   };
@@ -121,12 +121,26 @@ export default function TeamLeadersPage() {
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Edit Team Leader</h2>
             <div className="space-y-4">
-              <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Name" />
-              <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" />
-              <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone" />
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Name" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">New Password (blank = no change)</label>
+                <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Leave blank to keep current" />
+              </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={handleEdit} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Save</button>
@@ -197,7 +211,7 @@ export default function TeamLeadersPage() {
                       className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100">
                       Assign Batch
                     </button>
-                    <button onClick={() => { setEditUser(user); setEditForm({ name: user.name, email: user.email, phone: user.phone || "" }); }}
+                    <button onClick={() => { setEditUser(user); setEditForm({ name: user.name, email: user.email, phone: user.phone || "", password: "" }); }}
                       className="text-xs bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 border">
                       Edit
                     </button>

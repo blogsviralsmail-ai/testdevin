@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 interface Template {
   id: string;
   name: string;
+  type: string;
   htmlContent: string;
   isDefault: boolean;
   createdAt: string;
@@ -14,8 +15,9 @@ export default function LetterTemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [editing, setEditing] = useState<Template | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", htmlContent: "", isDefault: false });
+  const [form, setForm] = useState({ name: "", type: "offer", htmlContent: "", isDefault: false });
   const [preview, setPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState("offer");
 
   const fetchTemplates = useCallback(async () => {
     const res = await fetch("/api/letter-templates");
@@ -33,7 +35,7 @@ export default function LetterTemplatesPage() {
     });
     if (res.ok) {
       setShowAdd(false);
-      setForm({ name: "", htmlContent: "", isDefault: false });
+      setForm({ name: "", type: "offer", htmlContent: "", isDefault: false });
       fetchTemplates();
     }
   };
@@ -59,19 +61,15 @@ export default function LetterTemplatesPage() {
     fetchTemplates();
   };
 
-  const defaultTemplate = `<div style="font-family: system-ui, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
+  const defaultOfferTemplate = `<div style="font-family: system-ui, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
   <div style="text-align: center; margin-bottom: 40px;">
     <h1 style="color: #1e1b4b; font-size: 28px;">{{company_name}}</h1>
     <p style="color: #64748b;">Internship Offer Letter</p>
   </div>
-  
   <p style="color: #374151;"><strong>Ref:</strong> {{letter_number}}</p>
   <p style="color: #374151;"><strong>Date:</strong> {{date}}</p>
-  
   <p style="color: #374151; margin-top: 20px;">Dear <strong>{{student_name}}</strong>,</p>
-  
   <p style="color: #374151;">We are pleased to offer you an internship position for the <strong>{{program_name}}</strong> program at {{company_name}}.</p>
-  
   <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
     <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Duration</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{duration}} days</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Mode</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{mode}}</td></tr>
@@ -81,17 +79,45 @@ export default function LetterTemplatesPage() {
     <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Weekly Off</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{weekoffs}} day(s)</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Paid Leaves</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{paid_leaves}}/month</td></tr>
   </table>
-  
   <p style="color: #374151;">Please confirm your acceptance by joining on the mentioned date.</p>
-  
   <p style="color: #374151; margin-top: 40px;">Best Regards,<br/><strong>{{company_name}}</strong></p>
 </div>`;
 
-  const availablePlaceholders = [
+  const defaultExperienceTemplate = `<div style="font-family: system-ui, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
+  <div style="text-align: center; margin-bottom: 40px;">
+    <h1 style="color: #1e1b4b; font-size: 28px;">{{company_name}}</h1>
+    <h2 style="color: #374151;">EXPERIENCE / COMPLETION LETTER</h2>
+  </div>
+  <p style="color: #374151;"><strong>Ref:</strong> {{letter_number}}</p>
+  <p style="color: #374151;"><strong>Date:</strong> {{date}}</p>
+  <p style="color: #374151; margin-top: 20px;">To Whom It May Concern,</p>
+  <p style="color: #374151;">This is to certify that <strong>{{student_name}}</strong> has successfully completed the <strong>{{program_name}}</strong> internship program at {{company_name}}.</p>
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+    <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Program</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{program_name}}</td></tr>
+    <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Duration</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{duration}} days</td></tr>
+    <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Period</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{start_date}} to {{end_date}}</td></tr>
+    <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Performance</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{category}}</td></tr>
+    <tr><td style="padding: 8px; border: 1px solid #e5e7eb; color: #6b7280;">Remarks</td><td style="padding: 8px; border: 1px solid #e5e7eb; color: #111827;">{{remarks}}</td></tr>
+  </table>
+  <p style="color: #374151;">We wish {{student_name}} all the best in their future endeavors.</p>
+  <p style="color: #374151; margin-top: 40px;">Authorized Signatory,<br/><strong>{{company_name}}</strong></p>
+</div>`;
+
+  const offerPlaceholders = [
     "{{company_name}}", "{{student_name}}", "{{program_name}}", "{{letter_number}}",
     "{{date}}", "{{joining_date}}", "{{duration}}", "{{salary}}",
     "{{weekoffs}}", "{{paid_leaves}}", "{{work_timing}}", "{{mode}}",
   ];
+
+  const experiencePlaceholders = [
+    "{{company_name}}", "{{student_name}}", "{{program_name}}", "{{letter_number}}",
+    "{{date}}", "{{duration}}", "{{start_date}}", "{{end_date}}",
+    "{{category}}", "{{remarks}}", "{{mode}}",
+  ];
+
+  const availablePlaceholders = activeTab === "experience" ? experiencePlaceholders : offerPlaceholders;
+
+  const filteredTemplates = templates.filter((t) => (t.type || "offer") === activeTab);
 
   return (
     <div>
@@ -100,9 +126,9 @@ export default function LetterTemplatesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Letter Template Designer</h1>
           <p className="text-gray-600 text-sm">Design offer letters and experience letters — details auto-fill ho jayenge</p>
         </div>
-        <button onClick={() => { setShowAdd(!showAdd); if (!showAdd) setForm({ name: "", htmlContent: defaultTemplate, isDefault: false }); }}
+        <button onClick={() => { setShowAdd(!showAdd); if (!showAdd) setForm({ name: "", type: activeTab, htmlContent: activeTab === "experience" ? defaultExperienceTemplate : defaultOfferTemplate, isDefault: false }); }}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
-          {showAdd ? "Cancel" : "+ New Template"}
+          {showAdd ? "Cancel" : `+ New ${activeTab === "experience" ? "Experience" : "Offer"} Template`}
         </button>
       </div>
 
@@ -123,6 +149,7 @@ export default function LetterTemplatesPage() {
           <div className="space-y-4">
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Template Name" required />
+            <p className="text-xs text-gray-500">Type: <strong>{form.type === "experience" ? "Experience Letter" : "Offer Letter"}</strong></p>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm({ ...form, isDefault: e.target.checked })} />
               <label className="text-sm text-gray-700">Set as default template</label>
@@ -181,18 +208,18 @@ export default function LetterTemplatesPage() {
       )}
 
       {/* Templates List */}
-      {templates.length === 0 && !showAdd ? (
+      {filteredTemplates.length === 0 && !showAdd ? (
         <div className="bg-white rounded-xl p-12 text-center border">
           <p className="text-4xl mb-4">🎨</p>
-          <p className="text-gray-600">No templates yet. Create one to customize your offer letters!</p>
+          <p className="text-gray-600">No {activeTab === "experience" ? "experience letter" : "offer letter"} templates yet.</p>
           <p className="text-sm text-gray-400 mt-2">
-            Templates HTML mein hote hain placeholders ke saath — jab offer letter generate hota hai toh details auto-fill ho jaate hain.
+            Templates HTML mein hote hain placeholders ke saath — jab letter generate hota hai toh details auto-fill ho jaate hain.
           </p>
         </div>
       ) : (
         !editing && (
           <div className="grid gap-4">
-            {templates.map((tmpl) => (
+            {filteredTemplates.map((tmpl) => (
               <div key={tmpl.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
                 <div className="flex items-center justify-between">
                   <div>

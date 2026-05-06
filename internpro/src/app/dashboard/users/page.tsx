@@ -16,7 +16,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filter, setFilter] = useState("");
   const [editUser, setEditUser] = useState<User | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", role: "" });
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", role: "", password: "" });
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", email: "", phone: "", role: "student", password: "" });
 
@@ -124,19 +124,36 @@ export default function UsersPage() {
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Edit User</h2>
             <div className="space-y-4">
-              <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Name" />
-              <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" />
-              <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone" />
-              <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
-                <option value="student">Student</option>
-                <option value="teamleader">Team Leader</option>
-                <option value="organization">Organization</option>
-                <option value="admin">Admin</option>
-              </select>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Name" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">New Password (blank = no change)</label>
+                <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Leave blank to keep current" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Role</label>
+                <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                  <option value="student">Student</option>
+                  <option value="teamleader">Team Leader</option>
+                  <option value="organization">Organization</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={handleEdit} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Save</button>
@@ -171,7 +188,7 @@ export default function UsersPage() {
                 <td className="px-6 py-4 text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString("en-IN")}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
-                    <button onClick={() => { setEditUser(u); setEditForm({ name: u.name, email: u.email, phone: u.phone || "", role: u.role }); }}
+                    <button onClick={() => { setEditUser(u); setEditForm({ name: u.name, email: u.email, phone: u.phone || "", role: u.role, password: "" }); }}
                       className="text-xs bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-100 border">
                       Edit
                     </button>

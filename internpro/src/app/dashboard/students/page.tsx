@@ -9,7 +9,13 @@ interface Enrollment {
   enrolledAt: string;
   joiningDate: string | null;
   feeType: string | null;
-  student: { id: string; name: string; email: string; phone: string | null };
+  salary: number | null;
+  weekoffs: number | null;
+  paidLeaves: number | null;
+  workTiming: string | null;
+  feeAmount: number | null;
+  stipendAmount: number | null;
+  student: { id: string; name: string; email: string; phone: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null };
   batch: { program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number } };
   _count: { attendances: number; certificates: number; payments: number };
 }
@@ -19,6 +25,8 @@ export default function StudentsPage() {
   const [filter, setFilter] = useState("");
   const [editModal, setEditModal] = useState<Enrollment | null>(null);
   const [editForm, setEditForm] = useState({ status: "", remarks: "" });
+  const [studentForm, setStudentForm] = useState({ name: "", email: "", phone: "", password: "", collegeName: "", degree: "", year: "", address: "" });
+  const [editError, setEditError] = useState("");
 
   const fetchEnrollments = useCallback(async () => {
     const res = await fetch("/api/enrollments");
@@ -44,6 +52,31 @@ export default function StudentsPage() {
 
   const handleEditSave = async () => {
     if (!editModal) return;
+    setEditError("");
+
+    // Update user details
+    const userPayload: Record<string, string> = {};
+    if (studentForm.name) userPayload.name = studentForm.name;
+    if (studentForm.email) userPayload.email = studentForm.email;
+    if (studentForm.phone) userPayload.phone = studentForm.phone;
+    if (studentForm.password) userPayload.password = studentForm.password;
+    if (studentForm.collegeName) userPayload.collegeName = studentForm.collegeName;
+    if (studentForm.degree) userPayload.degree = studentForm.degree;
+    if (studentForm.year) userPayload.year = studentForm.year;
+    if (studentForm.address) userPayload.address = studentForm.address;
+
+    const userRes = await fetch(`/api/users/${editModal.student.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userPayload),
+    });
+    if (!userRes.ok) {
+      const data = await userRes.json();
+      setEditError(data.error || "Failed to update student");
+      return;
+    }
+
+    // Update enrollment status
     await fetch(`/api/enrollments/${editModal.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -112,17 +145,69 @@ export default function StudentsPage() {
       {/* Edit Student Modal */}
       {editModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Edit Student Status</h2>
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Edit Student</h2>
             <p className="text-sm text-gray-600 mb-4">
               <span className="font-medium text-gray-900">{editModal.student.name}</span> — {editModal.batch.program.title}
             </p>
-            <div className="space-y-4">
+            {editError && <p className="text-red-600 text-sm mb-3 bg-red-50 p-2 rounded">{editError}</p>}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-800 border-b pb-1">Personal Details</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                  <input value={studentForm.name} onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                  <input type="email" value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                  <input value={studentForm.phone} onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">New Password (blank = no change)</label>
+                  <input type="password" value={studentForm.password} onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Leave blank to keep" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">College</label>
+                  <input value={studentForm.collegeName} onChange={(e) => setStudentForm({ ...studentForm, collegeName: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Degree</label>
+                  <input value={studentForm.degree} onChange={(e) => setStudentForm({ ...studentForm, degree: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Year</label>
+                  <input value={studentForm.year} onChange={(e) => setStudentForm({ ...studentForm, year: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Address</label>
+                  <input value={studentForm.address} onChange={(e) => setStudentForm({ ...studentForm, address: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+              </div>
+              <h3 className="text-sm font-semibold text-gray-800 border-b pb-1 mt-2">Enrollment Status</h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
                 <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
                   <option value="applied">Applied</option>
+                  <option value="pending">Pending</option>
                   <option value="interview_scheduled">Interview Scheduled</option>
                   <option value="shortlisted">Shortlisted</option>
                   <option value="selected">Selected</option>
@@ -137,7 +222,7 @@ export default function StudentsPage() {
               <button onClick={handleEditSave} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                 Save Changes
               </button>
-              <button onClick={() => setEditModal(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              <button onClick={() => { setEditModal(null); setEditError(""); }} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -201,7 +286,21 @@ export default function StudentsPage() {
                       <td className="px-6 py-4">
                         <div className="flex gap-1 flex-wrap">
                           <button
-                            onClick={() => { setEditModal(enrollment); setEditForm({ status: enrollment.status, remarks: "" }); }}
+                            onClick={() => {
+                              setEditModal(enrollment);
+                              setEditForm({ status: enrollment.status, remarks: "" });
+                              setStudentForm({
+                                name: enrollment.student.name || "",
+                                email: enrollment.student.email || "",
+                                phone: enrollment.student.phone || "",
+                                password: "",
+                                collegeName: enrollment.student.collegeName || "",
+                                degree: enrollment.student.degree || "",
+                                year: enrollment.student.year || "",
+                                address: enrollment.student.address || "",
+                              });
+                              setEditError("");
+                            }}
                             className="text-xs bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-100 border"
                           >
                             Edit

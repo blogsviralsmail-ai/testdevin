@@ -123,6 +123,11 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+                <input value={settings.company_address || ""} onChange={(e) => updateSetting("company_address", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="123, Street, City, State - PIN" />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Support Email</label>
                 <input value={settings.support_email || ""} onChange={(e) => updateSetting("support_email", e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="support@yourcompany.com" />

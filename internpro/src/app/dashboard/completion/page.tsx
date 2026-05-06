@@ -63,7 +63,18 @@ export default function CompletionPage() {
 
   const handleApprove = async () => {
     if (!approveModal) return;
-    await fetch(`/api/enrollments/${approveModal.id}`, {
+    const enrollmentId = approveModal.id;
+
+    // If TL hasn't categorized yet, auto-set as "good" before approving
+    if (!approveModal.teamLeaderCategory) {
+      await fetch(`/api/enrollments/${enrollmentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamLeaderCategory: "good", teamLeaderRemarks: "Auto-categorized by admin" }),
+      });
+    }
+
+    await fetch(`/api/enrollments/${enrollmentId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -71,19 +82,20 @@ export default function CompletionPage() {
         adminRemarks: approveRemarks,
       }),
     });
-    setApproveModal(null);
-    setApproveRemarks("");
 
     // Auto-generate experience letter
-    await fetch("/api/experience-letters", {
+    const expRes = await fetch("/api/experience-letters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        enrollmentId: approveModal.id,
-        category: approveModal.teamLeaderCategory || "good",
-      }),
+      body: JSON.stringify({ enrollmentId }),
     });
+    if (!expRes.ok) {
+      const data = await expRes.json();
+      alert("Experience letter error: " + (data.error || "Unknown error"));
+    }
 
+    setApproveModal(null);
+    setApproveRemarks("");
     fetchData();
   };
 

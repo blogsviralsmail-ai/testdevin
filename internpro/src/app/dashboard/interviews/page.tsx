@@ -23,9 +23,17 @@ export default function InterviewsPage() {
   const [loading, setLoading] = useState(true);
   const [selectingId, setSelectingId] = useState<string | null>(null);
   const [editMeetLink, setEditMeetLink] = useState<{ id: string; link: string } | null>(null);
+  const [editEnrollment, setEditEnrollment] = useState<{ enrollmentId: string; salary: string; weekoffs: string; paidLeaves: string; workTiming: string; joiningDate: string; feeType: string; feeAmount: string; stipendAmount: string } | null>(null);
+
+  const getNextDay = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  };
+
   const [selectionForm, setSelectionForm] = useState({
     salary: "5000", weekoffs: "2", paidLeaves: "2",
-    workTiming: "10:00 AM - 6:00 PM", joiningDate: "",
+    workTiming: "10:00 AM - 6:00 PM", joiningDate: getNextDay(),
     feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
   });
 
@@ -53,6 +61,10 @@ export default function InterviewsPage() {
 
   const handleSelect = async () => {
     if (!selectingId) return;
+    if (!selectionForm.joiningDate) {
+      alert("Joining date is required!");
+      return;
+    }
     await fetch("/api/offer-letters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -62,13 +74,33 @@ export default function InterviewsPage() {
         weekoffs: parseInt(selectionForm.weekoffs),
         paidLeaves: parseInt(selectionForm.paidLeaves),
         workTiming: selectionForm.workTiming,
-        joiningDate: selectionForm.joiningDate || new Date().toISOString(),
+        joiningDate: selectionForm.joiningDate,
         feeType: selectionForm.feeType,
         feeAmount: parseFloat(selectionForm.feeAmount),
         stipendAmount: parseFloat(selectionForm.stipendAmount),
       }),
     });
     setSelectingId(null);
+    fetchInterviews();
+  };
+
+  const handleEditEnrollment = async () => {
+    if (!editEnrollment) return;
+    await fetch(`/api/enrollments/${editEnrollment.enrollmentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        salary: parseFloat(editEnrollment.salary),
+        weekoffs: parseInt(editEnrollment.weekoffs),
+        paidLeaves: parseInt(editEnrollment.paidLeaves),
+        workTiming: editEnrollment.workTiming,
+        joiningDate: editEnrollment.joiningDate,
+        feeType: editEnrollment.feeType,
+        feeAmount: parseFloat(editEnrollment.feeAmount),
+        stipendAmount: parseFloat(editEnrollment.stipendAmount),
+      }),
+    });
+    setEditEnrollment(null);
     fetchInterviews();
   };
 
@@ -123,9 +155,10 @@ export default function InterviewsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date <span className="text-red-500">*</span></label>
                 <input type="date" value={selectionForm.joiningDate} onChange={(e) => setSelectionForm({...selectionForm, joiningDate: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                  className="w-full px-3 py-2 rounded-lg border text-gray-900" required />
+                <p className="text-xs text-gray-500 mt-1">Required — agar blank rahe toh next day auto-fill hoti hai</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fee Type</label>
@@ -161,6 +194,77 @@ export default function InterviewsPage() {
                 Select & Generate Offer Letter
               </button>
               <button onClick={() => setSelectingId(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Enrollment Modal */}
+      {editEnrollment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Edit Selection Details</h2>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Salary/Stipend (₹)</label>
+                  <input type="number" value={editEnrollment.salary} onChange={(e) => setEditEnrollment({...editEnrollment, salary: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Offs (days)</label>
+                  <input type="number" value={editEnrollment.weekoffs} onChange={(e) => setEditEnrollment({...editEnrollment, weekoffs: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Paid Leaves/month</label>
+                  <input type="number" value={editEnrollment.paidLeaves} onChange={(e) => setEditEnrollment({...editEnrollment, paidLeaves: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Work Timing</label>
+                  <input type="text" value={editEnrollment.workTiming} onChange={(e) => setEditEnrollment({...editEnrollment, workTiming: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
+                <input type="date" value={editEnrollment.joiningDate} onChange={(e) => setEditEnrollment({...editEnrollment, joiningDate: e.target.value})}
+                  className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fee Type</label>
+                <select value={editEnrollment.feeType} onChange={(e) => setEditEnrollment({...editEnrollment, feeType: e.target.value})}
+                  className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                  <option value="free">Free</option>
+                  <option value="paid">Paid — Student pays</option>
+                  <option value="stipend">Stipend — Company pays</option>
+                </select>
+              </div>
+              {editEnrollment.feeType === "paid" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fee Amount (₹)</label>
+                  <input type="number" value={editEnrollment.feeAmount} onChange={(e) => setEditEnrollment({...editEnrollment, feeAmount: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                </div>
+              )}
+              {editEnrollment.feeType === "stipend" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stipend Amount (₹/month)</label>
+                  <input type="number" value={editEnrollment.stipendAmount} onChange={(e) => setEditEnrollment({...editEnrollment, stipendAmount: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={handleEditEnrollment} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                Save Changes
+              </button>
+              <button onClick={() => setEditEnrollment(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -259,6 +363,17 @@ export default function InterviewsPage() {
                         Reject
                       </button>
                     </div>
+                  )}
+                  {i.result === "selected" && (
+                    <button onClick={() => setEditEnrollment({
+                      enrollmentId: i.enrollment.id,
+                      salary: "5000", weekoffs: "2", paidLeaves: "2",
+                      workTiming: "10:00 AM - 6:00 PM", joiningDate: getNextDay(),
+                      feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
+                    })}
+                      className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs rounded-lg hover:bg-indigo-200 mt-2">
+                      Edit Details
+                    </button>
                   )}
                 </div>
               </div>

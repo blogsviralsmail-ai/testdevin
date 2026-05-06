@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, htmlContent, isDefault } = body;
+    const { name, htmlContent, isDefault, type } = body;
 
     if (!name || !htmlContent) {
       return NextResponse.json({ error: "Name and HTML content are required" }, { status: 400 });
@@ -31,13 +31,13 @@ export async function POST(request: NextRequest) {
 
     if (isDefault) {
       await prisma.offerLetterTemplate.updateMany({
-        where: { isDefault: true },
+        where: { isDefault: true, type: type || "offer" },
         data: { isDefault: false },
       });
     }
 
     const template = await prisma.offerLetterTemplate.create({
-      data: { name, htmlContent, isDefault: isDefault || false },
+      data: { name, htmlContent, isDefault: isDefault || false, type: type || "offer" },
     });
 
     return NextResponse.json(template, { status: 201 });
