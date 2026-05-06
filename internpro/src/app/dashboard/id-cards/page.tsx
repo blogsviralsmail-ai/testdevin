@@ -32,18 +32,28 @@ export default function IDCardsPage() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [generateForm, setGenerateForm] = useState({ userId: "", designation: "Intern", department: "", photoUrl: "" });
   const [previewCard, setPreviewCard] = useState<EmployeeCard | null>(null);
+  const [companyLogo, setCompanyLogo] = useState("/uploads/kkhs-logo-new.jpg");
+  const [companyName, setCompanyName] = useState("KKHS Media Private Limited");
 
   const fetchData = useCallback(async () => {
-    const [cardsRes, enrollRes, meRes] = await Promise.all([
+    const [cardsRes, enrollRes, meRes, settingsRes] = await Promise.all([
       fetch("/api/employee-cards"),
       fetch("/api/enrollments?status=selected"),
       fetch("/api/auth/me"),
+      fetch("/api/settings"),
     ]);
     if (cardsRes.ok) setCards(await cardsRes.json());
     if (enrollRes.ok) setEnrollments(await enrollRes.json());
     if (meRes.ok) {
       const meData = await meRes.json();
       setUser(meData.user);
+    }
+    if (settingsRes.ok) {
+      const sData = await settingsRes.json();
+      const sMap: Record<string, string> = {};
+      if (Array.isArray(sData)) sData.forEach((s: { key: string; value: string }) => { sMap[s.key] = s.value; });
+      if (sMap.letterhead_logo) setCompanyLogo(sMap.letterhead_logo);
+      if (sMap.letterhead_company_name) setCompanyName(sMap.letterhead_company_name);
     }
   }, []);
 
@@ -127,8 +137,8 @@ export default function IDCardsPage() {
 </div>
 <div class="card">
   <div class="card-header">
-    <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS Media" />
-    <div class="co-name">KKHS Media Private Limited</div>
+    <img src="${companyLogo}" alt="${companyName}" />
+    <div class="co-name">${companyName}</div>
   </div>
   <div class="card-body">
     <div class="photo-frame">${photoSrc ? `<img src="${photoSrc}" />` : `<span class="placeholder">&#128100;</span>`}</div>
@@ -216,8 +226,8 @@ export default function IDCardsPage() {
             <div className="mx-auto rounded-lg overflow-hidden shadow-lg border border-gray-300 flex flex-col" style={{ width: "189px", height: "321px" }}>
               {/* Header */}
               <div className="bg-[#0000AA] text-center pt-2.5 pb-2 px-2 relative flex-shrink-0">
-                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-8 mx-auto" />
-                <div className="text-white/85 text-[6px] mt-1 tracking-wider uppercase">KKHS Media Private Limited</div>
+                <img src={companyLogo} alt={companyName} className="h-8 mx-auto" />
+                <div className="text-white/85 text-[6px] mt-1 tracking-wider uppercase">{companyName}</div>
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d32f2f]"></div>
               </div>
               {/* Body */}
@@ -267,8 +277,8 @@ export default function IDCardsPage() {
           {cards.map((card) => (
             <div key={card.id} className="bg-white rounded-xl border hover:shadow-md transition overflow-hidden">
               <div className="bg-[#0000AA] text-white py-2 px-3 flex items-center justify-center gap-2 relative">
-                <img src="/uploads/kkhs-logo-new.jpg" alt="KKHS" className="h-5" />
-                <span className="text-[8px] text-white/80 uppercase tracking-wide">KKHS Media Pvt. Ltd.</span>
+                <img src={companyLogo} alt={companyName} className="h-5" />
+                <span className="text-[8px] text-white/80 uppercase tracking-wide">{companyName}</span>
                 <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#d32f2f]"></div>
               </div>
               <div className="p-4 flex flex-col items-center text-center">
