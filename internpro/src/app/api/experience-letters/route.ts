@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       enrollment: {
         include: {
           student: { select: { name: true, email: true } },
-          batch: { include: { program: { select: { title: true } } } },
+          batch: { include: { program: { select: { title: true, duration: true } } } },
         },
       },
     },

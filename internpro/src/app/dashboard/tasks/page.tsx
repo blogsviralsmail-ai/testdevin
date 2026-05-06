@@ -66,6 +66,8 @@ export default function TasksPage() {
   const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [selectedStudentName, setSelectedStudentName] = useState("");
+  const [filterBatch, setFilterBatch] = useState("");
+  const [filterStudent, setFilterStudent] = useState("");
 
   const fetchData = useCallback(async () => {
     const [tasksRes, batchesRes, meRes] = await Promise.all([
@@ -297,6 +299,36 @@ export default function TasksPage() {
         </form>
       )}
 
+      {/* Filters */}
+      {!isStudent && (
+        <div className="bg-white rounded-xl p-4 border mb-6">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Filter by Batch</label>
+              <select value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[200px]">
+                <option value="">All Batches</option>
+                {batches.map((b) => (
+                  <option key={b.id} value={`${b.program.title} - ${b.name}`}>{b.program.title} - {b.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Filter by Student</label>
+              <input
+                type="text"
+                value={filterStudent}
+                onChange={(e) => setFilterStudent(e.target.value)}
+                placeholder="Type student name..."
+                className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[200px]"
+              />
+            </div>
+            {(filterBatch || filterStudent) && (
+              <button onClick={() => { setFilterBatch(""); setFilterStudent(""); }} className="text-xs text-red-600 hover:text-red-800 mt-5">Clear Filters</button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Batch-level Delete */}
       {(isAdmin || isTeamLeader) && batches.length > 0 && (
         <div className="bg-white rounded-xl p-4 border mb-6">
@@ -327,7 +359,11 @@ export default function TasksPage() {
             <p className="text-gray-600">{isStudent ? "No tasks available yet. Tasks will appear as your working days progress." : "No tasks yet. Create your first task!"}</p>
           </div>
         ) : (
-          tasks.map((task) => {
+          tasks.filter((task) => {
+            if (filterBatch && `${task.batch.program.title} - ${task.batch.name}` !== filterBatch) return false;
+            if (filterStudent && !task.assignedTo?.toLowerCase().includes(filterStudent.toLowerCase())) return false;
+            return true;
+          }).map((task) => {
             const submission = getSubmissionForTask(task.id);
             const isReviewed = submission?.status === "reviewed";
             const isSubmitted = !!submission;

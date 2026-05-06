@@ -184,9 +184,11 @@ export default function OfferLetterPage() {
               <div key={letter.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{letter.enrollment.batch.program.title}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {letter.enrollment.student?.name ? `${letter.enrollment.student.name} — ` : ""}{letter.enrollment.batch.program.title}
+                    </h3>
                     <p className="text-sm text-gray-600">Letter No: {letter.letterNumber}</p>
-                    <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                    <div className="flex gap-4 mt-2 text-sm text-gray-500 flex-wrap">
                       <span className={`px-2 py-0.5 rounded text-xs ${
                         letter.category === "excellent" ? "bg-green-100 text-green-700" :
                         letter.category === "good" ? "bg-blue-100 text-blue-700" :
