@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     const PG = "width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;";
     const PGL = "width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;";
-    const PC = "flex:1;min-height:0;overflow:hidden;padding:20px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;";
+    const PC = "flex:1;min-height:0;overflow:hidden;padding:14px 36px 8px;display:flex;flex-direction:column;justify-content:space-between;";
 
     const extraTerms = sMap.letter_offer_extra || "";
     const extraSection = extraTerms ? `<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">9. Additional Terms</p><p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">${escapeHtml(extraTerms)}</p>` : "";
@@ -106,9 +106,9 @@ ${LH}
 <table style="width:100%;margin-bottom:6px;"><tr><td style="font-size:15px;color:#555;">Ref: <strong style="color:#222;">{{letter_number}}</strong></td><td style="text-align:right;font-size:15px;color:#555;">Date: <strong style="color:#222;">${todayDate}</strong></td></tr></table>
 <div style="text-align:center;margin:4px 0 10px;"><h2 style="margin:0;font-size:30px;font-weight:700;color:#0000AA;letter-spacing:3px;text-transform:uppercase;">Offer Letter</h2><div style="width:60px;height:3px;background:#d32f2f;margin:6px auto 0;"></div></div>
 <p style="font-size:17px;color:#333;margin:8px 0 4px;">Dear <strong style="color:#0000AA;">{{student_name}}</strong>,</p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">With reference to your application and subsequent interactions, we are pleased to offer you an internship position at <strong>${escapeHtml(lhCompany)}</strong> for the <strong>{{program_name}}</strong> program. This offer is subject to the following terms and conditions outlined below.</p>
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">With reference to your application and subsequent interactions, we are pleased to offer you an internship position at <strong>${escapeHtml(lhCompany)}</strong> for the <strong>{{program_name}}</strong> program. This offer is subject to the following terms and conditions outlined below.</p>
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">1. Position Details</p>
-<table style="width:100%;border-collapse:collapse;margin:0 0 6px;font-size:16px;border:1px solid #ddd;">
+<table style="width:100%;border-collapse:collapse;margin:0 0 4px;font-size:16px;border:1px solid #ddd;">
 <tr style="background:#0000AA;"><td style="padding:9px 16px;color:white;font-weight:600;width:180px;border:1px solid #0000AA;">Particulars</td><td style="padding:9px 16px;color:white;font-weight:600;border:1px solid #0000AA;">Details</td></tr>
 <tr><td style="padding:8px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Program</td><td style="padding:8px 16px;border:1px solid #e0e0e0;">{{program_name}}</td></tr>
 <tr><td style="padding:8px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Duration</td><td style="padding:8px 16px;border:1px solid #e0e0e0;">{{duration}} Days</td></tr>
@@ -121,10 +121,10 @@ ${LH}
 <tr><td style="padding:8px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Payment Type</td><td style="padding:8px 16px;border:1px solid #e0e0e0;">${feeLabel}</td></tr>
 </table>
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">2. Reporting &amp; Probation</p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">You shall report to your designated Team Leader on the date of joining. The first <strong>7 working days</strong> shall constitute a probationary period during which your performance, punctuality, and conduct will be evaluated. Upon successful completion of probation, a minimum written notice of <strong>7 days</strong> shall be required from either party for separation.</p>
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">You shall report to your designated Team Leader on the date of joining. The first <strong>7 working days</strong> shall constitute a probationary period during which your performance, punctuality, and conduct will be evaluated. Upon successful completion of probation, a minimum written notice of <strong>7 days</strong> shall be required from either party for separation.</p>
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">3. Code of Conduct</p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">As an intern, you are expected to:</p>
-<ul style="font-size:16px;color:#333;line-height:1.55;margin:0 0 4px;padding-left:24px;">
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">As an intern, you are expected to:</p>
+<ul style="font-size:16px;color:#333;line-height:1.55;margin:0;padding-left:24px;">
 <li style="margin-bottom:2px;">Maintain professional behaviour and adhere to all workplace policies and guidelines.</li>
 <li style="margin-bottom:2px;">Follow the prescribed work schedule and obtain prior written approval for any leave.</li>
 <li style="margin-bottom:2px;">Complete all assigned tasks within stipulated deadlines with a quality-first approach.</li>
@@ -140,11 +140,11 @@ ${LH}
 ${LH}
 <div style="${PC}">
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">5. Intellectual Property Rights</p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">Any and all work product, including but not limited to code, designs, content, documentation, creative output, research findings, or any other deliverables produced during the course of this internship shall be the sole and exclusive intellectual property of ${escapeHtml(lhCompany)}. You hereby agree to irrevocably assign all rights, title, and interest in such work to the company without any additional consideration.</p>
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">Any and all work product, including but not limited to code, designs, content, documentation, creative output, research findings, or any other deliverables produced during the course of this internship shall be the sole and exclusive intellectual property of ${escapeHtml(lhCompany)}. You hereby agree to irrevocably assign all rights, title, and interest in such work to the company without any additional consideration.</p>
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">6. Termination &amp; Separation</p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">The company reserves the right to terminate this internship at any time in the event of misconduct, breach of confidentiality, unsatisfactory performance, violation of company policies, or any behaviour detrimental to the organization. The intern may also choose to resign by providing a minimum of <strong>7 days</strong> written notice to the reporting authority. All company property, access credentials, and confidential materials must be returned upon separation.</p>
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">The company reserves the right to terminate this internship at any time in the event of misconduct, breach of confidentiality, unsatisfactory performance, violation of company policies, or any behaviour detrimental to the organization. The intern may also choose to resign by providing a minimum of <strong>7 days</strong> written notice to the reporting authority. All company property, access credentials, and confidential materials must be returned upon separation.</p>
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">7. General Terms &amp; Conditions</p>
-<ul style="font-size:16px;color:#333;line-height:1.55;margin:0 0 4px;padding-left:24px;">
+<ul style="font-size:16px;color:#333;line-height:1.55;margin:0;padding-left:24px;">
 <li style="margin-bottom:2px;">This offer is contingent upon successful verification of your educational qualifications, identity documents, and any other credentials as may be required.</li>
 <li style="margin-bottom:2px;">The company reserves the right to assign you to any project, team, or department as per prevailing business requirements and organizational needs.</li>
 <li style="margin-bottom:2px;">Use of personal mobile phones during working hours shall be restricted to designated break periods only.</li>
@@ -154,7 +154,7 @@ ${LH}
 ${extraSection}
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">8. Acceptance</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">Please confirm your acceptance of this offer by reporting at the office on the above-mentioned date of joining along with the following documents: <strong>Aadhar Card, PAN Card (if applicable), two passport-size photographs, all relevant educational certificates,</strong> and a <strong>signed copy of this offer letter.</strong></p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">We look forward to your valuable association with ${escapeHtml(lhCompany)} and wish you a highly productive and rewarding internship experience with us.</p>
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">We look forward to your valuable association with ${escapeHtml(lhCompany)} and wish you a highly productive and rewarding internship experience with us.</p>
 <p style="margin:6px 0 0;font-size:17px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
 <div style="margin-top:6px;">
 ${sigBlock}
