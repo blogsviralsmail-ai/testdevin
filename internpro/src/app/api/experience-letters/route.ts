@@ -115,48 +115,48 @@ export async function POST(request: NextRequest) {
       const lhEmail = sMap.letterhead_email || "hari@kkhsmedia.com";
       const lhGst = sMap.letterhead_gst || "08AAICK3853C1ZL";
 
-      const LH = `<table style="width:100%;border-collapse:collapse;margin:0;padding:0;"><tr><td style="width:80px;vertical-align:middle;padding:10px 0 10px 24px;"><img src="${lhLogo}" alt="${escapeHtml(lhCompany)}" style="height:65px;display:block;object-fit:contain;" /></td><td style="text-align:right;vertical-align:middle;padding:10px 24px 10px 12px;"><p style="margin:0;font-size:19px;font-weight:700;color:#0000AA;letter-spacing:0.5px;">${escapeHtml(lhCompany)}</p><p style="margin:4px 0 0;font-size:11px;color:#555;line-height:1.4;">${escapeHtml(lhAddress)}</p><p style="margin:3px 0 0;font-size:11px;color:#555;">Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></td></tr></table><div style="height:3px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);"></div>`;
+      const LH = `<table style="width:100%;border-collapse:collapse;margin:0;padding:0;"><tr><td style="width:100px;vertical-align:middle;padding:12px 0 12px 28px;"><img src="${lhLogo}" alt="${escapeHtml(lhCompany)}" style="height:75px;display:block;object-fit:contain;" /></td><td style="text-align:right;vertical-align:middle;padding:12px 28px 12px 14px;"><p style="margin:0;font-size:28px;font-weight:700;color:#0000AA;letter-spacing:0.5px;">${escapeHtml(lhCompany)}</p><p style="margin:5px 0 0;font-size:16px;color:#555;line-height:1.4;">${escapeHtml(lhAddress)}</p><p style="margin:4px 0 0;font-size:16px;color:#555;">Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></td></tr></table><div style="height:4px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);"></div>`;
 
-      const FT = `<div style="height:2px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);margin-top:auto;"></div><div style="padding:6px 24px;text-align:center;"><p style="margin:0;font-size:9px;font-weight:600;color:#0000AA;">${escapeHtml(lhCompany)}</p><p style="margin:2px 0 0;font-size:8px;color:#666;">${escapeHtml(lhAddress)} &nbsp;|&nbsp; Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></div>`;
+      const FT = `<div style="height:3px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);margin-top:auto;"></div><div style="padding:8px 28px;text-align:center;"><p style="margin:0;font-size:14px;font-weight:600;color:#0000AA;">${escapeHtml(lhCompany)}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">${escapeHtml(lhAddress)} &nbsp;|&nbsp; Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></div>`;
 
       const extraExpNote = sMap.letter_exp_extra || "";
-      const extraExpSection = extraExpNote ? `<p style="font-size:10.5px;color:#333;line-height:1.55;text-align:justify;margin:6px 0 8px;">${escapeHtml(extraExpNote)}</p>` : "";
+      const extraExpSection = extraExpNote ? `<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:8px 0 10px;">${escapeHtml(extraExpNote)}</p>` : "";
 
       htmlContent = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;margin:0 auto;padding:0;background:white;color:#222;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">
 <div style="width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;">
 ${LH}
-<div style="flex:1;padding:14px 30px 8px;">
-<table style="width:100%;margin-bottom:8px;"><tr><td style="font-size:10px;color:#555;">Ref: <strong style="color:#222;">${letterNumber}</strong></td><td style="text-align:right;font-size:10px;color:#555;">Date: <strong style="color:#222;">${todayFormatted}</strong></td></tr></table>
-<div style="text-align:center;margin:4px 0 14px;"><h2 style="margin:0;font-size:20px;font-weight:700;color:#0000AA;letter-spacing:3px;text-transform:uppercase;">Experience Certificate</h2><div style="width:50px;height:2px;background:#d32f2f;margin:4px auto 0;"></div></div>
-<p style="font-size:11.5px;color:#333;margin:8px 0 6px;"><strong>To Whom It May Concern,</strong></p>
-<p style="font-size:10.5px;color:#333;line-height:1.6;text-align:justify;margin:0 0 8px;">This is to certify that <strong style="color:#0000AA;">${safeStudentName}</strong> was associated with <strong>${escapeHtml(lhCompany)}</strong> as an intern under the <strong>${safeProgramTitle}</strong> program. The details of the engagement are summarized in the table below:</p>
-<table style="width:100%;border-collapse:collapse;margin:0 0 10px;font-size:10.5px;border:1px solid #ddd;">
-<tr style="background:#0000AA;"><td style="padding:5px 12px;color:white;font-weight:600;width:160px;border:1px solid #0000AA;">Particulars</td><td style="padding:5px 12px;color:white;font-weight:600;border:1px solid #0000AA;">Details</td></tr>
-<tr><td style="padding:4px 12px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Program</td><td style="padding:4px 12px;border:1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
-<tr><td style="padding:4px 12px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Duration</td><td style="padding:4px 12px;border:1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
-<tr><td style="padding:4px 12px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Period</td><td style="padding:4px 12px;border:1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
-<tr><td style="padding:4px 12px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Performance</td><td style="padding:4px 12px;border:1px solid #e0e0e0;"><strong style="color:#0000AA;">${performanceLabel}</strong></td></tr>
-${safeRemarks ? `<tr><td style="padding:4px 12px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Remarks</td><td style="padding:4px 12px;border:1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
+<div style="flex:1;padding:18px 32px 10px;">
+<table style="width:100%;margin-bottom:12px;"><tr><td style="font-size:15px;color:#555;">Ref: <strong style="color:#222;">${letterNumber}</strong></td><td style="text-align:right;font-size:15px;color:#555;">Date: <strong style="color:#222;">${todayFormatted}</strong></td></tr></table>
+<div style="text-align:center;margin:6px 0 18px;"><h2 style="margin:0;font-size:30px;font-weight:700;color:#0000AA;letter-spacing:3px;text-transform:uppercase;">Experience Certificate</h2><div style="width:60px;height:3px;background:#d32f2f;margin:6px auto 0;"></div></div>
+<p style="font-size:17px;color:#333;margin:10px 0 8px;"><strong>To Whom It May Concern,</strong></p>
+<p style="font-size:16px;color:#333;line-height:1.6;text-align:justify;margin:0 0 10px;">This is to certify that <strong style="color:#0000AA;">${safeStudentName}</strong> was associated with <strong>${escapeHtml(lhCompany)}</strong> as an intern under the <strong>${safeProgramTitle}</strong> program. The details of the engagement are summarized in the table below:</p>
+<table style="width:100%;border-collapse:collapse;margin:0 0 12px;font-size:16px;border:1px solid #ddd;">
+<tr style="background:#0000AA;"><td style="padding:8px 14px;color:white;font-weight:600;width:180px;border:1px solid #0000AA;">Particulars</td><td style="padding:8px 14px;color:white;font-weight:600;border:1px solid #0000AA;">Details</td></tr>
+<tr><td style="padding:6px 14px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Program</td><td style="padding:6px 14px;border:1px solid #e0e0e0;">${safeProgramTitle}</td></tr>
+<tr><td style="padding:6px 14px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Duration</td><td style="padding:6px 14px;border:1px solid #e0e0e0;">${enrollment.batch.program.duration} Days</td></tr>
+<tr><td style="padding:6px 14px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Period</td><td style="padding:6px 14px;border:1px solid #e0e0e0;">${startDateStr} to ${endDateStr}</td></tr>
+<tr><td style="padding:6px 14px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Performance</td><td style="padding:6px 14px;border:1px solid #e0e0e0;"><strong style="color:#0000AA;">${performanceLabel}</strong></td></tr>
+${safeRemarks ? `<tr><td style="padding:6px 14px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Remarks</td><td style="padding:6px 14px;border:1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
 </table>
-<p style="font-size:11.5px;font-weight:700;color:#0000AA;margin:8px 0 4px;">Performance Summary</p>
-<p style="font-size:10.5px;color:#333;line-height:1.6;text-align:justify;margin:0 0 8px;">During the internship tenure, ${safeStudentName} demonstrated commendable professionalism, technical aptitude, and a consistently proactive approach towards learning and skill development. The intern met assigned deadlines with diligence, exhibited strong analytical and problem-solving capabilities, and collaborated effectively with team members across various projects. The overall quality of work delivered was rated as <strong style="color:#0000AA;">${performanceLabel}</strong> by the supervising authority.</p>
-<p style="font-size:11.5px;font-weight:700;color:#0000AA;margin:8px 0 4px;">Key Strengths Observed</p>
-<ul style="font-size:10.5px;color:#333;line-height:1.6;margin:0 0 8px;padding-left:20px;">
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 6px;">Performance Summary</p>
+<p style="font-size:16px;color:#333;line-height:1.6;text-align:justify;margin:0 0 10px;">During the internship tenure, ${safeStudentName} demonstrated commendable professionalism, technical aptitude, and a consistently proactive approach towards learning and skill development. The intern met assigned deadlines with diligence, exhibited strong analytical and problem-solving capabilities, and collaborated effectively with team members across various projects. The overall quality of work delivered was rated as <strong style="color:#0000AA;">${performanceLabel}</strong> by the supervising authority.</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 6px;">Key Strengths Observed</p>
+<ul style="font-size:16px;color:#333;line-height:1.6;margin:0 0 10px;padding-left:24px;">
 <li style="margin-bottom:3px;">Strong understanding of core concepts and practical applications related to the ${safeProgramTitle} domain.</li>
 <li style="margin-bottom:3px;">Demonstrated ability to work both independently and as an effective team contributor.</li>
 <li style="margin-bottom:3px;">Excellent time management skills with consistent adherence to project deadlines and deliverables.</li>
 <li style="margin-bottom:3px;">Willingness to learn new technologies, tools, and methodologies as required by the role.</li>
 <li>Professional conduct, positive workplace attitude, and strong interpersonal communication skills throughout the engagement.</li>
 </ul>
-<p style="font-size:11.5px;font-weight:700;color:#0000AA;margin:8px 0 4px;">Recommendation</p>
-<p style="font-size:10.5px;color:#333;line-height:1.6;text-align:justify;margin:0 0 8px;">Based on the overall performance, dedication, and professional conduct demonstrated during the internship period, we are pleased to recommend <strong style="color:#0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this tenure will serve as a strong foundation for future career growth. We wish ${safeStudentName} all the very best in all future endeavours.</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 6px;">Recommendation</p>
+<p style="font-size:16px;color:#333;line-height:1.6;text-align:justify;margin:0 0 10px;">Based on the overall performance, dedication, and professional conduct demonstrated during the internship period, we are pleased to recommend <strong style="color:#0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this tenure will serve as a strong foundation for future career growth. We wish ${safeStudentName} all the very best in all future endeavours.</p>
 ${extraExpSection}
-<p style="margin:12px 0 0;font-size:11px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
-<div style="margin-top:8px;">
+<p style="margin:16px 0 0;font-size:17px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
+<div style="margin-top:10px;">
 ${sigBlock}
-${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:12px;">${escapeHtml(signatoryName)}</p>` : ""}
-<p style="margin:2px 0 0;font-size:10px;color:#555;">${escapeHtml(signatoryDesignation)}</p>
-<p style="margin:2px 0 0;font-size:10px;color:#555;">${escapeHtml(lhCompany)}</p>
+${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:18px;">${escapeHtml(signatoryName)}</p>` : ""}
+<p style="margin:3px 0 0;font-size:15px;color:#555;">${escapeHtml(signatoryDesignation)}</p>
+<p style="margin:3px 0 0;font-size:15px;color:#555;">${escapeHtml(lhCompany)}</p>
 </div>
 </div>
 <div style="flex-shrink:0;">${FT}</div>
