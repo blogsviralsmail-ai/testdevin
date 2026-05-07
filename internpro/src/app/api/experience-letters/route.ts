@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         ? `<img src="${signatureUrl}" alt="Signature" style="height: 40px; display: block; margin-bottom: 2px; object-fit: contain;" />`
         : `<div style="height: 40px; margin-bottom: 2px;"></div>`;
 
-      const lhLogo = sMap.letterhead_logo || "/uploads/kkhs-logo-new.jpg";
+      const lhLogo = sMap.letterhead_logo || "/uploads/kkhs-logo-new.png";
       const lhCompany = sMap.letterhead_company_name || org.name || "KKHS Media Private Limited";
       const lhAddress = sMap.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012";
       const lhPhone = sMap.letterhead_phone || "9782005500";

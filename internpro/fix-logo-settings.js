@@ -2,10 +2,10 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-const CORRECT_LOGO = "/uploads/kkhs-logo-new.jpg";
+const CORRECT_LOGO = "/uploads/kkhs-logo-new.png";
 
 async function main() {
-  // 1. Populate default settings if missing
+  // 1. Populate default settings (upsert to overwrite stale values too)
   const defaults = {
     letterhead_logo: CORRECT_LOGO,
     letterhead_company_name: "KKHS Media Private Limited",
@@ -18,77 +18,54 @@ async function main() {
   };
 
   for (const [key, value] of Object.entries(defaults)) {
-    const existing = await prisma.setting.findUnique({ where: { key } });
-    if (!existing) {
-      await prisma.setting.create({ data: { key, value } });
-      console.log(`Created setting: ${key} = ${value}`);
-    } else {
-      console.log(`Setting already exists: ${key} = ${existing.value}`);
-    }
+    await prisma.setting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    });
+    console.log(`Setting: ${key} = ${value}`);
   }
 
-  // 2. Fix all offer letters — replace broken logo paths
+  // Helper: replace all known broken logo paths in HTML
+  function fixLogoInHtml(html) {
+    const before = html;
+    // Match any src attribute pointing to old/broken logo paths
+    html = html.replace(/src="\/kkhs-logo\.png"/g, `src="${CORRECT_LOGO}"`);
+    html = html.replace(/src="\/kkhs-logo-new\.jpg"/g, `src="${CORRECT_LOGO}"`);
+    html = html.replace(/src="\/uploads\/kkhs-logo\.png"/g, `src="${CORRECT_LOGO}"`);
+    html = html.replace(/src="\/uploads\/kkhs-logo-new\.jpg"/g, `src="${CORRECT_LOGO}"`);
+    return { html, changed: html !== before };
+  }
+
+  // 2. Fix all offer letters
   const offerLetters = await prisma.offerLetter.findMany();
   for (const ol of offerLetters) {
-    if (!ol.htmlContent) continue;
-    let html = ol.htmlContent;
-    let changed = false;
-
-    // Replace any broken logo paths
-    const logoPatterns = [
-      /src="\/kkhs-logo\.png"/g,
-      /src="\/kkhs-logo-new\.jpg"/g,
-      /src="\/uploads\/kkhs-logo\.png"/g,
-    ];
-    for (const pattern of logoPatterns) {
-      if (pattern.test(html)) {
-        html = html.replace(pattern, `src="${CORRECT_LOGO}"`);
-        changed = true;
-      }
-    }
-
+    if (!ol.htmlContent) { console.log(`Offer letter ${ol.letterNumber}: no HTML`); continue; }
+    const { html, changed } = fixLogoInHtml(ol.htmlContent);
     if (changed) {
-      await prisma.offerLetter.update({
-        where: { id: ol.id },
-        data: { htmlContent: html },
-      });
+      await prisma.offerLetter.update({ where: { id: ol.id }, data: { htmlContent: html } });
       console.log(`Fixed offer letter: ${ol.letterNumber}`);
     } else {
       console.log(`Offer letter OK: ${ol.letterNumber}`);
     }
   }
 
-  // 3. Fix all experience letters — replace broken logo paths
+  // 3. Fix all experience letters
   const expLetters = await prisma.experienceLetter.findMany();
   for (const el of expLetters) {
-    if (!el.htmlContent) continue;
-    let html = el.htmlContent;
-    let changed = false;
-
-    const logoPatterns = [
-      /src="\/kkhs-logo\.png"/g,
-      /src="\/kkhs-logo-new\.jpg"/g,
-      /src="\/uploads\/kkhs-logo\.png"/g,
-    ];
-    for (const pattern of logoPatterns) {
-      if (pattern.test(html)) {
-        html = html.replace(pattern, `src="${CORRECT_LOGO}"`);
-        changed = true;
-      }
-    }
-
+    if (!el.htmlContent) { console.log(`Experience letter ${el.letterNumber}: no HTML`); continue; }
+    const { html, changed } = fixLogoInHtml(el.htmlContent);
     if (changed) {
-      await prisma.experienceLetter.update({
-        where: { id: el.id },
-        data: { htmlContent: html },
-      });
+      await prisma.experienceLetter.update({ where: { id: el.id }, data: { htmlContent: html } });
       console.log(`Fixed experience letter: ${el.letterNumber}`);
     } else {
       console.log(`Experience letter OK: ${el.letterNumber}`);
     }
   }
 
-  console.log("\nDone! All logos fixed and settings populated.");
+  // 4. Verify
+  const settingsCount = await prisma.setting.count();
+  console.log(`\nDone! ${settingsCount} settings in DB. All logos fixed.`);
 }
 
 main()
