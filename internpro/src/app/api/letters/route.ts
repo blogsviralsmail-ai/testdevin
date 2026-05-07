@@ -31,15 +31,41 @@ export async function GET(request: NextRequest) {
 
   // Apply search filter
   if (search) {
-    if (searchType === "name") {
-      enrollmentWhere.student = { name: { contains: search } };
-    } else if (searchType === "employee_id") {
-      // Search by employee card number
+    if (searchType === "all") {
+      // Search across name, phone, employee ID, email
       const matchingCards = await prisma.employeeCard.findMany({
         where: { cardNumber: { contains: search } },
         select: { userId: true },
       });
-      const userIds = matchingCards.map((c) => c.userId);
+      const matchingUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { name: { contains: search } },
+            { phone: { contains: search } },
+            { email: { contains: search } },
+            { employeeId: { contains: search } },
+          ],
+        },
+        select: { id: true },
+      });
+      const userIds = [...new Set([...matchingCards.map(c => c.userId), ...matchingUsers.map(u => u.id)])];
+      if (session.role === "student") {
+        enrollmentWhere.studentId = session.id;
+      } else {
+        enrollmentWhere.studentId = { in: userIds };
+      }
+    } else if (searchType === "name") {
+      enrollmentWhere.student = { name: { contains: search } };
+    } else if (searchType === "employee_id") {
+      const matchingCards = await prisma.employeeCard.findMany({
+        where: { cardNumber: { contains: search } },
+        select: { userId: true },
+      });
+      const matchingEmpIds = await prisma.user.findMany({
+        where: { employeeId: { contains: search } },
+        select: { id: true },
+      });
+      const userIds = [...new Set([...matchingCards.map(c => c.userId), ...matchingEmpIds.map(u => u.id)])];
       enrollmentWhere.studentId = session.role === "student" ? session.id : { in: userIds };
     } else if (searchType === "phone") {
       enrollmentWhere.student = { phone: { contains: search } };

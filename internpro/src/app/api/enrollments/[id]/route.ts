@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { generateEmployeeId } from "@/lib/employee-id";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -26,13 +27,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Admin can add remarks and edit enrollment details
-    if (session.role === "admin") {
+    if (session.role === "admin" || session.role === "organization") {
       if (adminRemarks) data.adminRemarks = adminRemarks;
       if (salary !== undefined) data.salary = salary;
       if (weekoffs !== undefined) data.weekoffs = weekoffs;
       if (paidLeaves !== undefined) data.paidLeaves = paidLeaves;
       if (workTiming !== undefined) data.workTiming = workTiming;
-      if (joiningDate !== undefined) data.joiningDate = new Date(joiningDate);
+      if (joiningDate !== undefined) {
+        data.joiningDate = new Date(joiningDate);
+
+        // Auto-generate employee ID if not already set
+        const enrollment = await prisma.enrollment.findUnique({
+          where: { id },
+          select: { studentId: true },
+        });
+        if (enrollment) {
+          const student = await prisma.user.findUnique({
+            where: { id: enrollment.studentId },
+            select: { employeeId: true },
+          });
+          if (!student?.employeeId) {
+            const empId = await generateEmployeeId(new Date(joiningDate));
+            await prisma.user.update({
+              where: { id: enrollment.studentId },
+              data: { employeeId: empId },
+            });
+          }
+        }
+      }
       if (feeType !== undefined) data.feeType = feeType;
       if (feeAmount !== undefined) data.feeAmount = feeAmount;
       if (stipendAmount !== undefined) data.stipendAmount = stipendAmount;
@@ -42,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data.completedAt = new Date();
     }
 
-    if (session.role === "admin" && batchId) {
+    if ((session.role === "admin" || session.role === "organization") && batchId) {
       data.batchId = batchId;
     }
 

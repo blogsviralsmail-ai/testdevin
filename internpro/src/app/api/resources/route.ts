@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
         title,
         type: type || "video",
         url,
+        fileUrl: body.fileUrl || null,
         dayNumber: dayNumber ? parseInt(dayNumber) : null,
         order: parseInt(order || "0"),
       },

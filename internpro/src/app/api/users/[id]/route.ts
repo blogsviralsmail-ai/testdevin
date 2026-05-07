@@ -12,7 +12,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
     const body = await request.json();
-    const { name, email, phone, password, collegeName, degree, year, address } = body;
+    const { name, email, phone, password, collegeName, degree, year, address, avatar, dob } = body;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
@@ -22,6 +22,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (degree !== undefined) data.degree = degree;
     if (year !== undefined) data.year = year;
     if (address !== undefined) data.address = address;
+    if (avatar !== undefined) data.avatar = avatar;
+    if (dob !== undefined) data.dob = dob ? new Date(dob) : null;
 
     if (password && password.trim()) {
       data.password = await bcrypt.hash(password, 10);
@@ -30,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const user = await prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, email: true, phone: true, role: true, collegeName: true, degree: true, year: true, address: true },
+      select: { id: true, name: true, email: true, phone: true, role: true, collegeName: true, degree: true, year: true, address: true, avatar: true, dob: true, employeeId: true },
     });
 
     return NextResponse.json(user);

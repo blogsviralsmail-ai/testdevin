@@ -68,6 +68,10 @@ export default function TasksPage() {
   const [selectedStudentName, setSelectedStudentName] = useState("");
   const [filterBatch, setFilterBatch] = useState("");
   const [filterStudent, setFilterStudent] = useState("");
+  const [editTaskModal, setEditTaskModal] = useState<Task | null>(null);
+  const [editTaskForm, setEditTaskForm] = useState({ title: "", description: "", type: "regular", dayNumber: "", maxPoints: "100", isUrgent: false });
+  const [viewTaskModal, setViewTaskModal] = useState<Task | null>(null);
+  const [fileUploading, setFileUploading] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [tasksRes, batchesRes, meRes] = await Promise.all([
@@ -137,6 +141,17 @@ export default function TasksPage() {
 
   const getSubmissionForTask = (taskId: string) => {
     return submissions.find((s) => s.taskId === taskId);
+  };
+
+  const handleEditTask = async () => {
+    if (!editTaskModal) return;
+    await fetch(`/api/tasks/${editTaskModal.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editTaskForm),
+    });
+    setEditTaskModal(null);
+    fetchData();
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -395,9 +410,27 @@ export default function TasksPage() {
                     </div>
                   </div>
 
-                  {/* Admin/TL: Delete button */}
+                  {/* Admin/TL: View/Edit/Delete buttons */}
                   {(isAdmin || isTeamLeader) && (
-                    <div className="ml-4 flex-shrink-0">
+                    <div className="ml-4 flex-shrink-0 flex gap-1">
+                      <button onClick={() => setViewTaskModal(task)}
+                        className="text-xs px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200">
+                        View
+                      </button>
+                      <button onClick={() => {
+                        setEditTaskModal(task);
+                        setEditTaskForm({
+                          title: task.title,
+                          description: task.description || "",
+                          type: task.type,
+                          dayNumber: task.dayNumber?.toString() || "",
+                          maxPoints: task.maxPoints.toString(),
+                          isUrgent: task.isUrgent,
+                        });
+                      }}
+                        className="text-xs px-3 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        Edit
+                      </button>
                       <button onClick={() => handleDeleteTask(task.id)}
                         className="text-xs px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200">
                         Delete
@@ -443,6 +476,71 @@ export default function TasksPage() {
         )}
       </div>
 
+      {/* View Task Modal */}
+      {viewTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">{viewTaskModal.title}</h2>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {viewTaskModal.dayNumber && <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Day {viewTaskModal.dayNumber}</span>}
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{viewTaskModal.type}</span>
+                {viewTaskModal.isUrgent && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">URGENT</span>}
+              </div>
+              <p className="text-sm text-gray-600">{viewTaskModal.description || "No description"}</p>
+              <div className="text-xs text-gray-500 space-y-1">
+                <p>Max Points: {viewTaskModal.maxPoints}</p>
+                <p>Batch: {viewTaskModal.batch.program.title} - {viewTaskModal.batch.name}</p>
+                <p>Scope: {viewTaskModal.scope}</p>
+                <p>Submissions: {viewTaskModal._count.submissions}</p>
+              </div>
+            </div>
+            <button onClick={() => setViewTaskModal(null)} className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {editTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Edit Task</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Title</label>
+                <input value={editTaskForm.title} onChange={(e) => setEditTaskForm({...editTaskForm, title: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                <textarea value={editTaskForm.description} onChange={(e) => setEditTaskForm({...editTaskForm, description: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={3} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Day Number</label>
+                  <input type="number" value={editTaskForm.dayNumber} onChange={(e) => setEditTaskForm({...editTaskForm, dayNumber: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Max Points</label>
+                  <input type="number" value={editTaskForm.maxPoints} onChange={(e) => setEditTaskForm({...editTaskForm, maxPoints: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked={editTaskForm.isUrgent} onChange={(e) => setEditTaskForm({...editTaskForm, isUrgent: e.target.checked})} />
+                <label className="text-sm text-red-600">Urgent Task</label>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={handleEditTask} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
+              <button onClick={() => setEditTaskModal(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Submit Task Modal */}
       {submitModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -461,13 +559,28 @@ export default function TasksPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">File URL (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">File URL or Upload</label>
                 <input
                   value={submitFile}
                   onChange={(e) => setSubmitFile(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                   placeholder="Link to your work (Google Drive, GitHub, etc.)"
                 />
+                <div className="mt-2">
+                  <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium border border-indigo-200 rounded-lg px-3 py-1.5 inline-block">
+                    {fileUploading ? "Uploading..." : "Upload File"}
+                    <input type="file" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setFileUploading(true);
+                      const fd = new FormData(); fd.append("file", file);
+                      const res = await fetch("/api/upload", { method: "POST", body: fd });
+                      if (res.ok) { const d = await res.json(); setSubmitFile(d.url); }
+                      setFileUploading(false);
+                    }} />
+                  </label>
+                  {submitFile && <span className="text-xs text-green-600 ml-2">File attached</span>}
+                </div>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">

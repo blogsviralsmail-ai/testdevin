@@ -60,8 +60,16 @@ export async function GET(request: NextRequest) {
   const batchName = escapeHtml(enrollment.batch.name);
   const leaderName = enrollment.batch.leader?.name ? escapeHtml(enrollment.batch.leader.name) : "N/A";
   const collegeName = enrollment.student.collegeName ? escapeHtml(enrollment.student.collegeName) : "N/A";
-  const startDate = new Date(enrollment.batch.startDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
-  const endDate = new Date(enrollment.batch.endDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+  // Date range: joining date to completion date (or today/program end, whichever is earlier)
+  const joiningDt = enrollment.joiningDate ? new Date(enrollment.joiningDate) : new Date(enrollment.batch.startDate);
+  const completedDt = enrollment.completedAt ? new Date(enrollment.completedAt) : null;
+  const programEndDt = new Date(joiningDt);
+  programEndDt.setDate(programEndDt.getDate() + enrollment.batch.program.duration);
+  const today = new Date();
+  // End date: if completed use completedAt; else min(today, program end date)
+  const reportEndDt = completedDt || (today < programEndDt ? today : programEndDt);
+  const startDate = joiningDt.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+  const endDate = reportEndDt.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 
   const LH = `<table style="width:100%;border-collapse:collapse;"><tr><td style="width:180px;vertical-align:middle;padding:12px 0 12px 28px;"><img src="${lhLogo}" alt="${escapeHtml(cn)}" style="height:164px;display:block;object-fit:contain;" /></td><td style="text-align:right;vertical-align:middle;padding:12px 28px 12px 14px;"><p style="margin:0;font-size:28px;font-weight:700;color:#0000AA;letter-spacing:0.5px;">${escapeHtml(cn)}</p><p style="margin:5px 0 0;font-size:16px;color:#555;line-height:1.4;">${escapeHtml(lhAddress)}</p><p style="margin:4px 0 0;font-size:16px;color:#555;">Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></td></tr></table><div style="height:4px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);"></div>`;
 

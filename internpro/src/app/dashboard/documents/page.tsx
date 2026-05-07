@@ -24,7 +24,8 @@ export default function DocumentsPage() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [reviewDoc, setReviewDoc] = useState<Document | null>(null);
   const [reviewForm, setReviewForm] = useState({ status: "approved", remarks: "" });
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("pending");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = useCallback(async () => {
     const [docRes, meRes] = await Promise.all([
@@ -92,7 +93,17 @@ export default function DocumentsPage() {
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
-  const filtered = filterStatus === "all" ? documents : documents.filter(d => d.status === filterStatus);
+  const filtered = documents.filter(d => {
+    if (filterStatus !== "all" && d.status !== filterStatus) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const nameMatch = d.user?.name?.toLowerCase().includes(q);
+      const emailMatch = d.user?.email?.toLowerCase().includes(q);
+      const titleMatch = d.title.toLowerCase().includes(q);
+      if (!nameMatch && !emailMatch && !titleMatch) return false;
+    }
+    return true;
+  });
 
   if (loading) return <div className="p-6">Loading...</div>;
 
@@ -153,15 +164,26 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* Filter — Admin/TL */}
+      {/* Filter + Search — Admin/TL */}
       {(isAdmin || isTL) && (
-        <div className="flex gap-2 mb-4">
-          {["all", "pending", "approved", "rejected"].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium ${filterStatus === s ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
-              {s === "all" ? `All (${documents.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${documents.filter(d => d.status === s).length})`}
-            </button>
-          ))}
+        <div className="space-y-3 mb-4">
+          <div className="flex gap-2 flex-wrap">
+            {["pending", "approved", "rejected", "all"].map(s => (
+              <button key={s} onClick={() => setFilterStatus(s)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium ${filterStatus === s ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+                {s === "all" ? `All (${documents.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${documents.filter(d => d.status === s).length})`}
+              </button>
+            ))}
+          </div>
+          <div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by student name, email, or document title..."
+              className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900"
+            />
+          </div>
         </div>
       )}
 

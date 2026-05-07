@@ -27,7 +27,7 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 export function createToken(user: SessionUser): string {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign(user, JWT_SECRET, { expiresIn: "30d" });
 }
 
 export function verifyToken(token: string): SessionUser | null {

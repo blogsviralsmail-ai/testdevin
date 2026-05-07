@@ -25,6 +25,8 @@ export default function ProfilePage() {
     name: "", phone: "", collegeName: "", degree: "", year: "", address: "", dob: "",
   });
   const [uploading, setUploading] = useState(false);
+  const [joiningDate, setJoiningDate] = useState<string | null>(null);
+  const [loginHours, setLoginHours] = useState<{date: string; loginTime: string; logoutTime: string | null; totalMinutes: number}[]>([]);
 
   useEffect(() => {
     fetch("/api/profile").then(r => r.json()).then(data => {
@@ -40,6 +42,16 @@ export default function ProfilePage() {
       });
       setLoading(false);
     });
+    // Fetch joining date from enrollment
+    fetch("/api/enrollments").then(r => r.json()).then(data => {
+      if (data.length > 0 && data[0].joiningDate) {
+        setJoiningDate(data[0].joiningDate);
+      }
+    }).catch(() => {});
+    // Fetch login hours
+    fetch("/api/login-sessions").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setLoginHours(data);
+    }).catch(() => {});
   }, []);
 
   const handlePhotoUpload = async (file: File) => {
@@ -189,6 +201,48 @@ export default function ProfilePage() {
           {saving ? "Saving..." : "Save Changes"}
         </button>
       </form>
+
+      {/* Joining Date — Read Only */}
+      {joiningDate && (
+        <div className="bg-white rounded-xl border p-6 mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Internship Info</h2>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700">Joining Date:</span>
+            <span className="text-sm text-indigo-600 font-medium">{new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Login Hours — Day Wise */}
+      {loginHours.length > 0 && (
+        <div className="bg-white rounded-xl border p-6 mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Login Hours</h2>
+          <p className="text-sm text-gray-600 mb-4">Your daily login time tracking</p>
+          <div className="overflow-hidden rounded-lg border">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Date</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Login</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Logout</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Hours</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {loginHours.slice(0, 30).map((session) => (
+                  <tr key={session.date}>
+                    <td className="px-4 py-2 text-sm text-gray-900">{new Date(session.date + "T00:00:00").toLocaleDateString("en-IN")}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{session.loginTime}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{session.logoutTime || "Active"}</td>
+                    <td className="px-4 py-2 text-sm font-medium text-indigo-600">{Math.floor(session.totalMinutes / 60)}h {session.totalMinutes % 60}m</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">Total: {Math.floor(loginHours.reduce((s, h) => s + h.totalMinutes, 0) / 60)}h {loginHours.reduce((s, h) => s + h.totalMinutes, 0) % 60}m</p>
+        </div>
+      )}
     </div>
   );
 }

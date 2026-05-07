@@ -11,7 +11,8 @@ interface Enrollment {
   adminRemarks: string | null;
   completedAt: string | null;
   currentWorkDay: number;
-  student: { name: string; email: string };
+  joiningDate: string | null;
+  student: { name: string; email: string; employeeId: string | null };
   batch: { name: string; program: { title: string; duration: number; domain: string } };
   _count: { attendances: number; submissions: number; certificates: number };
 }
@@ -28,7 +29,9 @@ export default function CompletionPage() {
   const [approveModal, setApproveModal] = useState<Enrollment | null>(null);
   const [categoryForm, setCategoryForm] = useState({ category: "good", remarks: "" });
   const [approveRemarks, setApproveRemarks] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("pending_tl");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [programFilter, setProgramFilter] = useState("");
   const [expLetters, setExpLetters] = useState<Record<string, { letterNumber: string; htmlContent: string | null; category: string; issuedAt: string }>>({});
   const [viewingLetter, setViewingLetter] = useState<{ letterNumber: string; htmlContent: string | null; studentName: string } | null>(null);
 
@@ -106,10 +109,26 @@ export default function CompletionPage() {
   };
 
   const eligibleEnrollments = enrollments.filter((e) => {
-    if (filter === "all") return e.status === "active" || e.status === "selected" || e.status === "completed";
-    if (filter === "pending_tl") return (e.status === "active" || e.status === "selected") && !e.teamLeaderCategory;
-    if (filter === "pending_admin") return e.teamLeaderCategory && !e.adminApproved && e.status !== "completed";
-    if (filter === "completed") return e.status === "completed";
+    // Status filter
+    let statusMatch = true;
+    if (filter === "all") statusMatch = e.status === "active" || e.status === "selected" || e.status === "completed";
+    else if (filter === "pending_tl") statusMatch = (e.status === "active" || e.status === "selected") && !e.teamLeaderCategory;
+    else if (filter === "pending_admin") statusMatch = e.teamLeaderCategory !== null && !e.adminApproved && e.status !== "completed";
+    else if (filter === "completed") statusMatch = e.status === "completed";
+    if (!statusMatch) return false;
+
+    // Program filter
+    if (programFilter && e.batch.program.title !== programFilter) return false;
+
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const nameMatch = e.student.name.toLowerCase().includes(q);
+      const emailMatch = e.student.email.toLowerCase().includes(q);
+      const empMatch = e.student.employeeId?.toLowerCase().includes(q);
+      if (!nameMatch && !emailMatch && !empMatch) return false;
+    }
+
     return true;
   });
 
@@ -129,30 +148,63 @@ export default function CompletionPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Course Completion</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Completion Approval</h1>
           <p className="text-gray-600 text-sm">
             {isTeamLeader ? "Categorize students based on their performance" :
-             isAdmin ? "Review TL categorization and approve for experience letter" :
-             "Your completion status and certificates"}
+             isAdmin ? "Review TL categorization and approve internship completion" :
+             "Your completion status"}
           </p>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6 flex-wrap">
+      <div className="flex gap-2 mb-4 flex-wrap">
         {[
-          { key: "all", label: "All" },
           { key: "pending_tl", label: "Pending TL Review" },
           { key: "pending_admin", label: "Pending Admin Approval" },
           { key: "completed", label: "Completed" },
+          { key: "all", label: "All" },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === tab.key ? "bg-indigo-600 text-white" : "bg-white text-gray-600 border hover:bg-gray-50"}`}
           >
-            {tab.label}
+            {tab.label} ({enrollments.filter(e => {
+              if (tab.key === "all") return e.status === "active" || e.status === "selected" || e.status === "completed";
+              if (tab.key === "pending_tl") return (e.status === "active" || e.status === "selected") && !e.teamLeaderCategory;
+              if (tab.key === "pending_admin") return e.teamLeaderCategory && !e.adminApproved && e.status !== "completed";
+              if (tab.key === "completed") return e.status === "completed";
+              return false;
+            }).length})
           </button>
         ))}
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white rounded-xl p-4 border mb-6">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex-1 min-w-[200px]">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, email, or employee ID..."
+              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+            />
+          </div>
+          <div>
+            <select value={programFilter} onChange={(e) => setProgramFilter(e.target.value)}
+              className="px-3 py-2 border rounded-lg text-sm text-gray-900">
+              <option value="">All Programs</option>
+              {[...new Set(enrollments.map(e => e.batch.program.title))].map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          {(searchQuery || programFilter) && (
+            <button onClick={() => { setSearchQuery(""); setProgramFilter(""); }} className="text-xs text-red-600 hover:text-red-800">Clear</button>
+          )}
+        </div>
       </div>
 
       {/* Categorize Modal */}
@@ -245,11 +297,14 @@ export default function CompletionPage() {
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">{enrollment.student.name}</h3>
                   <p className="text-sm text-gray-600">{enrollment.student.email}</p>
+                  {enrollment.student.employeeId && <p className="text-xs text-indigo-600 font-medium">{enrollment.student.employeeId}</p>}
                   <p className="text-sm text-indigo-600 mt-1">{enrollment.batch.program.title} — {enrollment.batch.name}</p>
                   <div className="flex gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                    <span>Joining: {enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN") : "—"}</span>
                     <span>Working Day: {enrollment.currentWorkDay}/{enrollment.batch.program.duration}</span>
                     <span>Attendance: {enrollment._count.attendances} days</span>
                     <span>Tasks: {enrollment._count.submissions} submitted</span>
+                    {enrollment.completedAt && <span>Last Working Day: {new Date(enrollment.completedAt).toLocaleDateString("en-IN")}</span>}
                   </div>
                   <div className="flex gap-2 mt-3">
                     {enrollment.teamLeaderCategory && (
@@ -286,13 +341,10 @@ export default function CompletionPage() {
                       {enrollment.teamLeaderCategory ? "Approve & Complete" : "Direct Approve"}
                     </button>
                   )}
-                  {enrollment.status === "completed" && expLetters[enrollment.id] && (
-                    <button
-                      onClick={() => setViewingLetter({ letterNumber: expLetters[enrollment.id].letterNumber, htmlContent: expLetters[enrollment.id].htmlContent, studentName: enrollment.student.name })}
-                      className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-xs hover:bg-indigo-200"
-                    >
-                      View Experience Letter
-                    </button>
+                  {enrollment.status === "completed" && (
+                    <span className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                      Internship Completed
+                    </span>
                   )}
                 </div>
               </div>

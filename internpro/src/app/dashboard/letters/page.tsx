@@ -32,7 +32,7 @@ export default function LettersPage() {
   const [results, setResults] = useState<LetterResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchType, setSearchType] = useState<"name" | "employee_id" | "phone">("name");
+  const [searchType, setSearchType] = useState<"all" | "name" | "employee_id" | "phone">("all");
   const [viewingLetter, setViewingLetter] = useState<{ html: string; title: string } | null>(null);
   const [generatingCert, setGeneratingCert] = useState<string | null>(null);
 
@@ -191,9 +191,10 @@ export default function LettersPage() {
               <label className="block text-xs font-medium text-gray-600 mb-1">Search By</label>
               <select
                 value={searchType}
-                onChange={(e) => setSearchType(e.target.value as "name" | "employee_id" | "phone")}
+                onChange={(e) => setSearchType(e.target.value as "all" | "name" | "employee_id" | "phone")}
                 className="px-3 py-2 border rounded-lg text-sm bg-white min-w-[160px]"
               >
+                <option value="all">All</option>
                 <option value="name">Name</option>
                 <option value="employee_id">Employee ID</option>
                 <option value="phone">Phone Number</option>
@@ -201,7 +202,7 @@ export default function LettersPage() {
             </div>
             <div className="flex-1 min-w-[200px]">
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                {searchType === "name" ? "Student Name" : searchType === "employee_id" ? "Employee ID / Card Number" : "Phone Number"}
+                {searchType === "all" ? "Search anything..." : searchType === "name" ? "Student Name" : searchType === "employee_id" ? "Employee ID / Card Number" : "Phone Number"}
               </label>
               <input
                 value={searchQuery}
@@ -280,42 +281,24 @@ export default function LettersPage() {
 
                 {/* Offer Letter */}
                 {r.offerLetter ? (
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}` })}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition"
-                    >
-                      Offer Letter
-                    </button>
-                    <button
-                      onClick={() => handlePrintLetter(r.offerLetter!.htmlContent || "", r.offerLetter!.letterNumber)}
-                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
-                      title="Print"
-                    >
-                      Print
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}` })}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition"
+                  >
+                    Offer Letter
+                  </button>
                 ) : (
                   <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">Offer Letter — Not Generated</span>
                 )}
 
                 {/* Experience Letter */}
                 {r.experienceLetter ? (
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setViewingLetter({ html: r.experienceLetter!.htmlContent || "", title: `Experience Letter — ${r.studentName}` })}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
-                    >
-                      Experience Letter
-                    </button>
-                    <button
-                      onClick={() => handlePrintLetter(r.experienceLetter!.htmlContent || "", r.experienceLetter!.letterNumber)}
-                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
-                      title="Print"
-                    >
-                      Print
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setViewingLetter({ html: r.experienceLetter!.htmlContent || "", title: `Experience Letter — ${r.studentName}` })}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
+                  >
+                    Experience Letter
+                  </button>
                 ) : (
                   <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">
                     {r.status === "completed" ? "Experience Letter — Pending" : "Experience Letter — After Completion"}

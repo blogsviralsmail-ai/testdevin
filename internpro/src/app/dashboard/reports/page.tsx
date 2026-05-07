@@ -80,8 +80,8 @@ export default function ReportsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Reports & Certificates</h1>
-        <p className="text-gray-600">View daily task reports and internship certificates.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+        <p className="text-gray-600">View daily task reports. Reports cover joining date to current/completion date.</p>
       </div>
 
       {selectedEnrollments.length === 0 ? (
@@ -103,12 +103,6 @@ export default function ReportsPage() {
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
                     {generating === enr.id ? "Generating..." : "Daily Task Report"}
                   </button>
-                  {(enr.status === "completed" || isAdmin) && (
-                    <button onClick={() => viewCertificate(enr)} disabled={generating === `cert-${enr.id}`}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
-                      {generating === `cert-${enr.id}` ? "Generating..." : "Internship Certificate"}
-                    </button>
-                  )}
                 </div>
               </div>
             </div>

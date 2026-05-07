@@ -7,6 +7,7 @@ interface Resource {
   title: string;
   type: string;
   url: string;
+  fileUrl: string | null;
   dayNumber: number | null;
   order: number;
   batchId: string;
@@ -40,7 +41,8 @@ export default function ResourcesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [user, setUser] = useState<UserSession | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ batchId: "", title: "", type: "video", url: "", dayNumber: "", order: "0" });
+  const [form, setForm] = useState({ batchId: "", title: "", type: "video", url: "", fileUrl: "", dayNumber: "", order: "0" });
+  const [fileUploading, setFileUploading] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [resRes, batchesRes, meRes] = await Promise.all([
@@ -70,7 +72,7 @@ export default function ResourcesPage() {
     });
     if (res.ok) {
       setShowForm(false);
-      setForm({ batchId: "", title: "", type: "video", url: "", dayNumber: "", order: "0" });
+      setForm({ batchId: "", title: "", type: "video", url: "", fileUrl: "", dayNumber: "", order: "0" });
       fetchData();
     }
   };
@@ -162,7 +164,25 @@ export default function ResourcesPage() {
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">URL / File Link</label>
               <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="YouTube/Drive/Dropbox link, or any file URL" required />
-              <p className="text-xs text-gray-500 mt-1">Koi bhi format ka file link — YouTube, Google Drive, Dropbox, direct URL</p>
+              <div className="flex items-center gap-3 mt-2">
+                <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium border border-indigo-200 rounded-lg px-3 py-1.5 inline-block">
+                  {fileUploading ? "Uploading..." : "Or Upload File"}
+                  <input type="file" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setFileUploading(true);
+                    const fd = new FormData(); fd.append("file", file);
+                    const res = await fetch("/api/upload", { method: "POST", body: fd });
+                    if (res.ok) {
+                      const d = await res.json();
+                      setForm({...form, fileUrl: d.url, url: d.url});
+                    }
+                    setFileUploading(false);
+                  }} />
+                </label>
+                {form.fileUrl && <span className="text-xs text-green-600">File uploaded: {form.fileUrl}</span>}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Koi bhi format ka file link — YouTube, Google Drive, Dropbox, direct URL ya file upload karo</p>
             </div>
           </div>
           <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">Add Resource</button>

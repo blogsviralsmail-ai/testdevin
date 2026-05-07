@@ -34,6 +34,8 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [salaries, setSalaries] = useState<Salary[]>([]);
   const [activeTab, setActiveTab] = useState<"payments" | "salaries">("payments");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetchData = useCallback(async () => {
     const [payRes, salRes] = await Promise.all([
@@ -78,14 +80,29 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button onClick={() => setActiveTab("payments")} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "payments" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
-          Fee Payments
-        </button>
-        <button onClick={() => setActiveTab("salaries")} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "salaries" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
-          Stipend/Salary
-        </button>
+      {/* Tabs + Search */}
+      <div className="flex flex-wrap gap-4 items-center mb-6">
+        <div className="flex gap-2">
+          <button onClick={() => setActiveTab("payments")} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "payments" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+            Fee Payments
+          </button>
+          <button onClick={() => setActiveTab("salaries")} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "salaries" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+            Stipend/Salary
+          </button>
+        </div>
+        <div className="flex-1 min-w-[200px]">
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by student name, email, program..."
+            className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 border rounded-lg text-sm text-gray-900">
+          <option value="all">All Status</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+          <option value="paid">Paid</option>
+        </select>
       </div>
 
       {activeTab === "payments" ? (

@@ -15,7 +15,7 @@ interface Enrollment {
   workTiming: string | null;
   feeAmount: number | null;
   stipendAmount: number | null;
-  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null };
+  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null };
   batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number } };
   _count: { attendances: number; certificates: number; payments: number };
 }
@@ -33,24 +33,32 @@ export default function StudentsPage() {
   const [filter, setFilter] = useState("");
   const [editModal, setEditModal] = useState<Enrollment | null>(null);
   const [editForm, setEditForm] = useState({ status: "", remarks: "" });
-  const [studentForm, setStudentForm] = useState({ name: "", email: "", phone: "", password: "", collegeName: "", degree: "", year: "", address: "" });
+  const [studentForm, setStudentForm] = useState({ name: "", email: "", phone: "", password: "", collegeName: "", degree: "", year: "", address: "", joiningDate: "", avatar: "" });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [viewProfile, setViewProfile] = useState<Enrollment | null>(null);
   const [editError, setEditError] = useState("");
   const [batches, setBatches] = useState<Batch[]>([]);
   const [transferModal, setTransferModal] = useState<Enrollment | null>(null);
   const [teamLeaders, setTeamLeaders] = useState<{ id: string; name: string }[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
 
   const fetchEnrollments = useCallback(async () => {
-    const [res, batchRes, tlRes] = await Promise.all([
+    const [res, batchRes, tlRes, meRes] = await Promise.all([
       fetch("/api/enrollments"),
       fetch("/api/batches"),
       fetch("/api/users?role=teamleader"),
+      fetch("/api/auth/me"),
     ]);
     if (res.ok) setEnrollments(await res.json());
     if (batchRes.ok) setBatches(await batchRes.json());
     if (tlRes.ok) setTeamLeaders(await tlRes.json());
+    if (meRes.ok) { const d = await meRes.json(); setCurrentUser(d.user); }
   }, []);
 
   useEffect(() => { fetchEnrollments(); }, [fetchEnrollments]);
+
+  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "organization";
+  const isTL = currentUser?.role === "teamleader";
 
   const updateStatus = async (id: string, status: string) => {
     await fetch(`/api/enrollments/${id}`, {
@@ -93,12 +101,21 @@ export default function StudentsPage() {
       return;
     }
 
-    // Update enrollment status
+    // Update enrollment status + joining date
+    const enrollData: Record<string, unknown> = { status: editForm.status };
+    if (studentForm.joiningDate) enrollData.joiningDate = studentForm.joiningDate;
     await fetch(`/api/enrollments/${editModal.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: editForm.status }),
+      body: JSON.stringify(enrollData),
     });
+    if (studentForm.avatar) {
+      await fetch(`/api/users/${editModal.student.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar: studentForm.avatar }),
+      });
+    }
     setEditModal(null);
     fetchEnrollments();
   };
@@ -180,6 +197,31 @@ export default function StudentsPage() {
             {editError && <p className="text-red-600 text-sm mb-3 bg-red-50 p-2 rounded">{editError}</p>}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-800 border-b pb-1">Personal Details</h3>
+              {/* Photo Upload */}
+              <div className="flex items-center gap-4 pb-2">
+                <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xl font-bold overflow-hidden border-2 border-indigo-200">
+                  {(studentForm.avatar || editModal.student.avatar) ? (
+                    <img src={studentForm.avatar || editModal.student.avatar || ""} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    editModal.student.name.split(" ").map(n => n[0]).join("").substring(0, 2)
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium">
+                    {avatarUploading ? "Uploading..." : "Change Photo"}
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setAvatarUploading(true);
+                      const fd = new FormData(); fd.append("file", file);
+                      const res = await fetch("/api/upload", { method: "POST", body: fd });
+                      if (res.ok) { const d = await res.json(); setStudentForm({...studentForm, avatar: d.url}); }
+                      setAvatarUploading(false);
+                    }} />
+                  </label>
+                  {editModal.student.employeeId && <p className="text-xs text-gray-500 mt-1">ID: {editModal.student.employeeId}</p>}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
@@ -228,7 +270,14 @@ export default function StudentsPage() {
                     className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
                 </div>
               </div>
-              <h3 className="text-sm font-semibold text-gray-800 border-b pb-1 mt-2">Enrollment Status</h3>
+              <h3 className="text-sm font-semibold text-gray-800 border-b pb-1 mt-2">Joining & Enrollment</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Joining Date</label>
+                  <input type="date" value={studentForm.joiningDate} onChange={(e) => setStudentForm({ ...studentForm, joiningDate: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
                 <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -296,12 +345,11 @@ export default function StudentsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Employee ID</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Program</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Fee Type</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Joining Date</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Join Status</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Attendance</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Team Leader</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Actions</th>
                 </tr>
               </thead>
@@ -327,106 +375,87 @@ export default function StudentsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{enrollment.batch.program.title}</div>
+                        <span className="text-xs text-indigo-600 font-medium">{enrollment.student.employeeId || "—"}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-xs text-gray-600">{getFeeLabel(enrollment)}</span>
+                        <div className="text-sm text-gray-900">{enrollment.batch.program.title}</div>
+                        <div className="text-xs text-gray-500">{enrollment.batch.name}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs text-gray-600">{enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN") : "—"}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(enrollment.status)}`}>
                           {enrollment.status.replace("_", " ")}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        {joinStatus ? (
-                          <span className={`text-xs px-2 py-1 rounded-full ${joinStatus.color}`}>
-                            {joinStatus.label}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
-                      </td>
                       <td className="px-6 py-4 text-sm text-gray-500">{enrollment._count.attendances} days</td>
-                      <td className="px-6 py-4">
-                        {(() => {
-                          const batch = batches.find((b) => b.id === enrollment.batch.id);
-                          const currentTL = batch?.leader?.name;
-                          return (
-                            <div>
-                              {currentTL && <div className="text-xs text-gray-700 font-medium mb-1">{currentTL}</div>}
-                              <select
-                                value={batch?.leaderId || ""}
-                                onChange={(e) => {
-                                  const tlBatches = batches.filter((b) => b.leaderId === e.target.value);
-                                  if (tlBatches.length > 0 && tlBatches[0].id !== enrollment.batch.id) {
-                                    handleTransfer(enrollment.id, tlBatches[0].id);
-                                  }
-                                }}
-                                className="text-xs px-1 py-0.5 border rounded text-gray-900 max-w-[120px]"
-                              >
-                                <option value="">No TL</option>
-                                {teamLeaders.map((tl) => (
-                                  <option key={tl.id} value={tl.id}>{tl.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                          );
-                        })()}
-                      </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-1 flex-wrap">
                           <button
-                            onClick={() => {
-                              setEditModal(enrollment);
-                              setEditForm({ status: enrollment.status, remarks: "" });
-                              setStudentForm({
-                                name: enrollment.student.name || "",
-                                email: enrollment.student.email || "",
-                                phone: enrollment.student.phone || "",
-                                password: "",
-                                collegeName: enrollment.student.collegeName || "",
-                                degree: enrollment.student.degree || "",
-                                year: enrollment.student.year || "",
-                                address: enrollment.student.address || "",
-                              });
-                              setEditError("");
-                            }}
+                            onClick={() => setViewProfile(enrollment)}
                             className="text-xs bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-100 border"
                           >
-                            Edit
+                            View
                           </button>
-                          {enrollment.status === "selected" && enrollment._count.attendances === 0 && (
-                            <button onClick={() => updateStatus(enrollment.id, "rejected")}
-                              className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">
-                              Reject
-                            </button>
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditModal(enrollment);
+                                  setEditForm({ status: enrollment.status, remarks: "" });
+                                  setStudentForm({
+                                    name: enrollment.student.name || "",
+                                    email: enrollment.student.email || "",
+                                    phone: enrollment.student.phone || "",
+                                    password: "",
+                                    collegeName: enrollment.student.collegeName || "",
+                                    degree: enrollment.student.degree || "",
+                                    year: enrollment.student.year || "",
+                                    address: enrollment.student.address || "",
+                                    joiningDate: enrollment.joiningDate ? new Date(enrollment.joiningDate).toISOString().split("T")[0] : "",
+                                    avatar: enrollment.student.avatar || "",
+                                  });
+                                  setEditError("");
+                                }}
+                                className="text-xs bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-100 border"
+                              >
+                                Edit
+                              </button>
+                              {enrollment.status === "selected" && enrollment._count.attendances === 0 && (
+                                <button onClick={() => updateStatus(enrollment.id, "rejected")}
+                                  className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">
+                                  Reject
+                                </button>
+                              )}
+                              {(enrollment.status === "selected" || enrollment.status === "active") && (
+                                <button onClick={() => updateStatus(enrollment.id, "dropped")}
+                                  className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded hover:bg-orange-100">
+                                  Mark Dropped
+                                </button>
+                              )}
+                              <button onClick={() => generateOfferLetter(enrollment.id)}
+                                className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100">
+                                Offer Letter
+                              </button>
+                              {enrollment.status === "completed" && enrollment._count.certificates === 0 && (
+                                <button onClick={() => generateCertificate(enrollment.id)}
+                                  className="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-100">
+                                  Certificate
+                                </button>
+                              )}
+                              {(enrollment.status === "active" || enrollment.status === "selected") && (
+                                <button onClick={() => setTransferModal(enrollment)}
+                                  className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">
+                                  Transfer Batch
+                                </button>
+                              )}
+                              <button onClick={() => handleDelete(enrollment.id)}
+                                className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">
+                                Delete
+                              </button>
+                            </>
                           )}
-                          {(enrollment.status === "selected" || enrollment.status === "active") && (
-                            <button onClick={() => updateStatus(enrollment.id, "dropped")}
-                              className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded hover:bg-orange-100">
-                              Mark Dropped
-                            </button>
-                          )}
-                          <button onClick={() => generateOfferLetter(enrollment.id)}
-                            className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100">
-                            Offer Letter
-                          </button>
-                          {enrollment.status === "completed" && enrollment._count.certificates === 0 && (
-                            <button onClick={() => generateCertificate(enrollment.id)}
-                              className="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-100">
-                              Certificate
-                            </button>
-                          )}
-                          {(enrollment.status === "active" || enrollment.status === "selected") && (
-                            <button onClick={() => setTransferModal(enrollment)}
-                              className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">
-                              Transfer Batch
-                            </button>
-                          )}
-                          <button onClick={() => handleDelete(enrollment.id)}
-                            className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">
-                            Delete
-                          </button>
                         </div>
                       </td>
                     </tr>

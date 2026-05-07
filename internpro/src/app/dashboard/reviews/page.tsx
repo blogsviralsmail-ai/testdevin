@@ -177,6 +177,12 @@ export default function ReviewsPage() {
                       <div className="text-2xl font-bold text-green-600">{sub.percentage}%</div>
                       <p className="text-xs text-gray-500">Score Given</p>
                       {sub.feedback && <p className="text-xs text-gray-600 mt-1 max-w-[200px]">{sub.feedback}</p>}
+                      <button
+                        onClick={() => { setReviewModal(sub); setReviewPercentage(sub.percentage?.toString() || ""); setReviewFeedback(sub.feedback || ""); }}
+                        className="mt-2 text-xs px-3 py-1 rounded bg-orange-100 text-orange-700 hover:bg-orange-200"
+                      >
+                        Edit Marks
+                      </button>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">

@@ -19,6 +19,8 @@ export default function ApplicationsPage() {
   const [scheduleForm, setScheduleForm] = useState({
     date: "", time: "10:00", mode: "online", meetLink: "", duration: "30",
   });
+  const [rejectModal, setRejectModal] = useState<Enrollment | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const fetchApplications = useCallback(async () => {
     const res = await fetch(`/api/enrollments?status=${filter}`);
@@ -29,13 +31,27 @@ export default function ApplicationsPage() {
 
   useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
-  const handleReject = async (id: string) => {
-    if (!confirm("Are you sure you want to reject this application?")) return;
-    await fetch(`/api/enrollments/${id}`, {
+  const handleReject = async () => {
+    if (!rejectModal) return;
+    await fetch(`/api/enrollments/${rejectModal.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "rejected" }),
+      body: JSON.stringify({ status: "rejected", adminRemarks: rejectReason }),
     });
+    // Send rejection email
+    if (rejectReason) {
+      fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: rejectModal.student.email,
+          subject: `Application Update — ${rejectModal.batch.program.title}`,
+          html: `<p>Dear ${rejectModal.student.name},</p><p>We regret to inform you that your application for <strong>${rejectModal.batch.program.title}</strong> has not been approved.</p><p><strong>Reason:</strong> ${rejectReason}</p><p>We encourage you to apply again in the future.</p><p>Best regards,<br/>KKHS Media Private Limited</p>`,
+        }),
+      }).catch(() => {});
+    }
+    setRejectModal(null);
+    setRejectReason("");
     fetchApplications();
   };
 
@@ -189,7 +205,7 @@ export default function ApplicationsPage() {
                         Schedule Interview
                       </button>
                       <button
-                        onClick={() => handleReject(e.id)}
+                        onClick={() => { setRejectModal(e); setRejectReason(""); }}
                         className="px-4 py-2 bg-red-50 text-red-700 text-sm rounded-lg hover:bg-red-100"
                       >
                         Reject
@@ -210,6 +226,40 @@ export default function ApplicationsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Reject Modal with Reason */}
+      {rejectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Reject Application</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              <strong>{rejectModal.student.name}</strong> — {rejectModal.batch.program.title}
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason</label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+                rows={3}
+                placeholder="e.g., Resume not submitted, Incomplete profile, Not matching requirements..."
+                required
+              />
+              <p className="text-xs text-gray-400 mt-1">This reason will be emailed to the student.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={handleReject} disabled={!rejectReason.trim()}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                Reject & Send Email
+              </button>
+              <button onClick={() => setRejectModal(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

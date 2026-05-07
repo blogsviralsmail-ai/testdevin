@@ -16,16 +16,24 @@ export async function GET(request: NextRequest) {
   const where: Record<string, unknown> = {};
   if (session.role === "student") {
     where.studentId = session.id;
+  } else if (session.role === "teamleader") {
+    // TL only sees students in their assigned batches
+    const tlBatches = await prisma.batch.findMany({
+      where: { leaderId: session.id },
+      select: { id: true },
+    });
+    where.batchId = batchId ? batchId : { in: tlBatches.map(b => b.id) };
+    if (studentId) where.studentId = studentId;
   } else {
     if (studentId) where.studentId = studentId;
+    if (batchId) where.batchId = batchId;
   }
-  if (batchId) where.batchId = batchId;
   if (status) where.status = status;
 
   const enrollments = await prisma.enrollment.findMany({
     where,
     include: {
-      student: { select: { id: true, name: true, email: true, phone: true, avatar: true, collegeName: true, degree: true, year: true, address: true } },
+      student: { select: { id: true, name: true, email: true, phone: true, avatar: true, collegeName: true, degree: true, year: true, address: true, dob: true, employeeId: true } },
       batch: {
         include: {
           program: { select: { title: true, domain: true, feeType: true, feeAmount: true, stipendAmount: true, mode: true, duration: true } },

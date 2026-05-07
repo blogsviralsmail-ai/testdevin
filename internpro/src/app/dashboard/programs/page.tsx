@@ -19,10 +19,13 @@ interface Program {
   batches: { id: string; name: string; isActive: boolean; _count: { enrollments: number } }[];
 }
 
+interface UserSession { id: string; role: string; }
+
 export default function ProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
+  const [user, setUser] = useState<UserSession | null>(null);
   const [form, setForm] = useState({
     title: "", description: "", domain: "web-dev", mode: "online", duration: "90",
     feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "",
@@ -34,7 +37,13 @@ export default function ProgramsPage() {
     if (res.ok) setPrograms(await res.json());
   }, []);
 
-  useEffect(() => { fetchPrograms(); }, [fetchPrograms]);
+  useEffect(() => {
+    fetchPrograms();
+    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => d && setUser(d.user)).catch(() => {});
+  }, [fetchPrograms]);
+
+  const isAdmin = user?.role === "admin" || user?.role === "organization";
+  const isTL = user?.role === "teamleader";
 
   const handleThumbnailUpload = async (file: File) => {
     setUploading(true);
@@ -82,9 +91,11 @@ export default function ProgramsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Programs</h1>
           <p className="text-gray-600 text-sm">Manage your internship programs</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
-          {showForm ? "Cancel" : "+ New Program"}
-        </button>
+        {isAdmin && (
+          <button onClick={() => setShowForm(!showForm)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+            {showForm ? "Cancel" : "+ New Program"}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -190,9 +201,11 @@ export default function ProgramsPage() {
                       <span>🏢 {program.organization.name}</span>
                     </div>
                   </div>
-                  <button onClick={() => togglePublish(program.id, program.isPublished)} className="text-sm text-indigo-600 hover:text-indigo-800">
-                    {program.isPublished ? "Unpublish" : "Publish"}
-                  </button>
+                  {isAdmin && (
+                    <button onClick={() => togglePublish(program.id, program.isPublished)} className="text-sm text-indigo-600 hover:text-indigo-800">
+                      {program.isPublished ? "Unpublish" : "Publish"}
+                    </button>
+                  )}
                 </div>
               </div>
             );

@@ -354,17 +354,36 @@ export default function SettingsPage() {
                 </select>
               </div>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Offer Letter — Extra Terms (optional)</label>
-              <textarea value={settings.letter_offer_extra || ""} onChange={(e) => updateSetting("letter_offer_extra", e.target.value)}
-                rows={3} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Additional terms or company-specific policies to include in offer letters..." />
-              <p className="text-xs text-gray-400 mt-1">This text will appear as an additional section in offer letters.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Experience Letter — Extra Note (optional)</label>
-              <textarea value={settings.letter_exp_extra || ""} onChange={(e) => updateSetting("letter_exp_extra", e.target.value)}
-                rows={3} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Additional recommendation text or company-specific notes for experience letters..." />
-              <p className="text-xs text-gray-400 mt-1">This text will appear as an additional section in experience letters.</p>
+            {/* SMTP Email Configuration */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-gray-800 mb-3">Email (SMTP) Configuration</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
+                  <input value={settings.smtp_host || ""} onChange={(e) => updateSetting("smtp_host", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="smtp.gmail.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Port</label>
+                  <input value={settings.smtp_port || ""} onChange={(e) => updateSetting("smtp_port", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="587" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP User (Email)</label>
+                  <input value={settings.smtp_user || ""} onChange={(e) => updateSetting("smtp_user", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@kkhsmedia.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Password</label>
+                  <input type="password" value={settings.smtp_password || ""} onChange={(e) => updateSetting("smtp_password", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="App password" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">From Email (Display Name)</label>
+                  <input value={settings.smtp_from || ""} onChange={(e) => updateSetting("smtp_from", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media <noreply@kkhsmedia.com>" />
+                </div>
+              </div>
             </div>
           </div>
         )}
