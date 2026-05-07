@@ -86,7 +86,7 @@ export default function IDCardsPage() {
     }
   };
 
-  // Portrait ID card: 50mm x 85mm = 189px x 321px at 96dpi
+  // Portrait ID card: 54mm x 86mm (standard CR80) — 204px x 325px at 96dpi
   const handlePrint = (card: EmployeeCard) => {
     const photoSrc = card.user.avatar || card.photoUrl || "";
     const printWindow = window.open("", "_blank");
@@ -94,68 +94,110 @@ export default function IDCardsPage() {
     printWindow.document.write(`<!DOCTYPE html><html><head><title>ID Card - ${card.user.name}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  @page { size: 50mm 85mm; margin: 0; }
-  body { font-family: 'Segoe UI', 'Calibri', Arial, sans-serif; background: #e8e8e8; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 16px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-  .no-print { display: flex; gap: 10px; }
+  @page { size: 54mm 86mm; margin: 0; }
+  body { font-family: 'Segoe UI', 'Calibri', Arial, sans-serif; background: #e8e8e8; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  .no-print { display: flex; gap: 10px; margin-bottom: 10px; }
   .no-print button { padding: 10px 28px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
   .btn-print { background: #0000AA; color: white; }
   .btn-print:hover { background: #000088; }
   .btn-pdf { background: #d32f2f; color: white; }
   .btn-pdf:hover { background: #b71c1c; }
+  .side-label { font-size: 12px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
 
-  .card { width: 189px; height: 321px; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; border: 1px solid #bbb; display: flex; flex-direction: column; }
+  .card { width: 204px; height: 325px; border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative; display: flex; flex-direction: column; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 6px; background: #d32f2f; border-radius: 10px 0 0 10px; z-index: 2; }
+  .card::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 6px; background: #2563eb; border-radius: 0 10px 10px 0; z-index: 2; }
 
-  .card-header { background: #0000AA; padding: 10px 8px 8px; text-align: center; position: relative; flex-shrink: 0; }
-  .card-header img { height: 32px; display: block; margin: 0 auto; }
-  .card-header .co-name { color: rgba(255,255,255,0.85); font-size: 6px; margin-top: 3px; letter-spacing: 0.8px; text-transform: uppercase; }
-  .card-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #d32f2f; }
+  /* FRONT SIDE */
+  .card-logo { text-align: center; padding: 12px 10px 8px; flex-shrink: 0; }
+  .card-logo img { height: 28px; }
+  .card-logo .co-name { font-size: 7px; color: #1a365d; font-weight: 700; margin-top: 3px; letter-spacing: 0.5px; }
 
-  .card-body { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 8px 4px; background: white; }
-  .photo-frame { width: 88px; height: 88px; border-radius: 50%; border: 2.5px solid #0000AA; overflow: hidden; background: #f0f0f8; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; flex-shrink: 0; }
+  .photo-section { text-align: center; padding: 4px 0 6px; flex-shrink: 0; }
+  .photo-frame { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #2563eb; overflow: hidden; background: #f0f4ff; display: inline-flex; align-items: center; justify-content: center; }
   .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-frame .placeholder { font-size: 36px; color: #0000AA; }
+  .photo-frame .placeholder { font-size: 32px; color: #2563eb; }
 
-  .emp-name { font-size: 11px; font-weight: 800; color: #0000AA; text-transform: uppercase; text-align: center; line-height: 1.25; margin-bottom: 2px; word-break: break-word; }
-  .emp-desg { font-size: 8px; color: #d32f2f; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 3px; }
-  .emp-info { font-size: 8px; color: #444; text-align: center; line-height: 1.5; word-break: break-word; }
-  .divider { width: 50px; height: 1.5px; background: #0000AA; margin: 3px auto; opacity: 0.4; }
+  .name-section { text-align: center; padding: 4px 10px; flex-shrink: 0; }
+  .emp-name { font-size: 12px; font-weight: 800; color: #1a202c; line-height: 1.2; margin-bottom: 3px; }
+  .emp-desg { display: inline-block; background: #2563eb; color: white; font-size: 7px; font-weight: 700; padding: 2px 10px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-  .card-footer { background: #0000AA; padding: 6px 8px; text-align: center; flex-shrink: 0; position: relative; }
-  .card-footer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: #d32f2f; }
-  .card-num { font-size: 7px; font-weight: 700; color: white; letter-spacing: 0.8px; }
-  .valid-txt { font-size: 6px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .info-section { flex: 1; padding: 6px 14px 4px; }
+  .info-row { display: flex; align-items: baseline; margin-bottom: 4px; font-size: 8px; }
+  .info-label { font-weight: 800; color: #1a202c; min-width: 44px; }
+  .info-value { color: #4a5568; flex: 1; }
+  .info-colon { margin: 0 4px; color: #4a5568; }
+
+  .card-barcode { text-align: center; padding: 4px 20px 10px; flex-shrink: 0; }
+  .barcode-lines { height: 22px; background: repeating-linear-gradient(90deg, #000 0px, #000 1px, transparent 1px, transparent 3px); margin: 0 auto; width: 80%; }
+  .barcode-num { font-size: 6px; color: #666; margin-top: 2px; letter-spacing: 1px; }
+
+  /* BACK SIDE */
+  .back-logo { text-align: center; padding: 14px 10px 10px; flex-shrink: 0; }
+  .back-logo img { height: 24px; }
+  .back-logo .co-name { font-size: 7px; color: #1a365d; font-weight: 700; margin-top: 3px; letter-spacing: 0.5px; }
+
+  .terms-section { flex: 1; padding: 0 14px; }
+  .terms-title { font-size: 10px; font-weight: 900; color: #1a202c; text-align: center; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+  .terms-text { font-size: 7px; color: #4a5568; line-height: 1.5; margin-bottom: 6px; }
+  .terms-text strong { color: #1a202c; font-size: 7.5px; }
+
+  .back-footer { text-align: center; padding: 6px 10px 10px; flex-shrink: 0; }
+  .id-badge { display: inline-block; background: #1a365d; color: white; font-size: 8px; font-weight: 700; padding: 4px 14px; border-radius: 12px; letter-spacing: 0.5px; }
+  .back-phone { font-size: 7px; color: #4a5568; margin-top: 5px; }
 
   @media print {
-    body { background: white !important; min-height: auto; padding: 0; }
-    .no-print { display: none !important; }
-    .card { box-shadow: none; margin: 0; }
+    body { background: white !important; min-height: auto; padding: 0; gap: 0; }
+    .no-print, .side-label { display: none !important; }
+    .card { box-shadow: none; margin: 0; page-break-after: always; }
+    .card:last-child { page-break-after: auto; }
   }
 </style></head><body>
 <div class="no-print">
-  <button class="btn-print" onclick="window.print()">Print</button>
+  <button class="btn-print" onclick="window.print()">Print (Both Sides)</button>
   <button class="btn-pdf" onclick="window.print()">Download PDF</button>
 </div>
+<div class="side-label">— Front Side —</div>
 <div class="card">
-  <div class="card-header">
+  <div class="card-logo">
     <img src="${companyLogo}" alt="${companyName}" />
     <div class="co-name">${companyName}</div>
   </div>
-  <div class="card-body">
+  <div class="photo-section">
     <div class="photo-frame">${photoSrc ? `<img src="${photoSrc}" />` : `<span class="placeholder">&#128100;</span>`}</div>
-    <div class="emp-name">${card.user.name}</div>
-    <div class="emp-desg">${card.designation}</div>
-    <div class="divider"></div>
-    <div class="emp-info">
-      ${card.user.email}<br/>
-      ${card.user.phone ? card.user.phone + "<br/>" : ""}
-      ${card.user.dob ? "DOB: " + new Date(card.user.dob).toLocaleDateString("en-IN") + "<br/>" : ""}
-      ${card.user.collegeName ? card.user.collegeName + "<br/>" : ""}
-      ${card.user.address ? card.user.address : ""}
-    </div>
   </div>
-  <div class="card-footer">
-    <div class="card-num">${card.cardNumber}</div>
-    <div class="valid-txt">Valid: ${new Date(card.validFrom).toLocaleDateString("en-IN")} - ${new Date(card.validUntil).toLocaleDateString("en-IN")}</div>
+  <div class="name-section">
+    <div class="emp-name">${card.user.name}</div>
+    <span class="emp-desg">${card.designation}</span>
+  </div>
+  <div class="info-section">
+    <div class="info-row"><span class="info-label">ID No</span><span class="info-colon">:</span><span class="info-value">${card.cardNumber}</span></div>
+    <div class="info-row"><span class="info-label">Email</span><span class="info-colon">:</span><span class="info-value">${card.user.email}</span></div>
+    ${card.user.phone ? `<div class="info-row"><span class="info-label">Phone</span><span class="info-colon">:</span><span class="info-value">${card.user.phone}</span></div>` : ""}
+    ${card.user.collegeName ? `<div class="info-row"><span class="info-label">College</span><span class="info-colon">:</span><span class="info-value">${card.user.collegeName}</span></div>` : ""}
+    ${card.user.dob ? `<div class="info-row"><span class="info-label">DOB</span><span class="info-colon">:</span><span class="info-value">${new Date(card.user.dob).toLocaleDateString("en-IN")}</span></div>` : ""}
+  </div>
+  <div class="card-barcode">
+    <div class="barcode-lines"></div>
+    <div class="barcode-num">${card.cardNumber}</div>
+  </div>
+</div>
+<div class="side-label">— Back Side —</div>
+<div class="card">
+  <div class="back-logo">
+    <img src="${companyLogo}" alt="${companyName}" />
+    <div class="co-name">${companyName}</div>
+  </div>
+  <div class="terms-section">
+    <div class="terms-title">Terms & Conditions</div>
+    <div class="terms-text"><strong>Identification:</strong> Employees are required to keep their ID badge visible or easily accessible during working hours to confirm identity when needed.</div>
+    <div class="terms-text"><strong>Proper Use:</strong> The ID badge is issued solely for company related activities. It may not be lent, duplicated, or used for any non-official purpose.</div>
+    <div class="terms-text"><strong>Security:</strong> If the badge is misplaced or suspected to be compromised, report it immediately so access can be disabled.</div>
+  </div>
+  <div class="back-footer">
+    <div class="id-badge">ID: ${card.cardNumber}</div>
+    <div class="back-phone">+91 7062010000 | ${companyName}</div>
+    <div class="back-phone">Valid: ${new Date(card.validFrom).toLocaleDateString("en-IN")} - ${new Date(card.validUntil).toLocaleDateString("en-IN")}</div>
   </div>
 </div>
 </body></html>`);
@@ -217,50 +259,84 @@ export default function IDCardsPage() {
         </form>
       )}
 
-      {/* Preview Modal — Portrait 50x85mm */}
+      {/* Preview Modal — 2-sided ID Card */}
       {previewCard && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">ID Card Preview</h3>
-            {/* Portrait card 189x321px = 50x85mm */}
-            <div className="mx-auto rounded-lg overflow-hidden shadow-lg border border-gray-300 flex flex-col" style={{ width: "189px", height: "321px" }}>
-              {/* Header */}
-              <div className="bg-[#0000AA] text-center pt-2.5 pb-2 px-2 relative flex-shrink-0">
-                <img src={companyLogo} alt={companyName} className="h-8 mx-auto" />
-                <div className="text-white/85 text-[6px] mt-1 tracking-wider uppercase">{companyName}</div>
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d32f2f]"></div>
-              </div>
-              {/* Body */}
-              <div className="flex-1 flex flex-col items-center px-2 pt-2 pb-1 bg-white">
-                <div className="w-[88px] h-[88px] rounded-full border-[2.5px] border-[#0000AA] overflow-hidden bg-blue-50 flex items-center justify-center mb-1 flex-shrink-0">
-                  {(previewCard.user.avatar || previewCard.photoUrl) ? (
-                    <img src={previewCard.user.avatar || previewCard.photoUrl || ""} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                    <span className="text-4xl">👤</span>
-                  )}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-auto">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">ID Card Preview (2-Sided)</h3>
+            <div className="flex gap-6 justify-center flex-wrap">
+              {/* FRONT SIDE */}
+              <div>
+                <p className="text-xs text-gray-500 text-center mb-2 font-semibold uppercase">Front</p>
+                <div className="rounded-[10px] overflow-hidden shadow-lg flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
+                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-red-500 rounded-l-[10px] z-10"></div>
+                  <div className="absolute top-0 right-0 bottom-0 w-[6px] bg-blue-600 rounded-r-[10px] z-10"></div>
+                  {/* Logo */}
+                  <div className="text-center pt-3 pb-2 px-3 flex-shrink-0">
+                    <img src={companyLogo} alt={companyName} className="h-7 mx-auto" />
+                    <div className="text-[7px] text-slate-700 font-bold mt-1 tracking-wide">{companyName}</div>
+                  </div>
+                  {/* Photo */}
+                  <div className="text-center py-1 flex-shrink-0">
+                    <div className="w-[80px] h-[80px] rounded-full border-[3px] border-blue-600 overflow-hidden bg-blue-50 inline-flex items-center justify-center">
+                      {(previewCard.user.avatar || previewCard.photoUrl) ? (
+                        <img src={previewCard.user.avatar || previewCard.photoUrl || ""} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <span className="text-3xl">👤</span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Name + Designation */}
+                  <div className="text-center px-3 py-1 flex-shrink-0">
+                    <div className="text-[12px] font-extrabold text-gray-900 leading-tight mb-1">{previewCard.user.name}</div>
+                    <span className="inline-block bg-blue-600 text-white text-[7px] font-bold px-2.5 py-[2px] rounded-full uppercase tracking-wide">{previewCard.designation}</span>
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 px-3.5 pt-1.5 pb-1">
+                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">ID No</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{previewCard.cardNumber}</span></div>
+                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">Email</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600 break-all">{previewCard.user.email}</span></div>
+                    {previewCard.user.phone && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">Phone</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{previewCard.user.phone}</span></div>}
+                    {previewCard.user.collegeName && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">College</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{previewCard.user.collegeName}</span></div>}
+                    {previewCard.user.dob && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">DOB</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{new Date(previewCard.user.dob).toLocaleDateString("en-IN")}</span></div>}
+                  </div>
+                  {/* Barcode */}
+                  <div className="text-center px-5 pb-2.5 flex-shrink-0">
+                    <div className="h-[22px] mx-auto w-[80%]" style={{ background: "repeating-linear-gradient(90deg, #000 0px, #000 1px, transparent 1px, transparent 3px)" }}></div>
+                    <div className="text-[6px] text-gray-500 mt-0.5 tracking-wider">{previewCard.cardNumber}</div>
+                  </div>
                 </div>
-                <div className="text-[11px] font-extrabold text-[#0000AA] uppercase text-center leading-tight mb-0.5">{previewCard.user.name}</div>
-                <div className="text-[8px] text-[#d32f2f] font-bold uppercase text-center mb-1">{previewCard.designation}</div>
-                <div className="w-[50px] h-[1.5px] bg-[#0000AA]/40 mb-1"></div>
-                <div className="text-[8px] text-gray-600 text-center leading-snug break-words">
-                  {previewCard.user.email}<br />
-                  {previewCard.user.phone && <>{previewCard.user.phone}<br /></>}
-                  {previewCard.user.dob && <>DOB: {new Date(previewCard.user.dob).toLocaleDateString("en-IN")}<br /></>}
-                  {previewCard.user.collegeName && <>{previewCard.user.collegeName}<br /></>}
-                  {previewCard.user.address && <>{previewCard.user.address}</>}
-                </div>
               </div>
-              {/* Footer */}
-              <div className="bg-[#0000AA] text-center py-1.5 px-2 flex-shrink-0 relative">
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#d32f2f]"></div>
-                <div className="text-[7px] font-bold text-white tracking-wider">{previewCard.cardNumber}</div>
-                <div className="text-[6px] text-white/70 mt-0.5">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} - {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
+              {/* BACK SIDE */}
+              <div>
+                <p className="text-xs text-gray-500 text-center mb-2 font-semibold uppercase">Back</p>
+                <div className="rounded-[10px] overflow-hidden shadow-lg flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
+                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-red-500 rounded-l-[10px] z-10"></div>
+                  <div className="absolute top-0 right-0 bottom-0 w-[6px] bg-blue-600 rounded-r-[10px] z-10"></div>
+                  {/* Logo */}
+                  <div className="text-center pt-4 pb-2 px-3 flex-shrink-0">
+                    <img src={companyLogo} alt={companyName} className="h-6 mx-auto" />
+                    <div className="text-[7px] text-slate-700 font-bold mt-1 tracking-wide">{companyName}</div>
+                  </div>
+                  {/* Terms */}
+                  <div className="flex-1 px-3.5">
+                    <div className="text-[10px] font-black text-gray-900 text-center uppercase mb-2 tracking-wide">Terms & Conditions</div>
+                    <p className="text-[7px] text-gray-600 leading-[1.5] mb-1.5"><strong className="text-gray-900">Identification:</strong> Employees are required to keep their ID badge visible or easily accessible during working hours to confirm identity when needed.</p>
+                    <p className="text-[7px] text-gray-600 leading-[1.5] mb-1.5"><strong className="text-gray-900">Proper Use:</strong> The ID badge is issued solely for company related activities. It may not be lent, duplicated, or used for any non-official purpose.</p>
+                    <p className="text-[7px] text-gray-600 leading-[1.5]"><strong className="text-gray-900">Security:</strong> If the badge is misplaced or suspected to be compromised, report it immediately so access can be disabled.</p>
+                  </div>
+                  {/* Footer */}
+                  <div className="text-center px-3 pb-3 flex-shrink-0">
+                    <span className="inline-block bg-slate-800 text-white text-[8px] font-bold px-3.5 py-1 rounded-full">ID: {previewCard.cardNumber}</span>
+                    <div className="text-[7px] text-gray-500 mt-1.5">+91 7062010000 | {companyName}</div>
+                    <div className="text-[6px] text-gray-400 mt-0.5">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} - {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => handlePrint(previewCard)} className="flex-1 bg-[#0000AA] text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-900">Print</button>
-              <button onClick={() => handlePrint(previewCard)} className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Download PDF</button>
-              <button onClick={() => setPreviewCard(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Close</button>
+            <div className="flex gap-3 mt-5 justify-center">
+              <button onClick={() => handlePrint(previewCard)} className="bg-[#0000AA] text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-900 font-medium">Print (Both Sides)</button>
+              <button onClick={() => handlePrint(previewCard)} className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-red-700 font-medium">Download PDF</button>
+              <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 font-medium">Close</button>
             </div>
           </div>
         </div>
