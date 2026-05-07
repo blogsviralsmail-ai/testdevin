@@ -19,20 +19,27 @@ export async function GET(request: NextRequest) {
     orderBy: [{ dayNumber: "asc" }, { order: "asc" }, { createdAt: "desc" }],
   });
 
-  // For students, filter resources based on current working day
+  // For students, show only their batch resources filtered by current working day
   if (session.role === "student") {
-    const enrollmentWhere: Record<string, unknown> = { studentId: session.id, status: "selected" };
+    const enrollmentWhere: Record<string, unknown> = { studentId: session.id, status: { in: ["selected", "completed"] } };
     if (batchId) enrollmentWhere.batchId = batchId;
     const enrollment = await prisma.enrollment.findFirst({
       where: enrollmentWhere,
     });
-    const currentDay = enrollment?.currentWorkDay || 0;
-
-    const filtered = resources.filter((r) => {
-      if (r.dayNumber && r.dayNumber > currentDay) return false;
-      return true;
-    });
-    return NextResponse.json(filtered);
+    if (enrollment) {
+      // Re-fetch resources only for the student's batch
+      const batchResources = await prisma.resource.findMany({
+        where: { batchId: enrollment.batchId },
+        orderBy: [{ dayNumber: "asc" }, { order: "asc" }, { createdAt: "desc" }],
+      });
+      const currentDay = enrollment.currentWorkDay || 999;
+      const filtered = batchResources.filter((r) => {
+        if (r.dayNumber && r.dayNumber > currentDay) return false;
+        return true;
+      });
+      return NextResponse.json(filtered);
+    }
+    return NextResponse.json([]);
   }
 
   return NextResponse.json(resources);

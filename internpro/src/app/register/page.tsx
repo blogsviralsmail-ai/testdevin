@@ -12,6 +12,8 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeUploading, setResumeUploading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +30,24 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      // Upload resume if provided
+      if (resumeFile) {
+        setResumeUploading(true);
+        try {
+          const fd = new FormData();
+          fd.append("file", resumeFile);
+          const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            await fetch("/api/documents", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ title: "Resume", type: "resume", fileUrl: uploadData.url }),
+            });
+          }
+        } catch { /* resume upload failed, user can re-upload later */ }
+        setResumeUploading(false);
+      }
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -149,6 +169,14 @@ export default function RegisterPage() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Resume (PDF) *</label>
+              <input type="file" accept=".pdf,.doc,.docx"
+                onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-gray-700" />
+              <p className="text-xs text-gray-400 mt-1">Upload your resume (PDF/DOC, shown to admin)</p>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
               <input type="password" value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -158,7 +186,7 @@ export default function RegisterPage() {
 
             <button type="submit" disabled={loading}
               className="w-full py-3 rounded-lg gradient-bg text-white font-medium hover:opacity-90 transition disabled:opacity-50">
-              {loading ? "Registering..." : "Register & Apply"}
+              {loading ? (resumeUploading ? "Uploading Resume..." : "Registering...") : "Register & Apply"}
             </button>
           </form>
 

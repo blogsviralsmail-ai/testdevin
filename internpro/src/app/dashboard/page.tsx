@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats>({});
   const [user, setUser] = useState<UserInfo | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const [showDocsPrompt, setShowDocsPrompt] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [statsRes, userRes] = await Promise.all([
@@ -43,6 +44,15 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Check if student needs to submit documents
+  useEffect(() => {
+    if (user?.role === "student") {
+      fetch("/api/documents").then(r => r.json()).then(docs => {
+        if (!docs || docs.length === 0) setShowDocsPrompt(true);
+      }).catch(() => {});
+    }
+  }, [user]);
 
   const handleSeed = async () => {
     setSeeding(true);
@@ -98,6 +108,25 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Documents Prompt Animation for New Students */}
+      {showDocsPrompt && user?.role === "student" && (
+        <div className="mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white relative overflow-hidden" style={{ animation: "fadeInUp 0.6s ease-out" }}>
+          <style>{`@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } } @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }`}</style>
+          <div className="relative z-10">
+            <h2 className="text-xl font-bold mb-2">Welcome to your Internship Dashboard!</h2>
+            <p className="text-indigo-100 mb-4">Please submit your documents to get started with your internship journey.</p>
+            <a href="/dashboard/documents"
+              className="inline-block bg-white text-indigo-600 font-semibold px-6 py-3 rounded-lg hover:bg-indigo-50 transition"
+              style={{ animation: "pulse 2s infinite" }}>
+              Submit Documents Now
+            </a>
+          </div>
+          <button onClick={() => setShowDocsPrompt(false)} className="absolute top-3 right-3 text-white/70 hover:text-white text-xl">&times;</button>
+          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full" />
+          <div className="absolute -right-2 -top-6 w-20 h-20 bg-white/5 rounded-full" />
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
