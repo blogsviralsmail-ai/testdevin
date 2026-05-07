@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { sendDocumentUploadNotification } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -62,6 +63,13 @@ export async function POST(request: NextRequest) {
         fileUrl,
       },
     });
+
+    // Notify admin about new document upload
+    const user = await prisma.user.findUnique({ where: { id: session.id }, select: { name: true } });
+    const admins = await prisma.user.findMany({ where: { role: { in: ["admin", "organization"] } }, select: { email: true } });
+    for (const admin of admins) {
+      sendDocumentUploadNotification(user?.name || "Student", admin.email, title).catch(() => {});
+    }
 
     return NextResponse.json(document, { status: 201 });
   } catch (error: unknown) {

@@ -567,6 +567,40 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Letter Templates */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Letter Templates</h2>
+            <p className="text-sm text-gray-500 mb-4">Manage letter designs. Changes here update all future letters generated.</p>
+            <div className="space-y-3">
+              {["offer_letter", "experience_letter", "internship_certificate", "id_card"].map((type) => {
+                const labels: Record<string, string> = {
+                  offer_letter: "Offer Letter Template",
+                  experience_letter: "Experience Letter Template",
+                  internship_certificate: "Internship Certificate Template",
+                  id_card: "ID Card Template",
+                };
+                return (
+                  <div key={type} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-gray-800">{labels[type]}</h3>
+                      <a href={`/dashboard/letter-templates?tab=${type}`} className="text-xs text-indigo-600 hover:underline">
+                        Edit in Designer
+                      </a>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {type === "offer_letter" && "2-page A4 letter with company terms, position details, and acceptance block."}
+                      {type === "experience_letter" && "1-page A4 certificate with performance summary and recommendation."}
+                      {type === "internship_certificate" && "Certificate with KKHS letterhead, dates, and program details."}
+                      {type === "id_card" && "Student ID card with photo, employee ID, and QR code."}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Platform Info */}
         <div className="bg-white rounded-xl p-6 border">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Platform Info</h2>

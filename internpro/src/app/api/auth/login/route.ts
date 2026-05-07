@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginUser } from "@/lib/auth";
-import { sendLoginNotificationEmail } from "@/lib/email";
+import { sendLoginNotification } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const { user, token } = await loginUser(email, password);
 
     // Send login notification (non-blocking)
-    sendLoginNotificationEmail(user.name, user.email).catch(() => {});
+    sendLoginNotification(user.name, user.email).catch(() => {});
 
     // Track login session for login hours
     const today = new Date().toISOString().split("T")[0];
