@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       htmlContent = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;margin:0 auto;padding:0;background:white;color:#222;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">
 <div style="width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;">
 ${LH}
-<div style="flex:1;padding:22px 36px 12px;">
+<div style="flex:1;padding:22px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;">
 <table style="width:100%;margin-bottom:16px;"><tr><td style="font-size:15px;color:#555;">Ref: <strong style="color:#222;">${letterNumber}</strong></td><td style="text-align:right;font-size:15px;color:#555;">Date: <strong style="color:#222;">${todayFormatted}</strong></td></tr></table>
 <div style="text-align:center;margin:10px 0 24px;"><h2 style="margin:0;font-size:30px;font-weight:700;color:#0000AA;letter-spacing:3px;text-transform:uppercase;">Experience Certificate</h2><div style="width:60px;height:3px;background:#d32f2f;margin:6px auto 0;"></div></div>
 <p style="font-size:17px;color:#333;margin:14px 0 12px;"><strong>To Whom It May Concern,</strong></p>
