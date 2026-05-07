@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 interface Interview {
   id: string;
@@ -19,6 +20,7 @@ interface Interview {
 }
 
 export default function InterviewsPage() {
+  const router = useRouter();
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectingId, setSelectingId] = useState<string | null>(null);
@@ -43,6 +45,15 @@ export default function InterviewsPage() {
     setInterviews(data);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    // Block students from accessing interviews page
+    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.user?.role === "student") {
+        router.push("/dashboard");
+      }
+    }).catch(() => {});
+  }, [router]);
 
   useEffect(() => { fetchInterviews(); }, [fetchInterviews]);
 

@@ -369,6 +369,108 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Program Types Management */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Program Types (Public Page)</h2>
+            <p className="text-sm text-gray-500 mb-6">Manage the 4 program types shown on the public <a href="/programs" target="_blank" className="text-indigo-600 underline">Programs</a> page. Changes apply after saving.</p>
+
+            {[
+              { id: "premium_paid_training", label: "1. Premium Paid Training Program", color: "#4f46e5",
+                defaults: { title: "Premium Paid Training Program", fees: "₹5,000", fees_note: "3 Months", duration: "3 Months", mode: "Online",
+                ideal_for: "2nd & 3rd year students who want serious learning, strong portfolio and job readiness",
+                highlights: "Complete structured online training\nReal-time projects on Live Client Work / Industry Projects\nWeekly doubt sessions with mentors\nFinal project report + presentation\nCertificate + Experience Letter + Recommendation Letter\nBest for students who want strong portfolio and job readiness" }},
+              { id: "basic_certification", label: "2. Basic Certification Program", color: "#059669",
+                defaults: { title: "Basic Certification Program", fees: "₹999", fees_note: "One Time", duration: "1-15 Days (Self-paced)", mode: "Online",
+                ideal_for: "Students who want quick certificate at low cost and basic knowledge",
+                highlights: "High-quality training material (PDF + Videos)\nTopic-wise study modules\nOnline Quiz / Assignment (MCQ + Subjective)\nPerformance-based percentage certificate\nDigital Certificate with your Percentage / Grade\nProject files included (if applicable)" }},
+              { id: "free_hybrid_internship", label: "3. Free Hybrid Internship", color: "#d97706",
+                defaults: { title: "Free Hybrid Internship", fees: "₹0", fees_note: "Completely Free", duration: "1-3 Months", mode: "Online + Offline",
+                ideal_for: "Students who want flexibility and can manage studies + internship together",
+                highlights: "Mix of Online + Offline work experience\nWeekly tasks and real projects\nMentorship from experienced team\nCertificate of Completion\nNo stipend, no fees — completely free\nFlexible schedule for working students" }},
+              { id: "stipend_office_internship", label: "4. Stipend Based Office Internship", color: "#dc2626",
+                defaults: { title: "Stipend Based Office Internship", fees: "₹5,000/month", fees_note: "Stipend (You Earn)", duration: "1-3 Months", mode: "Office (Jaipur)",
+                ideal_for: "Serious students who can come to office daily, minimum 6 days a week",
+                highlights: "Full-time office work in Jaipur\nWorking on Live Client Projects daily\nDaily learning + hands-on professional experience\nProfessional corporate work environment\nCertificate + Experience Letter on completion\nBest performing interns can get Pre-Placement Offer" }},
+            ].map((prog) => (
+              <div key={prog.id} className="mb-6 p-4 border rounded-xl" style={{ borderColor: `${prog.color}30` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold" style={{ color: prog.color }}>{prog.label}</h3>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox"
+                      checked={settings[`program_type_${prog.id}_enabled`] !== "false"}
+                      onChange={(e) => updateSetting(`program_type_${prog.id}_enabled`, e.target.checked ? "true" : "false")}
+                      className="w-4 h-4 rounded" />
+                    <span className="text-gray-600">Enabled</span>
+                  </label>
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+                    <input value={settings[`program_type_${prog.id}_title`] || prog.defaults.title}
+                      onChange={(e) => updateSetting(`program_type_${prog.id}_title`, e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Image URL (optional)</label>
+                    <input value={settings[`program_type_${prog.id}_image`] || ""}
+                      onChange={(e) => updateSetting(`program_type_${prog.id}_image`, e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://... (leave empty for default)" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Fees / Stipend</label>
+                    <input value={settings[`program_type_${prog.id}_fees`] || prog.defaults.fees}
+                      onChange={(e) => updateSetting(`program_type_${prog.id}_fees`, e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Fees Note</label>
+                    <input value={settings[`program_type_${prog.id}_fees_note`] || prog.defaults.fees_note}
+                      onChange={(e) => updateSetting(`program_type_${prog.id}_fees_note`, e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Duration</label>
+                    <input value={settings[`program_type_${prog.id}_duration`] || prog.defaults.duration}
+                      onChange={(e) => updateSetting(`program_type_${prog.id}_duration`, e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Mode</label>
+                    <input value={settings[`program_type_${prog.id}_mode`] || prog.defaults.mode}
+                      onChange={(e) => updateSetting(`program_type_${prog.id}_mode`, e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Theme Color</label>
+                    <div className="flex gap-2">
+                      <input type="color" value={settings[`program_type_${prog.id}_color`] || prog.color}
+                        onChange={(e) => updateSetting(`program_type_${prog.id}_color`, e.target.value)}
+                        className="w-10 h-9 border rounded-lg cursor-pointer" />
+                      <input value={settings[`program_type_${prog.id}_color`] || prog.color}
+                        onChange={(e) => updateSetting(`program_type_${prog.id}_color`, e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Ideal For</label>
+                  <input value={settings[`program_type_${prog.id}_ideal_for`] || prog.defaults.ideal_for}
+                    onChange={(e) => updateSetting(`program_type_${prog.id}_ideal_for`, e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Highlights (one per line)</label>
+                  <textarea
+                    value={settings[`program_type_${prog.id}_highlights`] || prog.defaults.highlights}
+                    onChange={(e) => updateSetting(`program_type_${prog.id}_highlights`, e.target.value)}
+                    rows={4} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Notification Settings */}
         {isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
