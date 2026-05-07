@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { escapeHtml, generateUniqueId } from "@/lib/utils";
+import { sendLetterGeneratedEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -238,6 +239,10 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
 
       return letter;
     });
+
+    // Send email notification (non-blocking)
+    const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
+    if (student) sendLetterGeneratedEmail(student.name, student.email, "Offer Letter", offerLetter.letterNumber).catch(() => {});
 
     return NextResponse.json(offerLetter, { status: 201 });
   } catch (error: unknown) {

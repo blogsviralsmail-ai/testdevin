@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginUser } from "@/lib/auth";
+import { sendLoginNotificationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +12,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { user, token } = await loginUser(email, password);
+
+    // Send login notification (non-blocking)
+    sendLoginNotificationEmail(user.name, user.email).catch(() => {});
 
     const response = NextResponse.json({ user });
     response.cookies.set("token", token, {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerUser, createToken } from "@/lib/auth";
 import type { SessionUser } from "@/lib/auth";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +27,9 @@ export async function POST(request: NextRequest) {
     };
 
     const token = createToken(sessionUser);
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user.name, user.email).catch(() => {});
+
     const response = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     response.cookies.set("token", token, {
       httpOnly: true,

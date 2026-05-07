@@ -16,6 +16,8 @@ model User {
   role          String    @default("student")
   avatar        String?
   isActive      Boolean   @default(true)
+  resetToken    String?
+  resetExpiry   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

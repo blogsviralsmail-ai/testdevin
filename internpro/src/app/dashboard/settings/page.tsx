@@ -405,6 +405,47 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* SMTP / Email Settings */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Email (SMTP) Settings</h2>
+            <p className="text-sm text-gray-500 mb-4">Configure SMTP to send emails for login, signup, forgot password, and letter notifications.</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
+                <input value={settings.smtp_host || ""} onChange={(e) => updateSetting("smtp_host", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="smtp.gmail.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Port</label>
+                <input value={settings.smtp_port || ""} onChange={(e) => updateSetting("smtp_port", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="587" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP User (Email)</label>
+                <input value={settings.smtp_user || ""} onChange={(e) => updateSetting("smtp_user", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Password / App Password</label>
+                <input type="password" value={settings.smtp_pass || ""} onChange={(e) => updateSetting("smtp_pass", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="••••••••" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">From Email</label>
+                <input value={settings.smtp_from || ""} onChange={(e) => updateSetting("smtp_from", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">From Name</label>
+                <input value={settings.smtp_from_name || ""} onChange={(e) => updateSetting("smtp_from_name", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media" />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">For Gmail: use smtp.gmail.com, port 587, and an App Password (not your regular password).</p>
+          </div>
+        )}
+
         {/* Platform Info */}
         <div className="bg-white rounded-xl p-6 border">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Platform Info</h2>

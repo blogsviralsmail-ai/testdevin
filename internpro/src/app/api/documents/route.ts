@@ -15,6 +15,17 @@ export async function GET(request: NextRequest) {
   const where: Record<string, unknown> = {};
   if (session.role === "student") {
     where.userId = session.id;
+  } else if (session.role === "teamleader") {
+    // Team leaders see docs from students in their batches
+    if (userId) {
+      where.userId = userId;
+    } else {
+      const leaderBatches = await prisma.batch.findMany({ where: { leaderId: session.id }, select: { id: true } });
+      const batchIds = leaderBatches.map(b => b.id);
+      const enrollments = await prisma.enrollment.findMany({ where: { batchId: { in: batchIds } }, select: { studentId: true } });
+      const studentIds = [...new Set(enrollments.map(e => e.studentId))];
+      where.userId = { in: studentIds };
+    }
   } else if (userId) {
     where.userId = userId;
   }
@@ -62,7 +73,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || !["admin", "organization"].includes(session.role)) {
+    if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
