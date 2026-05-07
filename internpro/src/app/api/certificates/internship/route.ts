@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
   const sMap: Record<string, string> = {};
   for (const s of settings) sMap[s.key] = s.value;
 
-  const lhLogo = sMap.letterhead_logo || "/kkhs-logo.png";
-  const lhCompany = sMap.letterhead_company || "KKHS Media Private Limited";
+  const lhLogo = sMap.letterhead_logo || "/uploads/kkhs-logo-new.jpg";
+  const lhCompany = sMap.letterhead_company_name || "KKHS Media Private Limited";
   const lhAddress = sMap.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012";
   const lhPhone = sMap.letterhead_phone || "9782005500";
   const lhEmail = sMap.letterhead_email || "hari@kkhsmedia.com";
