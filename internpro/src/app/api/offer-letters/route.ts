@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const lhEmail = sMap.letterhead_email || "hari@kkhsmedia.com";
     const lhGst = sMap.letterhead_gst || "08AAICK3853C1ZL";
 
-    const LH = `<table style="width:100%;border-collapse:collapse;margin:0;padding:0;"><tr><td style="width:100px;vertical-align:middle;padding:12px 0 12px 28px;"><img src="${lhLogo}" alt="${escapeHtml(lhCompany)}" style="height:82px;display:block;object-fit:contain;" /></td><td style="text-align:right;vertical-align:middle;padding:12px 28px 12px 14px;"><p style="margin:0;font-size:28px;font-weight:700;color:#0000AA;letter-spacing:0.5px;">${escapeHtml(lhCompany)}</p><p style="margin:5px 0 0;font-size:16px;color:#555;line-height:1.4;">${escapeHtml(lhAddress)}</p><p style="margin:4px 0 0;font-size:16px;color:#555;">Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></td></tr></table><div style="height:4px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);"></div>`;
+    const LH = `<table style="width:100%;border-collapse:collapse;margin:0;padding:0;"><tr><td style="width:180px;vertical-align:middle;padding:12px 0 12px 28px;"><img src="${lhLogo}" alt="${escapeHtml(lhCompany)}" style="height:164px;display:block;object-fit:contain;" /></td><td style="text-align:right;vertical-align:middle;padding:12px 28px 12px 14px;"><p style="margin:0;font-size:28px;font-weight:700;color:#0000AA;letter-spacing:0.5px;">${escapeHtml(lhCompany)}</p><p style="margin:5px 0 0;font-size:16px;color:#555;line-height:1.4;">${escapeHtml(lhAddress)}</p><p style="margin:4px 0 0;font-size:16px;color:#555;">Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></td></tr></table><div style="height:4px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);"></div>`;
 
     const FT = `<div style="height:3px;background:linear-gradient(90deg,#0000AA,#0000AA 70%,#d32f2f 70%,#d32f2f);margin-top:auto;"></div><div style="padding:8px 28px;text-align:center;"><p style="margin:0;font-size:14px;font-weight:600;color:#0000AA;">${escapeHtml(lhCompany)}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">${escapeHtml(lhAddress)} &nbsp;|&nbsp; Ph: ${escapeHtml(lhPhone)} &nbsp;|&nbsp; ${escapeHtml(lhEmail)} &nbsp;|&nbsp; GST: ${escapeHtml(lhGst)}</p></div>`;
 
@@ -131,14 +131,14 @@ ${LH}
 <li style="margin-bottom:2px;">Treat colleagues, clients, and all stakeholders with respect, dignity, and integrity.</li>
 <li>Refrain from any activity that may bring disrepute to the organization or its brand.</li>
 </ul>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">4. Confidentiality &amp; Non-Disclosure Agreement</p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">During the tenure and even after the conclusion of this internship, you shall not disclose, share, or make use of any proprietary information, trade secrets, client data, business strategies, or any other confidential material belonging to ${escapeHtml(lhCompany)} or its clients, partners, and associates without obtaining prior written consent from the management. Any violation of this clause may result in immediate termination and appropriate legal action as deemed necessary.</p>
 </div>
 <div style="flex-shrink:0;">${FT}</div>
 </div>
 <div style="${PGL}">
 ${LH}
 <div style="${PC}">
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">4. Confidentiality &amp; Non-Disclosure Agreement</p>
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">During the tenure and even after the conclusion of this internship, you shall not disclose, share, or make use of any proprietary information, trade secrets, client data, business strategies, or any other confidential material belonging to ${escapeHtml(lhCompany)} or its clients, partners, and associates without obtaining prior written consent from the management. Any violation of this clause may result in immediate termination and appropriate legal action as deemed necessary.</p>
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">5. Intellectual Property Rights</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">Any and all work product, including but not limited to code, designs, content, documentation, creative output, research findings, or any other deliverables produced during the course of this internship shall be the sole and exclusive intellectual property of ${escapeHtml(lhCompany)}. You hereby agree to irrevocably assign all rights, title, and interest in such work to the company without any additional consideration.</p>
 <p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">6. Termination &amp; Separation</p>
