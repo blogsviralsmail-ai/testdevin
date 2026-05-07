@@ -40,13 +40,9 @@ export default function ReportsPage() {
   const viewDailyReport = async (enrollment: Enrollment) => {
     setGenerating(enrollment.id);
     try {
-      const studentId = isStudent ? "" : `&studentId=${enrollment.studentId}`;
-      const res = await fetch(`/api/reports/daily-tasks?batchId=${enrollment.batch ? "" : ""}${studentId}&batchId=`);
-      // Build URL properly
-      const url = `/api/reports/daily-tasks?studentId=${enrollment.studentId}`;
-      const resp = await fetch(url);
-      if (resp.ok) {
-        const data = await resp.json();
+      const res = await fetch(`/api/reports/daily-tasks?studentId=${enrollment.studentId}`);
+      if (res.ok) {
+        const data = await res.json();
         setViewingReport({ html: data.html, title: `Daily Task Report — ${data.studentName}` });
       } else {
         alert("Failed to generate report");

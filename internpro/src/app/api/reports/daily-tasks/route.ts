@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (!studentId) return NextResponse.json({ error: "Student ID required" }, { status: 400 });
 
   // Get enrollment
-  const enrollWhere: Record<string, unknown> = { studentId, status: "selected" };
+  const enrollWhere: Record<string, unknown> = { studentId, status: { in: ["selected", "completed"] } };
   if (batchId) enrollWhere.batchId = batchId;
   const enrollment = await prisma.enrollment.findFirst({
     where: enrollWhere,
