@@ -109,13 +109,11 @@ export default function LettersPage() {
   };
 
   const viewIDCard = async (studentId: string) => {
-    // Fetch and display ID card via employee-cards API
     const res = await fetch("/api/employee-cards");
     if (res.ok) {
       const cards = await res.json();
       const card = cards.find((c: { userId: string }) => c.userId === studentId);
       if (card) {
-        // Open ID card in print view (reuse existing logic)
         window.open(`/dashboard/id-cards?view=${card.id}`, "_blank");
       }
     }
@@ -140,29 +138,43 @@ export default function LettersPage() {
   const isStudent = user?.role === "student";
   const pageTitle = isStudent ? "My Letters" : "Letters";
   const pageDesc = isStudent
-    ? "View all your documents — ID Card, Offer Letter, Experience Letter, and Internship Certificate"
-    : "Search and view all student documents in one place";
+    ? "View all your documents — ID Card, Offer Letter, Experience Letter, and Internship Certificate."
+    : "Search and view all student documents in one place.";
+
+  const handlePrint = () => {
+    if (!viewingLetter) return;
+    handlePrintLetter(viewingLetter.html, viewingLetter.title);
+  };
 
   if (viewingLetter) {
     return (
       <div>
         <button onClick={() => setViewingLetter(null)} className="mb-4 text-indigo-600 hover:underline text-sm">
-          ← Back to Letters
+          &larr; Back to {pageTitle}
         </button>
-        <div className="bg-white rounded-xl p-8 border shadow-sm">
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => handlePrintLetter(viewingLetter.html, viewingLetter.title)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
-            >
-              Print / Download PDF
-            </button>
+        <div className="bg-white rounded-xl shadow-sm border">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="font-bold text-gray-900">{viewingLetter.title}</h3>
+            <div className="flex gap-2">
+              <button onClick={handlePrint}
+                className="px-4 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">
+                Print / PDF
+              </button>
+              <button onClick={() => setViewingLetter(null)}
+                className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">
+                Close
+              </button>
+            </div>
           </div>
-          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
+          <div className="p-4 bg-gray-100 overflow-auto max-h-[80vh]">
+            <div dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
+          </div>
         </div>
       </div>
     );
   }
+
+  if (loading) return <div className="p-6">Loading...</div>;
 
   return (
     <div>
@@ -171,9 +183,9 @@ export default function LettersPage() {
         <p className="text-gray-600 text-sm">{pageDesc}</p>
       </div>
 
-      {/* Search Section — hidden for students (they see only their own) */}
+      {/* Search Section — hidden for students */}
       {!isStudent && (
-        <div className="bg-white rounded-xl p-5 border border-gray-100 mb-6">
+        <div className="bg-white rounded-xl p-5 border mb-6">
           <div className="flex gap-3 items-end flex-wrap">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Search By</label>
@@ -201,7 +213,7 @@ export default function LettersPage() {
             </div>
             <button
               onClick={handleSearch}
-              className="px-6 py-2 bg-[#0000AA] text-white rounded-lg text-sm font-medium hover:bg-[#000088] transition"
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
             >
               Search
             </button>
@@ -218,137 +230,118 @@ export default function LettersPage() {
       )}
 
       {/* Results */}
-      {loading ? (
+      {results.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center border">
-          <p className="text-gray-500">Loading...</p>
-        </div>
-      ) : results.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
-          <div className="text-5xl mb-4">📋</div>
-          <h3 className="text-lg font-semibold text-gray-700">No Letters Found</h3>
-          <p className="text-gray-500 mt-2">
+          <p className="text-gray-500">
             {searchQuery ? "No results for your search. Try a different search term." : "No documents available yet."}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           {results.map((r) => (
-            <div key={r.enrollmentId} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-              {/* Student Header */}
-              <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
-                <div className="flex items-center gap-3">
+            <div key={r.enrollmentId} className="bg-white rounded-xl p-5 border">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
                   {r.studentAvatar ? (
-                    <img src={r.studentAvatar} alt={r.studentName} className="w-10 h-10 rounded-full object-cover border" />
+                    <img src={r.studentAvatar} alt={r.studentName} className="w-10 h-10 rounded-full object-cover border flex-shrink-0" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
                       {r.studentName.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{r.studentName}</h3>
-                    <p className="text-xs text-gray-500">
-                      {r.program} — {r.batch}
-                      {r.employeeCardNumber && <span className="ml-2 text-indigo-600 font-medium">ID: {r.employeeCardNumber}</span>}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900">{r.studentName}</p>
+                    <p className="text-sm text-gray-600">{r.program} — {r.batch}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {r.employeeCardNumber && <span className="text-indigo-600 font-medium mr-2">ID: {r.employeeCardNumber}</span>}
+                      {r.studentEmail}
+                      {r.studentPhone && <span className="ml-2">{r.studentPhone}</span>}
                     </p>
                   </div>
-                  <span className={`text-xs font-medium px-2 py-1 rounded ${r.status === "completed" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
-                    {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                  </span>
                 </div>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${r.status === "completed" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
+                  {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                </span>
               </div>
 
-              {/* Documents Grid */}
-              <div className="p-5">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {/* ID Card */}
-                  <div className={`rounded-lg border p-4 text-center ${r.idCard ? "border-blue-200 bg-blue-50" : "border-gray-200 bg-gray-50"}`}>
-                    <div className="text-2xl mb-2">🪪</div>
-                    <p className="text-xs font-medium text-gray-700 mb-2">ID Card</p>
-                    {r.idCard ? (
-                      <button
-                        onClick={() => viewIDCard(r.studentId)}
-                        className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
-                      >
-                        View
-                      </button>
-                    ) : (
-                      <span className="text-xs text-gray-400">Not Generated</span>
-                    )}
-                  </div>
+              {/* Documents — inline buttons */}
+              <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-100">
+                {/* ID Card */}
+                {r.idCard ? (
+                  <button
+                    onClick={() => viewIDCard(r.studentId)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                  >
+                    ID Card
+                  </button>
+                ) : (
+                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">ID Card — Not Generated</span>
+                )}
 
-                  {/* Offer Letter */}
-                  <div className={`rounded-lg border p-4 text-center ${r.offerLetter ? "border-indigo-200 bg-indigo-50" : "border-gray-200 bg-gray-50"}`}>
-                    <div className="text-2xl mb-2">📨</div>
-                    <p className="text-xs font-medium text-gray-700 mb-2">Offer Letter</p>
-                    {r.offerLetter ? (
-                      <div className="flex gap-1 justify-center">
-                        <button
-                          onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}` })}
-                          className="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 transition"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => handlePrintLetter(r.offerLetter!.htmlContent || "", r.offerLetter!.letterNumber)}
-                          className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300 transition"
-                        >
-                          Print
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">Not Generated</span>
-                    )}
+                {/* Offer Letter */}
+                {r.offerLetter ? (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}` })}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition"
+                    >
+                      Offer Letter
+                    </button>
+                    <button
+                      onClick={() => handlePrintLetter(r.offerLetter!.htmlContent || "", r.offerLetter!.letterNumber)}
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+                      title="Print"
+                    >
+                      Print
+                    </button>
                   </div>
+                ) : (
+                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">Offer Letter — Not Generated</span>
+                )}
 
-                  {/* Experience Letter */}
-                  <div className={`rounded-lg border p-4 text-center ${r.experienceLetter ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50"}`}>
-                    <div className="text-2xl mb-2">📜</div>
-                    <p className="text-xs font-medium text-gray-700 mb-2">Experience Letter</p>
-                    {r.experienceLetter ? (
-                      <div className="flex gap-1 justify-center">
-                        <button
-                          onClick={() => setViewingLetter({ html: r.experienceLetter!.htmlContent || "", title: `Experience Letter — ${r.studentName}` })}
-                          className="px-3 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 transition"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => handlePrintLetter(r.experienceLetter!.htmlContent || "", r.experienceLetter!.letterNumber)}
-                          className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300 transition"
-                        >
-                          Print
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">{r.status === "completed" ? "Pending Approval" : "After Completion"}</span>
-                    )}
+                {/* Experience Letter */}
+                {r.experienceLetter ? (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setViewingLetter({ html: r.experienceLetter!.htmlContent || "", title: `Experience Letter — ${r.studentName}` })}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
+                    >
+                      Experience Letter
+                    </button>
+                    <button
+                      onClick={() => handlePrintLetter(r.experienceLetter!.htmlContent || "", r.experienceLetter!.letterNumber)}
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+                      title="Print"
+                    >
+                      Print
+                    </button>
                   </div>
+                ) : (
+                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">
+                    {r.status === "completed" ? "Experience Letter — Pending" : "Experience Letter — After Completion"}
+                  </span>
+                )}
 
-                  {/* Internship Certificate */}
-                  <div className={`rounded-lg border p-4 text-center ${r.internshipCertificate ? "border-yellow-200 bg-yellow-50" : "border-gray-200 bg-gray-50"}`}>
-                    <div className="text-2xl mb-2">🏆</div>
-                    <p className="text-xs font-medium text-gray-700 mb-2">Internship Certificate</p>
-                    {r.internshipCertificate ? (
-                      <button
-                        onClick={() => viewCertificate(r.enrollmentId, r.studentName)}
-                        disabled={generatingCert === r.enrollmentId}
-                        className="px-3 py-1 bg-yellow-600 text-white rounded text-xs font-medium hover:bg-yellow-700 transition disabled:opacity-50"
-                      >
-                        {generatingCert === r.enrollmentId ? "Loading..." : "View"}
-                      </button>
-                    ) : r.experienceLetter ? (
-                      <button
-                        onClick={() => viewCertificate(r.enrollmentId, r.studentName)}
-                        disabled={generatingCert === r.enrollmentId}
-                        className="px-3 py-1 bg-yellow-500 text-white rounded text-xs font-medium hover:bg-yellow-600 transition disabled:opacity-50"
-                      >
-                        {generatingCert === r.enrollmentId ? "Generating..." : "Generate"}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-gray-400">After Experience Letter</span>
-                    )}
-                  </div>
-                </div>
+                {/* Internship Certificate */}
+                {r.internshipCertificate ? (
+                  <button
+                    onClick={() => viewCertificate(r.enrollmentId, r.studentName)}
+                    disabled={generatingCert === r.enrollmentId}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm hover:bg-yellow-700 transition disabled:opacity-50"
+                  >
+                    {generatingCert === r.enrollmentId ? "Loading..." : "Internship Certificate"}
+                  </button>
+                ) : r.experienceLetter ? (
+                  <button
+                    onClick={() => viewCertificate(r.enrollmentId, r.studentName)}
+                    disabled={generatingCert === r.enrollmentId}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm hover:bg-yellow-600 transition disabled:opacity-50"
+                  >
+                    {generatingCert === r.enrollmentId ? "Generating..." : "Generate Certificate"}
+                  </button>
+                ) : (
+                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">Certificate — After Experience Letter</span>
+                )}
               </div>
             </div>
           ))}
