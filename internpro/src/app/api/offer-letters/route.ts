@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     const PG = "width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;";
     const PGL = "width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;";
-    const PC = "flex:1;padding:20px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;";
+    const PC = "flex:1;min-height:0;padding:20px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;";
 
     const extraTerms = sMap.letter_offer_extra || "";
     const extraSection = extraTerms ? `<p style="font-size:17px;font-weight:700;color:#0000AA;margin:14px 0 6px;">9. Additional Terms</p><p style="font-size:16px;color:#333;line-height:1.6;text-align:justify;margin:0 0 8px;">${escapeHtml(extraTerms)}</p>` : "";

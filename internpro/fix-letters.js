@@ -34,7 +34,7 @@ async function main() {
 
   const PG = "width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;page-break-after:always;display:flex;flex-direction:column;overflow:hidden;";
   const PGL = "width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;";
-  const PC = "flex:1;padding:20px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;";
+  const PC = "flex:1;min-height:0;padding:20px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;";
 
   const extraSection = extraTerms ? `<p style="font-size:17px;font-weight:700;color:#0000AA;margin:18px 0 8px;">9. Additional Terms</p><p style="font-size:16px;color:#333;line-height:1.85;text-align:justify;margin:0 0 12px;">${esc(extraTerms)}</p>` : "";
   const extraExpSec = extraExpNote ? `<p style="font-size:16px;color:#333;line-height:1.85;text-align:justify;margin:8px 0 14px;">${esc(extraExpNote)}</p>` : "";
@@ -166,7 +166,7 @@ ${sigNameLine}
     const html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;margin:0 auto;padding:0;background:white;color:#222;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">
 <div style="width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;">
 ${LH}
-<div style="flex:1;padding:22px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;">
+<div style="flex:1;min-height:0;padding:22px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;">
 <table style="width:100%;margin-bottom:16px;"><tr><td style="font-size:15px;color:#555;">Ref: <strong style="color:#222;">${letterNumber}</strong></td><td style="text-align:right;font-size:15px;color:#555;">Date: <strong style="color:#222;">${todayFormatted}</strong></td></tr></table>
 <div style="text-align:center;margin:10px 0 24px;"><h2 style="margin:0;font-size:30px;font-weight:700;color:#0000AA;letter-spacing:3px;text-transform:uppercase;">Experience Certificate</h2><div style="width:60px;height:3px;background:#d32f2f;margin:6px auto 0;"></div></div>
 <p style="font-size:17px;color:#333;margin:14px 0 12px;"><strong>To Whom It May Concern,</strong></p>
