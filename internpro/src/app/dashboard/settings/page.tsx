@@ -567,6 +567,27 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Razorpay Payment Gateway */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Payment Gateway (Razorpay)</h2>
+            <p className="text-sm text-gray-500 mb-4">Configure Razorpay for paid program enrollments.</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key ID</label>
+                <input value={settings.razorpay_key_id || ""} onChange={(e) => updateSetting("razorpay_key_id", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="rzp_live_xxxx" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key Secret</label>
+                <input type="password" value={settings.razorpay_key_secret || ""} onChange={(e) => updateSetting("razorpay_key_secret", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="••••••••" />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">Get keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Razorpay Dashboard</a>. Use test keys for testing.</p>
+          </div>
+        )}
+
         {/* Letter Templates */}
         {isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
