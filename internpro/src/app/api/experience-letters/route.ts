@@ -138,9 +138,9 @@ ${LH}
 <tr><td style="padding:9px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Performance</td><td style="padding:9px 16px;border:1px solid #e0e0e0;"><strong style="color:#0000AA;">${performanceLabel}</strong></td></tr>
 ${safeRemarks ? `<tr><td style="padding:9px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Remarks</td><td style="padding:9px 16px;border:1px solid #e0e0e0;">${safeRemarks}</td></tr>` : ""}
 </table>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">Performance Summary</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">Performance Summary</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">During the internship tenure, ${safeStudentName} demonstrated commendable professionalism, technical aptitude, and a consistently proactive approach towards learning and skill development. The intern met assigned deadlines with diligence, exhibited strong analytical and problem-solving capabilities, and collaborated effectively with team members across various projects. The overall quality of work delivered was rated as <strong style="color:#0000AA;">${performanceLabel}</strong> by the supervising authority.</p>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">Key Strengths Observed</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">Key Strengths Observed</p>
 <ul style="font-size:16px;color:#333;line-height:1.55;margin:0 0 6px;padding-left:24px;">
 <li style="margin-bottom:6px;">Strong understanding of core concepts and practical applications related to the ${safeProgramTitle} domain.</li>
 <li style="margin-bottom:6px;">Demonstrated ability to work both independently and as an effective team contributor.</li>
@@ -148,10 +148,10 @@ ${safeRemarks ? `<tr><td style="padding:9px 16px;border:1px solid #e0e0e0;font-w
 <li style="margin-bottom:6px;">Willingness to learn new technologies, tools, and methodologies as required by the role.</li>
 <li>Professional conduct, positive workplace attitude, and strong interpersonal communication skills throughout the engagement.</li>
 </ul>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">Recommendation</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">Recommendation</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">Based on the overall performance, dedication, and professional conduct demonstrated during the internship period, we are pleased to recommend <strong style="color:#0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this tenure will serve as a strong foundation for future career growth. We wish ${safeStudentName} all the very best in all future endeavours.</p>
 ${extraExpSection}
-<p style="margin:10px 0 0;font-size:17px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
+<p style="margin:6px 0 0;font-size:17px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
 <div style="margin-top:12px;">
 ${sigBlock}
 ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:18px;">${escapeHtml(signatoryName)}</p>` : ""}

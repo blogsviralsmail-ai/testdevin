@@ -36,7 +36,7 @@ async function main() {
   const PGL = "width:210mm;height:297mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;";
   const PC = "flex:1;min-height:0;overflow:hidden;padding:20px 36px 12px;display:flex;flex-direction:column;justify-content:space-between;";
 
-  const extraSection = extraTerms ? `<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">9. Additional Terms</p><p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">${esc(extraTerms)}</p>` : "";
+  const extraSection = extraTerms ? `<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">9. Additional Terms</p><p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">${esc(extraTerms)}</p>` : "";
   const extraExpSec = extraExpNote ? `<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:4px 0 8px;">${esc(extraExpNote)}</p>` : "";
 
   // ==================== OFFER LETTERS ====================
@@ -65,11 +65,11 @@ async function main() {
 <div style="${PG}">
 ${LH}
 <div style="${PC}">
-<table style="width:100%;margin-bottom:14px;"><tr><td style="font-size:15px;color:#555;">Ref: <strong style="color:#222;">${letterNumber}</strong></td><td style="text-align:right;font-size:15px;color:#555;">Date: <strong style="color:#222;">${todayDate}</strong></td></tr></table>
+<table style="width:100%;margin-bottom:6px;"><tr><td style="font-size:15px;color:#555;">Ref: <strong style="color:#222;">${letterNumber}</strong></td><td style="text-align:right;font-size:15px;color:#555;">Date: <strong style="color:#222;">${todayDate}</strong></td></tr></table>
 <div style="text-align:center;margin:4px 0 10px;"><h2 style="margin:0;font-size:30px;font-weight:700;color:#0000AA;letter-spacing:3px;text-transform:uppercase;">Offer Letter</h2><div style="width:60px;height:3px;background:#d32f2f;margin:6px auto 0;"></div></div>
 <p style="font-size:17px;color:#333;margin:8px 0 4px;">Dear <strong style="color:#0000AA;">${studentName}</strong>,</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">With reference to your application and subsequent interactions, we are pleased to offer you an internship position at <strong>${cn}</strong> for the <strong>${programName}</strong> program. This offer is subject to the following terms and conditions outlined below.</p>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:10px 0 4px;">1. Position Details</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">1. Position Details</p>
 <table style="width:100%;border-collapse:collapse;margin:0 0 6px;font-size:16px;border:1px solid #ddd;">
 <tr style="background:#0000AA;"><td style="padding:9px 16px;color:white;font-weight:600;width:180px;border:1px solid #0000AA;">Particulars</td><td style="padding:9px 16px;color:white;font-weight:600;border:1px solid #0000AA;">Details</td></tr>
 <tr><td style="padding:8px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Program</td><td style="padding:8px 16px;border:1px solid #e0e0e0;">${programName}</td></tr>
@@ -82,18 +82,18 @@ ${LH}
 <tr><td style="padding:8px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Paid Leaves</td><td style="padding:8px 16px;border:1px solid #e0e0e0;">${paidLeaves} per month</td></tr>
 <tr><td style="padding:8px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Payment Type</td><td style="padding:8px 16px;border:1px solid #e0e0e0;">${feeLabel}</td></tr>
 </table>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">2. Reporting &amp; Probation</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">2. Reporting &amp; Probation</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">You shall report to your designated Team Leader on the date of joining. The first <strong>7 working days</strong> shall constitute a probationary period during which your performance, punctuality, and conduct will be evaluated. Upon successful completion of probation, a minimum written notice of <strong>7 days</strong> shall be required from either party for separation.</p>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">3. Code of Conduct</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">3. Code of Conduct</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">As an intern, you are expected to:</p>
 <ul style="font-size:16px;color:#333;line-height:1.55;margin:0 0 4px;padding-left:24px;">
-<li style="margin-bottom:5px;">Maintain professional behaviour and adhere to all workplace policies and guidelines.</li>
-<li style="margin-bottom:5px;">Follow the prescribed work schedule and obtain prior written approval for any leave.</li>
-<li style="margin-bottom:5px;">Complete all assigned tasks within stipulated deadlines with a quality-first approach.</li>
-<li style="margin-bottom:5px;">Treat colleagues, clients, and all stakeholders with respect, dignity, and integrity.</li>
+<li style="margin-bottom:2px;">Maintain professional behaviour and adhere to all workplace policies and guidelines.</li>
+<li style="margin-bottom:2px;">Follow the prescribed work schedule and obtain prior written approval for any leave.</li>
+<li style="margin-bottom:2px;">Complete all assigned tasks within stipulated deadlines with a quality-first approach.</li>
+<li style="margin-bottom:2px;">Treat colleagues, clients, and all stakeholders with respect, dignity, and integrity.</li>
 <li>Refrain from any activity that may bring disrepute to the organization or its brand.</li>
 </ul>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">4. Confidentiality &amp; Non-Disclosure Agreement</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">4. Confidentiality &amp; Non-Disclosure Agreement</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">During the tenure and even after the conclusion of this internship, you shall not disclose, share, or make use of any proprietary information, trade secrets, client data, business strategies, or any other confidential material belonging to ${cn} or its clients, partners, and associates without obtaining prior written consent from the management. Any violation of this clause may result in immediate termination and appropriate legal action as deemed necessary.</p>
 </div>
 <div style="flex-shrink:0;">${FT}</div>
@@ -101,32 +101,32 @@ ${LH}
 <div style="${PGL}">
 ${LH}
 <div style="${PC}">
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:10px 0 4px;">5. Intellectual Property Rights</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">5. Intellectual Property Rights</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">Any and all work product, including but not limited to code, designs, content, documentation, creative output, research findings, or any other deliverables produced during the course of this internship shall be the sole and exclusive intellectual property of ${cn}. You hereby agree to irrevocably assign all rights, title, and interest in such work to the company without any additional consideration.</p>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">6. Termination &amp; Separation</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">6. Termination &amp; Separation</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">The company reserves the right to terminate this internship at any time in the event of misconduct, breach of confidentiality, unsatisfactory performance, violation of company policies, or any behaviour detrimental to the organization. The intern may also choose to resign by providing a minimum of <strong>7 days</strong> written notice to the reporting authority. All company property, access credentials, and confidential materials must be returned upon separation.</p>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">7. General Terms &amp; Conditions</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">7. General Terms &amp; Conditions</p>
 <ul style="font-size:16px;color:#333;line-height:1.55;margin:0 0 4px;padding-left:24px;">
-<li style="margin-bottom:5px;">This offer is contingent upon successful verification of your educational qualifications, identity documents, and any other credentials as may be required.</li>
-<li style="margin-bottom:5px;">The company reserves the right to assign you to any project, team, or department as per prevailing business requirements and organizational needs.</li>
-<li style="margin-bottom:5px;">Use of personal mobile phones during working hours shall be restricted to designated break periods only.</li>
-<li style="margin-bottom:5px;">You shall not engage in any freelancing, part-time employment, or competing business activity during the period of this internship.</li>
+<li style="margin-bottom:2px;">This offer is contingent upon successful verification of your educational qualifications, identity documents, and any other credentials as may be required.</li>
+<li style="margin-bottom:2px;">The company reserves the right to assign you to any project, team, or department as per prevailing business requirements and organizational needs.</li>
+<li style="margin-bottom:2px;">Use of personal mobile phones during working hours shall be restricted to designated break periods only.</li>
+<li style="margin-bottom:2px;">You shall not engage in any freelancing, part-time employment, or competing business activity during the period of this internship.</li>
 <li>Any disputes arising out of or in connection with this offer shall be subject to the exclusive jurisdiction of the courts in Jaipur, Rajasthan, India.</li>
 </ul>
 ${extraSection}
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">8. Acceptance</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">8. Acceptance</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 4px;">Please confirm your acceptance of this offer by reporting at the office on the above-mentioned date of joining along with the following documents: <strong>Aadhar Card, PAN Card (if applicable), two passport-size photographs, all relevant educational certificates,</strong> and a <strong>signed copy of this offer letter.</strong></p>
-<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 10px;">We look forward to your valuable association with ${cn} and wish you a highly productive and rewarding internship experience with us.</p>
-<p style="margin:18px 0 0;font-size:17px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${cn}</strong>,</p>
-<div style="margin-top:10px;">
+<p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">We look forward to your valuable association with ${cn} and wish you a highly productive and rewarding internship experience with us.</p>
+<p style="margin:8px 0 0;font-size:17px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${cn}</strong>,</p>
+<div style="margin-top:6px;">
 ${sigBlock}
 ${sigNameLine}
 <p style="margin:3px 0 0;font-size:15px;color:#555;">${esc(sigDesg)}</p>
 <p style="margin:3px 0 0;font-size:15px;color:#555;">${cn}</p>
 </div>
-<div style="margin-top:14px;padding-top:10px;border-top:1px dashed #ccc;">
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:0 0 10px;">Intern&rsquo;s Acceptance</p>
-<p style="font-size:15px;color:#333;line-height:1.55;margin:0 0 10px;">I, <strong>${studentName}</strong>, hereby accept the above-mentioned terms and conditions and agree to abide by all policies, rules, and regulations of ${cn} during the course of my internship.</p>
+<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #ccc;">
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:0 0 4px;">Intern&rsquo;s Acceptance</p>
+<p style="font-size:15px;color:#333;line-height:1.55;margin:0 0 4px;">I, <strong>${studentName}</strong>, hereby accept the above-mentioned terms and conditions and agree to abide by all policies, rules, and regulations of ${cn} during the course of my internship.</p>
 <table style="width:100%;font-size:15px;color:#555;"><tr><td style="width:50%;padding:6px 0;">Signature: ________________________</td><td style="width:50%;padding:6px 0;">Date: ________________________</td></tr><tr><td style="padding:6px 0;">Name: ${studentName}</td><td></td></tr></table>
 </div>
 </div>
@@ -179,9 +179,9 @@ ${LH}
 <tr><td style="padding:9px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Performance</td><td style="padding:9px 16px;border:1px solid #e0e0e0;"><strong style="color:#0000AA;">${performanceLabel}</strong></td></tr>
 ${remarks ? `<tr><td style="padding:9px 16px;border:1px solid #e0e0e0;font-weight:600;color:#333;background:#fafbff;">Remarks</td><td style="padding:9px 16px;border:1px solid #e0e0e0;">${remarks}</td></tr>` : ""}
 </table>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">Performance Summary</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">Performance Summary</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">During the internship tenure, ${studentName} demonstrated commendable professionalism, technical aptitude, and a consistently proactive approach towards learning and skill development. The intern met assigned deadlines with diligence, exhibited strong analytical and problem-solving capabilities, and collaborated effectively with team members across various projects. The overall quality of work delivered was rated as <strong style="color:#0000AA;">${performanceLabel}</strong> by the supervising authority.</p>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">Key Strengths Observed</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">Key Strengths Observed</p>
 <ul style="font-size:16px;color:#333;line-height:1.55;margin:0 0 6px;padding-left:24px;">
 <li style="margin-bottom:6px;">Strong understanding of core concepts and practical applications related to the ${programName} domain.</li>
 <li style="margin-bottom:6px;">Demonstrated ability to work both independently and as an effective team contributor.</li>
@@ -189,7 +189,7 @@ ${remarks ? `<tr><td style="padding:9px 16px;border:1px solid #e0e0e0;font-weigh
 <li style="margin-bottom:6px;">Willingness to learn new technologies, tools, and methodologies as required by the role.</li>
 <li>Professional conduct, positive workplace attitude, and strong interpersonal communication skills throughout the engagement.</li>
 </ul>
-<p style="font-size:17px;font-weight:700;color:#0000AA;margin:12px 0 4px;">Recommendation</p>
+<p style="font-size:17px;font-weight:700;color:#0000AA;margin:8px 0 2px;">Recommendation</p>
 <p style="font-size:16px;color:#333;line-height:1.55;text-align:justify;margin:0 0 6px;">Based on the overall performance, dedication, and professional conduct demonstrated during the internship period, we are pleased to recommend <strong style="color:#0000AA;">${studentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this tenure will serve as a strong foundation for future career growth. We wish ${studentName} all the very best in all future endeavours.</p>
 ${extraExpSec}
 <p style="margin:22px 0 0;font-size:17px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${cn}</strong>,</p>
