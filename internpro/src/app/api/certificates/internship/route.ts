@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   const lhAddress = sMap.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012";
   const lhPhone = sMap.letterhead_phone || "9782005500";
   const lhEmail = sMap.letterhead_email || "hari@kkhsmedia.com";
-  const sigImage = sMap.signature_image || "";
+  const sigImage = sMap.admin_signature || sMap.signature_image || "";
   const sigName = sMap.signatory_name || "Hari Soni";
   const sigDesignation = sMap.signatory_designation || "Director";
 
