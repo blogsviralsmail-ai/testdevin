@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { escapeHtml, generateUniqueId } from "@/lib/utils";
+import { escapeHtml, generateUniqueId, generateCertNumber } from "@/lib/utils";
 import { sendLetterGeneratedEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
@@ -186,6 +186,28 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
         },
       });
     });
+
+    // Auto-generate Internship Certificate if not exists
+    const existingCert = await prisma.certificate.findFirst({
+      where: { enrollmentId, type: "completion" },
+    });
+    if (!existingCert) {
+      try {
+        const certNumber = generateCertNumber();
+        await prisma.certificate.create({
+          data: {
+            enrollmentId,
+            certNumber,
+            type: "completion",
+            studentName: enrollment.student.name,
+            programName: enrollment.batch.program.title,
+            orgName: enrollment.batch.program.organization.name,
+          },
+        });
+      } catch {
+        // Certificate generation failed (e.g., unique constraint) — non-critical
+      }
+    }
 
     // Send email notification (non-blocking)
     const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
