@@ -114,10 +114,10 @@ export default function DashboardLayout() {
         {/* Logo */}
         <div className="h-12 flex items-center px-3 border-b" style={{ borderColor: 'rgb(var(--border))' }}>
           <Link to={isAdminRoute ? '/admin' : '/dashboard'} className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-[10px] font-bold">G</span>
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-[10px] font-bold">S</span>
             </div>
-            {!collapsed && <span className="text-sm font-semibold truncate text-primary">GoLivePro</span>}
+            {!collapsed && <span className="text-sm font-semibold truncate text-primary">StreamAdda</span>}
           </Link>
         </div>
 

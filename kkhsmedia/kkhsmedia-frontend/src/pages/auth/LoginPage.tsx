@@ -38,10 +38,10 @@ export default function LoginPage() {
         className="w-full max-w-sm"
       >
         <div className="flex items-center justify-center gap-2 mb-10">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white text-xs font-bold">G</span>
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center">
+            <span className="text-white text-xs font-bold">S</span>
           </div>
-          <span className="text-sm font-semibold text-primary">GoLivePro</span>
+          <span className="text-sm font-semibold text-primary">StreamAdda</span>
         </div>
 
         <div className="text-center mb-8">
