@@ -192,54 +192,93 @@ export default function DocumentsPage() {
         <div className="bg-white rounded-xl p-12 text-center border">
           <p className="text-gray-500">{isStudent ? "No documents uploaded yet." : "No documents to review."}</p>
         </div>
-      ) : (
+      ) : isStudent ? (
         <div className="bg-white rounded-xl border overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
-                {!isStudent && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remarks</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                {(isAdmin || isTL) && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y">
               {filtered.map((doc) => (
                 <tr key={doc.id}>
-                  {!isStudent && (
-                    <td className="px-6 py-4 text-sm">
-                      <p className="font-medium text-gray-900">{doc.user?.name}</p>
-                      <p className="text-gray-500 text-xs">{doc.user?.email}</p>
-                    </td>
-                  )}
                   <td className="px-6 py-4">
-                    <a href={doc.fileUrl} target="_blank" className="text-indigo-600 hover:underline font-medium text-sm">
-                      {doc.title}
-                    </a>
+                    <a href={doc.fileUrl} target="_blank" className="text-indigo-600 hover:underline font-medium text-sm">{doc.title}</a>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 capitalize">{doc.type.replace("_", " ")}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(doc.status)}`}>
-                      {doc.status}
-                    </span>
-                  </td>
+                  <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(doc.status)}`}>{doc.status}</span></td>
                   <td className="px-6 py-4 text-sm text-gray-600">{doc.remarks || "—"}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{new Date(doc.createdAt).toLocaleDateString("en-IN")}</td>
-                  {(isAdmin || isTL) && (
-                    <td className="px-6 py-4">
-                      <button onClick={() => { setReviewDoc(doc); setReviewForm({ status: "approved", remarks: "" }); }}
-                        className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">
-                        Review
-                      </button>
-                    </td>
-                  )}
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {(() => {
+            const grouped: Record<string, Document[]> = {};
+            filtered.forEach(doc => {
+              const key = doc.user?.id || "unknown";
+              if (!grouped[key]) grouped[key] = [];
+              grouped[key].push(doc);
+            });
+            return Object.entries(grouped).map(([userId, docs]) => {
+              const student = docs[0].user;
+              const pendingCount = docs.filter(d => d.status === "pending").length;
+              return (
+                <details key={userId} className="bg-white rounded-xl border overflow-hidden group" open={pendingCount > 0}>
+                  <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-bold">
+                        {student?.name?.split(" ").map(n => n[0]).join("").substring(0, 2) || "?"}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{student?.name || "Unknown"}</p>
+                        <p className="text-xs text-gray-500">{student?.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{docs.length} docs</span>
+                      {pendingCount > 0 && <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">{pendingCount} pending</span>}
+                    </div>
+                  </summary>
+                  <div className="border-t">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Document</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Type</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Date</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {docs.map(doc => (
+                          <tr key={doc.id}>
+                            <td className="px-6 py-3"><a href={doc.fileUrl} target="_blank" className="text-indigo-600 hover:underline text-sm">{doc.title}</a></td>
+                            <td className="px-6 py-3 text-xs text-gray-600 capitalize">{doc.type.replace("_", " ")}</td>
+                            <td className="px-6 py-3"><span className={`px-2 py-0.5 rounded-full text-xs ${statusBadge(doc.status)}`}>{doc.status}</span></td>
+                            <td className="px-6 py-3 text-xs text-gray-500">{new Date(doc.createdAt).toLocaleDateString("en-IN")}</td>
+                            <td className="px-6 py-3">
+                              <button onClick={() => { setReviewDoc(doc); setReviewForm({ status: "approved", remarks: "" }); }}
+                                className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">Review</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              );
+            });
+          })()}
         </div>
       )}
 

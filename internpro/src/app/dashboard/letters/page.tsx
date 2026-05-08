@@ -33,7 +33,7 @@ export default function LettersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<"all" | "name" | "employee_id" | "phone">("all");
-  const [viewingLetter, setViewingLetter] = useState<{ html: string; title: string } | null>(null);
+  const [viewingLetter, setViewingLetter] = useState<{ html: string; title: string; email?: string; phone?: string } | null>(null);
   const [generatingCert, setGeneratingCert] = useState<string | null>(null);
 
   const fetchUser = useCallback(async () => {
@@ -125,7 +125,8 @@ export default function LettersPage() {
       const res = await fetch(`/api/certificates/internship?enrollmentId=${enrollmentId}`);
       if (res.ok) {
         const data = await res.json();
-        setViewingLetter({ html: data.html, title: `Internship Certificate — ${studentName}` });
+        const matchResult = results.find(rr => rr.enrollmentId === enrollmentId);
+        setViewingLetter({ html: data.html, title: `Internship Certificate — ${studentName}`, email: matchResult?.studentEmail, phone: matchResult?.studentPhone || "" });
       } else {
         alert("Failed to generate certificate");
       }
@@ -155,11 +156,36 @@ export default function LettersPage() {
         <div className="bg-white rounded-xl shadow-sm border">
           <div className="flex items-center justify-between p-4 border-b">
             <h3 className="font-bold text-gray-900">{viewingLetter.title}</h3>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button onClick={handlePrint}
                 className="px-4 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">
                 Print / PDF
               </button>
+              {viewingLetter.email && (
+                <button onClick={async () => {
+                  const res = await fetch("/api/send-letter-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: viewingLetter.email, subject: viewingLetter.title, htmlContent: viewingLetter.html }),
+                  });
+                  if (res.ok) alert("Email sent successfully!");
+                  else alert("Failed to send email. Check SMTP settings.");
+                }}
+                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                  Email
+                </button>
+              )}
+              {viewingLetter.phone && (
+                <button onClick={() => {
+                  const msg = encodeURIComponent(`Dear Student,\n\nYour ${viewingLetter.title} has been generated. Please login to your InternPro dashboard to view and download it.\n\nPortal: https://internship.kkhsmedia.com/login\n\nRegards,\nKKHS Media Private Limited`);
+                  const phone = viewingLetter.phone!.replace(/[^0-9]/g, "");
+                  const waPhone = phone.startsWith("91") ? phone : `91${phone}`;
+                  window.open(`https://wa.me/${waPhone}?text=${msg}`, "_blank");
+                }}
+                  className="px-4 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700">
+                  WhatsApp
+                </button>
+              )}
               <button onClick={() => setViewingLetter(null)}
                 className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">
                 Close
@@ -282,7 +308,7 @@ export default function LettersPage() {
                 {/* Offer Letter */}
                 {r.offerLetter ? (
                   <button
-                    onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}` })}
+                    onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}`, email: r.studentEmail, phone: r.studentPhone || "" })}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition"
                   >
                     Offer Letter
@@ -294,7 +320,7 @@ export default function LettersPage() {
                 {/* Experience Letter */}
                 {r.experienceLetter ? (
                   <button
-                    onClick={() => setViewingLetter({ html: r.experienceLetter!.htmlContent || "", title: `Experience Letter — ${r.studentName}` })}
+                    onClick={() => setViewingLetter({ html: r.experienceLetter!.htmlContent || "", title: `Experience Letter — ${r.studentName}`, email: r.studentEmail, phone: r.studentPhone || "" })}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
                   >
                     Experience Letter

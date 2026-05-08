@@ -27,13 +27,16 @@ const navItems = [
   { href: "/dashboard/completion", label: "Completion Approval", icon: "🎓", roles: ["admin", "organization", "teamleader"] },
   { href: "/dashboard/letters", label: "Letters", icon: "📋", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
-  { href: "/dashboard/profile", label: "My Profile", icon: "👤", roles: ["student"] },
   { href: "/dashboard/documents", label: "My Documents", icon: "📄", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/team-leaders", label: "Team Leaders", icon: "👔", roles: ["admin", "organization"] },
   { href: "/dashboard/users", label: "User Management", icon: "🔑", roles: ["admin"] },
 
   { href: "/dashboard/support", label: "Support", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
+];
+
+const bottomNavItems = [
+  { href: "/dashboard/profile", label: "My Profile", icon: "👤", roles: ["student"] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -154,7 +157,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        <div className="p-3 border-t border-indigo-800">
+        <div className="p-3 border-t border-indigo-800 space-y-1">
+          {bottomNavItems.filter(item => item.roles.includes(user.role)).map(item => {
+            const isActive = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm",
+                  isActive ? "bg-indigo-600 text-white" : "text-indigo-200 hover:bg-indigo-800 hover:text-white")}>
+                <span className="text-lg shrink-0">{item.icon}</span>
+                {sidebarOpen && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 hover:bg-red-600 hover:text-white transition-all text-sm w-full"
@@ -183,17 +197,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="text-xs text-gray-500 capitalize">{user.role}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link href="/dashboard" className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-medium capitalize">
               {user.role} Dashboard
             </Link>
-            <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
-              {user.avatar ? (
-                <img src={user.avatar} className="w-full h-full object-cover" alt="" />
-              ) : (
-                user.name.split(" ").map((n) => n[0]).join("").substring(0, 2)
-              )}
-            </div>
+            <Link href={user.role === "student" ? "/dashboard/profile" : "/dashboard/settings"} className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+                {user.avatar ? (
+                  <img src={user.avatar} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  user.name.split(" ").map((n) => n[0]).join("").substring(0, 2)
+                )}
+              </div>
+            </Link>
           </div>
         </header>
 

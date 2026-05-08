@@ -333,6 +333,64 @@ export default function StudentsPage() {
         </div>
       )}
 
+      {/* View Profile Modal */}
+      {viewProfile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Student Profile</h2>
+              <button onClick={() => setViewProfile(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <div className="flex items-center gap-4 mb-5 pb-4 border-b">
+              <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-bold overflow-hidden border-2 border-indigo-200">
+                {viewProfile.student.avatar ? (
+                  <img src={viewProfile.student.avatar} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  viewProfile.student.name.split(" ").map(n => n[0]).join("").substring(0, 2)
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">{viewProfile.student.name}</h3>
+                <p className="text-sm text-gray-500">{viewProfile.student.email}</p>
+                {viewProfile.student.phone && <p className="text-sm text-gray-500">{viewProfile.student.phone}</p>}
+                {viewProfile.student.employeeId && <p className="text-xs text-indigo-600 font-medium mt-1">ID: {viewProfile.student.employeeId}</p>}
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-gray-500 text-xs">Program</span><p className="font-medium text-gray-900">{viewProfile.batch.program.title}</p></div>
+                <div><span className="text-gray-500 text-xs">Batch</span><p className="font-medium text-gray-900">{viewProfile.batch.name}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-gray-500 text-xs">Status</span><p><span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(viewProfile.status)}`}>{viewProfile.status.replace("_", " ")}</span></p></div>
+                <div><span className="text-gray-500 text-xs">Joining Date</span><p className="font-medium text-gray-900">{viewProfile.joiningDate ? formatDate(viewProfile.joiningDate) : "—"}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-gray-500 text-xs">College</span><p className="font-medium text-gray-900">{viewProfile.student.collegeName || "—"}</p></div>
+                <div><span className="text-gray-500 text-xs">Degree</span><p className="font-medium text-gray-900">{viewProfile.student.degree || "—"}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-gray-500 text-xs">Year</span><p className="font-medium text-gray-900">{viewProfile.student.year || "—"}</p></div>
+                <div><span className="text-gray-500 text-xs">DOB</span><p className="font-medium text-gray-900">{viewProfile.student.dob ? formatDate(viewProfile.student.dob) : "—"}</p></div>
+              </div>
+              <div><span className="text-gray-500 text-xs">Address</span><p className="font-medium text-gray-900">{viewProfile.student.address || "—"}</p></div>
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t">
+                <div className="text-center"><span className="text-gray-500 text-xs block">Attendance</span><p className="font-bold text-indigo-600 text-lg">{viewProfile._count.attendances}</p></div>
+                <div className="text-center"><span className="text-gray-500 text-xs block">Certificates</span><p className="font-bold text-green-600 text-lg">{viewProfile._count.certificates}</p></div>
+                <div className="text-center"><span className="text-gray-500 text-xs block">Payments</span><p className="font-bold text-amber-600 text-lg">{viewProfile._count.payments}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t">
+                <div><span className="text-gray-500 text-xs">Fee Type</span><p className="font-medium text-gray-900">{getFeeLabel(viewProfile)}</p></div>
+                <div><span className="text-gray-500 text-xs">Work Timing</span><p className="font-medium text-gray-900">{viewProfile.workTiming || "—"}</p></div>
+              </div>
+            </div>
+            <button onClick={() => setViewProfile(null)} className="mt-5 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl p-12 border border-gray-100 text-center">
           <p className="text-4xl mb-4">👥</p>
