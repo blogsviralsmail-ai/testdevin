@@ -580,9 +580,8 @@ async function main() {
         questions: {
           create: quiz.questions.map((q, i) => ({
             question: q.q,
-            type: "multiple_choice",
             options: JSON.stringify(q.options),
-            correctAnswer: String(q.correct),
+            correctAnswer: q.correct,
             points: 10,
             order: i + 1,
           })),
@@ -612,9 +611,8 @@ async function main() {
         questions: {
           create: quiz.questions.map((q, i) => ({
             question: q.q,
-            type: "multiple_choice",
             options: JSON.stringify(q.options),
-            correctAnswer: String(q.correct),
+            correctAnswer: q.correct,
             points: 10,
             order: i + 1,
           })),
