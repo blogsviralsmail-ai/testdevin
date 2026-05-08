@@ -10,7 +10,7 @@ export default function JobsPage() {
   const [form, setForm] = useState({ title: "", company: "KKHS Media Private Limited", description: "", location: "", salary: "", type: "full-time", skills: "" });
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d));
+    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
     fetchJobs();
   }, []);
 

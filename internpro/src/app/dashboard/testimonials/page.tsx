@@ -11,7 +11,7 @@ export default function TestimonialsPage() {
   const [form, setForm] = useState({ name: "", role: "", content: "", rating: 5, videoUrl: "", isPublished: true });
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d));
+    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
     fetchTestimonials();
   }, []);
 

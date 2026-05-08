@@ -10,7 +10,7 @@ export default function AnnouncementsPage() {
   const [form, setForm] = useState({ title: "", content: "", category: "general", isPinned: false, targetRole: "all" });
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d));
+    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
     fetchAnnouncements();
   }, []);
 

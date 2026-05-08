@@ -13,7 +13,7 @@ export default function AgentsPage() {
   const [payoutAmount, setPayoutAmount] = useState("");
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d));
+    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
     fetchAgents();
   }, []);
 

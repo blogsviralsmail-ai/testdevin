@@ -15,7 +15,7 @@ export default function QuizzesPage() {
   const [form, setForm] = useState({ title: "", description: "", timeLimit: "", passingScore: "60", questions: [{ question: "", options: ["", "", "", ""], correctAnswer: 0, points: 10 }] as Question[] });
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d));
+    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
     fetchQuizzes();
   }, []);
 
