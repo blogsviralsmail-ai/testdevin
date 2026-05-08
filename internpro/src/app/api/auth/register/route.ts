@@ -19,6 +19,21 @@ export async function POST(request: NextRequest) {
       collegeName, degree, year, address,
     });
 
+    // Auto-create enrollment (application) in the first active batch
+    const firstBatch = await prisma.batch.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (firstBatch) {
+      await prisma.enrollment.create({
+        data: {
+          studentId: user.id,
+          batchId: firstBatch.id,
+          status: "applied",
+        },
+      });
+    }
+
     // Track referral if code provided
     if (referralCode) {
       const agent = await prisma.agent.findUnique({ where: { referralCode } });
