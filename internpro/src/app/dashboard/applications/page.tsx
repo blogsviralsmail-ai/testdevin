@@ -217,7 +217,7 @@ export default function ApplicationsPage() {
                         </div>
                       </div>
                       <a
-                        href={doc.fileUrl.startsWith("http") ? doc.fileUrl : `/uploads/${doc.fileUrl}`}
+                        href={doc.fileUrl.startsWith("http") ? doc.fileUrl : doc.fileUrl.startsWith("/uploads/") ? doc.fileUrl : `/uploads/${doc.fileUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-lg hover:bg-indigo-100 transition"
