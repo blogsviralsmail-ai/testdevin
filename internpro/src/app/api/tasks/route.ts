@@ -29,16 +29,23 @@ export async function GET(request: NextRequest) {
 
   // For students, filter tasks based on their working day and individual assignments
   if (session.role === "student") {
-    const enrollmentWhere: Record<string, unknown> = { studentId: session.id, status: "selected" };
+    const enrollmentWhere: Record<string, unknown> = { studentId: session.id, status: { in: ["selected", "active", "completed"] } };
     if (batchId) enrollmentWhere.batchId = batchId;
     const enrollment = await prisma.enrollment.findFirst({
       where: enrollmentWhere,
     });
     const currentDay = enrollment?.currentWorkDay || 0;
+    const isCompleted = enrollment?.status === "completed";
+
+    const enrolledBatchIds = (await prisma.enrollment.findMany({
+      where: { studentId: session.id, status: { in: ["selected", "active", "completed"] } },
+      select: { batchId: true },
+    })).map(e => e.batchId);
 
     const filtered = tasks.filter((t) => {
       if (t.scope === "individual" && t.assignedTo !== session.id) return false;
-      if (t.dayNumber && t.dayNumber > currentDay) return false;
+      if (!isCompleted && t.dayNumber && t.dayNumber > currentDay) return false;
+      if (enrolledBatchIds.length > 0 && !enrolledBatchIds.includes(t.batchId)) return false;
       return true;
     });
     return NextResponse.json(filtered);
