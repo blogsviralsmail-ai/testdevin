@@ -42,6 +42,23 @@ model User {
   interviews      Interview[]
   employeeCards   EmployeeCard[]
   supportTickets  SupportTicket[]
+
+  // Gamification
+  points          GamificationPoint[] @relation("UserPoints")
+  badges          UserBadge[]         @relation("UserBadges")
+
+  // Quiz
+  quizAttempts    QuizAttempt[]       @relation("QuizAttempts")
+
+  // Announcements
+  announcements   Announcement[]      @relation("Announcements")
+
+  // Jobs
+  jobApplications JobApplication[]    @relation("JobApplications")
+
+  // Agent/Referral
+  agentProfile    Agent?              @relation("AgentProfile")
+  referredBy      Referral[]          @relation("ReferredBy")
 }
 
 model Organization {
@@ -387,4 +404,214 @@ model LoginSession {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, date])
+}
+
+// ===== GAMIFICATION =====
+model GamificationPoint {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserPoints", fields: [userId], references: [id])
+  points    Int
+  reason    String
+  category  String   @default("task") // task, attendance, quiz, streak, bonus
+  createdAt DateTime @default(now())
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String   @default("🏆")
+  category    String   @default("achievement")
+  threshold   Int      @default(0) // points/days needed
+  createdAt   DateTime @default(now())
+
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserBadges", fields: [userId], references: [id])
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
+
+// ===== QUIZ & ASSESSMENT =====
+model Quiz {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  batchId     String?
+  programId   String?
+  timeLimit   Int?     // minutes
+  passingScore Int     @default(60)
+  isPublished Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+}
+
+model QuizQuestion {
+  id          String   @id @default(cuid())
+  quizId      String
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question    String
+  options     String   // JSON array of options
+  correctAnswer Int    // index of correct option
+  points      Int      @default(10)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model QuizAttempt {
+  id          String   @id @default(cuid())
+  quizId      String
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  userId      String
+  user        User     @relation("QuizAttempts", fields: [userId], references: [id])
+  answers     String   // JSON array of selected answers
+  score       Float
+  totalPoints Int
+  passed      Boolean  @default(false)
+  timeTaken   Int?     // seconds
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@unique([quizId, userId])
+}
+
+// ===== ANNOUNCEMENTS =====
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  category  String   @default("general") // general, urgent, event
+  isPinned  Boolean  @default(false)
+  authorId  String
+  author    User     @relation("Announcements", fields: [authorId], references: [id])
+  targetRole String  @default("all") // all, student, teamleader
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ===== PLACEMENT / JOB BOARD =====
+model JobPosting {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  description String
+  location    String?
+  salary      String?
+  type        String   @default("full-time") // full-time, part-time, contract
+  skills      String?  // comma-separated
+  applyUrl    String?
+  isActive    Boolean  @default(true)
+  postedBy    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       JobPosting @relation(fields: [jobId], references: [id])
+  userId    String
+  user      User     @relation("JobApplications", fields: [userId], references: [id])
+  resume    String?
+  coverNote String?
+  status    String   @default("applied") // applied, shortlisted, hired, rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobId, userId])
+}
+
+// ===== AGENT/REFERRAL PROGRAM =====
+model Agent {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation("AgentProfile", fields: [userId], references: [id])
+  referralCode  String   @unique
+  commissionRate Float   @default(30) // percentage
+  totalEarnings Float    @default(0)
+  walletBalance Float    @default(0)
+  bankName      String?
+  accountNumber String?
+  ifscCode      String?
+  upiId         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  referrals     Referral[]
+  payouts       AgentPayout[]
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id])
+  studentId   String
+  student     User     @relation("ReferredBy", fields: [studentId], references: [id])
+  programId   String?
+  amount      Float    @default(0)
+  commission  Float    @default(0)
+  status      String   @default("pending") // pending, converted, paid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AgentPayout {
+  id          String   @id @default(cuid())
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id])
+  amount      Float
+  method      String   @default("manual") // manual, razorpay
+  status      String   @default("pending") // pending, processing, completed, failed
+  razorpayId  String?
+  reference   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ===== TESTIMONIALS =====
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String?  // e.g. "Full Stack Intern"
+  content   String
+  rating    Int      @default(5)
+  avatar    String?
+  videoUrl  String?
+  isPublished Boolean @default(true)
+  userId    String?  // linked user (optional — admin can add manually)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ===== EMAIL CAMPAIGNS =====
+model EmailCampaign {
+  id          String   @id @default(cuid())
+  title       String
+  subject     String
+  htmlContent String
+  targetRole  String   @default("all") // all, student, teamleader, agent
+  status      String   @default("draft") // draft, scheduled, sent
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  sentCount   Int      @default(0)
+  openCount   Int      @default(0)
+  clickCount  Int      @default(0)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { registerUser, createToken } from "@/lib/auth";
 import type { SessionUser } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/email";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password, phone, collegeName, degree, year, address } = body;
+    const { name, email, password, phone, collegeName, degree, year, address, referralCode } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });
@@ -17,6 +18,16 @@ export async function POST(request: NextRequest) {
       role: "student",
       collegeName, degree, year, address,
     });
+
+    // Track referral if code provided
+    if (referralCode) {
+      const agent = await prisma.agent.findUnique({ where: { referralCode } });
+      if (agent) {
+        await prisma.referral.create({
+          data: { agentId: agent.id, studentId: user.id, status: "pending" },
+        });
+      }
+    }
 
     const sessionUser: SessionUser = {
       id: user.id,

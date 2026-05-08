@@ -1,0 +1,218 @@
+"use client";
+import { useState, useEffect } from "react";
+
+interface Agent { id: string; userId: string; referralCode: string; commissionRate: number; totalEarnings: number; walletBalance: number; bankName?: string; accountNumber?: string; ifscCode?: string; upiId?: string; isActive: boolean; user: { id: string; name: string; email: string; phone?: string; avatar?: string }; referrals: { id: string; status: string; commission: number; student?: { name: string; email: string; phone?: string } }[]; payouts: { id: string; amount: number; status: string; method: string; createdAt: string }[]; }
+
+export default function AgentsPage() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showPayout, setShowPayout] = useState<string | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [user, setUser] = useState<{ role: string } | null>(null);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", commissionRate: "30", bankName: "", accountNumber: "", ifscCode: "", upiId: "" });
+  const [payoutAmount, setPayoutAmount] = useState("");
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d));
+    fetchAgents();
+  }, []);
+
+  const fetchAgents = async () => { const r = await fetch("/api/agents"); if (r.ok) { const data = await r.json(); setAgents(Array.isArray(data) ? data : [data]); } };
+
+  const createAgent = async () => {
+    const r = await fetch("/api/agents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, commissionRate: parseFloat(form.commissionRate) }) });
+    if (r.ok) { setShowCreate(false); setForm({ name: "", email: "", phone: "", password: "", commissionRate: "30", bankName: "", accountNumber: "", ifscCode: "", upiId: "" }); fetchAgents(); }
+    else { const err = await r.json(); alert(err.error); }
+  };
+
+  const processPayout = async () => {
+    if (!showPayout || !payoutAmount) return;
+    const r = await fetch("/api/agents/payouts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agentId: showPayout, amount: parseFloat(payoutAmount), method: "manual" }) });
+    if (r.ok) { setShowPayout(null); setPayoutAmount(""); fetchAgents(); }
+    else { const err = await r.json(); alert(err.error); }
+  };
+
+  const isAdmin = user?.role === "admin" || user?.role === "organization";
+  const isAgent = user?.role === "agent";
+
+  // Agent Panel View
+  if (isAgent && agents.length === 1) {
+    const agent = agents[0];
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Agent Dashboard</h1>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-5 text-white">
+            <p className="text-sm opacity-80">Total Earnings</p>
+            <p className="text-2xl font-bold">₹{agent.totalEarnings.toLocaleString()}</p>
+          </div>
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-5 text-white">
+            <p className="text-sm opacity-80">Wallet Balance</p>
+            <p className="text-2xl font-bold">₹{agent.walletBalance.toLocaleString()}</p>
+          </div>
+          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl p-5 text-white">
+            <p className="text-sm opacity-80">Total Referrals</p>
+            <p className="text-2xl font-bold">{agent.referrals?.length || 0}</p>
+          </div>
+          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-5 text-white">
+            <p className="text-sm opacity-80">Commission Rate</p>
+            <p className="text-2xl font-bold">{agent.commissionRate}%</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-5 border">
+          <h2 className="font-semibold mb-2">Your Referral Link</h2>
+          <div className="flex gap-2">
+            <input readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${agent.referralCode}`} className="flex-1 px-3 py-2 bg-gray-50 border rounded-lg text-sm" />
+            <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/register?ref=${agent.referralCode}`)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Copy</button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="p-4 border-b"><h2 className="font-semibold">Referrals</h2></div>
+          <table className="w-full">
+            <thead className="bg-gray-50"><tr><th className="px-4 py-2 text-left text-xs">Student</th><th className="px-4 py-2 text-left text-xs">Status</th><th className="px-4 py-2 text-right text-xs">Commission</th></tr></thead>
+            <tbody className="divide-y">
+              {(agent.referrals || []).map(r => (
+                <tr key={r.id}><td className="px-4 py-3 text-sm">{r.student?.name || "—"}</td><td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded ${r.status === "paid" ? "bg-green-100 text-green-700" : r.status === "converted" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>{r.status}</span></td><td className="px-4 py-3 text-right text-sm font-medium">₹{r.commission}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="p-4 border-b"><h2 className="font-semibold">Payout History</h2></div>
+          <table className="w-full">
+            <thead className="bg-gray-50"><tr><th className="px-4 py-2 text-left text-xs">Date</th><th className="px-4 py-2 text-left text-xs">Method</th><th className="px-4 py-2 text-left text-xs">Status</th><th className="px-4 py-2 text-right text-xs">Amount</th></tr></thead>
+            <tbody className="divide-y">
+              {(agent.payouts || []).map(p => (
+                <tr key={p.id}><td className="px-4 py-3 text-sm">{new Date(p.createdAt).toLocaleDateString()}</td><td className="px-4 py-3 text-sm">{p.method}</td><td className="px-4 py-3"><span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700">{p.status}</span></td><td className="px-4 py-3 text-right text-sm font-medium">₹{p.amount}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin View
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Agent Management</h1>
+          <p className="text-sm text-gray-500">Manage referral agents and commissions</p>
+        </div>
+        {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ Add Agent</button>}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Total Agents</p><p className="text-2xl font-bold">{agents.length}</p></div>
+        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Total Referrals</p><p className="text-2xl font-bold">{agents.reduce((s, a) => s + (a.referrals?.length || 0), 0)}</p></div>
+        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Total Payouts</p><p className="text-2xl font-bold">₹{agents.reduce((s, a) => s + a.totalEarnings, 0).toLocaleString()}</p></div>
+        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Pending Payouts</p><p className="text-2xl font-bold">₹{agents.reduce((s, a) => s + a.walletBalance, 0).toLocaleString()}</p></div>
+      </div>
+
+      {/* Agent List */}
+      <div className="bg-white rounded-xl border overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Agent</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Code</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Referrals</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Earnings</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Balance</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {agents.map(agent => (
+              <tr key={agent.id}>
+                <td className="px-4 py-3"><div><p className="text-sm font-medium">{agent.user.name}</p><p className="text-xs text-gray-500">{agent.user.email}</p></div></td>
+                <td className="px-4 py-3 text-sm font-mono text-indigo-600">{agent.referralCode}</td>
+                <td className="px-4 py-3 text-center text-sm">{agent.referrals?.length || 0}</td>
+                <td className="px-4 py-3 text-right text-sm font-medium">₹{agent.totalEarnings.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right text-sm font-medium text-green-600">₹{agent.walletBalance.toLocaleString()}</td>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex gap-2 justify-center">
+                    <button onClick={() => setSelectedAgent(agent)} className="text-xs text-indigo-600 hover:underline">View</button>
+                    <button onClick={() => { setShowPayout(agent.id); setPayoutAmount(""); }} className="text-xs text-green-600 hover:underline">Payout</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Create Agent Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold mb-4">Add Agent</h2>
+            <div className="space-y-3">
+              <input placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input placeholder="Password" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input placeholder="Commission Rate (%)" value={form.commissionRate} onChange={e => setForm({ ...form, commissionRate: e.target.value })} className="w-full px-3 py-2 border rounded-lg" type="number" />
+              <input placeholder="Bank Name" value={form.bankName} onChange={e => setForm({ ...form, bankName: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input placeholder="Account Number" value={form.accountNumber} onChange={e => setForm({ ...form, accountNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input placeholder="IFSC Code" value={form.ifscCode} onChange={e => setForm({ ...form, ifscCode: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <input placeholder="UPI ID" value={form.upiId} onChange={e => setForm({ ...form, upiId: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-gray-600">Cancel</button>
+              <button onClick={createAgent} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Create Agent</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payout Modal */}
+      {showPayout && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+            <h2 className="text-lg font-bold mb-4">Process Payout</h2>
+            <input placeholder="Amount (₹)" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} className="w-full px-3 py-2 border rounded-lg" type="number" />
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowPayout(null)} className="px-4 py-2 text-gray-600">Cancel</button>
+              <button onClick={processPayout} className="px-4 py-2 bg-green-600 text-white rounded-lg">Pay</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Detail Modal */}
+      {selectedAgent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">{selectedAgent.user.name} — Agent Details</h2>
+              <button onClick={() => setSelectedAgent(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+              <p><strong>Email:</strong> {selectedAgent.user.email}</p>
+              <p><strong>Phone:</strong> {selectedAgent.user.phone || "—"}</p>
+              <p><strong>Code:</strong> {selectedAgent.referralCode}</p>
+              <p><strong>Commission:</strong> {selectedAgent.commissionRate}%</p>
+              <p><strong>Bank:</strong> {selectedAgent.bankName || "—"}</p>
+              <p><strong>UPI:</strong> {selectedAgent.upiId || "—"}</p>
+            </div>
+            <h3 className="font-semibold mb-2">Referrals ({selectedAgent.referrals?.length || 0})</h3>
+            <div className="space-y-2">
+              {(selectedAgent.referrals || []).map(r => (
+                <div key={r.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                  <span>{r.student?.name} ({r.student?.email})</span>
+                  <span className="font-medium">₹{r.commission}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

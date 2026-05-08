@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ interface User {
 }
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "organization", "teamleader", "student", "agent"] },
   { href: "/dashboard/applications", label: "Applications", icon: "📋", roles: ["admin", "organization"] },
   { href: "/dashboard/interviews", label: "Interviews", icon: "🎤", roles: ["admin", "organization"] },
   { href: "/dashboard/programs", label: "Programs", icon: "📚", roles: ["admin", "organization", "teamleader"] },
@@ -22,15 +22,22 @@ const navItems = [
   { href: "/dashboard/attendance", label: "Attendance", icon: "📅", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/tasks", label: "Tasks", icon: "📝", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/reviews", label: "Review Tasks", icon: "✅", roles: ["teamleader", "admin"] },
+  { href: "/dashboard/quizzes", label: "Quizzes", icon: "🧠", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/resources", label: "Study Material", icon: "🎥", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/leaderboard", label: "Leaderboard", icon: "🏆", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/reports", label: "Reports", icon: "📑", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/completion", label: "Completion Approval", icon: "🎓", roles: ["admin", "organization", "teamleader"] },
   { href: "/dashboard/letters", label: "Letters", icon: "📋", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
   { href: "/dashboard/documents", label: "My Documents", icon: "📄", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/announcements", label: "Announcements", icon: "📢", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/jobs", label: "Job Board", icon: "💼", roles: ["admin", "organization", "student"] },
   { href: "/dashboard/team-leaders", label: "Team Leaders", icon: "👔", roles: ["admin", "organization"] },
+  { href: "/dashboard/agents", label: "Agents", icon: "🤝", roles: ["admin", "organization", "agent"] },
+  { href: "/dashboard/analytics", label: "Analytics", icon: "📈", roles: ["admin", "organization"] },
+  { href: "/dashboard/campaigns", label: "Email Campaigns", icon: "📧", roles: ["admin", "organization"] },
+  { href: "/dashboard/testimonials", label: "Testimonials", icon: "⭐", roles: ["admin", "organization"] },
   { href: "/dashboard/users", label: "User Management", icon: "🔑", roles: ["admin"] },
-
   { href: "/dashboard/support", label: "Support", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
@@ -45,6 +52,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<{ id: string; title: string; message: string; isRead: boolean; createdAt: string; link?: string }[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -62,6 +73,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Fetch notifications periodically
+  useEffect(() => {
+    if (!user) return;
+    const fetchNotifs = () => {
+      fetch("/api/notifications").then(r => r.json()).then(data => {
+        if (data.notifications) setNotifications(data.notifications);
+        if (typeof data.unreadCount === "number") setUnreadCount(data.unreadCount);
+      }).catch(() => {});
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Close notification dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifs(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const markAllRead = async () => {
+    await fetch("/api/notifications", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ markAll: true }) });
+    setUnreadCount(0);
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
 
   // Auto attendance for students — login time = checkIn, last activity = checkOut
   useEffect(() => {
@@ -201,6 +239,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link href="/dashboard" className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-medium capitalize">
               {user.role} Dashboard
             </Link>
+            {/* Notification Bell */}
+            <div className="relative" ref={notifRef}>
+              <button onClick={() => setShowNotifs(!showNotifs)} className="relative p-2 text-gray-500 hover:text-gray-700">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>}
+              </button>
+              {showNotifs && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border z-50 max-h-96 overflow-y-auto">
+                  <div className="p-3 border-b flex items-center justify-between">
+                    <span className="font-semibold text-sm">Notifications</span>
+                    {unreadCount > 0 && <button onClick={markAllRead} className="text-xs text-indigo-600 hover:underline">Mark all read</button>}
+                  </div>
+                  <div className="divide-y">
+                    {notifications.slice(0, 10).map(n => (
+                      <div key={n.id} className={`p-3 text-sm ${!n.isRead ? "bg-indigo-50" : ""}`}>
+                        <p className="font-medium text-gray-900">{n.title}</p>
+                        <p className="text-gray-500 text-xs mt-0.5">{n.message}</p>
+                        <p className="text-gray-400 text-[10px] mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                      </div>
+                    ))}
+                    {notifications.length === 0 && <div className="p-4 text-center text-gray-400 text-sm">No notifications</div>}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link href={user.role === "student" ? "/dashboard/profile" : "/dashboard/settings"} className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
                 {user.avatar ? (
