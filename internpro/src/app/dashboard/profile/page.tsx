@@ -203,15 +203,13 @@ export default function ProfilePage() {
       </form>
 
       {/* Joining Date — Read Only */}
-      {joiningDate && (
-        <div className="bg-white rounded-xl border p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Internship Info</h2>
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Joining Date:</span>
-            <span className="text-sm text-indigo-600 font-medium">{new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
-          </div>
+      <div className="bg-white rounded-xl border p-6 mt-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Internship Info</h2>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-700">Joining Date:</span>
+          <span className="text-sm text-indigo-600 font-medium">{joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "Not assigned yet"}</span>
         </div>
-      )}
+      </div>
 
       {/* Login Hours — Day Wise */}
       {loginHours.length > 0 && (

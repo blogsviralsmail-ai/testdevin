@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const isCompleted = enrollment?.status === "completed";
 
     const enrolledBatchIds = (await prisma.enrollment.findMany({
-      where: { studentId: session.id, status: { in: ["selected", "active", "completed"] } },
+      where: { studentId: session.id, status: { in: ["applied", "interview_scheduled", "shortlisted", "selected", "active", "completed"] } },
       select: { batchId: true },
     })).map(e => e.batchId);
 
