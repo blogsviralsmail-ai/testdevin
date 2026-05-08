@@ -11,12 +11,24 @@ interface StudentDoc {
   createdAt: string;
 }
 
+interface InterviewInfo {
+  id: string;
+  scheduledAt: string;
+  duration: number;
+  mode: string;
+  meetLink: string | null;
+  location: string | null;
+  status: string;
+  result: string | null;
+}
+
 interface Enrollment {
   id: string;
   status: string;
   createdAt: string;
   student: { id: string; name: string; email: string; phone: string; avatar: string | null; collegeName: string; degree: string; year: string; address: string | null; dob: string | null; employeeId: string | null };
   batch: { program: { title: string; domain: string; mode: string } };
+  interviews: InterviewInfo[];
   _count: { interviews: number };
 }
 
@@ -33,6 +45,7 @@ export default function ApplicationsPage() {
   const [viewModal, setViewModal] = useState<Enrollment | null>(null);
   const [viewDocs, setViewDocs] = useState<StudentDoc[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [editLinkModal, setEditLinkModal] = useState<{ interviewId: string; link: string } | null>(null);
 
   const fetchApplications = useCallback(async () => {
     const res = await fetch(`/api/enrollments?status=${filter}`);
@@ -92,10 +105,23 @@ export default function ApplicationsPage() {
         duration: parseInt(scheduleForm.duration),
         mode: scheduleForm.mode,
         meetLink: scheduleForm.meetLink || null,
+        location: scheduleForm.mode === "offline" ? (scheduleForm as Record<string, string>).location || null : null,
       }),
     });
     setScheduleModal(null);
     setScheduleForm({ date: "", time: "10:00", mode: "online", meetLink: "", duration: "30" });
+    alert("Interview scheduled! Student ko email notification bhi gaya hai.");
+    fetchApplications();
+  };
+
+  const handleUpdateMeetLink = async () => {
+    if (!editLinkModal) return;
+    await fetch("/api/interviews", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: editLinkModal.interviewId, meetLink: editLinkModal.link }),
+    });
+    setEditLinkModal(null);
     fetchApplications();
   };
 
@@ -230,6 +256,55 @@ export default function ApplicationsPage() {
               )}
             </div>
 
+            {/* Interview Details (if scheduled) */}
+            {viewModal.interviews && viewModal.interviews.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Interview Details</h3>
+                {viewModal.interviews.map((iv) => (
+                  <div key={iv.id} className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                      <div className="text-center">
+                        <p className="text-[10px] text-gray-500 uppercase">Date</p>
+                        <p className="text-sm font-semibold text-gray-900">{new Date(iv.scheduledAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[10px] text-gray-500 uppercase">Time</p>
+                        <p className="text-sm font-semibold text-gray-900">{new Date(iv.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[10px] text-gray-500 uppercase">Duration</p>
+                        <p className="text-sm font-semibold text-gray-900">{iv.duration} min</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[10px] text-gray-500 uppercase">Mode</p>
+                        <p className="text-sm font-semibold text-gray-900 capitalize">{iv.mode}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      {iv.meetLink ? (
+                        <div className="flex items-center gap-2">
+                          <a href={iv.meetLink} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline font-medium">
+                            {iv.meetLink}
+                          </a>
+                          <button onClick={() => setEditLinkModal({ interviewId: iv.id, link: iv.meetLink || "" })}
+                            className="text-xs text-gray-500 hover:text-indigo-600 underline">(Edit)</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setEditLinkModal({ interviewId: iv.id, link: "" })}
+                          className="text-sm text-indigo-600 hover:underline font-medium">+ Add Meeting Link</button>
+                      )}
+                      {iv.location && <p className="text-xs text-gray-600">Location: {iv.location}</p>}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        iv.result === "selected" ? "bg-green-100 text-green-700" :
+                        iv.result === "rejected" ? "bg-red-100 text-red-700" :
+                        "bg-blue-100 text-blue-700"
+                      }`}>{iv.result || iv.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t">
               {filter === "applied" && (
@@ -247,6 +322,12 @@ export default function ApplicationsPage() {
                     Reject
                   </button>
                 </>
+              )}
+              {(filter === "interview_scheduled" || filter === "shortlisted") && viewModal.interviews?.length > 0 && !viewModal.interviews[0].meetLink && (
+                <button onClick={() => setEditLinkModal({ interviewId: viewModal.interviews[0].id, link: "" })}
+                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm">
+                  Add Meeting Link
+                </button>
               )}
               <button onClick={() => setViewModal(null)}
                 className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
@@ -307,14 +388,25 @@ export default function ApplicationsPage() {
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link (optional)</label>
-                <input type="url" value={scheduleForm.meetLink}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, meetLink: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
-                  placeholder="https://meet.google.com/... or Zoom link" />
-                <p className="text-xs text-gray-500 mt-1">Student ko ye link dikhega. Baad me bhi add/edit kar sakte ho Interviews page se.</p>
-              </div>
+              {scheduleForm.mode === "online" || scheduleForm.mode === "phone" ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link (optional)</label>
+                  <input type="url" value={scheduleForm.meetLink}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, meetLink: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+                    placeholder="https://meet.google.com/... or Zoom link" />
+                  <p className="text-xs text-gray-500 mt-1">Student ko ye link dikhega. Baad mein bhi add/edit kar sakte ho.</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location / Address</label>
+                  <input type="text" value={(scheduleForm as Record<string, string>).location || ""}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value } as typeof scheduleForm)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+                    placeholder="e.g., Office - 3rd Floor, Tower B, Sector 62, Noida" />
+                  <p className="text-xs text-gray-500 mt-1">Offline interview ka address student ko dikhega.</p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -359,9 +451,23 @@ export default function ApplicationsPage() {
                       Applied for: {e.batch.program.title} ({e.batch.program.mode})
                     </p>
                     <p className="text-xs text-gray-400 mt-1">Applied: {new Date(e.createdAt).toLocaleDateString("en-IN")}</p>
+                    {/* Interview details for scheduled students */}
+                    {e.interviews && e.interviews.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
+                        <span className="bg-blue-50 px-2 py-1 rounded">📅 {new Date(e.interviews[0].scheduledAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                        <span className="bg-purple-50 px-2 py-1 rounded">🕐 {new Date(e.interviews[0].scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span className="bg-green-50 px-2 py-1 rounded">⏱ {e.interviews[0].duration} min</span>
+                        <span className="bg-orange-50 px-2 py-1 rounded capitalize">📍 {e.interviews[0].mode}</span>
+                        {e.interviews[0].meetLink ? (
+                          <a href={e.interviews[0].meetLink} target="_blank" rel="noopener noreferrer" className="bg-indigo-50 px-2 py-1 rounded text-indigo-600 hover:underline">🔗 Meeting Link</a>
+                        ) : (
+                          <span className="bg-yellow-50 px-2 py-1 rounded text-yellow-700">⚠ No link yet</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0 flex-wrap justify-end">
                   <button
                     onClick={() => openViewModal(e)}
                     className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 font-medium"
@@ -384,6 +490,14 @@ export default function ApplicationsPage() {
                       </button>
                     </>
                   )}
+                  {filter === "interview_scheduled" && e.interviews?.length > 0 && (
+                    <button
+                      onClick={() => setEditLinkModal({ interviewId: e.interviews[0].id, link: e.interviews[0].meetLink || "" })}
+                      className="px-4 py-2 bg-indigo-50 text-indigo-700 text-sm rounded-lg hover:bg-indigo-100 font-medium"
+                    >
+                      {e.interviews[0].meetLink ? "Edit Link" : "+ Add Link"}
+                    </button>
+                  )}
                   {filter === "shortlisted" && (
                     <button
                       onClick={() => {
@@ -398,6 +512,34 @@ export default function ApplicationsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Edit Meeting Link Modal */}
+      {editLinkModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">{editLinkModal.link ? "Edit Meeting Link" : "Add Meeting Link"}</h2>
+            <p className="text-sm text-gray-600 mb-4">Student ko ye link dikhega interview join karne ke liye.</p>
+            <input
+              type="url"
+              value={editLinkModal.link}
+              onChange={(e) => setEditLinkModal({ ...editLinkModal, link: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 mb-4"
+              placeholder="https://meet.google.com/abc-xyz or Zoom link"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button onClick={handleUpdateMeetLink}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                Save Link
+              </button>
+              <button onClick={() => setEditLinkModal(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

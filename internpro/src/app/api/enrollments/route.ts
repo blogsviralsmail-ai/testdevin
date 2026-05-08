@@ -43,6 +43,11 @@ export async function GET(request: NextRequest) {
       },
       offerLetter: true,
       experienceLetter: true,
+      interviews: {
+        select: { id: true, scheduledAt: true, duration: true, mode: true, meetLink: true, location: true, status: true, result: true },
+        orderBy: { scheduledAt: "desc" as const },
+        take: 1,
+      },
       _count: { select: { attendances: true, certificates: true, payments: true, interviews: true } },
     },
     orderBy: { createdAt: "desc" },
