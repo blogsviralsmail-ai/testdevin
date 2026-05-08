@@ -32,7 +32,31 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(letters);
+  // Dynamic logo/signature replacement from current settings
+  const currentSettings = await prisma.setting.findMany({
+    where: { key: { in: ["letterhead_logo", "admin_signature"] } },
+  });
+  const sMap: Record<string, string> = {};
+  currentSettings.forEach((s) => { sMap[s.key] = s.value; });
+  const curLogo = sMap.letterhead_logo || "/uploads/kkhs-logo-new.png";
+  const curSig = sMap.admin_signature || "";
+
+  const mapped = letters.map((l) => {
+    if (!l.htmlContent) return l;
+    let html = l.htmlContent;
+    html = html.replace(/<img\s([^>]*)\/?>/g, (match: string, attrs: string) => {
+      if (attrs.includes('alt="Signature"')) {
+        return curSig ? match.replace(/src="[^"]*"/, `src="${curSig}"`) : match;
+      }
+      if (attrs.includes('object-fit:contain')) {
+        return match.replace(/src="[^"]*"/, `src="${curLogo}"`);
+      }
+      return match;
+    });
+    return { ...l, htmlContent: html };
+  });
+
+  return NextResponse.json(mapped);
 }
 
 export async function POST(request: NextRequest) {

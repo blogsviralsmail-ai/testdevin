@@ -118,6 +118,32 @@ export async function GET(request: NextRequest) {
   });
   const idCardMap = new Map(idCards.map((c) => [c.userId, c]));
 
+  // Fetch current settings for dynamic logo/signature replacement
+  const currentSettings = await prisma.setting.findMany({
+    where: { key: { in: ["letterhead_logo", "admin_signature", "letterhead_company_name"] } },
+  });
+  const settingsMap: Record<string, string> = {};
+  currentSettings.forEach((s) => { settingsMap[s.key] = s.value; });
+  const currentLogo = settingsMap.letterhead_logo || "/uploads/kkhs-logo-new.png";
+  const currentSignature = settingsMap.admin_signature || "";
+
+  function replaceSettingsInHtml(html: string | null): string | null {
+    if (!html) return html;
+    let result = html;
+    // Replace logo img (has object-fit:contain and NOT alt="Signature")
+    result = result.replace(/<img\s([^>]*)\/?>/g, (match, attrs: string) => {
+      if (attrs.includes('alt="Signature"')) {
+        if (currentSignature) return match.replace(/src="[^"]*"/, `src="${currentSignature}"`);
+        return match;
+      }
+      if (attrs.includes('object-fit:contain') && !attrs.includes('alt="Signature"')) {
+        return match.replace(/src="[^"]*"/, `src="${currentLogo}"`);
+      }
+      return match;
+    });
+    return result;
+  }
+
   // Map results
   const results = enrollments.map((enr) => ({
     enrollmentId: enr.id,
@@ -139,13 +165,13 @@ export async function GET(request: NextRequest) {
     offerLetter: enr.offerLetter ? {
       id: enr.offerLetter.id,
       letterNumber: enr.offerLetter.letterNumber,
-      htmlContent: enr.offerLetter.htmlContent,
+      htmlContent: replaceSettingsInHtml(enr.offerLetter.htmlContent),
       issuedAt: enr.offerLetter.issuedAt,
     } : null,
     experienceLetter: enr.experienceLetter ? {
       id: enr.experienceLetter.id,
       letterNumber: enr.experienceLetter.letterNumber,
-      htmlContent: enr.experienceLetter.htmlContent,
+      htmlContent: replaceSettingsInHtml(enr.experienceLetter.htmlContent),
       category: enr.experienceLetter.category,
       issuedAt: enr.experienceLetter.issuedAt,
     } : null,
