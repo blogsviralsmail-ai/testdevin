@@ -14,9 +14,11 @@ interface Interview {
   result: string | null;
   enrollment: {
     id: string;
+    studentId: string;
     student: { id: string; name: string; email: string; phone: string; collegeName: string; degree: string };
     batch: { program: { title: string; domain: string } };
   };
+  interviewer: { name: string; email: string } | null;
 }
 
 export default function InterviewsPage() {
