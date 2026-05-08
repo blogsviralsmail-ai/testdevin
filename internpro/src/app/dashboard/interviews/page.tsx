@@ -46,12 +46,11 @@ export default function InterviewsPage() {
     setLoading(false);
   }, []);
 
+  const [userRole, setUserRole] = useState<string>("");
+
   useEffect(() => {
-    // Block students from accessing interviews page
     fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(data => {
-      if (data?.user?.role === "student") {
-        router.push("/dashboard");
-      }
+      if (data?.user?.role) setUserRole(data.user.role);
     }).catch(() => {});
   }, [router]);
 
@@ -131,8 +130,8 @@ export default function InterviewsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Interviews</h1>
-        <p className="text-gray-600">Manage scheduled interviews and select candidates</p>
+        <h1 className="text-2xl font-bold text-gray-900">{userRole === "student" ? "My Interviews" : "Interviews"}</h1>
+        <p className="text-gray-600">{userRole === "student" ? "View your scheduled interviews and meeting details" : "Manage scheduled interviews and select candidates"}</p>
       </div>
 
       {/* Selection Modal */}
@@ -310,9 +309,65 @@ export default function InterviewsPage() {
 
       {interviews.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center border">
-          <p className="text-gray-500">No interviews scheduled yet</p>
+          <p className="text-gray-500">{userRole === "student" ? "No interviews scheduled for you yet" : "No interviews scheduled yet"}</p>
+        </div>
+      ) : userRole === "student" ? (
+        /* Student View — prominent interview details with meeting link */
+        <div className="grid gap-4">
+          {interviews.map((i) => (
+            <div key={i.id} className={`bg-white rounded-xl border overflow-hidden ${i.status === "scheduled" ? "border-indigo-200" : ""}`}>
+              {i.status === "scheduled" && (
+                <div className="bg-indigo-600 text-white px-6 py-2 text-sm font-medium">Upcoming Interview</div>
+              )}
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900">{i.enrollment.batch.program.title}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Date</p>
+                    <p className="text-sm font-semibold text-gray-900">{new Date(i.scheduledAt).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</p>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Time</p>
+                    <p className="text-sm font-semibold text-gray-900">{new Date(i.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Duration</p>
+                    <p className="text-sm font-semibold text-gray-900">{i.duration} minutes</p>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Mode</p>
+                    <p className="text-sm font-semibold text-gray-900 capitalize">{i.mode}</p>
+                  </div>
+                </div>
+                {i.meetLink && i.status === "scheduled" && (
+                  <a href={i.meetLink} target="_blank" rel="noopener noreferrer"
+                    className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold text-sm transition">
+                    🔗 Join Meeting
+                  </a>
+                )}
+                {!i.meetLink && i.status === "scheduled" && (
+                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg text-center text-sm text-yellow-700">
+                    Meeting link will be shared before the interview
+                  </div>
+                )}
+                <div className="flex items-center justify-between mt-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    i.status === "scheduled" ? "bg-blue-100 text-blue-800" :
+                    i.result === "selected" ? "bg-green-100 text-green-800" :
+                    i.result === "rejected" ? "bg-red-100 text-red-800" :
+                    i.result === "shortlisted" ? "bg-yellow-100 text-yellow-800" :
+                    "bg-gray-100 text-gray-800"
+                  }`}>
+                    {i.result === "selected" ? "Selected!" : i.result === "rejected" ? "Not Selected" : i.result === "shortlisted" ? "Shortlisted" : "Scheduled"}
+                  </span>
+                  {i.interviewer && <p className="text-xs text-gray-500">Interviewer: {i.interviewer.name}</p>}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
+        /* Admin/TL View — existing cards with management actions */
         <div className="grid gap-4">
           {interviews.map((i) => (
             <div key={i.id} className="bg-white rounded-xl p-6 border">

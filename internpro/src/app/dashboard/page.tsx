@@ -25,11 +25,26 @@ interface UserInfo {
   name: string;
 }
 
+interface UpcomingInterview {
+  id: string;
+  scheduledAt: string;
+  duration: number;
+  mode: string;
+  meetLink: string | null;
+  status: string;
+  result: string | null;
+  enrollment: {
+    batch: { program: { title: string; domain: string } };
+  };
+  interviewer: { name: string } | null;
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats>({});
   const [user, setUser] = useState<UserInfo | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [showDocsPrompt, setShowDocsPrompt] = useState(false);
+  const [upcomingInterviews, setUpcomingInterviews] = useState<UpcomingInterview[]>([]);
 
   const fetchData = useCallback(async () => {
     const [statsRes, userRes] = await Promise.all([
@@ -45,11 +60,14 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Check if student needs to submit documents
+  // Check if student needs to submit documents + fetch interviews
   useEffect(() => {
     if (user?.role === "student") {
       fetch("/api/documents").then(r => r.json()).then(docs => {
         if (!docs || docs.length === 0) setShowDocsPrompt(true);
+      }).catch(() => {});
+      fetch("/api/interviews").then(r => r.ok ? r.json() : []).then(data => {
+        setUpcomingInterviews(data);
       }).catch(() => {});
     }
   }, [user]);
@@ -162,6 +180,63 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Upcoming Interviews for Students */}
+      {user?.role === "student" && upcomingInterviews.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Interviews</h2>
+          <div className="grid gap-4">
+            {upcomingInterviews.map((iv) => (
+              <div key={iv.id} className={`bg-white rounded-xl border overflow-hidden ${iv.status === "scheduled" ? "border-indigo-300 shadow-md" : ""}`}>
+                {iv.status === "scheduled" && (
+                  <div className="bg-indigo-600 text-white px-4 py-1.5 text-xs font-semibold tracking-wide">UPCOMING INTERVIEW</div>
+                )}
+                <div className="p-5">
+                  <h3 className="font-bold text-gray-900">{iv.enrollment.batch.program.title}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                    <div className="bg-blue-50 rounded-lg p-2.5 text-center">
+                      <p className="text-[10px] text-gray-500 uppercase">Date</p>
+                      <p className="text-sm font-semibold text-gray-900">{new Date(iv.scheduledAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-2.5 text-center">
+                      <p className="text-[10px] text-gray-500 uppercase">Time</p>
+                      <p className="text-sm font-semibold text-gray-900">{new Date(iv.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-2.5 text-center">
+                      <p className="text-[10px] text-gray-500 uppercase">Duration</p>
+                      <p className="text-sm font-semibold text-gray-900">{iv.duration} min</p>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-2.5 text-center">
+                      <p className="text-[10px] text-gray-500 uppercase">Mode</p>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">{iv.mode}</p>
+                    </div>
+                  </div>
+                  {iv.meetLink && iv.status === "scheduled" && (
+                    <a href={iv.meetLink} target="_blank" rel="noopener noreferrer"
+                      className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold text-sm transition">
+                      🔗 Join Meeting
+                    </a>
+                  )}
+                  {!iv.meetLink && iv.status === "scheduled" && (
+                    <p className="mt-3 text-center text-sm text-yellow-700 bg-yellow-50 rounded-lg py-2">Meeting link will be shared before the interview</p>
+                  )}
+                  {iv.result && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        iv.result === "selected" ? "bg-green-100 text-green-800" :
+                        iv.result === "rejected" ? "bg-red-100 text-red-800" :
+                        "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {iv.result === "selected" ? "Selected!" : iv.result === "rejected" ? "Not Selected" : "Shortlisted"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="bg-white rounded-xl p-6 border border-gray-100">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
@@ -208,6 +283,10 @@ export default function DashboardPage() {
           )}
           {user?.role === "student" && (
             <>
+              <a href="/dashboard/interviews" className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition">
+                <span className="text-2xl">🎤</span>
+                <span className="text-sm text-gray-700">My Interviews</span>
+              </a>
               <a href="/dashboard/tasks" className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition">
                 <span className="text-2xl">📝</span>
                 <span className="text-sm text-gray-700">My Tasks</span>
