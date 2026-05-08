@@ -21,6 +21,14 @@ export async function GET() {
     const avgPercentage = submissions.filter((s) => s.percentage).reduce((acc, s) => acc + (s.percentage || 0), 0);
     const completionPercentage = totalTasks > 0 ? Math.round(avgPercentage / totalTasks) : 0;
 
+    // Enrollment status for blinking badges
+    const enrollmentStatuses = enrollments.map(e => e.status);
+    const hasInterviewScheduled = enrollmentStatuses.includes("interview_scheduled");
+    const hasSelected = enrollmentStatuses.includes("selected");
+    const hasRejected = enrollmentStatuses.includes("rejected");
+    const hasShortlisted = enrollmentStatuses.includes("shortlisted");
+    const currentStatus = hasSelected ? "selected" : hasShortlisted ? "shortlisted" : hasInterviewScheduled ? "interview_scheduled" : hasRejected ? "rejected" : enrollmentStatuses[0] || "applied";
+
     return NextResponse.json({
       totalEnrollments: enrollments.length,
       activeEnrollments: enrollments.filter((e) => e.status === "selected").length,
@@ -29,6 +37,8 @@ export async function GET() {
       completedTasks,
       completionPercentage,
       totalCertificates: certificates,
+      enrollmentStatus: currentStatus,
+      hasDocuments: true, // will be overridden below
     });
   }
 

@@ -18,6 +18,7 @@ interface Stats {
   scheduledInterviews?: number;
   selectedStudents?: number;
   completionPercentage?: number;
+  enrollmentStatus?: string;
 }
 
 interface UserInfo {
@@ -126,22 +127,82 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Blinking CSS Animations */}
+      {user?.role === "student" && (
+        <style>{`
+          @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+          @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+          @keyframes glowGreen { 0%,100% { box-shadow:0 0 5px #22c55e; } 50% { box-shadow:0 0 20px #22c55e, 0 0 40px #22c55e33; } }
+          @keyframes glowRed { 0%,100% { box-shadow:0 0 5px #ef4444; } 50% { box-shadow:0 0 20px #ef4444, 0 0 40px #ef444433; } }
+          @keyframes glowBlue { 0%,100% { box-shadow:0 0 5px #6366f1; } 50% { box-shadow:0 0 20px #6366f1, 0 0 40px #6366f133; } }
+          @keyframes glowYellow { 0%,100% { box-shadow:0 0 5px #eab308; } 50% { box-shadow:0 0 20px #eab308, 0 0 40px #eab30833; } }
+        `}</style>
+      )}
+
+      {/* Status Banner for Students */}
+      {user?.role === "student" && stats.enrollmentStatus && stats.enrollmentStatus !== "applied" && (
+        <div className={`mb-6 rounded-xl p-5 relative overflow-hidden ${
+          stats.enrollmentStatus === "selected" ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white" :
+          stats.enrollmentStatus === "shortlisted" ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-white" :
+          stats.enrollmentStatus === "interview_scheduled" ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white" :
+          stats.enrollmentStatus === "rejected" ? "bg-gradient-to-r from-red-500 to-rose-600 text-white" :
+          "bg-gray-100 text-gray-800"
+        }`} style={{ animation: `${
+          stats.enrollmentStatus === "selected" ? "glowGreen" :
+          stats.enrollmentStatus === "rejected" ? "glowRed" :
+          stats.enrollmentStatus === "interview_scheduled" ? "glowBlue" :
+          "glowYellow"
+        } 2s infinite` }}>
+          <div className="flex items-center gap-4">
+            <div className="text-4xl" style={{ animation: "blink 1.5s infinite" }}>
+              {stats.enrollmentStatus === "selected" ? "🎉" :
+               stats.enrollmentStatus === "shortlisted" ? "⭐" :
+               stats.enrollmentStatus === "interview_scheduled" ? "🎤" :
+               stats.enrollmentStatus === "rejected" ? "😔" : "📋"}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold" style={{ animation: "blink 1.5s infinite" }}>
+                {stats.enrollmentStatus === "selected" ? "Congratulations! You are SELECTED!" :
+                 stats.enrollmentStatus === "shortlisted" ? "You are SHORTLISTED!" :
+                 stats.enrollmentStatus === "interview_scheduled" ? "Interview Scheduled!" :
+                 stats.enrollmentStatus === "rejected" ? "Application Not Approved" : "Application Status"}
+              </h2>
+              <p className="text-sm opacity-90 mt-1">
+                {stats.enrollmentStatus === "selected" ? "Welcome aboard! Check your offer letter and complete the joining formalities." :
+                 stats.enrollmentStatus === "shortlisted" ? "Great news! You have been shortlisted. Stay tuned for further updates." :
+                 stats.enrollmentStatus === "interview_scheduled" ? "Your interview is scheduled. Check details below and be prepared!" :
+                 stats.enrollmentStatus === "rejected" ? "Unfortunately your application was not approved this time. You can apply again." : ""}
+              </p>
+            </div>
+            <a href={stats.enrollmentStatus === "interview_scheduled" ? "/dashboard/interviews" : stats.enrollmentStatus === "selected" ? "/dashboard/offer-letter" : "/dashboard/applications"}
+              className="ml-auto px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-semibold transition whitespace-nowrap"
+              style={{ animation: "pulse 2s infinite" }}>
+              {stats.enrollmentStatus === "interview_scheduled" ? "View Interview" :
+               stats.enrollmentStatus === "selected" ? "View Offer Letter" :
+               stats.enrollmentStatus === "shortlisted" ? "View Details" : "View Status"}
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Documents Prompt Animation for New Students */}
       {showDocsPrompt && user?.role === "student" && (
-        <div className="mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white relative overflow-hidden" style={{ animation: "fadeInUp 0.6s ease-out" }}>
-          <style>{`@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } } @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }`}</style>
-          <div className="relative z-10">
-            <h2 className="text-xl font-bold mb-2">Welcome to your Internship Dashboard!</h2>
-            <p className="text-indigo-100 mb-4">Please submit your documents to get started with your internship journey.</p>
-            <a href="/dashboard/documents"
-              className="inline-block bg-white text-indigo-600 font-semibold px-6 py-3 rounded-lg hover:bg-indigo-50 transition"
-              style={{ animation: "pulse 2s infinite" }}>
-              Submit Documents Now
-            </a>
+        <div className="mb-6 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white relative overflow-hidden" style={{ animation: "glowYellow 2s infinite" }}>
+          <div className="relative z-10 flex items-center gap-4">
+            <div className="text-4xl" style={{ animation: "blink 1s infinite" }}>📄</div>
+            <div>
+              <h2 className="text-xl font-bold" style={{ animation: "blink 1.2s infinite" }}>Submit Your Documents!</h2>
+              <p className="text-orange-100 mb-3">Upload your resume and documents to proceed with your application.</p>
+              <a href="/dashboard/documents"
+                className="inline-block bg-white text-orange-600 font-semibold px-6 py-3 rounded-lg hover:bg-orange-50 transition"
+                style={{ animation: "pulse 1.5s infinite" }}>
+                Submit Documents Now →
+              </a>
+            </div>
           </div>
           <button onClick={() => setShowDocsPrompt(false)} className="absolute top-3 right-3 text-white/70 hover:text-white text-xl">&times;</button>
           <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full" />
-          <div className="absolute -right-2 -top-6 w-20 h-20 bg-white/5 rounded-full" />
         </div>
       )}
 
