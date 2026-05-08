@@ -2,11 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+interface StudentDoc {
+  id: string;
+  type: string;
+  title: string;
+  fileUrl: string;
+  status: string;
+  createdAt: string;
+}
+
 interface Enrollment {
   id: string;
   status: string;
   createdAt: string;
-  student: { id: string; name: string; email: string; phone: string; collegeName: string; degree: string; year: string };
+  student: { id: string; name: string; email: string; phone: string; avatar: string | null; collegeName: string; degree: string; year: string; address: string | null; dob: string | null; employeeId: string | null };
   batch: { program: { title: string; domain: string; mode: string } };
   _count: { interviews: number };
 }
@@ -21,6 +30,9 @@ export default function ApplicationsPage() {
   });
   const [rejectModal, setRejectModal] = useState<Enrollment | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [viewModal, setViewModal] = useState<Enrollment | null>(null);
+  const [viewDocs, setViewDocs] = useState<StudentDoc[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     const res = await fetch(`/api/enrollments?status=${filter}`);
@@ -31,6 +43,19 @@ export default function ApplicationsPage() {
 
   useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
+  const openViewModal = async (e: Enrollment) => {
+    setViewModal(e);
+    setLoadingDocs(true);
+    try {
+      const res = await fetch(`/api/documents?userId=${e.student.id}`);
+      if (res.ok) {
+        const docs = await res.json();
+        setViewDocs(docs);
+      }
+    } catch { /* ignore */ }
+    setLoadingDocs(false);
+  };
+
   const handleReject = async () => {
     if (!rejectModal) return;
     await fetch(`/api/enrollments/${rejectModal.id}`, {
@@ -38,7 +63,6 @@ export default function ApplicationsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "rejected", adminRemarks: rejectReason }),
     });
-    // Send rejection email
     if (rejectReason) {
       fetch("/api/email/send", {
         method: "POST",
@@ -99,6 +123,139 @@ export default function ApplicationsPage() {
           </button>
         ))}
       </div>
+
+      {/* View Details Modal */}
+      {viewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Applicant Details</h2>
+              <button onClick={() => setViewModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+
+            {/* Profile Header */}
+            <div className="flex items-center gap-4 mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
+              <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-xl font-bold text-indigo-600 overflow-hidden">
+                {viewModal.student.avatar ? (
+                  <img src={viewModal.student.avatar.startsWith("http") ? viewModal.student.avatar : `/uploads/${viewModal.student.avatar}`} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  viewModal.student.name.split(" ").map(n => n[0]).join("").slice(0, 2)
+                )}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{viewModal.student.name}</h3>
+                <p className="text-sm text-indigo-600 font-medium">{viewModal.batch.program.title} ({viewModal.batch.program.mode})</p>
+                <p className="text-xs text-gray-500">Applied: {new Date(viewModal.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
+              </div>
+            </div>
+
+            {/* Personal Details Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 uppercase font-medium">Email</p>
+                <p className="text-sm text-gray-900 font-medium">{viewModal.student.email}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 uppercase font-medium">Phone</p>
+                <p className="text-sm text-gray-900 font-medium">{viewModal.student.phone || "Not provided"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 uppercase font-medium">College / Institution</p>
+                <p className="text-sm text-gray-900 font-medium">{viewModal.student.collegeName || "Not provided"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 uppercase font-medium">Degree</p>
+                <p className="text-sm text-gray-900 font-medium">{viewModal.student.degree || "Not provided"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 uppercase font-medium">Year</p>
+                <p className="text-sm text-gray-900 font-medium">{viewModal.student.year || "Not provided"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 uppercase font-medium">Date of Birth</p>
+                <p className="text-sm text-gray-900 font-medium">{viewModal.student.dob ? new Date(viewModal.student.dob).toLocaleDateString("en-IN") : "Not provided"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+                <p className="text-xs text-gray-500 uppercase font-medium">Address</p>
+                <p className="text-sm text-gray-900 font-medium">{viewModal.student.address || "Not provided"}</p>
+              </div>
+              {viewModal.student.employeeId && (
+                <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+                  <p className="text-xs text-gray-500 uppercase font-medium">Employee ID</p>
+                  <p className="text-sm text-indigo-600 font-medium">{viewModal.student.employeeId}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Documents / Resume Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <span>Uploaded Documents</span>
+                {loadingDocs && <span className="text-xs text-gray-400">Loading...</span>}
+              </h3>
+              {!loadingDocs && viewDocs.length === 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                  No documents uploaded yet. Student has not submitted resume or other documents.
+                </div>
+              )}
+              {viewDocs.length > 0 && (
+                <div className="space-y-2">
+                  {viewDocs.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3 border">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                          doc.type === "resume" ? "bg-blue-100 text-blue-700" :
+                          doc.type === "marksheet" ? "bg-green-100 text-green-700" :
+                          doc.type === "id_proof" ? "bg-orange-100 text-orange-700" :
+                          "bg-gray-100 text-gray-700"
+                        }`}>
+                          {doc.type === "resume" ? "CV" : doc.type === "marksheet" ? "MS" : doc.type === "id_proof" ? "ID" : doc.type.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{doc.title || doc.type.replace("_", " ").replace(/\b\w/g, l => l.toUpperCase())}</p>
+                          <p className="text-xs text-gray-500">Uploaded: {new Date(doc.createdAt).toLocaleDateString("en-IN")} | Status: <span className={doc.status === "approved" ? "text-green-600" : doc.status === "rejected" ? "text-red-600" : "text-yellow-600"}>{doc.status}</span></p>
+                        </div>
+                      </div>
+                      <a
+                        href={doc.fileUrl.startsWith("http") ? doc.fileUrl : `/uploads/${doc.fileUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-lg hover:bg-indigo-100 transition"
+                      >
+                        View / Download
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t">
+              {filter === "applied" && (
+                <>
+                  <button
+                    onClick={() => { setViewModal(null); setScheduleModal(viewModal); }}
+                    className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm"
+                  >
+                    Schedule Interview
+                  </button>
+                  <button
+                    onClick={() => { setViewModal(null); setRejectModal(viewModal); setRejectReason(""); }}
+                    className="px-4 py-2.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium text-sm"
+                  >
+                    Reject
+                  </button>
+                </>
+              )}
+              <button onClick={() => setViewModal(null)}
+                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Schedule Interview Modal */}
       {scheduleModal && (
@@ -184,18 +341,33 @@ export default function ApplicationsPage() {
           {enrollments.map((e) => (
             <div key={e.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
               <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{e.student.name}</h3>
-                  <p className="text-sm text-gray-600">{e.student.email} | {e.student.phone}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {e.student.collegeName} — {e.student.degree} ({e.student.year} Year)
-                  </p>
-                  <p className="text-sm text-indigo-600 mt-2 font-medium">
-                    Applied for: {e.batch.program.title} ({e.batch.program.mode})
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">Applied: {new Date(e.createdAt).toLocaleDateString("en-IN")}</p>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 shrink-0 overflow-hidden">
+                    {e.student.avatar ? (
+                      <img src={e.student.avatar.startsWith("http") ? e.student.avatar : `/uploads/${e.student.avatar}`} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      e.student.name.split(" ").map(n => n[0]).join("").slice(0, 2)
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{e.student.name}</h3>
+                    <p className="text-sm text-gray-600">{e.student.email} | {e.student.phone}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {e.student.collegeName} — {e.student.degree} ({e.student.year} Year)
+                    </p>
+                    <p className="text-sm text-indigo-600 mt-2 font-medium">
+                      Applied for: {e.batch.program.title} ({e.batch.program.mode})
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">Applied: {new Date(e.createdAt).toLocaleDateString("en-IN")}</p>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => openViewModal(e)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 font-medium"
+                  >
+                    View Details
+                  </button>
                   {filter === "applied" && (
                     <>
                       <button
