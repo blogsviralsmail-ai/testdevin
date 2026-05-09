@@ -186,23 +186,24 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Documents Prompt Animation for New Students */}
+      {/* Documents Submission Popup for New Students */}
       {showDocsPrompt && user?.role === "student" && (
-        <div className="mb-6 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white relative overflow-hidden" style={{ animation: "glowYellow 2s infinite" }}>
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="text-4xl" style={{ animation: "blink 1s infinite" }}>📄</div>
-            <div>
-              <h2 className="text-xl font-bold" style={{ animation: "blink 1.2s infinite" }}>Submit Your Documents!</h2>
-              <p className="text-orange-100 mb-3">Upload your resume and documents to proceed with your application.</p>
-              <a href="/dashboard/documents"
-                className="inline-block bg-white text-orange-600 font-semibold px-6 py-3 rounded-lg hover:bg-orange-50 transition"
-                style={{ animation: "pulse 1.5s infinite" }}>
-                Submit Documents Now →
-              </a>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ animation: "fadeInUp 0.3s ease-out" }}>
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-100 rounded-full opacity-50" />
+            <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-orange-100 rounded-full opacity-50" />
+            <div className="relative z-10">
+              <div className="text-6xl mb-4" style={{ animation: "pulse 1.5s infinite" }}>📄</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Please Submit Your Documents</h2>
+              <p className="text-gray-600 mb-6">Apni application complete karne ke liye apne documents (Resume, ID Proof, etc.) upload karein.</p>
+              <button
+                onClick={() => { setShowDocsPrompt(false); window.location.href = "/dashboard/documents"; }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-lg hover:opacity-90 transition"
+                style={{ animation: "pulse 2s infinite" }}>
+                OK — Submit Documents
+              </button>
             </div>
           </div>
-          <button onClick={() => setShowDocsPrompt(false)} className="absolute top-3 right-3 text-white/70 hover:text-white text-xl">&times;</button>
-          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full" />
         </div>
       )}
 
