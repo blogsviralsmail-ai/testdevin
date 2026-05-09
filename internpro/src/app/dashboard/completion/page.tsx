@@ -109,6 +109,17 @@ export default function CompletionPage() {
       alert("Experience letter error: " + (data.error || "Unknown error"));
     }
 
+    // Auto-generate completion certificate
+    const certRes = await fetch("/api/certificates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enrollmentId, type: "completion" }),
+    });
+    if (!certRes.ok) {
+      const data = await certRes.json();
+      console.error("Certificate error:", data.error);
+    }
+
     setApproveModal(null);
     setApproveRemarks("");
     fetchData();

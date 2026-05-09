@@ -598,6 +598,51 @@ model Testimonial {
   updatedAt DateTime @updatedAt
 }
 
+// ===== DISCUSSION FORUM =====
+model Discussion {
+  id          String   @id @default(cuid())
+  batchId     String?
+  programId   String?
+  authorId    String
+  title       String
+  content     String
+  category    String   @default("doubt") // doubt, discussion, resource
+  isPinned    Boolean  @default(false)
+  isResolved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  replies     DiscussionReply[]
+}
+
+model DiscussionReply {
+  id           String   @id @default(cuid())
+  discussionId String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  authorId     String
+  content      String
+  isAnswer     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+// ===== LIVE SESSIONS =====
+model LiveSession {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  batchId     String?
+  programId   String?
+  hostId      String
+  meetLink    String?
+  platform    String   @default("google_meet") // google_meet, zoom, other
+  scheduledAt DateTime
+  duration    Int      @default(60) // minutes
+  status      String   @default("scheduled") // scheduled, live, completed, cancelled
+  recordingUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // ===== EMAIL CAMPAIGNS =====
 model EmailCampaign {
   id          String   @id @default(cuid())

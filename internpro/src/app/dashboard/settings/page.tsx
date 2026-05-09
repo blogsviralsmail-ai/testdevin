@@ -513,6 +513,21 @@ export default function SettingsPage() {
                   onChange={(e) => updateSetting("whatsapp_notifications", e.target.checked ? "true" : "false")}
                   className="w-5 h-5 rounded" />
               </div>
+              {settings.whatsapp_notifications === "true" && (
+                <div className="ml-4 pl-4 border-l-2 border-green-200 space-y-3 py-2">
+                  <p className="text-xs text-gray-500">Configure WhatsApp Business API (Meta Cloud API)</p>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Phone Number ID</label>
+                    <input value={settings.whatsapp_phone_id || ""} onChange={(e) => updateSetting("whatsapp_phone_id", e.target.value)}
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="From Meta Business Suite" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Access Token</label>
+                    <input type="password" value={settings.whatsapp_token || ""} onChange={(e) => updateSetting("whatsapp_token", e.target.value)}
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="Permanent access token" />
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between py-2">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Auto Attendance</p>

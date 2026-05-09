@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { generateEmployeeId } from "@/lib/employee-id";
+import { notifyApplicationStatusChange } from "@/lib/notifications";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -75,7 +76,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const enrollment = await prisma.enrollment.update({
       where: { id },
       data,
+      include: { student: { select: { email: true, name: true } }, batch: { include: { program: { select: { title: true } } } } },
     });
+
+    // Send notification on status change
+    if (status && ["selected", "rejected", "interview"].includes(status)) {
+      notifyApplicationStatusChange(enrollment.student.email, enrollment.student.name, status, enrollment.batch.program.title).catch(() => {});
+    }
 
     return NextResponse.json(enrollment);
   } catch (error: unknown) {

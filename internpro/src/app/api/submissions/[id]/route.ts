@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { notifyTaskReviewed } from "@/lib/notifications";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -21,7 +22,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         ...(status && { status }),
         reviewedBy: session.id,
       },
+      include: { student: { select: { id: true, email: true, name: true } }, task: { select: { title: true } } },
     });
+
+    // Notify student of review
+    if (status === "reviewed") {
+      notifyTaskReviewed(submission.student.id, submission.student.email, submission.student.name, submission.task.title, percentage ? parseFloat(percentage) : null, feedback || null).catch(() => {});
+    }
 
     return NextResponse.json(submission);
   } catch (error: unknown) {

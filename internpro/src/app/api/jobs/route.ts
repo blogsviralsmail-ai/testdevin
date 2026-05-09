@@ -9,9 +9,15 @@ export async function GET(request: NextRequest) {
 
   if (!isPublic && !session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const isAdmin = session && ["admin", "organization"].includes(session.role);
+
   const jobs = await prisma.jobPosting.findMany({
     where: isPublic ? { isActive: true } : {},
-    include: { applications: session ? { where: { userId: session.id } } : false },
+    include: {
+      applications: isAdmin
+        ? { include: { user: { select: { name: true, email: true, phone: true } } }, orderBy: { createdAt: "desc" } }
+        : session ? { where: { userId: session.id } } : false,
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -19,7 +25,7 @@ export async function GET(request: NextRequest) {
     ...j,
     applicationCount: (j as Record<string, unknown>).applications ? ((j as Record<string, unknown>).applications as unknown[]).length : 0,
     hasApplied: session ? ((j.applications as unknown[])?.length > 0) : false,
-    applications: ["admin", "organization"].includes(session?.role || "") ? j.applications : undefined,
+    applications: isAdmin ? j.applications : undefined,
   })));
 }
 
