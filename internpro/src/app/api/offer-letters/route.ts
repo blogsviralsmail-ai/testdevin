@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   });
   const sMap: Record<string, string> = {};
   currentSettings.forEach((s) => { sMap[s.key] = s.value; });
-  const curLogo = sMap.letterhead_logo || "/uploads/kkhs-logo-new.png";
+  const curLogo = sMap.letterhead_logo || "/uploads/kkhs-logo.png";
   const curSig = sMap.admin_signature || "";
 
   const mapped = letters.map((l) => {
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       ? `<img src="${signatureUrl}" alt="Signature" style="height: 50px; display: block; margin-bottom: 4px; object-fit: contain;" />`
       : `<div style="height: 50px; margin-bottom: 4px;"></div>`;
 
-    const lhLogo = sMap.letterhead_logo || "/uploads/kkhs-logo-new.png";
+    const lhLogo = sMap.letterhead_logo || "/uploads/kkhs-logo.png";
     const lhCompany = sMap.letterhead_company_name || org.name || "KKHS Media Private Limited";
     const lhAddress = sMap.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012";
     const lhPhone = sMap.letterhead_phone || "9782005500";

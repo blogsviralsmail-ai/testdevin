@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
   });
   const settingsMap: Record<string, string> = {};
   currentSettings.forEach((s) => { settingsMap[s.key] = s.value; });
-  const currentLogo = settingsMap.letterhead_logo || "/uploads/kkhs-logo-new.png";
+  const currentLogo = settingsMap.letterhead_logo || "/uploads/kkhs-logo.png";
   const currentSignature = settingsMap.admin_signature || "";
 
   function replaceSettingsInHtml(html: string | null): string | null {

@@ -32,7 +32,7 @@ export default function IDCardsPage() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [generateForm, setGenerateForm] = useState({ userId: "", designation: "Intern", department: "", photoUrl: "" });
   const [previewCard, setPreviewCard] = useState<EmployeeCard | null>(null);
-  const [companyLogo, setCompanyLogo] = useState("/uploads/kkhs-logo-new.png");
+  const [companyLogo, setCompanyLogo] = useState("/uploads/kkhs-logo.png");
   const [companyName, setCompanyName] = useState("KKHS Media Private Limited");
 
   const fetchData = useCallback(async () => {
