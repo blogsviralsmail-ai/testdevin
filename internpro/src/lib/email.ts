@@ -36,11 +36,17 @@ export async function sendEmail({ to, subject, html, attachments }: EmailOptions
       auth: { user: smtpUser, pass: smtpPass },
     });
 
+    const companyLogo = sMap.letterhead_logo || sMap.company_logo || "";
+    const companyName = sMap.letterhead_company_name || sMap.company_name || "KKHS Media Private Limited";
+    const companyAddress = sMap.letterhead_address || sMap.company_address || "190A Krishna Kunj, Kalwar Road, Jaipur";
+    const companyPhone = sMap.letterhead_phone || "9782005500";
+    const companyEmail = sMap.letterhead_email || smtpFrom || "hari@kkhsmedia.com";
+
     await transporter.sendMail({
       from: `${smtpFromName} <${smtpFrom}>`,
       to,
       subject,
-      html: wrapEmailTemplate(subject, html),
+      html: wrapEmailTemplate(subject, html, companyLogo, companyName, companyAddress, companyPhone, companyEmail),
       attachments: attachments?.map(a => ({ filename: a.filename, content: a.content, contentType: a.contentType || "application/pdf" })),
     });
 
@@ -378,17 +384,28 @@ export async function sendPasswordResetEmail(name: string, email: string, token:
   });
 }
 
-function wrapEmailTemplate(title: string, content: string): string {
+function wrapEmailTemplate(title: string, content: string, logoUrl?: string, companyName?: string, companyAddress?: string, companyPhone?: string, companyEmail?: string): string {
+  const name = companyName || "KKHS Media Private Limited";
+  const addr = companyAddress || "190A Krishna Kunj, Kalwar Road, Jaipur";
+  const phone = companyPhone || "9782005500";
+  const email = companyEmail || "hari@kkhsmedia.com";
+  const siteUrl = "https://internship.kkhsmedia.com";
+
+  const logoImg = logoUrl
+    ? `<img src="${logoUrl.startsWith("http") ? logoUrl : siteUrl + logoUrl}" alt="${name}" style="height:60px;display:block;margin:0 auto 10px;" />`
+    : "";
+
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title></head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:20px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 <tr><td style="background:linear-gradient(135deg,#0000AA,#4f46e5);padding:24px 30px;text-align:center;">
-<h1 style="color:#fff;margin:0;font-size:22px;">KKHS Media Private Limited</h1>
+${logoImg}
+<h1 style="color:#fff;margin:0;font-size:22px;">${name}</h1>
 <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px;">Internship Management Platform</p>
 </td></tr>
 <tr><td style="padding:30px;">${content}</td></tr>
 <tr><td style="padding:20px 30px;background:#f9fafb;text-align:center;border-top:1px solid #e5e7eb;">
-<p style="margin:0;font-size:12px;color:#9ca3af;">KKHS Media Private Limited | 190A Krishna Kunj, Kalwar Road, Jaipur</p>
-<p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">Ph: 9782005500 | hari@kkhsmedia.com</p>
+<p style="margin:0;font-size:12px;color:#9ca3af;">${name} | ${addr}</p>
+<p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">Ph: ${phone} | ${email}</p>
 </td></tr></table></body></html>`;
 }

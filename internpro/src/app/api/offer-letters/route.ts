@@ -273,7 +273,7 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
     });
 
     // Send Offer Letter email with PDF attachment (non-blocking)
-    const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
+    const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true, avatar: true } });
     if (student) {
       const joiningDateStr = joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
       const extraDetails: Record<string, string> = {
@@ -287,10 +287,25 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
       };
       sendLetterGeneratedEmail(student.name, student.email, "Offer Letter", offerLetter.letterNumber, offerLetter.htmlContent || undefined, extraDetails).catch(() => {});
 
-      // Send ID Card email separately (non-blocking)
+      // Send ID Card email separately with PDF (non-blocking)
       const idCard = await prisma.employeeCard.findFirst({ where: { userId: enrollment.studentId }, orderBy: { createdAt: "desc" } });
       if (idCard) {
-        sendLetterGeneratedEmail(student.name, student.email, "ID Card", idCard.cardNumber).catch(() => {});
+        const idQr = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(siteUrl + "/verify/card/" + idCard.cardNumber)}`;
+        const photo = student.avatar || "";
+        const photoHtml = photo ? `<img src="${photo.startsWith("http") ? photo : siteUrl + photo}" style="width:100%;height:100%;object-fit:cover;" />` : `<div style="font-size:40px;color:#2563eb;">👤</div>`;
+        const idCardHtml = `<div style="font-family:'Segoe UI','Calibri',Arial,sans-serif;width:210mm;padding:30mm 50mm;background:white;display:flex;flex-direction:column;align-items:center;gap:20px;">
+<div style="width:240px;border-radius:12px;overflow:hidden;background:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);border:1px solid #e5e7eb;">
+<div style="text-align:center;padding:14px 10px 8px;"><img src="${lhLogo.startsWith("http") ? lhLogo : siteUrl + lhLogo}" style="height:36px;" /><p style="font-size:8px;color:#1a365d;font-weight:700;margin-top:3px;">${escapeHtml(lhCompany)}</p></div>
+<div style="text-align:center;padding:6px 0;"><div style="width:90px;height:90px;border-radius:50%;border:3px solid #2563eb;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:#f0f4ff;">${photoHtml}</div></div>
+<div style="text-align:center;padding:6px 10px;"><p style="font-size:14px;font-weight:800;color:#1a202c;">${escapeHtml(student.name)}</p><span style="display:inline-block;background:#2563eb;color:white;font-size:8px;font-weight:700;padding:3px 12px;border-radius:10px;">${escapeHtml(idCard.designation || enrollment.batch.program.title + " Intern")}</span></div>
+<div style="padding:8px 16px;font-size:9px;">
+<p style="margin:3px 0;"><strong>ID:</strong> ${idCard.cardNumber}</p>
+<p style="margin:3px 0;"><strong>Email:</strong> ${escapeHtml(student.email)}</p>
+<p style="margin:3px 0;"><strong>Valid:</strong> ${idCard.validFrom?.toLocaleDateString("en-IN") || "N/A"} to ${idCard.validUntil?.toLocaleDateString("en-IN") || "N/A"}</p>
+</div>
+<div style="text-align:center;padding:8px 20px 14px;"><img src="${idQr}" style="width:70px;height:70px;" /><p style="font-size:7px;color:#888;margin-top:2px;">Scan to verify</p></div>
+</div></div>`;
+        sendLetterGeneratedEmail(student.name, student.email, "ID Card", idCard.cardNumber, idCardHtml).catch(() => {});
       }
     }
 
