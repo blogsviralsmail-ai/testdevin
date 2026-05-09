@@ -16,11 +16,12 @@ function findChrome(): string {
   return CHROME_PATHS[0];
 }
 
-const SITE_URL = "https://internship.kkhsmedia.com";
+// Use localhost for Puppeteer to avoid cloaker/proxy issues when fetching images
+const LOCAL_BASE = `http://localhost:${process.env.PORT || 3005}`;
 
 function resolveLocalPaths(html: string): string {
   // Convert relative src="/uploads/..." and src="/api/..." to full URLs so Puppeteer can fetch them
-  return html.replace(/src="\/([^"]+)"/g, `src="${SITE_URL}/$1"`);
+  return html.replace(/src="\/([^"]+)"/g, `src="${LOCAL_BASE}/$1"`);
 }
 
 export async function htmlToPdfBuffer(htmlContent: string): Promise<Buffer> {
