@@ -76,6 +76,7 @@ export async function registerUser(data: {
   degree?: string;
   year?: string;
   address?: string;
+  state?: string;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) throw new Error("Email already registered");
@@ -92,6 +93,7 @@ export async function registerUser(data: {
       degree: data.degree || null,
       year: data.year || null,
       address: data.address || null,
+      state: data.state || null,
     },
   });
 

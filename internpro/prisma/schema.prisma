@@ -27,6 +27,7 @@ model User {
   degree        String?
   year          String?
   address       String?
+  state         String?
   dob           DateTime?
 
   // Login tracking

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password, phone, collegeName, degree, year, address, referralCode } = body;
+    const { name, email, password, phone, collegeName, degree, year, address, state, referralCode } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const user = await registerUser({
       name, email, password, phone,
       role: "student",
-      collegeName, degree, year, address,
+      collegeName, degree, year, address, state,
     });
 
     // Auto-create enrollment (application) in the first active batch
