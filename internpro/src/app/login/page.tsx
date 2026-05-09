@@ -34,19 +34,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillDemo = (role: string) => {
-    const credentials: Record<string, { email: string; password: string }> = {
-      admin: { email: "admin@internpro.com", password: "admin123" },
-      organization: { email: "org@internpro.com", password: "admin123" },
-      teamleader: { email: "leader@internpro.com", password: "leader123" },
-      student: { email: "student@internpro.com", password: "student123" },
-    };
-    const cred = credentials[role];
-    if (cred) {
-      setEmail(cred.email);
-      setPassword(cred.password);
-    }
-  };
 
   return (
     <div className="min-h-screen flex">
@@ -119,21 +106,6 @@ export default function LoginPage() {
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
-
-          <div className="mt-6">
-            <p className="text-sm text-gray-500 mb-3 text-center">Quick Demo Login:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {["admin", "organization", "teamleader", "student"].map((role) => (
-                <button
-                  key={role}
-                  onClick={() => fillDemo(role)}
-                  className="text-xs py-2 px-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition capitalize text-gray-600"
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
-          </div>
 
           <p className="text-center mt-6 text-gray-600 text-sm">
             Don&apos;t have an account?{" "}

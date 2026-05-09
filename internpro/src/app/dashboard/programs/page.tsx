@@ -27,7 +27,7 @@ export default function ProgramsPage() {
   const [error, setError] = useState("");
   const [user, setUser] = useState<UserSession | null>(null);
   const [form, setForm] = useState({
-    title: "", description: "", domain: "web-dev", mode: "online", duration: "90",
+    title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", duration: "90",
     feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "",
   });
   const [uploading, setUploading] = useState(false);
@@ -60,14 +60,15 @@ export default function ProgramsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const submitData = { ...form, domain: form.domain === "other" && form.customDomain.trim() ? form.customDomain.trim() : form.domain };
     const res = await fetch("/api/programs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(submitData),
     });
     if (res.ok) {
       setShowForm(false);
-      setForm({ title: "", description: "", domain: "web-dev", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "" });
+      setForm({ title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "" });
       fetchPrograms();
     } else {
       const data = await res.json();
@@ -121,6 +122,9 @@ export default function ProgramsPage() {
                   <option key={d} value={d}>{getDomainLabel(d)}</option>
                 ))}
               </select>
+              {form.domain === "other" && (
+                <input value={form.customDomain} onChange={(e) => setForm({ ...form, customDomain: e.target.value })} placeholder="Enter custom domain name" className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 mt-2" required />
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mode</label>
