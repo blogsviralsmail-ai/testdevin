@@ -446,6 +446,7 @@ async def start_stream(slot_id: str, user_id: str) -> Optional[int]:
             {"$set": {
                 "isStreaming": True,
                 "streamProcessId": process_id,
+                "streamStartedAt": datetime.utcnow().isoformat() + "Z",
                 "updatedAt": datetime.utcnow(),
             }}
         )
@@ -475,6 +476,7 @@ async def stop_stream(slot_id: str, user_id: str) -> bool:
         {"$set": {
             "isStreaming": False,
             "streamProcessId": None,
+            "streamStartedAt": None,
             "updatedAt": datetime.utcnow(),
         }}
     )
@@ -598,6 +600,7 @@ async def _scheduler_loop():
                             {"$set": {
                                 "isStreaming": True,
                                 "streamProcessId": process_id,
+                                "streamStartedAt": now.isoformat() + "Z",
                                 "scheduledStart": None,
                                 "updatedAt": now,
                             }}
@@ -632,6 +635,7 @@ async def _scheduler_loop():
                         {"$set": {
                             "isStreaming": False,
                             "streamProcessId": None,
+                            "streamStartedAt": None,
                             "scheduledEnd": None,
                             "updatedAt": now,
                         }}
