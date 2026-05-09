@@ -1,11 +1,11 @@
 import puppeteer from "puppeteer-core";
 
 const CHROME_PATHS = [
+  "/snap/bin/chromium",
   "/usr/bin/chromium-browser",
   "/usr/bin/chromium",
   "/usr/bin/google-chrome",
   "/usr/bin/google-chrome-stable",
-  "/snap/bin/chromium",
 ];
 
 function findChrome(): string {
