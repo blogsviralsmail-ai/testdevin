@@ -16,6 +16,9 @@ interface VerifyResult {
     category?: string;
     orgName?: string;
     issuedAt: string;
+    currentStatus?: string;
+    enrolledAt?: string;
+    completedAt?: string;
   };
 }
 
@@ -126,6 +129,29 @@ export default function VerifySearchPage() {
                       <span className="text-gray-500">Issue Date</span>
                       <span className="font-medium">{formatDate(result.data.issuedAt)}</span>
                     </div>
+                    {result.data.currentStatus && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Current Status</span>
+                        <span className={`font-semibold px-2 py-0.5 rounded text-xs ${
+                          result.data.currentStatus.includes("Completed") ? "bg-green-100 text-green-700" :
+                          result.data.currentStatus.includes("Working") || result.data.currentStatus === "Selected" ? "bg-blue-100 text-blue-700" :
+                          result.data.currentStatus.includes("Rejected") || result.data.currentStatus.includes("Terminated") || result.data.currentStatus.includes("Dropped") ? "bg-red-100 text-red-700" :
+                          "bg-yellow-100 text-yellow-700"
+                        }`}>{result.data.currentStatus}</span>
+                      </div>
+                    )}
+                    {result.data.enrolledAt && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Enrolled On</span>
+                        <span className="font-medium">{formatDate(result.data.enrolledAt)}</span>
+                      </div>
+                    )}
+                    {result.data.completedAt && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Completed On</span>
+                        <span className="font-medium">{formatDate(result.data.completedAt)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Document ID</span>
                       <span className="font-mono text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded">{result.data.number}</span>

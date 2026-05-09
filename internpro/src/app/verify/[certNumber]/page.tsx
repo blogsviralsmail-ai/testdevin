@@ -15,6 +15,9 @@ interface VerifyData {
     category?: string;
     orgName?: string;
     issuedAt: string;
+    currentStatus?: string;
+    enrolledAt?: string;
+    completedAt?: string;
   };
   // Legacy cert format
   certificate?: {
@@ -137,6 +140,29 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
                   <span className="text-gray-500">Issue Date</span>
                   <span className="font-medium">{formatDate(info.issuedAt)}</span>
                 </div>
+                {info.currentStatus && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Current Status</span>
+                    <span className={`font-semibold px-2 py-0.5 rounded text-xs ${
+                      info.currentStatus.includes("Completed") ? "bg-green-100 text-green-700" :
+                      info.currentStatus.includes("Working") || info.currentStatus === "Selected" ? "bg-blue-100 text-blue-700" :
+                      info.currentStatus.includes("Rejected") || info.currentStatus.includes("Terminated") || info.currentStatus.includes("Dropped") ? "bg-red-100 text-red-700" :
+                      "bg-yellow-100 text-yellow-700"
+                    }`}>{info.currentStatus}</span>
+                  </div>
+                )}
+                {info.enrolledAt && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Enrolled On</span>
+                    <span className="font-medium">{formatDate(info.enrolledAt)}</span>
+                  </div>
+                )}
+                {info.completedAt && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Completed On</span>
+                    <span className="font-medium">{formatDate(info.completedAt)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Document ID</span>
                   <span className="font-mono text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded">{info.number}</span>

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+const statusLabels: Record<string, string> = {
+  applied: "Applied",
+  shortlisted: "Shortlisted",
+  selected: "Selected",
+  active: "Working / Currently Interning",
+  completed: "Internship Completed",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+  dropped: "Dropped Out",
+  terminated: "Terminated",
+};
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const number = searchParams.get("number")?.trim();
@@ -48,6 +60,7 @@ export async function GET(request: NextRequest) {
 
   if (offerLetter) {
     const prog = offerLetter.enrollment.batch.program;
+    const enrollStatus = offerLetter.enrollment.status;
     return NextResponse.json({
       valid: true,
       type: "Offer Letter",
@@ -59,12 +72,16 @@ export async function GET(request: NextRequest) {
         duration: prog.duration,
         mode: prog.mode,
         issuedAt: offerLetter.issuedAt,
+        currentStatus: statusLabels[enrollStatus] || enrollStatus,
+        enrolledAt: offerLetter.enrollment.enrolledAt,
+        completedAt: offerLetter.enrollment.completedAt,
       },
     });
   }
 
   if (experienceLetter) {
     const prog = experienceLetter.enrollment.batch.program;
+    const enrollStatus = experienceLetter.enrollment.status;
     return NextResponse.json({
       valid: true,
       type: "Experience Certificate",
@@ -77,11 +94,15 @@ export async function GET(request: NextRequest) {
         mode: prog.mode,
         category: experienceLetter.category,
         issuedAt: experienceLetter.issuedAt,
+        currentStatus: statusLabels[enrollStatus] || enrollStatus,
+        enrolledAt: experienceLetter.enrollment.enrolledAt,
+        completedAt: experienceLetter.enrollment.completedAt,
       },
     });
   }
 
   if (certificate) {
+    const enrollStatus = certificate.enrollment.status;
     return NextResponse.json({
       valid: true,
       type: "Certificate",
@@ -91,6 +112,9 @@ export async function GET(request: NextRequest) {
         programName: certificate.programName,
         orgName: certificate.orgName,
         issuedAt: certificate.issueDate,
+        currentStatus: statusLabels[enrollStatus] || enrollStatus,
+        enrolledAt: certificate.enrollment.enrolledAt,
+        completedAt: certificate.enrollment.completedAt,
       },
     });
   }
