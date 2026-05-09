@@ -84,6 +84,13 @@ export default function ProgramsPage() {
     fetchPrograms();
   };
 
+  const deleteProgram = async (id: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete "${title}"? This will also delete all batches, tasks, resources, and quizzes under this program.`)) return;
+    const res = await fetch(`/api/programs/${id}`, { method: "DELETE" });
+    if (res.ok) fetchPrograms();
+    else { const data = await res.json(); alert(data.error || "Failed to delete"); }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -202,9 +209,14 @@ export default function ProgramsPage() {
                     </div>
                   </div>
                   {isAdmin && (
-                    <button onClick={() => togglePublish(program.id, program.isPublished)} className="text-sm text-indigo-600 hover:text-indigo-800">
-                      {program.isPublished ? "Unpublish" : "Publish"}
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => togglePublish(program.id, program.isPublished)} className="text-sm text-indigo-600 hover:text-indigo-800">
+                        {program.isPublished ? "Unpublish" : "Publish"}
+                      </button>
+                      <button onClick={() => deleteProgram(program.id, program.title)} className="text-sm text-red-600 hover:text-red-800">
+                        Delete
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

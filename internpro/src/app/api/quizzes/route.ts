@@ -4,11 +4,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Allow public access — show published quizzes only for non-admin
+  const isAdmin = session && ["admin", "organization", "teamleader"].includes(session.role);
 
   const quizzes = await prisma.quiz.findMany({
-    where: session.role === "student" ? { isPublished: true } : {},
-    include: { questions: { select: { id: true } }, attempts: session.role === "student" ? { where: { userId: session.id } } : { select: { id: true } } },
+    where: isAdmin ? {} : { isPublished: true },
+    include: { questions: { select: { id: true } }, attempts: session ? (isAdmin ? { select: { id: true } } : { where: { userId: session.id } }) : { select: { id: true } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -16,7 +18,7 @@ export async function GET() {
     ...q,
     questionCount: q.questions.length,
     attemptCount: q.attempts.length,
-    myAttempt: session.role === "student" ? q.attempts[0] || null : undefined,
+    myAttempt: session && !isAdmin ? q.attempts[0] || null : undefined,
     questions: undefined,
     attempts: undefined,
   })));

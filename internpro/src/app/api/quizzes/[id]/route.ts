@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
 
   const quiz = await prisma.quiz.findUnique({
@@ -13,9 +12,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   });
   if (!quiz) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // For students, hide correct answers if not attempted
-  if (session.role === "student") {
-    const myAttempt = quiz.attempts.find(a => a.userId === session.id);
+  const isAdmin = session && ["admin", "organization", "teamleader"].includes(session.role);
+
+  // For non-admin (including public/anonymous), hide correct answers
+  if (!isAdmin) {
+    const myAttempt = session ? quiz.attempts.find(a => a.userId === session.id) : null;
     return NextResponse.json({
       ...quiz,
       questions: quiz.questions.map(q => ({ ...q, options: JSON.parse(q.options), correctAnswer: myAttempt ? q.correctAnswer : undefined })),
