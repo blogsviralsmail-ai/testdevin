@@ -16,6 +16,13 @@ function findChrome(): string {
   return CHROME_PATHS[0];
 }
 
+const SITE_URL = "https://internship.kkhsmedia.com";
+
+function resolveLocalPaths(html: string): string {
+  // Convert relative src="/uploads/..." and src="/api/..." to full URLs so Puppeteer can fetch them
+  return html.replace(/src="\/([^"]+)"/g, `src="${SITE_URL}/$1"`);
+}
+
 export async function htmlToPdfBuffer(htmlContent: string): Promise<Buffer> {
   const browser = await puppeteer.launch({
     executablePath: findChrome(),
@@ -26,11 +33,13 @@ export async function htmlToPdfBuffer(htmlContent: string): Promise<Buffer> {
   try {
     const page = await browser.newPage();
 
+    const resolvedContent = resolveLocalPaths(htmlContent);
+
     const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <style>*{margin:0;padding:0;box-sizing:border-box;}@page{size:A4;margin:0;}body{font-family:'Calibri','Segoe UI',Arial,sans-serif;margin:0;padding:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important;}img{max-width:100%;display:inline-block;}</style>
-</head><body><div class="letter-wrap">${htmlContent}</div></body></html>`;
+</head><body><div class="letter-wrap">${resolvedContent}</div></body></html>`;
 
-    await page.setContent(fullHtml, { waitUntil: "networkidle0", timeout: 15000 });
+    await page.setContent(fullHtml, { waitUntil: "networkidle0", timeout: 30000 });
     const pdfUint8 = await page.pdf({ format: "A4", printBackground: true, margin: { top: 0, bottom: 0, left: 0, right: 0 } });
     return Buffer.from(pdfUint8);
   } finally {

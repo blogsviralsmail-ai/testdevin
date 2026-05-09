@@ -166,8 +166,17 @@ async function sendLetterGeneratedNotificationWithAttachment(studentName: string
   const customSubject = sMap[`email_template_${templateKey}_subject`];
   const customBody = sMap[`email_template_${templateKey}_body`];
 
+  const siteUrl = "https://internship.kkhsmedia.com";
+  const logoPath = sMap.letterhead_logo || sMap.company_logo || "/uploads/kkhs-logo.png";
+  const logoFullUrl = logoPath.startsWith("http") ? logoPath : siteUrl + logoPath;
+  const companyNameText = sMap.letterhead_company_name || sMap.company_name || "KKHS Media Private Limited";
+  const logoBlock = `<div style="text-align:center;margin:0 0 20px;padding:16px 0;border-bottom:3px solid #0000AA;">
+<img src="${logoFullUrl}" alt="${companyNameText}" style="height:70px;display:inline-block;object-fit:contain;" />
+<p style="margin:8px 0 0;font-size:18px;font-weight:700;color:#0000AA;letter-spacing:0.5px;">${companyNameText}</p>
+</div>`;
+
   const defaultBodies: Record<string, string> = {
-    offer_letter: `<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}! You have been Selected!</h2>
+    offer_letter: `${logoBlock}<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}! You have been Selected!</h2>
 <p style="color:#4b5563;line-height:1.7;margin:0 0 10px;">We are pleased to inform you that your application has been <strong style="color:#16a34a;">accepted</strong> and your <strong>Offer Letter</strong> has been generated. Please find the Offer Letter attached as a PDF with this email.</p>
 <table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:14px;">
 <tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;color:#374151;width:40%;">Letter Number</td><td style="padding:8px 12px;border:1px solid #e5e7eb;">{{letter_number}}</td></tr>
@@ -180,14 +189,14 @@ async function sendLetterGeneratedNotificationWithAttachment(studentName: string
 <p style="color:#b91c1c;font-weight:600;line-height:1.6;margin:10px 0 6px;">Important: Please sign the attached Offer Letter and return a signed copy within 7 days.</p>
 <p style="color:#4b5563;line-height:1.6;margin:0 0 6px;">You can also view and download the Offer Letter from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>.</p>
 <p style="color:#4b5563;line-height:1.6;">Your Employee ID Card has been generated and sent in a separate email. Please report on the joining date with the required documents.</p>`,
-    experience_letter: `<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}!</h2>
+    experience_letter: `${logoBlock}<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}!</h2>
 <p style="color:#4b5563;line-height:1.7;">You have successfully completed your internship and your <strong>Experience Letter</strong> has been generated. Please find it attached as a PDF.</p>
 <p style="color:#4b5563;">Letter Number: <strong>{{letter_number}}</strong></p>
 <p style="color:#4b5563;">View and download from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>. We wish you all the best!</p>`,
-    internship_certificate: `<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}!</h2>
+    internship_certificate: `${logoBlock}<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}!</h2>
 <p style="color:#4b5563;line-height:1.7;">Your <strong>Internship Certificate</strong> has been generated. Please find it attached as a PDF.</p>
 <p style="color:#4b5563;">View and download from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>.</p>`,
-    id_card: `<h2 style="color:#1f2937;margin:0 0 12px;">Welcome aboard, {{student_name}}!</h2>
+    id_card: `${logoBlock}<h2 style="color:#1f2937;margin:0 0 12px;">Welcome aboard, {{student_name}}!</h2>
 <p style="color:#4b5563;line-height:1.7;">Your <strong>Employee ID Card</strong> has been generated. Please find it attached as a PDF.</p>
 <p style="color:#4b5563;">View and download from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>. Please carry this ID card during your internship period.</p>`,
   };
