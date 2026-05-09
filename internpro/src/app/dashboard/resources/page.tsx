@@ -43,6 +43,7 @@ export default function ResourcesPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ batchId: "", title: "", type: "video", url: "", fileUrl: "", dayNumber: "", order: "0" });
   const [fileUploading, setFileUploading] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
 
   const fetchData = useCallback(async () => {
     const [resRes, batchesRes, meRes] = await Promise.all([
@@ -79,10 +80,13 @@ export default function ResourcesPage() {
 
   const isStudent = user?.role === "student";
 
+  // Filter resources by selected batch/course
+  const filteredResources = selectedBatchId === "all" ? resources : resources.filter(r => r.batchId === selectedBatchId);
+
   // Group resources by day number
   const dayGroups: Record<string, Resource[]> = {};
   const generalResources: Resource[] = [];
-  resources.forEach((r) => {
+  filteredResources.forEach((r) => {
     if (r.dayNumber) {
       const key = `Day ${r.dayNumber}`;
       if (!dayGroups[key]) dayGroups[key] = [];
@@ -117,6 +121,33 @@ export default function ResourcesPage() {
           </button>
         )}
       </div>
+
+      {/* Course/Program Filter */}
+      {batches.length > 1 && (
+        <div className="bg-white rounded-xl border p-4 mb-6">
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="text-sm font-medium text-gray-700">Filter by Course:</label>
+            <select
+              value={selectedBatchId}
+              onChange={(e) => setSelectedBatchId(e.target.value)}
+              className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]"
+            >
+              <option value="all">All Courses ({resources.length} resources)</option>
+              {batches.map((b) => {
+                const count = resources.filter(r => r.batchId === b.id).length;
+                return (
+                  <option key={b.id} value={b.id}>{b.program.title} — {b.name} ({count})</option>
+                );
+              })}
+            </select>
+            {selectedBatchId !== "all" && (
+              <button onClick={() => setSelectedBatchId("all")} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                Clear Filter
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Info Banner for Students */}
       {isStudent && (
@@ -189,7 +220,7 @@ export default function ResourcesPage() {
         </form>
       )}
 
-      {resources.length === 0 ? (
+      {filteredResources.length === 0 ? (
         <div className="bg-white rounded-xl p-12 border text-center">
           <p className="text-4xl mb-4">🎥</p>
           <p className="text-gray-600">{isStudent ? "No study materials available yet." : "No resources yet. Add pre-recorded videos and study materials."}</p>
