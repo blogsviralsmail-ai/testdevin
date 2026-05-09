@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="description" content="Bainsla Music - India's No.1 Rajasthani Rasiya Music Label. Immersive 3D experience." />
+  <meta name="theme-color" content="#0a0a1a" />
+  <title>Bainsla Music | 3D Immersive Experience</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/main.css" />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loader">
+    <div class="loader-inner">
+      <div class="loader-ring">
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+      </div>
+      <div class="loader-logo">
+        <span class="logo-text">BAINSLA</span>
+        <span class="logo-sub">MUSIC</span>
+      </div>
+      <div class="loader-progress">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <p class="loader-status" id="loader-status">Initializing 3D Experience...</p>
+    </div>
+  </div>
+
+  <!-- 3D Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Navigation -->
+  <nav id="main-nav">
+    <div class="nav-logo">
+      <span class="nav-logo-text">BAINSLA</span>
+      <span class="nav-logo-sub">MUSIC</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#home" class="nav-link active" data-section="0">Home</a></li>
+      <li><a href="#about" class="nav-link" data-section="1">About</a></li>
+      <li><a href="#services" class="nav-link" data-section="2">Services</a></li>
+      <li><a href="#videos" class="nav-link" data-section="3">Videos</a></li>
+      <li><a href="#contact" class="nav-link" data-section="4">Contact</a></li>
+    </ul>
+    <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Section Overlays -->
+  <div id="overlay-container">
+    <!-- Home Overlay -->
+    <div class="section-overlay active" id="section-home">
+      <div class="overlay-content home-content">
+        <h1 class="glitch-text" data-text="BAINSLA MUSIC">BAINSLA MUSIC</h1>
+        <p class="tagline">India's No.1 Rajasthani Rasiya Music Label</p>
+        <p class="subtitle">"Music can change the world" - Bringing Rajasthan's rich musical heritage to the globe</p>
+        <div class="cta-group">
+          <button class="btn-primary" data-navigate="2">Our Services</button>
+          <button class="btn-secondary" data-navigate="3">Watch Videos</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- About Overlay -->
+    <div class="section-overlay" id="section-about">
+      <div class="overlay-content about-content">
+        <h2 class="section-title">About Us</h2>
+        <div class="about-grid">
+          <div class="about-text">
+            <p>"Bainsla Music" is a distinguished music production company rooted in the vibrant culture of Rajasthan, India. Specializing in the traditional Rajasthani genre of 'Rasiya' songs, our company has been dedicated to preserving and promoting the rich musical heritage of Rajasthan for the past 9 years.</p>
+            <p>Under the visionary leadership of directors Ajeet Bainsla and Aman Bainsla, our company has carved a unique niche in the music industry. We strive to blend the old with the new, ensuring that the soulful melodies of Rasiya songs continue to captivate audiences globally.</p>
+          </div>
+          <div class="team-grid">
+            <h3>Our Directors</h3>
+            <div class="team-cards">
+              <div class="team-card">
+                <div class="card-glow"></div>
+                <h4>Ajeet Bainsla</h4>
+                <span>Founder &amp; Director</span>
+              </div>
+              <div class="team-card">
+                <div class="card-glow"></div>
+                <h4>Shivlal Bainsla</h4>
+                <span>Director</span>
+              </div>
+              <div class="team-card">
+                <div class="card-glow"></div>
+                <h4>Aman Bainsla</h4>
+                <span>Director</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services Overlay -->
+    <div class="section-overlay" id="section-services">
+      <div class="overlay-content services-content">
+        <h2 class="section-title">Our Services</h2>
+        <div class="services-grid">
+          <div class="service-card" data-service="youtube">
+            <div class="service-icon">&#127909;</div>
+            <h3>YouTube CMS/MCN Services</h3>
+            <p>Complete and fastest solution focused on your project's YouTube growth and management.</p>
+          </div>
+          <div class="service-card" data-service="channel">
+            <div class="service-icon">&#128200;</div>
+            <h3>Channel Promotion &amp; Management</h3>
+            <p>Customer focused solutions providing the best business outcomes for channel growth.</p>
+          </div>
+          <div class="service-card" data-service="audio">
+            <div class="service-icon">&#127926;</div>
+            <h3>Audio Video Distribution</h3>
+            <p>Our success rate of almost 100% ensures the goal of any type of business distribution.</p>
+          </div>
+          <div class="service-card" data-service="social">
+            <div class="service-icon">&#128241;</div>
+            <h3>Social Media Management</h3>
+            <p>Complete solution focused on building and managing your social media presence.</p>
+          </div>
+          <div class="service-card" data-service="tunes">
+            <div class="service-icon">&#127925;</div>
+            <h3>Caller Tunes</h3>
+            <p>Complete caller tune distribution and management services for your music.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Videos Overlay -->
+    <div class="section-overlay" id="section-videos">
+      <div class="overlay-content videos-content">
+        <h2 class="section-title">Our Videos</h2>
+        <p class="videos-subtitle">Watch our latest Rajasthani Rasiya music videos</p>
+        <div class="videos-grid" id="videos-grid">
+          <!-- Videos populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Overlay -->
+    <div class="section-overlay" id="section-contact">
+      <div class="overlay-content contact-content">
+        <h2 class="section-title">Contact Us</h2>
+        <div class="contact-grid">
+          <div class="contact-info">
+            <p>Stay connected with us for the latest updates, releases, and behind-the-scenes glimpses of our music production journey.</p>
+            <div class="contact-item">
+              <span class="contact-icon">&#128205;</span>
+              <div>
+                <h4>Address</h4>
+                <p>59A Chanchan Nagar, Gokulpura, Jhotwara, Jaipur-302012, Rajasthan, India</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <span class="contact-icon">&#128222;</span>
+              <div>
+                <h4>Phone</h4>
+                <a href="tel:+91-8696761606">+91 8696761606</a>
+              </div>
+            </div>
+            <div class="contact-item">
+              <span class="contact-icon">&#9993;</span>
+              <div>
+                <h4>Email</h4>
+                <a href="mailto:ajeet@bainslamusic.com">ajeet@bainslamusic.com</a>
+              </div>
+            </div>
+          </div>
+          <form class="contact-form" id="contact-form">
+            <h3>Send Message</h3>
+            <div class="form-group">
+              <input type="text" id="form-name" placeholder="Full Name" required />
+            </div>
+            <div class="form-group">
+              <input type="email" id="form-email" placeholder="Email Address" required />
+            </div>
+            <div class="form-group">
+              <textarea id="form-message" placeholder="Your Message..." rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn-primary">Send Message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Visualizer Bar -->
+  <div id="audio-visualizer">
+    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+  </div>
+
+  <!-- Section Indicator -->
+  <div id="section-dots">
+    <div class="dot active" data-section="0"></div>
+    <div class="dot" data-section="1"></div>
+    <div class="dot" data-section="2"></div>
+    <div class="dot" data-section="3"></div>
+    <div class="dot" data-section="4"></div>
+  </div>
+
+  <!-- Scroll Hint -->
+  <div id="scroll-hint">
+    <div class="mouse">
+      <div class="wheel"></div>
+    </div>
+    <p>Scroll to explore</p>
+  </div>
+
+  <!-- Footer -->
+  <footer id="main-footer">
+    <p>&copy; 2026 Bainsla Music. All rights reserved. | Let's keep the tradition of Rajasthani Rasiya music alive!</p>
+  </footer>
+
+  <!-- Video Modal -->
+  <div id="video-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <div id="video-player"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

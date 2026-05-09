@@ -1,0 +1,17 @@
+{
+  "name": "Bainsla Music - 3D Experience",
+  "short_name": "Bainsla Music",
+  "description": "India's No.1 Rajasthani Rasiya Music Label - Immersive 3D Experience",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0a0a1a",
+  "theme_color": "#0a0a1a",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
