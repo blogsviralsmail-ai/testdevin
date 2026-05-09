@@ -221,9 +221,9 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
       });
     });
 
-    // Send email notification (non-blocking)
+    // Send email notification with PDF attachment (non-blocking)
     const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
-    if (student) sendLetterGeneratedEmail(student.name, student.email, "Experience Letter", letter.letterNumber).catch(() => {});
+    if (student) sendLetterGeneratedEmail(student.name, student.email, "Experience Letter", letter.letterNumber, letter.htmlContent || undefined).catch(() => {});
 
     return NextResponse.json(letter, { status: 201 });
   } catch (error: unknown) {

@@ -23,7 +23,19 @@ export async function POST(request: NextRequest) {
   <div class="letter-wrap">${htmlContent}</div>
   </body></html>`;
 
-  const sent = await sendEmail({ to: email, subject, html: emailHtml });
+  // Generate PDF attachment from the document HTML
+  let attachments: { filename: string; content: Buffer; contentType?: string }[] | undefined;
+  try {
+    const { htmlToPdfBuffer } = await import("@/lib/pdf");
+    const pdfBuffer = await htmlToPdfBuffer(htmlContent);
+    const safeFilename = subject.replace(/[^a-zA-Z0-9\s\-_]/g, "").replace(/\s+/g, "_").substring(0, 60);
+    attachments = [{ filename: `${safeFilename}.pdf`, content: pdfBuffer }];
+  } catch (err) {
+    console.error("PDF attachment generation failed:", err);
+    // Continue sending email without attachment
+  }
+
+  const sent = await sendEmail({ to: email, subject, html: emailHtml, attachments });
   if (sent) {
     return NextResponse.json({ success: true });
   }
