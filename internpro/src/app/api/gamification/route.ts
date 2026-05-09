@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendLeaderboardEmail } from "@/lib/email";
 
 // GET - Leaderboard + user points/badges
 export async function GET(request: NextRequest) {
@@ -78,6 +79,15 @@ export async function POST(request: NextRequest) {
   const point = await prisma.gamificationPoint.create({
     data: { userId, points, reason, category: category || "bonus" },
   });
+
+  // Send leaderboard email to user (non-blocking)
+  const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+  const totalPts = await prisma.gamificationPoint.aggregate({ where: { userId }, _sum: { points: true } });
+  const allRanked = await prisma.gamificationPoint.groupBy({ by: ["userId"], _sum: { points: true }, orderBy: { _sum: { points: "desc" } } });
+  const userRank = allRanked.findIndex(r => r.userId === userId) + 1;
+  if (targetUser?.email) {
+    sendLeaderboardEmail(targetUser.name, targetUser.email, points, userRank || 1, reason).catch(() => {});
+  }
 
   // Check badge eligibility
   const totalPoints = await prisma.gamificationPoint.aggregate({

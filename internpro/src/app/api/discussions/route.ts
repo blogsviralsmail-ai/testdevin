@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendDiscussionEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -45,6 +46,16 @@ export async function POST(request: NextRequest) {
   const discussion = await prisma.discussion.create({
     data: { title, content, authorId: session.id, programId, batchId, category: category || "doubt" },
   });
+
+  // Email all students in the batch/program about new discussion (non-blocking)
+  if (batchId || programId) {
+    const enrollWhere: Record<string, unknown> = { status: { in: ["selected", "active"] } };
+    if (batchId) enrollWhere.batchId = batchId;
+    const enrollments = await prisma.enrollment.findMany({ where: enrollWhere, select: { student: { select: { name: true, email: true } } } });
+    for (const e of enrollments) {
+      if (e.student.email) sendDiscussionEmail(e.student.name, e.student.email, title, "New Discussion Posted").catch(() => {});
+    }
+  }
 
   return NextResponse.json(discussion, { status: 201 });
 }

@@ -118,6 +118,12 @@ export default function SettingsPage() {
     { key: "experience_letter", label: "Experience Letter", desc: "Course complete hone pe experience letter generate hone pe ye email jaata hai" },
     { key: "internship_certificate", label: "Internship Certificate", desc: "Internship certificate generate hone pe ye email jaata hai" },
     { key: "id_card", label: "ID Card", desc: "ID card generate hone pe ye email jaata hai" },
+    { key: "daily_attendance", label: "Daily Attendance", desc: "Jab student ki attendance mark hoti hai tab ye email jaata hai" },
+    { key: "video_unlock", label: "Video/Resource Unlock", desc: "Jab naya video ya study material unlock hota hai tab ye email jaata hai" },
+    { key: "quiz_attempt", label: "Quiz Result", desc: "Jab student quiz attempt karta hai tab result ka email jaata hai" },
+    { key: "discussion_post", label: "Discussion Post/Reply", desc: "Jab discussion mein naya post ya reply hota hai tab ye email jaata hai" },
+    { key: "live_session", label: "Live Session Scheduled", desc: "Jab naya live session schedule hota hai tab ye email jaata hai" },
+    { key: "leaderboard_update", label: "Leaderboard Update", desc: "Jab student ko points milte hain aur leaderboard update hota hai tab ye email jaata hai" },
   ];
 
   const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
@@ -165,6 +171,85 @@ export default function SettingsPage() {
 </div>
 <p style="color:#6b7280;font-size:13px;margin-top:24px;">Best Regards,<br/>{{company_name}}<br/>{{company_phone}} | {{company_email}}</p>`,
     },
+    daily_attendance: {
+      subject: "Attendance Marked — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your attendance has been marked as <strong style="color:#059669;">{{attendance_status}}</strong> for <strong>{{attendance_date}}</strong>.</p>
+<p style="color:#4b5563;line-height:1.6;">Keep up the great work! Check your progress on the dashboard.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/attendance" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Attendance</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    },
+    video_unlock: {
+      subject: "New Study Material Unlocked — Day {{day_number}} — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">A new study material has been unlocked for you!</p>
+<div style="background:#f0f9ff;border-left:4px solid #3b82f6;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;color:#1e40af;font-weight:600;">Day {{day_number}}: {{video_title}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Watch the video and complete today's task to stay on track.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/resources" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Watch Now</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    },
+    quiz_attempt: {
+      subject: "Quiz Result — {{quiz_title}} — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your quiz result for <strong>{{quiz_title}}</strong> is here:</p>
+<div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;font-size:24px;font-weight:700;color:#15803d;">{{quiz_score}}%</p>
+  <p style="margin:4px 0 0;color:#166534;font-weight:600;">{{quiz_result}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Keep learning and improving!</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/quizzes" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Quizzes</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    },
+    discussion_post: {
+      subject: "Discussion {{discussion_action}} — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">A discussion has been {{discussion_action}}:</p>
+<div style="background:#faf5ff;border-left:4px solid #8b5cf6;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;color:#6d28d9;font-weight:600;">{{discussion_title}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Join the discussion and share your thoughts!</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/discussions" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Discussion</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    },
+    live_session: {
+      subject: "Live Session Scheduled — {{session_title}} — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">A new live session has been scheduled for you!</p>
+<div style="background:#fff7ed;border-left:4px solid #f97316;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;color:#c2410c;font-weight:600;">{{session_title}}</p>
+  <p style="margin:8px 0 0;color:#9a3412;">Scheduled: {{session_time}}</p>
+</div>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{meet_link}}" style="background:#059669;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Join Session</a>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Make sure to join on time!</p>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    },
+    leaderboard_update: {
+      subject: "Leaderboard Update — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your leaderboard has been updated!</p>
+<div style="background:#fefce8;border-left:4px solid #eab308;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;font-size:20px;font-weight:700;color:#a16207;">+{{points_earned}} Points</p>
+  <p style="margin:4px 0 0;color:#854d0e;">Reason: {{points_reason}}</p>
+  <p style="margin:8px 0 0;color:#92400e;font-weight:600;">Current Rank: #{{current_rank}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Keep earning points to climb the leaderboard!</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/leaderboard" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Leaderboard</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    },
   };
 
   const getTemplateSubject = (key: string) => settings[`email_template_${key}_subject`] || DEFAULT_TEMPLATES[key]?.subject || "";
@@ -178,9 +263,25 @@ export default function SettingsPage() {
       "{{company_email}}": settings.letterhead_email || settings.smtp_from || "hari@kkhsmedia.com",
       "{{company_phone}}": settings.letterhead_phone || "9782005500",
       "{{company_address}}": settings.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur",
-      "{{dashboard_link}}": "https://internship.kkhsmedia.com/dashboard/letters",
+      "{{dashboard_link}}": "https://internship.kkhsmedia.com/dashboard",
       "{{date}}": new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
+      "{{time}}": new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
       "{{letter_number}}": "KKHS/HR/2026-05/001",
+      "{{attendance_status}}": "Present",
+      "{{attendance_date}}": new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
+      "{{video_title}}": "Introduction to HTML Tags",
+      "{{day_number}}": "5",
+      "{{quiz_title}}": "HTML Basics Quiz",
+      "{{quiz_score}}": "85",
+      "{{quiz_result}}": "PASSED",
+      "{{discussion_title}}": "How to center a div in CSS?",
+      "{{discussion_action}}": "New Reply on Your Discussion",
+      "{{session_title}}": "Weekly Doubt Clearing Session",
+      "{{session_time}}": "10 May 2026, 04:00 PM",
+      "{{meet_link}}": "https://meet.google.com/abc-defg-hij",
+      "{{points_earned}}": "25",
+      "{{current_rank}}": "3",
+      "{{points_reason}}": "Quiz passed: HTML Basics",
     };
     let result = html;
     for (const [key, value] of Object.entries(replacements)) {
@@ -474,35 +575,28 @@ export default function SettingsPage() {
           <div className="space-y-6">
             {/* When emails are sent */}
             <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
-              <h3 className="text-sm font-semibold text-blue-800 mb-3">Email kab jayegi?</h3>
-              <div className="space-y-2 text-xs text-blue-700">
-                <div className="flex items-start gap-2">
-                  <span className="text-green-600 font-bold mt-0.5">JAYEGI:</span>
-                  <ul className="space-y-1">
-                    <li>Student register kare — Welcome Email</li>
-                    <li>Student login kare — Login Notification</li>
-                    <li>Admin student ko <strong>Select/Reject/Interview</strong> kare — Status Change Email</li>
-                    <li>Offer Letter generate ho — Offer Letter Email</li>
-                    <li>Experience Letter generate ho — Experience Letter Email</li>
-                    <li>Internship Certificate generate ho — Certificate Email</li>
-                    <li>ID Card generate ho — ID Card Email</li>
-                    <li>Student task submit kare aur admin review kare — Task Reviewed Email</li>
-                    <li>Student document upload kare — Admin ko notification email</li>
-                    <li>Password reset kare — Reset Link Email</li>
-                  </ul>
-                </div>
-                <div className="flex items-start gap-2 mt-3">
-                  <span className="text-red-600 font-bold mt-0.5">NAHI JAYEGI:</span>
-                  <ul className="space-y-1">
-                    <li>SMTP settings configure nahi hai toh koi bhi email nahi jayegi</li>
-                    <li>Daily attendance mark hone pe — koi email nahi</li>
-                    <li>Naya video/resource unlock hone pe — koi email nahi</li>
-                    <li>Quiz attempt karne pe — koi email nahi</li>
-                    <li>Discussion forum pe post/reply pe — koi email nahi</li>
-                    <li>Live session schedule hone pe — koi email nahi (in-app notification only)</li>
-                    <li>Leaderboard update pe — koi email nahi</li>
-                  </ul>
-                </div>
+              <h3 className="text-sm font-semibold text-blue-800 mb-3">Email kab kab jayegi?</h3>
+              <div className="text-xs text-blue-700">
+                <p className="font-semibold text-green-700 mb-2">HAR EVENT PE EMAIL JAYEGI (SMTP configure hona chahiye):</p>
+                <ul className="space-y-1 mb-3">
+                  <li>Student <strong>register</strong> kare — Welcome Email</li>
+                  <li>Student <strong>login</strong> kare — Login Notification</li>
+                  <li>Admin student ko <strong>Select/Reject/Interview</strong> kare — Status Change Email</li>
+                  <li>Offer Letter generate ho — <strong>Offer Letter Email</strong> (neeche template edit karo)</li>
+                  <li>Experience Letter generate ho — <strong>Experience Letter Email</strong></li>
+                  <li>Internship Certificate generate ho — <strong>Certificate Email</strong></li>
+                  <li>ID Card generate ho — <strong>ID Card Email</strong></li>
+                  <li>Student ki <strong>attendance</strong> mark ho — Attendance Confirmation Email</li>
+                  <li>Naya <strong>video/resource unlock</strong> ho — Video Unlock Email</li>
+                  <li><strong>Quiz attempt</strong> kare — Quiz Result Email (score + pass/fail)</li>
+                  <li><strong>Discussion</strong> me naya post ya reply ho — Discussion Notification Email</li>
+                  <li>Naya <strong>live session schedule</strong> ho — Live Session Email (join link ke saath)</li>
+                  <li><strong>Leaderboard points</strong> milein — Points Update Email</li>
+                  <li>Student <strong>task submit</strong> kare aur admin review kare — Task Reviewed Email</li>
+                  <li>Student <strong>document upload</strong> kare — Admin ko notification email</li>
+                  <li><strong>Password reset</strong> kare — Reset Link Email</li>
+                </ul>
+                <p className="text-red-600 font-semibold">Note: Agar SMTP settings configure nahi hain toh koi bhi email nahi jayegi!</p>
               </div>
             </div>
 
@@ -559,10 +653,20 @@ export default function SettingsPage() {
             {/* Email Templates */}
             <div className="bg-white rounded-xl p-6 border">
               <h2 className="text-lg font-semibold text-gray-900 mb-2">Email Templates</h2>
-              <p className="text-sm text-gray-500 mb-4">Jab letter/certificate generate hota hai tab student ko ye email jaata hai. Subject aur body customize kar sakte ho.</p>
-              <p className="text-xs text-gray-400 mb-4">
-                Variables use karo: <code className="bg-gray-100 px-1 rounded">{"{{student_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_type}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_phone}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_email}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{dashboard_link}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{date}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_number}}"}</code>
-              </p>
+              <p className="text-sm text-gray-500 mb-2">Har event pe student ko styled email jaata hai. Subject aur body customize kar sakte ho.</p>
+              <details className="mb-4">
+                <summary className="text-xs text-indigo-600 cursor-pointer font-medium">Variables list dekho (click karo)</summary>
+                <div className="mt-2 text-xs text-gray-500 space-y-1">
+                  <p><strong>Common:</strong> <code className="bg-gray-100 px-1 rounded">{"{{student_name}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_name}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_phone}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_email}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{dashboard_link}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{date}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{time}}"}</code></p>
+                  <p><strong>Letters:</strong> <code className="bg-gray-100 px-1 rounded">{"{{letter_type}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{letter_number}}"}</code></p>
+                  <p><strong>Attendance:</strong> <code className="bg-gray-100 px-1 rounded">{"{{attendance_status}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{attendance_date}}"}</code></p>
+                  <p><strong>Video:</strong> <code className="bg-gray-100 px-1 rounded">{"{{video_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{day_number}}"}</code></p>
+                  <p><strong>Quiz:</strong> <code className="bg-gray-100 px-1 rounded">{"{{quiz_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{quiz_score}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{quiz_result}}"}</code></p>
+                  <p><strong>Discussion:</strong> <code className="bg-gray-100 px-1 rounded">{"{{discussion_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{discussion_action}}"}</code></p>
+                  <p><strong>Live Session:</strong> <code className="bg-gray-100 px-1 rounded">{"{{session_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{session_time}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{meet_link}}"}</code></p>
+                  <p><strong>Leaderboard:</strong> <code className="bg-gray-100 px-1 rounded">{"{{points_earned}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{current_rank}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{points_reason}}"}</code></p>
+                </div>
+              </details>
               <div className="space-y-3">
                 {EMAIL_TEMPLATES.map((tpl) => (
                   <div key={tpl.key} className="border rounded-lg p-4">

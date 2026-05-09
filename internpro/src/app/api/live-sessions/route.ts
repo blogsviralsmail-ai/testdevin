@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendLiveSessionEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -45,6 +46,19 @@ export async function POST(request: NextRequest) {
   const liveSession = await prisma.liveSession.create({
     data: { title, description, programId, batchId, hostId: session.id, meetLink, platform: platform || "google_meet", scheduledAt: new Date(scheduledAt), duration: duration || 60 },
   });
+
+  // Email all students in the batch/program about new live session (non-blocking)
+  const enrollWhere: Record<string, unknown> = { status: { in: ["selected", "active"] } };
+  if (batchId) enrollWhere.batchId = batchId;
+  else if (programId) {
+    const batches = await prisma.batch.findMany({ where: { programId }, select: { id: true } });
+    enrollWhere.batchId = { in: batches.map(b => b.id) };
+  }
+  const enrollments = await prisma.enrollment.findMany({ where: enrollWhere, select: { student: { select: { name: true, email: true } } } });
+  const schedStr = new Date(scheduledAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  for (const e of enrollments) {
+    if (e.student.email) sendLiveSessionEmail(e.student.name, e.student.email, title, schedStr, meetLink || "").catch(() => {});
+  }
 
   return NextResponse.json(liveSession, { status: 201 });
 }

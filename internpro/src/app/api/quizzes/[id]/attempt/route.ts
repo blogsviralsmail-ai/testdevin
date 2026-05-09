@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendQuizAttemptEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -37,6 +38,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (passed) {
       await prisma.gamificationPoint.create({ data: { userId: session.id, points: Math.round(percentage / 2), reason: `Quiz passed: ${quiz.title}`, category: "quiz" } });
+    }
+
+    // Send quiz result email (non-blocking)
+    const user = await prisma.user.findUnique({ where: { id: session.id }, select: { name: true, email: true } });
+    if (user?.email) {
+      sendQuizAttemptEmail(user.name, user.email, quiz.title, percentage, passed).catch(() => {});
     }
 
     return NextResponse.json({ ...attempt, score: percentage, passed });

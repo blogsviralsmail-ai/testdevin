@@ -129,6 +129,149 @@ function getTemplateKey(letterType: string): string {
   return map[letterType] || letterType.toLowerCase().replace(/\s+/g, "_");
 }
 
+// Generic templated email sender — reads custom template from settings, falls back to default
+export async function sendTemplatedNotification(
+  templateKey: string,
+  toEmail: string,
+  defaultSubject: string,
+  defaultBody: string,
+  variables: Record<string, string>,
+): Promise<boolean> {
+  const settings = await prisma.setting.findMany();
+  const sMap: Record<string, string> = {};
+  for (const s of settings) sMap[s.key] = s.value;
+
+  let subject = sMap[`email_template_${templateKey}_subject`] || defaultSubject;
+  let body = sMap[`email_template_${templateKey}_body`] || defaultBody;
+
+  const allVars: Record<string, string> = {
+    "{{company_name}}": sMap.company_name || sMap.letterhead_company_name || "KKHS Media Private Limited",
+    "{{company_email}}": sMap.letterhead_email || sMap.smtp_from || "hari@kkhsmedia.com",
+    "{{company_phone}}": sMap.letterhead_phone || "9782005500",
+    "{{company_address}}": sMap.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur",
+    "{{dashboard_link}}": "https://internship.kkhsmedia.com/dashboard",
+    "{{date}}": new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
+    "{{time}}": new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }),
+    ...variables,
+  };
+
+  for (const [key, value] of Object.entries(allVars)) {
+    subject = subject.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
+    body = body.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
+  }
+
+  return sendEmail({ to: toEmail, subject, html: body });
+}
+
+// ---- Attendance Email ----
+export async function sendAttendanceEmail(studentName: string, studentEmail: string, status: string, date: string): Promise<boolean> {
+  return sendTemplatedNotification("daily_attendance", studentEmail,
+    "Attendance Marked — {{company_name}}",
+    `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your attendance has been marked as <strong style="color:#059669;">{{attendance_status}}</strong> for <strong>{{attendance_date}}</strong>.</p>
+<p style="color:#4b5563;line-height:1.6;">Keep up the great work! Check your progress on the dashboard.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/attendance" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Attendance</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    { "{{student_name}}": studentName, "{{attendance_status}}": status, "{{attendance_date}}": date },
+  );
+}
+
+// ---- New Video/Resource Unlocked Email ----
+export async function sendVideoUnlockedEmail(studentName: string, studentEmail: string, videoTitle: string, dayNumber: number): Promise<boolean> {
+  return sendTemplatedNotification("video_unlock", studentEmail,
+    "New Study Material Unlocked — Day {{day_number}} — {{company_name}}",
+    `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">A new study material has been unlocked for you!</p>
+<div style="background:#f0f9ff;border-left:4px solid #3b82f6;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;color:#1e40af;font-weight:600;">Day {{day_number}}: {{video_title}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Watch the video and complete today's task to stay on track.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/resources" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Watch Now</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    { "{{student_name}}": studentName, "{{video_title}}": videoTitle, "{{day_number}}": String(dayNumber) },
+  );
+}
+
+// ---- Quiz Attempt Email ----
+export async function sendQuizAttemptEmail(studentName: string, studentEmail: string, quizTitle: string, score: number, passed: boolean): Promise<boolean> {
+  return sendTemplatedNotification("quiz_attempt", studentEmail,
+    passed ? "Quiz Passed — {{quiz_title}} — {{company_name}}" : "Quiz Result — {{quiz_title}} — {{company_name}}",
+    `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your quiz result for <strong>{{quiz_title}}</strong> is here:</p>
+<div style="background:${passed ? "#f0fdf4" : "#fef2f2"};border-left:4px solid ${passed ? "#22c55e" : "#ef4444"};padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;font-size:24px;font-weight:700;color:${passed ? "#15803d" : "#dc2626"};">{{quiz_score}}%</p>
+  <p style="margin:4px 0 0;color:${passed ? "#166534" : "#991b1b"};font-weight:600;">{{quiz_result}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">${passed ? "Congratulations! Keep learning and improving." : "Don't worry — review the material and try again!"}</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/quizzes" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Quizzes</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    { "{{student_name}}": studentName, "{{quiz_title}}": quizTitle, "{{quiz_score}}": String(Math.round(score)), "{{quiz_result}}": passed ? "PASSED" : "NOT PASSED" },
+  );
+}
+
+// ---- Discussion Post Email ----
+export async function sendDiscussionEmail(studentName: string, studentEmail: string, discussionTitle: string, action: string): Promise<boolean> {
+  return sendTemplatedNotification("discussion_post", studentEmail,
+    "Discussion {{discussion_action}} — {{company_name}}",
+    `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">A discussion has been {{discussion_action}}:</p>
+<div style="background:#faf5ff;border-left:4px solid #8b5cf6;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;color:#6d28d9;font-weight:600;">{{discussion_title}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Join the discussion and share your thoughts!</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/discussions" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Discussion</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    { "{{student_name}}": studentName, "{{discussion_title}}": discussionTitle, "{{discussion_action}}": action },
+  );
+}
+
+// ---- Live Session Scheduled Email ----
+export async function sendLiveSessionEmail(studentName: string, studentEmail: string, sessionTitle: string, scheduledAt: string, meetLink: string): Promise<boolean> {
+  return sendTemplatedNotification("live_session", studentEmail,
+    "Live Session Scheduled — {{session_title}} — {{company_name}}",
+    `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">A new live session has been scheduled for you!</p>
+<div style="background:#fff7ed;border-left:4px solid #f97316;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;color:#c2410c;font-weight:600;">{{session_title}}</p>
+  <p style="margin:8px 0 0;color:#9a3412;">Scheduled: {{session_time}}</p>
+</div>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{meet_link}}" style="background:#059669;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Join Session</a>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Make sure to join on time. You can also find the link on your dashboard.</p>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    { "{{student_name}}": studentName, "{{session_title}}": sessionTitle, "{{session_time}}": scheduledAt, "{{meet_link}}": meetLink || "{{dashboard_link}}/live-sessions" },
+  );
+}
+
+// ---- Leaderboard Update Email ----
+export async function sendLeaderboardEmail(studentName: string, studentEmail: string, points: number, rank: number, reason: string): Promise<boolean> {
+  return sendTemplatedNotification("leaderboard_update", studentEmail,
+    "Leaderboard Update — {{company_name}}",
+    `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your leaderboard has been updated!</p>
+<div style="background:#fefce8;border-left:4px solid #eab308;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+  <p style="margin:0;font-size:20px;font-weight:700;color:#a16207;">+{{points_earned}} Points</p>
+  <p style="margin:4px 0 0;color:#854d0e;">Reason: {{points_reason}}</p>
+  <p style="margin:8px 0 0;color:#92400e;font-weight:600;">Current Rank: #{{current_rank}}</p>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Keep earning points to climb the leaderboard!</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}/leaderboard" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Leaderboard</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">{{company_name}} | {{company_phone}}</p>`,
+    { "{{student_name}}": studentName, "{{points_earned}}": String(points), "{{current_rank}}": String(rank), "{{points_reason}}": reason },
+  );
+}
+
 export async function sendPasswordResetEmail(name: string, email: string, token: string, baseUrl: string): Promise<boolean> {
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
   return sendEmail({

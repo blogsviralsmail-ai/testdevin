@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { sendAttendanceEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -98,6 +99,13 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
       },
     });
+
+    // Send attendance email to student (non-blocking)
+    const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
+    if (student?.email) {
+      const dateStr = attendanceDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+      sendAttendanceEmail(student.name, student.email, attendance.status, dateStr).catch(() => {});
+    }
 
     return NextResponse.json(attendance, { status: 201 });
   } catch (error: unknown) {

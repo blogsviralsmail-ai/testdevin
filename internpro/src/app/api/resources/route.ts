@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { calculateWorkingDay } from "@/lib/utils";
+import { sendVideoUnlockedEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -71,6 +72,20 @@ export async function POST(request: NextRequest) {
         order: parseInt(order || "0"),
       },
     });
+
+    // Notify students in the batch about new resource (non-blocking)
+    if (dayNumber) {
+      const enrollments = await prisma.enrollment.findMany({
+        where: { batchId, status: { in: ["selected", "active"] } },
+        select: { student: { select: { name: true, email: true } }, joiningDate: true },
+      });
+      for (const e of enrollments) {
+        const currentDay = e.joiningDate ? calculateWorkingDay(e.joiningDate) : 999;
+        if (parseInt(dayNumber) <= currentDay && e.student.email) {
+          sendVideoUnlockedEmail(e.student.name, e.student.email, title, parseInt(dayNumber)).catch(() => {});
+        }
+      }
+    }
 
     return NextResponse.json(resource, { status: 201 });
   } catch (error: unknown) {
