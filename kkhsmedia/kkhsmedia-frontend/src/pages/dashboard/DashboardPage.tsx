@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { slotsAPI, videosAPI } from '../../services/api';
-import { Radio, Video, CheckCircle, XCircle, Clock, ArrowRight, Activity } from 'lucide-react';
+import { Radio, Video, CheckCircle, XCircle, Clock, ArrowRight, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function DashboardPage() {
@@ -88,23 +88,13 @@ export default function DashboardPage() {
             </div>
             <ArrowRight size={14} className="text-tertiary group-hover:text-primary transition-colors" />
           </Link>
-          <Link to="/stream-health" className="card-premium p-4 flex items-center gap-3 group">
+          <Link to="/billing" className="card-premium p-4 flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <Activity size={16} className="text-green-400" />
+              <CreditCard size={16} className="text-green-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-medium text-primary">Stream Health</h3>
-              <p className="text-[11px] text-tertiary">Monitor stream performance</p>
-            </div>
-            <ArrowRight size={14} className="text-tertiary group-hover:text-primary transition-colors" />
-          </Link>
-          <Link to="/analytics" className="card-premium p-4 flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
-              <Activity size={16} className="text-amber-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-medium text-primary">Analytics</h3>
-              <p className="text-[11px] text-tertiary">View streaming analytics</p>
+              <h3 className="text-sm font-medium text-primary">Billing</h3>
+              <p className="text-[11px] text-tertiary">Manage plans &amp; payments</p>
             </div>
             <ArrowRight size={14} className="text-tertiary group-hover:text-primary transition-colors" />
           </Link>

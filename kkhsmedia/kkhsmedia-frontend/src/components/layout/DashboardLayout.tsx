@@ -6,9 +6,7 @@ import {
   LayoutDashboard, Radio, Video, CreditCard, User, MessageSquare,
   LogOut, Menu, Moon, Sun, ChevronDown, Search,
   Users, Settings, BarChart3, Package, ShoppingCart, MonitorPlay,
-  Bell, Webhook, Gift, Store, Globe, Tag, UserPlus,
-  Activity, Calendar, Layers, Shield, Wifi, Server,
-  PanelLeftClose, PanelLeft
+  Globe, PanelLeftClose, PanelLeft
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -46,18 +44,7 @@ export default function DashboardLayout() {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/live-slots', icon: Radio, label: 'Live Slots' },
     { to: '/videos', icon: Video, label: 'Videos' },
-    { to: '/analytics', icon: BarChart3, label: 'Analytics' },
     { to: '/billing', icon: CreditCard, label: 'Billing' },
-    { to: '/notifications', icon: Bell, label: 'Notifications' },
-    { to: '/webhooks', icon: Webhook, label: 'Webhooks' },
-    { to: '/referrals', icon: Gift, label: 'Referrals' },
-    { to: '/reseller', icon: Store, label: 'Reseller' },
-    { to: '/stream-health', icon: Activity, label: 'Stream Health' },
-    { to: '/schedule', icon: Calendar, label: 'Schedule' },
-    { to: '/overlays', icon: Layers, label: 'Overlays' },
-    { to: '/rtmp-pull', icon: Wifi, label: 'RTMP Pull' },
-    { to: '/bandwidth', icon: BarChart3, label: 'Bandwidth' },
-    { to: '/security', icon: Shield, label: 'Security' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 
@@ -69,13 +56,8 @@ export default function DashboardLayout() {
     { to: '/admin/videos', icon: MonitorPlay, label: 'Videos', roles: ['admin', 'moderator'] },
     { to: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['admin', 'moderator'] },
     { to: '/admin/products', icon: Package, label: 'Plans', roles: ['admin'] },
-    { to: '/admin/coupons', icon: Tag, label: 'Coupons', roles: ['admin'] },
-    { to: '/admin/resellers', icon: Store, label: 'Resellers', roles: ['admin'] },
-    { to: '/admin/affiliates', icon: UserPlus, label: 'Affiliates', roles: ['admin'] },
-    { to: '/admin/servers', icon: Server, label: 'Servers', roles: ['admin'] },
     { to: '/admin/contacts', icon: MessageSquare, label: 'Messages', roles: ['admin', 'moderator'] },
     { to: '/admin/analytics', icon: BarChart3, label: 'Analytics', roles: ['admin'] },
-    { to: '/admin/roles', icon: Shield, label: 'Roles', roles: ['admin'] },
     { to: '/admin/settings', icon: Settings, label: 'Settings', roles: ['admin'] },
   ];
   const adminLinks = allAdminLinks.filter(link => link.roles.includes(user?.role || 'user'));
@@ -114,10 +96,10 @@ export default function DashboardLayout() {
         {/* Logo */}
         <div className="h-12 flex items-center px-3 border-b" style={{ borderColor: 'rgb(var(--border))' }}>
           <Link to={isAdminRoute ? '/admin' : '/dashboard'} className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-[10px] font-bold">G</span>
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-[10px] font-bold">S</span>
             </div>
-            {!collapsed && <span className="text-sm font-semibold truncate text-primary">GoLivePro</span>}
+            {!collapsed && <span className="text-sm font-semibold truncate text-primary">StreamAdda</span>}
           </Link>
         </div>
 

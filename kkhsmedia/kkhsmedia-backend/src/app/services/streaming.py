@@ -178,14 +178,16 @@ async def start_ffmpeg_stream(
             "-fflags", "+genpts+igndts",
             "-stream_loop", "-1",
             "-i", video_url,
+            "-vf", "scale=-2:720",
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-tune", "zerolatency",
             "-b:v", "4500k",
             "-maxrate", "5000k",
-            "-bufsize", "8000k",
+            "-bufsize", "10000k",
             "-g", "60",
             "-keyint_min", "60",
+            "-threads", "1",
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "128k",
@@ -200,8 +202,8 @@ async def start_ffmpeg_stream(
         try:
             process = await asyncio.create_subprocess_exec(
                 *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
             )
             active_streams[slot_id] = {
                 "process": process,
@@ -258,13 +260,14 @@ async def _stream_watchdog(slot_id: str):
                     # Kill the zombie FFmpeg and let restart logic handle it
                     logger.error(f"Watchdog: Slot {slot_id} RTMP connection dead, killing FFmpeg PID {pid}")
                     try:
-                        proc.kill()
-                        await proc.wait()
-                    except Exception:
-                        try:
-                            os.kill(pid, signal.SIGKILL)
-                        except Exception:
-                            pass
+                        os.kill(pid, signal.SIGKILL)
+                    except (ProcessLookupError, PermissionError):
+                        pass
+                    # Wait briefly for process to die, with timeout
+                    try:
+                        await asyncio.wait_for(proc.wait(), timeout=5)
+                    except asyncio.TimeoutError:
+                        logger.warning(f"Watchdog: proc.wait() timed out for PID {pid}, proceeding with restart")
                     rtmp_dead_count = 0
                     # Fall through to the restart logic below
                 else:
@@ -445,6 +448,7 @@ async def start_stream(slot_id: str, user_id: str) -> Optional[int]:
             {"$set": {
                 "isStreaming": True,
                 "streamProcessId": process_id,
+                "streamStartedAt": datetime.utcnow().isoformat() + "Z",
                 "updatedAt": datetime.utcnow(),
             }}
         )
@@ -474,6 +478,7 @@ async def stop_stream(slot_id: str, user_id: str) -> bool:
         {"$set": {
             "isStreaming": False,
             "streamProcessId": None,
+            "streamStartedAt": None,
             "updatedAt": datetime.utcnow(),
         }}
     )
@@ -597,6 +602,7 @@ async def _scheduler_loop():
                             {"$set": {
                                 "isStreaming": True,
                                 "streamProcessId": process_id,
+                                "streamStartedAt": now.isoformat() + "Z",
                                 "scheduledStart": None,
                                 "updatedAt": now,
                             }}
@@ -631,6 +637,7 @@ async def _scheduler_loop():
                         {"$set": {
                             "isStreaming": False,
                             "streamProcessId": None,
+                            "streamStartedAt": None,
                             "scheduledEnd": None,
                             "updatedAt": now,
                         }}

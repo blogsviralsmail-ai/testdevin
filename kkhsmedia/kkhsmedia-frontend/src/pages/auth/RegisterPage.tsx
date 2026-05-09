@@ -38,15 +38,15 @@ export default function RegisterPage() {
         className="w-full max-w-sm"
       >
         <div className="flex items-center justify-center gap-2 mb-10">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white text-xs font-bold">G</span>
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center">
+            <span className="text-white text-xs font-bold">S</span>
           </div>
-          <span className="text-sm font-semibold text-primary">GoLivePro</span>
+          <span className="text-sm font-semibold text-primary">StreamAdda</span>
         </div>
 
         <div className="text-center mb-8">
           <h1 className="text-xl font-semibold text-primary mb-1.5">Create an account</h1>
-          <p className="text-sm text-tertiary">Get started with GoLivePro</p>
+          <p className="text-sm text-tertiary">Get started with StreamAdda</p>
         </div>
 
         {error && (
