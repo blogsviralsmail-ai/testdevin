@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { calculateWorkingDay } from "@/lib/utils";
 
 function escapeHtml(s: string) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -122,7 +123,7 @@ export async function GET(request: NextRequest) {
   const reviewed = tasks.filter(t => t.submissions[0]?.status === "reviewed").length;
   const avgScore = tasks.filter(t => t.submissions[0]?.percentage).reduce((sum, t) => sum + (t.submissions[0]?.percentage || 0), 0) / (reviewed || 1);
   const presentDays = attendances.filter(a => a.status === "present").length;
-  const totalDays = enrollment.currentWorkDay || attendances.length;
+  const totalDays = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || attendances.length);
 
   const todayStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -136,7 +137,7 @@ ${LH}
 <tr><td style="padding:4px 0;width:50%;"><strong>Student Name:</strong> ${studentName}</td><td style="padding:4px 0;"><strong>Program:</strong> ${programName}</td></tr>
 <tr><td style="padding:4px 0;"><strong>Batch:</strong> ${batchName}</td><td style="padding:4px 0;"><strong>Team Leader:</strong> ${leaderName}</td></tr>
 <tr><td style="padding:4px 0;"><strong>College:</strong> ${collegeName}</td><td style="padding:4px 0;"><strong>Period:</strong> ${startDate} to ${endDate}</td></tr>
-<tr><td style="padding:4px 0;"><strong>Report Date:</strong> ${todayStr}</td><td style="padding:4px 0;"><strong>Current Day:</strong> ${enrollment.currentWorkDay} / ${enrollment.batch.program.duration}</td></tr>
+<tr><td style="padding:4px 0;"><strong>Report Date:</strong> ${todayStr}</td><td style="padding:4px 0;"><strong>Current Day:</strong> ${enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : enrollment.currentWorkDay} / ${enrollment.batch.program.duration}</td></tr>
 </table>
 
 <div style="display:flex;gap:10px;margin-bottom:14px;">

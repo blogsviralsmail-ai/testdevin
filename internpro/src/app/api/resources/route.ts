@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { calculateWorkingDay } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
         where: { batchId: enrollment.batchId },
         orderBy: [{ dayNumber: "asc" }, { order: "asc" }, { createdAt: "desc" }],
       });
-      const currentDay = enrollment.currentWorkDay || 999;
+      const currentDay = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || 999);
       const filtered = batchResources.filter((r) => {
         if (r.dayNumber && r.dayNumber > currentDay) return false;
         return true;

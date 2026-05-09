@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { calculateWorkingDay } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     const enrollment = await prisma.enrollment.findFirst({
       where: enrollmentWhere,
     });
-    const currentDay = enrollment?.currentWorkDay || 0;
+    const currentDay = enrollment?.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment?.currentWorkDay || 0);
     const isCompleted = enrollment?.status === "completed";
 
     const enrolledBatchIds = (await prisma.enrollment.findMany({

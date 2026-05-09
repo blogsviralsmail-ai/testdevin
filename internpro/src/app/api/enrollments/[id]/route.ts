@@ -60,6 +60,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (stipendAmount !== undefined) data.stipendAmount = stipendAmount;
     }
 
+    if (status === "selected" && !joiningDate) {
+      data.joiningDate = new Date();
+    }
+
     if (status === "completed") {
       data.completedAt = new Date();
     }

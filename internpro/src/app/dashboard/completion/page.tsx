@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { calculateWorkingDay } from "@/lib/utils";
+
+function getWorkDay(enrollment: { joiningDate: string | null; currentWorkDay: number }): number {
+  if (enrollment.joiningDate) return calculateWorkingDay(enrollment.joiningDate);
+  return enrollment.currentWorkDay;
+}
 
 interface Enrollment {
   id: string;
@@ -216,7 +222,7 @@ export default function CompletionPage() {
               <strong className="text-gray-900">{categorizeModal.student.name}</strong> — {categorizeModal.batch.program.title}
             </p>
             <p className="text-sm text-gray-500 mb-4">
-              Work Days: {categorizeModal.currentWorkDay}/{categorizeModal.batch.program.duration} | 
+              Work Days: {getWorkDay(categorizeModal)}/{categorizeModal.batch.program.duration} | 
               Attendance: {categorizeModal._count.attendances} days | 
               Submissions: {categorizeModal._count.submissions}
             </p>
@@ -301,7 +307,7 @@ export default function CompletionPage() {
                   <p className="text-sm text-indigo-600 mt-1">{enrollment.batch.program.title} — {enrollment.batch.name}</p>
                   <div className="flex gap-3 mt-2 text-xs text-gray-500 flex-wrap">
                     <span>Joining: {enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN") : "—"}</span>
-                    <span>Working Day: {enrollment.currentWorkDay}/{enrollment.batch.program.duration}</span>
+                    <span>Working Day: {getWorkDay(enrollment)}/{enrollment.batch.program.duration}</span>
                     <span>Attendance: {enrollment._count.attendances} days</span>
                     <span>Tasks: {enrollment._count.submissions} submitted</span>
                     {enrollment.completedAt && <span>Last Working Day: {new Date(enrollment.completedAt).toLocaleDateString("en-IN")}</span>}

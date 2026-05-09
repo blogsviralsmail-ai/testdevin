@@ -113,6 +113,26 @@ export function getFeeTypeLabel(feeType: string): string {
   return labels[feeType] || feeType;
 }
 
+export function calculateWorkingDay(joiningDate: Date | string): number {
+  const start = new Date(joiningDate);
+  start.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (today < start) return 0;
+
+  let workingDays = 0;
+  const current = new Date(start);
+  while (current <= today) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0) {
+      workingDays++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return workingDays;
+}
+
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-800",
