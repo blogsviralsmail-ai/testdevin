@@ -200,8 +200,8 @@ async def start_ffmpeg_stream(
         try:
             process = await asyncio.create_subprocess_exec(
                 *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
             )
             active_streams[slot_id] = {
                 "process": process,
@@ -258,13 +258,14 @@ async def _stream_watchdog(slot_id: str):
                     # Kill the zombie FFmpeg and let restart logic handle it
                     logger.error(f"Watchdog: Slot {slot_id} RTMP connection dead, killing FFmpeg PID {pid}")
                     try:
-                        proc.kill()
-                        await proc.wait()
-                    except Exception:
-                        try:
-                            os.kill(pid, signal.SIGKILL)
-                        except Exception:
-                            pass
+                        os.kill(pid, signal.SIGKILL)
+                    except (ProcessLookupError, PermissionError):
+                        pass
+                    # Wait briefly for process to die, with timeout
+                    try:
+                        await asyncio.wait_for(proc.wait(), timeout=5)
+                    except asyncio.TimeoutError:
+                        logger.warning(f"Watchdog: proc.wait() timed out for PID {pid}, proceeding with restart")
                     rtmp_dead_count = 0
                     # Fall through to the restart logic below
                 else:
