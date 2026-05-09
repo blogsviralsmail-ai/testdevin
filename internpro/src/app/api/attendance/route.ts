@@ -74,6 +74,12 @@ export async function POST(request: NextRequest) {
 
     const attendanceDate = new Date(date || new Date().toISOString().split("T")[0]);
 
+    // Check if attendance already exists for today (to avoid duplicate emails)
+    const existing = await prisma.attendance.findUnique({
+      where: { enrollmentId_date: { enrollmentId, date: attendanceDate } },
+    });
+    const isNewAttendance = !existing;
+
     const attendance = await prisma.attendance.upsert({
       where: {
         enrollmentId_date: {
@@ -84,8 +90,8 @@ export async function POST(request: NextRequest) {
       update: {
         status: status || "present",
         method: method || "manual",
-        checkIn: checkIn || null,
-        checkOut: checkOut || null,
+        ...(checkIn && { checkIn }),
+        ...(checkOut && { checkOut }),
         notes: notes || null,
       },
       create: {
@@ -100,11 +106,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send attendance email to student (non-blocking)
-    const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
-    if (student?.email) {
-      const dateStr = attendanceDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-      sendAttendanceEmail(student.name, student.email, attendance.status, dateStr).catch(() => {});
+    // Send attendance email ONLY on first check-in (not on checkout updates)
+    if (isNewAttendance) {
+      const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
+      if (student?.email) {
+        const dateStr = attendanceDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+        sendAttendanceEmail(student.name, student.email, attendance.status, dateStr).catch(() => {});
+      }
     }
 
     return NextResponse.json(attendance, { status: 201 });

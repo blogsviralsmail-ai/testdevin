@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get template, org, and settings before transaction
-    const template = await prisma.offerLetterTemplate.findFirst({ where: { isDefault: true } });
+    const template = await prisma.offerLetterTemplate.findFirst({ where: { isDefault: true, type: { not: "experience" } } });
     const org = enrollment.batch.program.organization;
     const allSettings = await prisma.setting.findMany();
     const sMap: Record<string, string> = {};
@@ -272,9 +272,27 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
       return letter;
     });
 
-    // Send email notification with PDF attachment (non-blocking)
+    // Send Offer Letter email with PDF attachment (non-blocking)
     const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true } });
-    if (student) sendLetterGeneratedEmail(student.name, student.email, "Offer Letter", offerLetter.letterNumber, offerLetter.htmlContent || undefined).catch(() => {});
+    if (student) {
+      const joiningDateStr = joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+      const extraDetails: Record<string, string> = {
+        "{{program_name}}": enrollment.batch.program.title,
+        "{{joining_date}}": joiningDateStr,
+        "{{work_timing}}": workTiming || "10:00 AM - 6:00 PM",
+        "{{salary}}": String(salary || 0),
+        "{{weekoffs}}": String(weekoffs || 1),
+        "{{mode}}": enrollment.batch.program.mode,
+        "{{duration}}": String(enrollment.batch.program.duration),
+      };
+      sendLetterGeneratedEmail(student.name, student.email, "Offer Letter", offerLetter.letterNumber, offerLetter.htmlContent || undefined, extraDetails).catch(() => {});
+
+      // Send ID Card email separately (non-blocking)
+      const idCard = await prisma.employeeCard.findFirst({ where: { userId: enrollment.studentId }, orderBy: { createdAt: "desc" } });
+      if (idCard) {
+        sendLetterGeneratedEmail(student.name, student.email, "ID Card", idCard.cardNumber).catch(() => {});
+      }
+    }
 
     return NextResponse.json(offerLetter, { status: 201 });
   } catch (error: unknown) {

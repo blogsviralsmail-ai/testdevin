@@ -123,9 +123,18 @@ export async function sendLetterGeneratedNotification(studentName: string, stude
   return sendEmail({ to: studentEmail, subject, html: body });
 }
 
-export async function sendLetterGeneratedEmail(studentName: string, studentEmail: string, letterType: string, letterNumber?: string, letterHtmlContent?: string): Promise<boolean> {
+export async function sendLetterGeneratedEmail(
+  studentName: string, studentEmail: string, letterType: string,
+  letterNumber?: string, letterHtmlContent?: string,
+  extraDetails?: Record<string, string>,
+): Promise<boolean> {
   const extra: Record<string, string> = {};
   if (letterNumber) extra["{{letter_number}}"] = letterNumber;
+  if (extraDetails) {
+    for (const [k, v] of Object.entries(extraDetails)) {
+      extra[k] = v;
+    }
+  }
 
   let pdfAttachments: Attachment[] | undefined;
   if (letterHtmlContent) {
@@ -151,10 +160,38 @@ async function sendLetterGeneratedNotificationWithAttachment(studentName: string
   const customSubject = sMap[`email_template_${templateKey}_subject`];
   const customBody = sMap[`email_template_${templateKey}_body`];
 
-  let subject = customSubject || `Your ${letterType} is Ready — KKHS Media`;
-  let body = customBody || `<h2 style="color:#1f2937;margin:0 0 16px;">Congratulations, {{student_name}}!</h2>
+  const defaultBodies: Record<string, string> = {
+    offer_letter: `<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}! You have been Selected!</h2>
+<p style="color:#4b5563;line-height:1.7;margin:0 0 10px;">We are pleased to inform you that your application has been <strong style="color:#16a34a;">accepted</strong> and your <strong>Offer Letter</strong> has been generated. Please find the Offer Letter attached as a PDF with this email.</p>
+<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:14px;">
+<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;color:#374151;width:40%;">Letter Number</td><td style="padding:8px 12px;border:1px solid #e5e7eb;">{{letter_number}}</td></tr>
+<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;color:#374151;">Program</td><td style="padding:8px 12px;border:1px solid #e5e7eb;">{{program_name}}</td></tr>
+<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;color:#374151;">Joining Date</td><td style="padding:8px 12px;border:1px solid #e5e7eb;">{{joining_date}}</td></tr>
+<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;color:#374151;">Work Timing</td><td style="padding:8px 12px;border:1px solid #e5e7eb;">{{work_timing}}</td></tr>
+<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;color:#374151;">Monthly Stipend</td><td style="padding:8px 12px;border:1px solid #e5e7eb;">\u20B9{{salary}}/month</td></tr>
+<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;color:#374151;">Weekly Off</td><td style="padding:8px 12px;border:1px solid #e5e7eb;">{{weekoffs}} day(s)</td></tr>
+</table>
+<p style="color:#b91c1c;font-weight:600;line-height:1.6;margin:10px 0 6px;">Important: Please sign the attached Offer Letter and return a signed copy within 7 days.</p>
+<p style="color:#4b5563;line-height:1.6;margin:0 0 6px;">You can also view and download the Offer Letter from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>.</p>
+<p style="color:#4b5563;line-height:1.6;">Your Employee ID Card has been generated and sent in a separate email. Please report on the joining date with the required documents.</p>`,
+    experience_letter: `<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}!</h2>
+<p style="color:#4b5563;line-height:1.7;">You have successfully completed your internship and your <strong>Experience Letter</strong> has been generated. Please find it attached as a PDF.</p>
+<p style="color:#4b5563;">Letter Number: <strong>{{letter_number}}</strong></p>
+<p style="color:#4b5563;">View and download from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>. We wish you all the best!</p>`,
+    internship_certificate: `<h2 style="color:#1f2937;margin:0 0 12px;">Congratulations, {{student_name}}!</h2>
+<p style="color:#4b5563;line-height:1.7;">Your <strong>Internship Certificate</strong> has been generated. Please find it attached as a PDF.</p>
+<p style="color:#4b5563;">View and download from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>.</p>`,
+    id_card: `<h2 style="color:#1f2937;margin:0 0 12px;">Welcome aboard, {{student_name}}!</h2>
+<p style="color:#4b5563;line-height:1.7;">Your <strong>Employee ID Card</strong> has been generated. Please find it attached as a PDF.</p>
+<p style="color:#4b5563;">View and download from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>. Please carry this ID card during your internship period.</p>`,
+  };
+
+  const defaultBody = defaultBodies[templateKey] || `<h2 style="color:#1f2937;margin:0 0 16px;">Congratulations, {{student_name}}!</h2>
 <p style="color:#4b5563;line-height:1.6;">Your <strong>{{letter_type}}</strong> has been generated and is ready for download.</p>
 <p style="color:#4b5563;">View and download it from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;">Letters page</a>.</p>`;
+
+  let subject = customSubject || (templateKey === "offer_letter" ? `Congratulations! You are Selected — Offer Letter #{{letter_number}}` : `Your ${letterType} is Ready — KKHS Media`);
+  let body = customBody || defaultBody;
 
   const replacements: Record<string, string> = {
     "{{student_name}}": studentName,
