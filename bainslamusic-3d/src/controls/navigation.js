@@ -28,6 +28,8 @@ export class NavigationController {
     this.endLookAt = new THREE.Vector3();
     this.currentLookAt = new THREE.Vector3(0, 0, 0);
     this.onComplete = null;
+    this.lastTime = 0;
+    this.transitionSpeed = 1.5;
 
     // Mouse parallax
     this.mouse = { x: 0, y: 0 };
@@ -81,9 +83,12 @@ export class NavigationController {
   }
 
   update(time) {
+    const deltaTime = this.lastTime > 0 ? Math.min(time - this.lastTime, 0.1) : 0.016;
+    this.lastTime = time;
+
     // Camera transition animation
     if (this.isAnimating) {
-      this.animationProgress += 0.025;
+      this.animationProgress += deltaTime * this.transitionSpeed;
 
       if (this.animationProgress >= 1) {
         this.animationProgress = 1;

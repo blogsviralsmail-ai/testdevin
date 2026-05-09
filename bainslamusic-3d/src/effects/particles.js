@@ -55,6 +55,7 @@ export class ParticleSystem {
     });
 
     this.musicParticles = new THREE.Points(geometry, material);
+    this.musicBasePositions = new Float32Array(positions);
     this.scene.add(this.musicParticles);
     this.particles.push(this.musicParticles);
   }
@@ -111,12 +112,13 @@ export class ParticleSystem {
   }
 
   update(time) {
-    // Animate music particles - gentle float
-    if (this.musicParticles) {
+    // Animate music particles - gentle float using absolute positions
+    if (this.musicParticles && this.musicBasePositions) {
       const positions = this.musicParticles.geometry.attributes.position.array;
+      const base = this.musicBasePositions;
       for (let i = 0; i < positions.length; i += 3) {
-        positions[i + 1] += Math.sin(time * 0.5 + positions[i] * 0.5) * 0.002;
-        positions[i] += Math.cos(time * 0.3 + positions[i + 2] * 0.3) * 0.001;
+        positions[i] = base[i] + Math.cos(time * 0.3 + base[i + 2] * 0.3) * 0.5;
+        positions[i + 1] = base[i + 1] + Math.sin(time * 0.5 + base[i] * 0.5) * 0.5;
       }
       this.musicParticles.geometry.attributes.position.needsUpdate = true;
       this.musicParticles.rotation.y = time * 0.02;

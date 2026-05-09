@@ -8,7 +8,6 @@ export class SceneManager {
   constructor(canvas) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
-    this.clock = new THREE.Clock();
     this.objects = [];
     this.sectionObjects = [];
   }
@@ -171,6 +170,7 @@ export class SceneManager {
         -2 + (Math.random() - 0.5) * 10
       );
       mesh.userData.float = true;
+      mesh.userData.baseY = mesh.position.y;
       mesh.userData.floatSpeed = 0.3 + Math.random() * 0.5;
       mesh.userData.floatOffset = Math.random() * Math.PI * 2;
       mesh.userData.rotate = true;
@@ -248,6 +248,7 @@ export class SceneManager {
       cube.userData.rotate = true;
       cube.userData.speed = 0.5;
       cube.userData.float = true;
+      cube.userData.baseY = cube.position.y;
       cube.userData.floatSpeed = 0.4;
       cube.userData.floatOffset = tp.y;
       group.add(cube);
@@ -279,6 +280,7 @@ export class SceneManager {
       node.userData.rotate = true;
       node.userData.speed = 0.5;
       node.userData.float = true;
+      node.userData.baseY = node.position.y;
       node.userData.floatSpeed = 0.3;
       node.userData.floatOffset = i;
       group.add(node);
@@ -334,6 +336,7 @@ export class SceneManager {
           0
         );
         screen.userData.float = true;
+        screen.userData.baseY = screen.position.y;
         screen.userData.floatSpeed = 0.2;
         screen.userData.floatOffset = row * 4 + col;
 
@@ -472,7 +475,8 @@ export class SceneManager {
       if (obj.userData.float) {
         const offset = obj.userData.floatOffset || 0;
         const speed = obj.userData.floatSpeed || 0.5;
-        obj.position.y += Math.sin(time * speed + offset) * 0.003;
+        const baseY = obj.userData.baseY || 0;
+        obj.position.y = baseY + Math.sin(time * speed + offset) * 0.3;
       }
 
       if (obj.userData.pulse) {
