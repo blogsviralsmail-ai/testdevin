@@ -98,6 +98,10 @@ export async function POST(request: NextRequest) {
     const letterNumber = generateUniqueId("OL");
     const cardNumber = generateUniqueId("EMP");
 
+    const siteUrl = sMap.site_url || "https://internship.kkhsmedia.com";
+    const verifyUrl = `${siteUrl}/verify?number=${letterNumber}`;
+    const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(verifyUrl)}`;
+
     const todayDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
     const joiningDateFormatted = joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : todayDate;
     const feeLabel = body.feeType === "paid_by_student" ? "Training Fee" : body.feeType === "stipend" ? "Monthly Stipend" : "Free";
@@ -190,7 +194,7 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
 <div style="margin-top:6px;padding-top:4px;border-top:1px dashed #ccc;">
 <p style="font-size:14px;font-weight:700;color:#0000AA;margin:0 0 3px;">Intern&rsquo;s Acceptance</p>
 <p style="font-size:13px;color:#333;line-height:1.45;margin:0 0 3px;">I, <strong>{{student_name}}</strong>, hereby accept the above-mentioned terms and conditions and agree to abide by all policies, rules, and regulations of ${escapeHtml(lhCompany)} during the course of my internship.</p>
-<table style="width:100%;font-size:13px;color:#555;"><tr><td style="width:50%;padding:4px 0;">Signature: ________________________</td><td style="width:50%;padding:4px 0;">Date: ________________________</td></tr><tr><td style="padding:4px 0;">Name: {{student_name}}</td><td></td></tr></table>
+<table style="width:100%;font-size:13px;color:#555;"><tr><td style="width:50%;padding:4px 0;">Signature: ________________________</td><td style="width:50%;padding:4px 0;">Date: ________________________</td></tr><tr><td style="padding:4px 0;">Name: {{student_name}}</td><td style="text-align:right;vertical-align:bottom;"><img src="${qrImg}" alt="Verify QR" style="width:60px;height:60px;display:inline-block;" /><br/><span style="font-size:9px;color:#888;">Scan to verify</span></td></tr></table>
 </div>
 </div>
 <div style="flex-shrink:0;">${FT}</div>

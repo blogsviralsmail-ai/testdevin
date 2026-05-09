@@ -92,12 +92,18 @@ export async function POST(request: NextRequest) {
 
     const letterNumber = generateUniqueId("EXP");
     const org = enrollment.batch.program.organization;
+
     const allSettings = await prisma.setting.findMany();
     const sMap: Record<string, string> = {};
     allSettings.forEach((s) => { sMap[s.key] = s.value; });
     const signatureUrl = sMap.admin_signature || "";
     const signatoryName = sMap.signatory_name || "";
     const signatoryDesignation = sMap.signatory_designation || "Authorized Signatory";
+
+    // QR code for verification
+    const siteUrl = sMap.site_url || "https://internship.kkhsmedia.com";
+    const verifyUrl = `${siteUrl}/verify?number=${letterNumber}`;
+    const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(verifyUrl)}`;
 
     const safeOrgName = escapeHtml(org.name);
     const safeStudentName = escapeHtml(enrollment.student.name);
@@ -176,13 +182,17 @@ ${safeRemarks ? `<tr><td style="padding:5px 12px;border:1px solid #e0e0e0;font-w
 <p style="font-size:14px;font-weight:700;color:#0000AA;margin:5px 0 2px;">Recommendation</p>
 <p style="font-size:13px;color:#333;line-height:1.45;text-align:justify;margin:0 0 3px;">Based on the overall performance, dedication, and professional conduct demonstrated during the internship period, we are pleased to recommend <strong style="color:#0000AA;">${safeStudentName}</strong> for any suitable professional opportunity. We are confident that the skills and experience gained during this tenure will serve as a strong foundation for future career growth. We wish ${safeStudentName} all the very best in all future endeavours.</p>
 ${extraExpSection}
-<p style="margin:10px 0 0;font-size:14px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
+<table style="width:100%;margin-top:10px;"><tr><td style="vertical-align:top;">
+<p style="margin:0;font-size:14px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
 <div style="margin-top:6px;">
 ${sigBlock}
 ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16px;">${escapeHtml(signatoryName)}</p>` : ""}
 <p style="margin:2px 0 0;font-size:13px;color:#555;">${escapeHtml(signatoryDesignation)}</p>
 <p style="margin:2px 0 0;font-size:13px;color:#555;">${escapeHtml(lhCompany)}</p>
 </div>
+</td><td style="width:80px;text-align:right;vertical-align:bottom;">
+<img src="${qrImg}" alt="Verify QR" style="width:60px;height:60px;display:inline-block;" /><br/><span style="font-size:9px;color:#888;">Scan to verify</span>
+</td></tr></table>
 </div>
 <div style="flex-shrink:0;">${FT}</div>
 </div>
