@@ -9,7 +9,7 @@ async function getSmtpTransporter() {
   const smtpHost = sMap.smtp_host;
   const smtpPort = parseInt(sMap.smtp_port || "587");
   const smtpUser = sMap.smtp_user;
-  const smtpPass = sMap.smtp_password;
+  const smtpPass = sMap.smtp_password || sMap.smtp_pass;
   const smtpFrom = sMap.smtp_from || smtpUser;
 
   if (!smtpHost || !smtpUser || !smtpPass) return null;

@@ -16,7 +16,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<bo
     const smtpHost = sMap.smtp_host;
     const smtpPort = parseInt(sMap.smtp_port || "587");
     const smtpUser = sMap.smtp_user;
-    const smtpPass = sMap.smtp_password;
+    const smtpPass = sMap.smtp_password || sMap.smtp_pass;
     const smtpFrom = sMap.smtp_from || smtpUser;
     const smtpFromName = sMap.smtp_from_name || "InternPro";
 
@@ -81,18 +81,52 @@ export async function sendDocumentUploadNotification(studentName: string, adminE
   });
 }
 
-export async function sendLetterGeneratedNotification(studentName: string, studentEmail: string, letterType: string): Promise<boolean> {
-  return sendEmail({
-    to: studentEmail,
-    subject: `Your ${letterType} is Ready — KKHS Media`,
-    html: `<h2 style="color:#1f2937;margin:0 0 16px;">Congratulations, ${studentName}!</h2>
-<p style="color:#4b5563;line-height:1.6;">Your <strong>${letterType}</strong> has been generated and is ready for download.</p>
-<p style="color:#4b5563;">View and download it from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;">Letters page</a>.</p>`,
-  });
+export async function sendLetterGeneratedNotification(studentName: string, studentEmail: string, letterType: string, extraData?: Record<string, string>): Promise<boolean> {
+  const templateKey = getTemplateKey(letterType);
+  const settings = await prisma.setting.findMany();
+  const sMap: Record<string, string> = {};
+  for (const s of settings) sMap[s.key] = s.value;
+
+  const customSubject = sMap[`email_template_${templateKey}_subject`];
+  const customBody = sMap[`email_template_${templateKey}_body`];
+
+  let subject = customSubject || `Your ${letterType} is Ready — KKHS Media`;
+  let body = customBody || `<h2 style="color:#1f2937;margin:0 0 16px;">Congratulations, {{student_name}}!</h2>
+<p style="color:#4b5563;line-height:1.6;">Your <strong>{{letter_type}}</strong> has been generated and is ready for download.</p>
+<p style="color:#4b5563;">View and download it from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;">Letters page</a>.</p>`;
+
+  const replacements: Record<string, string> = {
+    "{{student_name}}": studentName,
+    "{{letter_type}}": letterType,
+    "{{company_name}}": sMap.company_name || sMap.letterhead_company_name || "KKHS Media Private Limited",
+    "{{company_email}}": sMap.letterhead_email || sMap.smtp_from || "hari@kkhsmedia.com",
+    "{{company_phone}}": sMap.letterhead_phone || "9782005500",
+    "{{company_address}}": sMap.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur",
+    "{{dashboard_link}}": "https://internship.kkhsmedia.com/dashboard/letters",
+    "{{date}}": new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
+    ...extraData,
+  };
+
+  for (const [key, value] of Object.entries(replacements)) {
+    subject = subject.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
+    body = body.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
+  }
+
+  return sendEmail({ to: studentEmail, subject, html: body });
 }
 
-export async function sendLetterGeneratedEmail(studentName: string, studentEmail: string, letterType: string, _letterNumber?: string): Promise<boolean> {
-  return sendLetterGeneratedNotification(studentName, studentEmail, letterType);
+export async function sendLetterGeneratedEmail(studentName: string, studentEmail: string, letterType: string, letterNumber?: string): Promise<boolean> {
+  return sendLetterGeneratedNotification(studentName, studentEmail, letterType, letterNumber ? { "{{letter_number}}": letterNumber } : undefined);
+}
+
+function getTemplateKey(letterType: string): string {
+  const map: Record<string, string> = {
+    "Offer Letter": "offer_letter",
+    "Experience Letter": "experience_letter",
+    "Internship Certificate": "internship_certificate",
+    "ID Card": "id_card",
+  };
+  return map[letterType] || letterType.toLowerCase().replace(/\s+/g, "_");
 }
 
 export async function sendPasswordResetEmail(name: string, email: string, token: string, baseUrl: string): Promise<boolean> {

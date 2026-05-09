@@ -21,6 +21,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [sigUploading, setSigUploading] = useState(false);
+  const [smtpTesting, setSmtpTesting] = useState(false);
+  const [smtpTestResult, setSmtpTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
+  const [templatePreview, setTemplatePreview] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [meRes, settingsRes] = await Promise.all([
@@ -70,6 +74,105 @@ export default function SettingsPage() {
       }
     } catch { /* ignore */ }
     setSigUploading(false);
+  };
+
+  const handleSmtpTest = async () => {
+    setSmtpTesting(true);
+    setSmtpTestResult(null);
+    try {
+      // Save settings first so SMTP values are in DB
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings }),
+      });
+      const res = await fetch("/api/email/test", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setSmtpTestResult({ ok: true, msg: data.message || "Test email sent successfully!" });
+      } else {
+        setSmtpTestResult({ ok: false, msg: data.error || "Test failed" });
+      }
+    } catch {
+      setSmtpTestResult({ ok: false, msg: "Network error — could not reach server" });
+    }
+    setSmtpTesting(false);
+  };
+
+  const EMAIL_TEMPLATES = [
+    { key: "offer_letter", label: "Offer Letter", desc: "Jab student ko select karke offer letter generate hota hai tab ye email jaata hai" },
+    { key: "experience_letter", label: "Experience Letter", desc: "Course complete hone pe experience letter generate hone pe ye email jaata hai" },
+    { key: "internship_certificate", label: "Internship Certificate", desc: "Internship certificate generate hone pe ye email jaata hai" },
+    { key: "id_card", label: "ID Card", desc: "ID card generate hone pe ye email jaata hai" },
+  ];
+
+  const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
+    offer_letter: {
+      subject: "Congratulations! Your Offer Letter — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Dear {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">We are pleased to inform you that your application has been accepted!</p>
+<p style="color:#4b5563;line-height:1.6;">Your <strong>Offer Letter</strong> has been generated and is now available for download on your dashboard.</p>
+<p style="color:#4b5563;line-height:1.6;">Please review the offer letter carefully and proceed with the acceptance.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View Offer Letter</a>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Welcome to <strong>{{company_name}}</strong>! We look forward to working with you.</p>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">Best Regards,<br/>{{company_name}}<br/>{{company_phone}} | {{company_email}}</p>`,
+    },
+    experience_letter: {
+      subject: "Your Experience Letter is Ready — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Congratulations, {{student_name}}!</h2>
+<p style="color:#4b5563;line-height:1.6;">We are happy to let you know that your <strong>Experience Letter</strong> has been generated.</p>
+<p style="color:#4b5563;line-height:1.6;">This letter certifies your successful completion of the internship program at {{company_name}}.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Download Experience Letter</a>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Thank you for your dedication and hard work during the internship. We wish you all the best in your future endeavors!</p>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">Best Regards,<br/>{{company_name}}<br/>{{company_phone}} | {{company_email}}</p>`,
+    },
+    internship_certificate: {
+      subject: "Your Internship Certificate — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Dear {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your <strong>Internship Certificate</strong> has been generated and is available for download.</p>
+<p style="color:#4b5563;line-height:1.6;">This certificate is QR-verified and can be shared with potential employers.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Download Certificate</a>
+</div>
+<p style="color:#4b5563;line-height:1.6;">Congratulations on completing your internship at {{company_name}}!</p>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">Best Regards,<br/>{{company_name}}<br/>{{company_phone}} | {{company_email}}</p>`,
+    },
+    id_card: {
+      subject: "Your ID Card is Ready — {{company_name}}",
+      body: `<h2 style="color:#1f2937;margin:0 0 16px;">Hi {{student_name}},</h2>
+<p style="color:#4b5563;line-height:1.6;">Your <strong>Digital ID Card</strong> has been generated.</p>
+<p style="color:#4b5563;line-height:1.6;">You can download and print it from your dashboard.</p>
+<div style="margin:24px 0;text-align:center;">
+  <a href="{{dashboard_link}}" style="background:#4f46e5;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">View ID Card</a>
+</div>
+<p style="color:#6b7280;font-size:13px;margin-top:24px;">Best Regards,<br/>{{company_name}}<br/>{{company_phone}} | {{company_email}}</p>`,
+    },
+  };
+
+  const getTemplateSubject = (key: string) => settings[`email_template_${key}_subject`] || DEFAULT_TEMPLATES[key]?.subject || "";
+  const getTemplateBody = (key: string) => settings[`email_template_${key}_body`] || DEFAULT_TEMPLATES[key]?.body || "";
+
+  const renderPreview = (html: string) => {
+    const replacements: Record<string, string> = {
+      "{{student_name}}": "Rahul Sharma",
+      "{{letter_type}}": editingTemplate ? EMAIL_TEMPLATES.find(t => t.key === editingTemplate)?.label || "" : "",
+      "{{company_name}}": settings.company_name || settings.letterhead_company_name || "KKHS Media Private Limited",
+      "{{company_email}}": settings.letterhead_email || settings.smtp_from || "hari@kkhsmedia.com",
+      "{{company_phone}}": settings.letterhead_phone || "9782005500",
+      "{{company_address}}": settings.letterhead_address || "190A Krishna Kunj, Kalwar Road, Jaipur",
+      "{{dashboard_link}}": "https://internship.kkhsmedia.com/dashboard/letters",
+      "{{date}}": new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
+      "{{letter_number}}": "KKHS/HR/2026-05/001",
+    };
+    let result = html;
+    for (const [key, value] of Object.entries(replacements)) {
+      result = result.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
+    }
+    return result;
   };
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
@@ -578,7 +681,93 @@ export default function SettingsPage() {
                   className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media" />
               </div>
             </div>
+            <div className="flex items-center gap-3 mt-4 pt-4 border-t">
+              <button onClick={handleSmtpTest} disabled={smtpTesting}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
+                {smtpTesting ? "Testing..." : "Send Test Email"}
+              </button>
+              {smtpTestResult && (
+                <p className={`text-sm ${smtpTestResult.ok ? "text-green-600" : "text-red-600"}`}>
+                  {smtpTestResult.msg}
+                </p>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-3">For Gmail: use smtp.gmail.com, port 587, and an App Password (not your regular password).</p>
+          </div>
+        )}
+
+        {/* Email Templates */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Email Templates</h2>
+            <p className="text-sm text-gray-500 mb-4">Jab letter/certificate generate hota hai tab student ko ye email jaata hai. Subject aur body customize kar sakte ho.</p>
+            <p className="text-xs text-gray-400 mb-4">
+              Variables use karo: <code className="bg-gray-100 px-1 rounded">{"{{student_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_type}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_phone}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_email}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{dashboard_link}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{date}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_number}}"}</code>
+            </p>
+            <div className="space-y-3">
+              {EMAIL_TEMPLATES.map((tpl) => (
+                <div key={tpl.key} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-800">{tpl.label}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{tpl.desc}</p>
+                    </div>
+                    <button onClick={() => { setEditingTemplate(editingTemplate === tpl.key ? null : tpl.key); setTemplatePreview(false); }}
+                      className="text-xs text-indigo-600 hover:underline font-medium">
+                      {editingTemplate === tpl.key ? "Close" : "Edit Template"}
+                    </button>
+                  </div>
+
+                  {/* Current subject preview */}
+                  <p className="text-xs text-gray-400 mt-2">
+                    Subject: <span className="text-gray-600">{getTemplateSubject(tpl.key).substring(0, 80)}{getTemplateSubject(tpl.key).length > 80 ? "..." : ""}</span>
+                  </p>
+
+                  {/* Edit form */}
+                  {editingTemplate === tpl.key && (
+                    <div className="mt-4 space-y-3 border-t pt-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Email Subject</label>
+                        <input
+                          value={getTemplateSubject(tpl.key)}
+                          onChange={(e) => updateSetting(`email_template_${tpl.key}_subject`, e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+                          placeholder="Email subject line..."
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-medium text-gray-600">Email Body (HTML)</label>
+                          <button onClick={() => setTemplatePreview(!templatePreview)}
+                            className="text-xs text-indigo-600 hover:underline">
+                            {templatePreview ? "Edit" : "Preview"}
+                          </button>
+                        </div>
+                        {templatePreview ? (
+                          <div className="border rounded-lg p-4 bg-white min-h-[200px] text-sm"
+                            dangerouslySetInnerHTML={{ __html: renderPreview(getTemplateBody(tpl.key)) }} />
+                        ) : (
+                          <textarea
+                            value={getTemplateBody(tpl.key)}
+                            onChange={(e) => updateSetting(`email_template_${tpl.key}_body`, e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 font-mono h-48"
+                            placeholder="Email body in HTML..."
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => {
+                          updateSetting(`email_template_${tpl.key}_subject`, DEFAULT_TEMPLATES[tpl.key]?.subject || "");
+                          updateSetting(`email_template_${tpl.key}_body`, DEFAULT_TEMPLATES[tpl.key]?.body || "");
+                        }} className="text-xs text-orange-600 hover:underline">
+                          Reset to Default
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -606,8 +795,8 @@ export default function SettingsPage() {
         {/* Letter Templates */}
         {isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Letter Templates</h2>
-            <p className="text-sm text-gray-500 mb-4">Manage letter designs. Changes here update all future letters generated.</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Letter Templates (Design)</h2>
+            <p className="text-sm text-gray-500 mb-4">Letter ka design change karna hai to yahan se karo. Email template upar section mein hai.</p>
             <div className="space-y-3">
               {["offer_letter", "experience_letter", "internship_certificate", "id_card"].map((type) => {
                 const labels: Record<string, string> = {
