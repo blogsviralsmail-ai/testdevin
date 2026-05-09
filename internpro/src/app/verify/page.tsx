@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDate } from "@/lib/utils";
 
 interface VerifyResult {
@@ -28,10 +28,10 @@ export default function VerifySearchPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = query.trim();
+  const doSearch = async (num: string) => {
+    const trimmed = num.trim();
     if (!trimmed) return;
+    setQuery(trimmed);
     setLoading(true);
     setSearched(true);
     try {
@@ -43,6 +43,18 @@ export default function VerifySearchPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const num = params.get("number");
+    if (num) doSearch(num);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    doSearch(query);
   };
 
   const performanceMap: Record<string, string> = { excellent: "Outstanding", good: "Very Good", average: "Satisfactory" };

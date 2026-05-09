@@ -184,13 +184,17 @@ ${extraSection}
 <p style="font-size:14px;font-weight:700;color:#0000AA;margin:5px 0 2px;">8. Acceptance</p>
 <p style="font-size:13px;color:#333;line-height:1.45;text-align:justify;margin:0 0 3px;">Please confirm your acceptance of this offer by reporting at the office on the above-mentioned date of joining along with the following documents: <strong>Aadhar Card, PAN Card (if applicable), two passport-size photographs, all relevant educational certificates,</strong> and a <strong>signed copy of this offer letter.</strong></p>
 <p style="font-size:13px;color:#333;line-height:1.45;text-align:justify;margin:0 0 3px;">We look forward to your valuable association with ${escapeHtml(lhCompany)} and wish you a highly productive and rewarding internship experience with us.</p>
-<p style="margin:5px 0 0;font-size:14px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
+<table style="width:100%;margin-top:5px;"><tr><td style="vertical-align:top;">
+<p style="margin:0;font-size:14px;color:#333;">For &amp; on behalf of <strong style="color:#0000AA;">${escapeHtml(lhCompany)}</strong>,</p>
 <div style="margin-top:4px;">
 ${sigBlock}
 ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16px;">${escapeHtml(signatoryName)}</p>` : ""}
 <p style="margin:2px 0 0;font-size:13px;color:#555;">{{signatory_designation}}</p>
 <p style="margin:2px 0 0;font-size:13px;color:#555;">${escapeHtml(lhCompany)}</p>
 </div>
+</td><td style="width:90px;text-align:right;vertical-align:bottom;">
+<img src="${qrImg}" alt="Verify QR" style="width:70px;height:70px;display:inline-block;" /><br/><span style="font-size:9px;color:#888;">Scan to verify</span>
+</td></tr></table>
 <div style="margin-top:6px;padding-top:4px;border-top:1px dashed #ccc;">
 <p style="font-size:14px;font-weight:700;color:#0000AA;margin:0 0 3px;">Intern&rsquo;s Acceptance</p>
 <p style="font-size:13px;color:#333;line-height:1.45;margin:0 0 3px;">I, <strong>{{student_name}}</strong>, hereby accept the above-mentioned terms and conditions and agree to abide by all policies, rules, and regulations of ${escapeHtml(lhCompany)} during the course of my internship.</p>

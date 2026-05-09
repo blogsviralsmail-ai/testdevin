@@ -51,6 +51,10 @@ export async function GET(request: NextRequest) {
 
   const sigBlock = sigImage ? `<img src="${sigImage}" style="height:50px;display:block;margin:0 auto 4px;" />` : `<div style="height:50px;"></div>`;
 
+  const siteUrl = sMap.site_url || "https://internship.kkhsmedia.com";
+  const verifyUrl = `${siteUrl}/verify?number=${encodeURIComponent(refNo)}`;
+  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(verifyUrl)}`;
+
   // Landscape A4: 297mm x 210mm
   const html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;margin:0 auto;padding:0;background:white;color:#222;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">
 <div style="width:297mm;height:210mm;padding:0;margin:0 auto;background:white;position:relative;box-sizing:border-box;overflow:hidden;">
@@ -100,9 +104,8 @@ ${sigBlock}
 <p style="margin:2px 0 0;font-size:12px;color:#666;">${escapeHtml(sigDesignation)}</p>
 </div>
 <div style="text-align:center;">
-<div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#0000AA,#4444cc);display:flex;align-items:center;justify-content:center;margin:0 auto;">
-<span style="color:#c9a84c;font-size:32px;">★</span>
-</div>
+<img src="${qrImg}" alt="Verify QR" style="width:70px;height:70px;display:block;margin:0 auto;" />
+<p style="margin:4px 0 0;font-size:9px;color:#888;">Scan to verify</p>
 </div>
 </div>
 
