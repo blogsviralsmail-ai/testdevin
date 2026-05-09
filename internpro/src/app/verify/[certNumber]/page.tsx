@@ -127,10 +127,10 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
                     <span className="font-medium">{getModeLabel(info.mode)}</span>
                   </div>
                 )}
-                {(info as Record<string, unknown>).category && (
+                {info.category && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Performance</span>
-                    <span className="font-medium text-green-700">{performanceMap[(info as Record<string, string>).category] || (info as Record<string, string>).category}</span>
+                    <span className="font-medium text-green-700">{performanceMap[info.category] || info.category}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
