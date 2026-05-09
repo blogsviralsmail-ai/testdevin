@@ -15,6 +15,20 @@ interface SettingItem {
   value: string;
 }
 
+type TabKey = "profile" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "info";
+
+const TABS: { key: TabKey; label: string; icon: string; adminOnly?: boolean }[] = [
+  { key: "profile", label: "Profile", icon: "👤" },
+  { key: "branding", label: "Branding", icon: "🎨", adminOnly: true },
+  { key: "letterhead", label: "Letterhead & Signature", icon: "📄", adminOnly: true },
+  { key: "email", label: "SMTP & Email", icon: "📧", adminOnly: true },
+  { key: "notifications", label: "Notifications", icon: "🔔", adminOnly: true },
+  { key: "payments", label: "Payments", icon: "💰", adminOnly: true },
+  { key: "program_types", label: "Program Types", icon: "📋", adminOnly: true },
+  { key: "letter_design", label: "Letter Design", icon: "🖨️", adminOnly: true },
+  { key: "info", label: "Platform Info", icon: "ℹ️" },
+];
+
 export default function SettingsPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -25,6 +39,7 @@ export default function SettingsPage() {
   const [smtpTestResult, setSmtpTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [templatePreview, setTemplatePreview] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>("profile");
 
   const fetchData = useCallback(async () => {
     const [meRes, settingsRes] = await Promise.all([
@@ -80,7 +95,6 @@ export default function SettingsPage() {
     setSmtpTesting(true);
     setSmtpTestResult(null);
     try {
-      // Save settings first so SMTP values are in DB
       await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,6 +191,8 @@ export default function SettingsPage() {
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
 
+  const visibleTabs = TABS.filter(t => !t.adminOnly || isAdmin);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -192,32 +208,49 @@ export default function SettingsPage() {
         )}
       </div>
 
-      <div className="grid gap-6 max-w-3xl">
-        {/* Profile */}
-        <div className="bg-white rounded-xl p-6 border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input value={user?.name || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input value={user?.email || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-              <input value={user?.role || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50 capitalize" readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input value={user?.phone || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
+      {/* Sub-menu Tabs */}
+      <div className="flex flex-wrap gap-1 mb-6 bg-gray-100 p-1 rounded-xl">
+        {visibleTabs.map((tab) => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              activeTab === tab.key
+                ? "bg-white text-indigo-700 shadow-sm"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            }`}>
+            <span className="mr-1">{tab.icon}</span>{tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="max-w-3xl">
+
+        {/* ========== PROFILE ========== */}
+        {activeTab === "profile" && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input value={user?.name || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input value={user?.email || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <input value={user?.role || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50 capitalize" readOnly />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input value={user?.phone || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Website Branding (Admin Only) */}
-        {isAdmin && (
+        {/* ========== BRANDING ========== */}
+        {activeTab === "branding" && isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Website Branding</h2>
             <p className="text-sm text-gray-500 mb-4">Customize how your platform looks to students and visitors</p>
@@ -275,191 +308,208 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Payment Settings (Admin Only) */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Settings (Razorpay)</h2>
-            <p className="text-sm text-gray-500 mb-4">Configure Razorpay payment gateway for paid internships</p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key ID</label>
-                <input value={settings.razorpay_key_id || ""} onChange={(e) => updateSetting("razorpay_key_id", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="rzp_live_..." />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Secret</label>
-                <input type="password" value={settings.razorpay_secret || ""} onChange={(e) => updateSetting("razorpay_secret", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Secret key" />
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 mt-3">
-              Razorpay Dashboard se Key ID and Secret copy karo: https://dashboard.razorpay.com/app/keys
-            </p>
-          </div>
-        )}
-
-        {/* Signature Settings (Admin Only) */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Authorized Signature</h2>
-            <p className="text-sm text-gray-500 mb-4">Upload your signature image — it will appear on offer letters and experience letters</p>
-            <div className="flex items-start gap-6">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Signature Image</label>
-                <input type="file" accept="image/*"
-                  onChange={(e) => e.target.files?.[0] && handleSignatureUpload(e.target.files[0])}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
-                <p className="text-xs text-gray-400 mt-1">PNG with transparent background recommended. Max 2MB.</p>
-                {sigUploading && <p className="text-xs text-blue-600 mt-1">Uploading...</p>}
-              </div>
-              {settings.admin_signature && (
-                <div className="flex-shrink-0">
-                  <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                  <div className="border rounded-lg p-2 bg-gray-50">
-                    <img src={settings.admin_signature} alt="Signature" className="h-16 max-w-[200px] object-contain" />
+        {/* ========== LETTERHEAD & SIGNATURE ========== */}
+        {activeTab === "letterhead" && isAdmin && (
+          <div className="space-y-6">
+            {/* Signature */}
+            <div className="bg-white rounded-xl p-6 border">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Authorized Signature</h2>
+              <p className="text-sm text-gray-500 mb-4">Upload your signature image — it will appear on offer letters and experience letters</p>
+              <div className="flex items-start gap-6">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Signature Image</label>
+                  <input type="file" accept="image/*"
+                    onChange={(e) => e.target.files?.[0] && handleSignatureUpload(e.target.files[0])}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  <p className="text-xs text-gray-400 mt-1">PNG with transparent background recommended. Max 2MB.</p>
+                  {sigUploading && <p className="text-xs text-blue-600 mt-1">Uploading...</p>}
+                </div>
+                {settings.admin_signature && (
+                  <div className="flex-shrink-0">
+                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                    <div className="border rounded-lg p-2 bg-gray-50">
+                      <img src={settings.admin_signature} alt="Signature" className="h-16 max-w-[200px] object-contain" />
+                    </div>
+                    <button onClick={() => updateSetting("admin_signature", "")}
+                      className="text-xs text-red-500 mt-1 hover:underline">Remove</button>
                   </div>
-                  <button onClick={() => updateSetting("admin_signature", "")}
-                    className="text-xs text-red-500 mt-1 hover:underline">Remove</button>
-                </div>
-              )}
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Name</label>
-              <input value={settings.signatory_name || ""} onChange={(e) => updateSetting("signatory_name", e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Hari Singh, Director" />
-            </div>
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Designation</label>
-              <input value={settings.signatory_designation || ""} onChange={(e) => updateSetting("signatory_designation", e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Managing Director" />
-            </div>
-          </div>
-        )}
-
-        {/* Letterhead Settings (Admin Only) */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Letterhead Settings</h2>
-            <p className="text-sm text-gray-500 mb-4">Customize your letterhead — these details appear on offer letters, experience letters, and ID cards</p>
-            <div className="flex items-start gap-6 mb-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Letterhead Logo</label>
-                <input type="file" accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    if (file.size > 5 * 1024 * 1024) { alert("File must be less than 5MB"); return; }
-                    const formData = new FormData();
-                    formData.append("file", file);
-                    const res = await fetch("/api/upload", { method: "POST", body: formData });
-                    if (res.ok) {
-                      const data = await res.json();
-                      updateSetting("letterhead_logo", data.url);
-                    }
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
-                <p className="text-xs text-gray-400 mt-1">Upload company logo for letterhead. PNG/JPG, max 5MB.</p>
+                )}
               </div>
-              {settings.letterhead_logo && (
-                <div className="flex-shrink-0">
-                  <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                  <div className="border rounded-lg p-2 bg-gray-50">
-                    <img src={settings.letterhead_logo} alt="Logo" className="h-16 max-w-[200px] object-contain" />
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Name</label>
+                <input value={settings.signatory_name || ""} onChange={(e) => updateSetting("signatory_name", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Hari Singh, Director" />
+              </div>
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Designation</label>
+                <input value={settings.signatory_designation || ""} onChange={(e) => updateSetting("signatory_designation", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Managing Director" />
+              </div>
+            </div>
+
+            {/* Letterhead */}
+            <div className="bg-white rounded-xl p-6 border">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Letterhead Settings</h2>
+              <p className="text-sm text-gray-500 mb-4">Customize your letterhead — these details appear on offer letters, experience letters, and ID cards</p>
+              <div className="flex items-start gap-6 mb-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Letterhead Logo</label>
+                  <input type="file" accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { alert("File must be less than 5MB"); return; }
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      const res = await fetch("/api/upload", { method: "POST", body: formData });
+                      if (res.ok) {
+                        const data = await res.json();
+                        updateSetting("letterhead_logo", data.url);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  <p className="text-xs text-gray-400 mt-1">Upload company logo for letterhead. PNG/JPG, max 5MB.</p>
+                </div>
+                {settings.letterhead_logo && (
+                  <div className="flex-shrink-0">
+                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                    <div className="border rounded-lg p-2 bg-gray-50">
+                      <img src={settings.letterhead_logo} alt="Logo" className="h-16 max-w-[200px] object-contain" />
+                    </div>
+                    <button onClick={() => updateSetting("letterhead_logo", "")}
+                      className="text-xs text-red-500 mt-1 hover:underline">Remove</button>
                   </div>
-                  <button onClick={() => updateSetting("letterhead_logo", "")}
-                    className="text-xs text-red-500 mt-1 hover:underline">Remove</button>
+                )}
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Name (Letterhead)</label>
+                  <input value={settings.letterhead_company_name || ""} onChange={(e) => updateSetting("letterhead_company_name", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media Private Limited" />
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+                  <input value={settings.letterhead_address || ""} onChange={(e) => updateSetting("letterhead_address", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="190A Krishna Kunj, Kalwar Road, Jaipur" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input value={settings.letterhead_phone || ""} onChange={(e) => updateSetting("letterhead_phone", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="9782005500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input value={settings.letterhead_email || ""} onChange={(e) => updateSetting("letterhead_email", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="hari@kkhsmedia.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">GST Number</label>
+                  <input value={settings.letterhead_gst || ""} onChange={(e) => updateSetting("letterhead_gst", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="08AAICK3853C1ZL" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                  <input value={settings.letterhead_website || ""} onChange={(e) => updateSetting("letterhead_website", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="www.kkhsmedia.com" />
+                </div>
+              </div>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name (Letterhead)</label>
-                <input value={settings.letterhead_company_name || ""} onChange={(e) => updateSetting("letterhead_company_name", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media Private Limited" />
+
+            {/* Letter Customization */}
+            <div className="bg-white rounded-xl p-6 border">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Letter Customization</h2>
+              <p className="text-sm text-gray-500 mb-4">Customize fonts, colors, and content of offer/experience letters. Changes apply to newly generated letters.</p>
+              <div className="grid md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Body Font Size (px)</label>
+                  <input type="number" min="7" max="14" step="0.5" value={settings.letter_font_size || "9"} onChange={(e) => updateSetting("letter_font_size", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
+                  <p className="text-xs text-gray-400 mt-1">Default: 9px. Smaller = fits more on page.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Heading Font Size (px)</label>
+                  <input type="number" min="10" max="20" step="0.5" value={settings.letter_heading_size || "16"} onChange={(e) => updateSetting("letter_heading_size", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
+                  <p className="text-xs text-gray-400 mt-1">Default: 16px for main heading.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+                  <div className="flex gap-2">
+                    <input type="color" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
+                      className="w-12 h-10 border rounded-lg cursor-pointer" />
+                    <input type="text" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
+                      className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#0000AA" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
-                <input value={settings.letterhead_address || ""} onChange={(e) => updateSetting("letterhead_address", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="190A Krishna Kunj, Kalwar Road, Jaipur" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input value={settings.letterhead_phone || ""} onChange={(e) => updateSetting("letterhead_phone", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="9782005500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input value={settings.letterhead_email || ""} onChange={(e) => updateSetting("letterhead_email", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="hari@kkhsmedia.com" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">GST Number</label>
-                <input value={settings.letterhead_gst || ""} onChange={(e) => updateSetting("letterhead_gst", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="08AAICK3853C1ZL" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                <input value={settings.letterhead_website || ""} onChange={(e) => updateSetting("letterhead_website", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="www.kkhsmedia.com" />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Accent Color</label>
+                  <div className="flex gap-2">
+                    <input type="color" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
+                      className="w-12 h-10 border rounded-lg cursor-pointer" />
+                    <input type="text" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
+                      className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#d32f2f" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Font Family</label>
+                  <select value={settings.letter_font_family || "Calibri"} onChange={(e) => updateSetting("letter_font_family", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900">
+                    <option value="Calibri">Calibri (Default)</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Trebuchet MS">Trebuchet MS</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Letter Customization (Admin Only) */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Letter Customization</h2>
-            <p className="text-sm text-gray-500 mb-4">Customize fonts, colors, and content of offer/experience letters. Changes apply to newly generated letters.</p>
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Body Font Size (px)</label>
-                <input type="number" min="7" max="14" step="0.5" value={settings.letter_font_size || "9"} onChange={(e) => updateSetting("letter_font_size", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
-                <p className="text-xs text-gray-400 mt-1">Default: 9px. Smaller = fits more on page.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Heading Font Size (px)</label>
-                <input type="number" min="10" max="20" step="0.5" value={settings.letter_heading_size || "16"} onChange={(e) => updateSetting("letter_heading_size", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
-                <p className="text-xs text-gray-400 mt-1">Default: 16px for main heading.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
-                <div className="flex gap-2">
-                  <input type="color" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
-                    className="w-12 h-10 border rounded-lg cursor-pointer" />
-                  <input type="text" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
-                    className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#0000AA" />
+        {/* ========== SMTP & EMAIL ========== */}
+        {activeTab === "email" && isAdmin && (
+          <div className="space-y-6">
+            {/* When emails are sent */}
+            <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+              <h3 className="text-sm font-semibold text-blue-800 mb-3">Email kab jayegi?</h3>
+              <div className="space-y-2 text-xs text-blue-700">
+                <div className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold mt-0.5">JAYEGI:</span>
+                  <ul className="space-y-1">
+                    <li>Student register kare — Welcome Email</li>
+                    <li>Student login kare — Login Notification</li>
+                    <li>Admin student ko <strong>Select/Reject/Interview</strong> kare — Status Change Email</li>
+                    <li>Offer Letter generate ho — Offer Letter Email</li>
+                    <li>Experience Letter generate ho — Experience Letter Email</li>
+                    <li>Internship Certificate generate ho — Certificate Email</li>
+                    <li>ID Card generate ho — ID Card Email</li>
+                    <li>Student task submit kare aur admin review kare — Task Reviewed Email</li>
+                    <li>Student document upload kare — Admin ko notification email</li>
+                    <li>Password reset kare — Reset Link Email</li>
+                  </ul>
+                </div>
+                <div className="flex items-start gap-2 mt-3">
+                  <span className="text-red-600 font-bold mt-0.5">NAHI JAYEGI:</span>
+                  <ul className="space-y-1">
+                    <li>SMTP settings configure nahi hai toh koi bhi email nahi jayegi</li>
+                    <li>Daily attendance mark hone pe — koi email nahi</li>
+                    <li>Naya video/resource unlock hone pe — koi email nahi</li>
+                    <li>Quiz attempt karne pe — koi email nahi</li>
+                    <li>Discussion forum pe post/reply pe — koi email nahi</li>
+                    <li>Live session schedule hone pe — koi email nahi (in-app notification only)</li>
+                    <li>Leaderboard update pe — koi email nahi</li>
+                  </ul>
                 </div>
               </div>
             </div>
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Accent Color</label>
-                <div className="flex gap-2">
-                  <input type="color" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
-                    className="w-12 h-10 border rounded-lg cursor-pointer" />
-                  <input type="text" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
-                    className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#d32f2f" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Font Family</label>
-                <select value={settings.letter_font_family || "Calibri"} onChange={(e) => updateSetting("letter_font_family", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900">
-                  <option value="Calibri">Calibri (Default)</option>
-                  <option value="Arial">Arial</option>
-                  <option value="Times New Roman">Times New Roman</option>
-                  <option value="Georgia">Georgia</option>
-                  <option value="Verdana">Verdana</option>
-                  <option value="Trebuchet MS">Trebuchet MS</option>
-                </select>
-              </div>
-            </div>
-            {/* SMTP Email Configuration */}
-            <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-semibold text-gray-800 mb-3">Email (SMTP) Configuration</h3>
+
+            {/* SMTP Config */}
+            <div className="bg-white rounded-xl p-6 border">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">SMTP Configuration</h2>
+              <p className="text-sm text-gray-500 mb-4">Configure SMTP to send emails for login, signup, forgot password, and letter notifications.</p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
@@ -474,44 +524,204 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">SMTP User (Email)</label>
                   <input value={settings.smtp_user || ""} onChange={(e) => updateSetting("smtp_user", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@kkhsmedia.com" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Password</label>
-                  <input type="password" value={settings.smtp_password || ""} onChange={(e) => updateSetting("smtp_password", e.target.value)}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Password / App Password</label>
+                  <input type="password" value={settings.smtp_pass || ""} onChange={(e) => updateSetting("smtp_pass", e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="App password" />
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">From Email (Display Name)</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">From Email</label>
                   <input value={settings.smtp_from || ""} onChange={(e) => updateSetting("smtp_from", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media <noreply@kkhsmedia.com>" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">From Name</label>
+                  <input value={settings.smtp_from_name || ""} onChange={(e) => updateSetting("smtp_from_name", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mt-4 pt-4 border-t">
+                <button onClick={handleSmtpTest} disabled={smtpTesting}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
+                  {smtpTesting ? "Testing..." : "Send Test Email"}
+                </button>
+                {smtpTestResult && (
+                  <p className={`text-sm ${smtpTestResult.ok ? "text-green-600" : "text-red-600"}`}>
+                    {smtpTestResult.msg}
+                  </p>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-3">For Gmail: use smtp.gmail.com, port 587, and an App Password (not your regular password).</p>
+            </div>
+
+            {/* Email Templates */}
+            <div className="bg-white rounded-xl p-6 border">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Email Templates</h2>
+              <p className="text-sm text-gray-500 mb-4">Jab letter/certificate generate hota hai tab student ko ye email jaata hai. Subject aur body customize kar sakte ho.</p>
+              <p className="text-xs text-gray-400 mb-4">
+                Variables use karo: <code className="bg-gray-100 px-1 rounded">{"{{student_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_type}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_phone}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_email}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{dashboard_link}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{date}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_number}}"}</code>
+              </p>
+              <div className="space-y-3">
+                {EMAIL_TEMPLATES.map((tpl) => (
+                  <div key={tpl.key} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800">{tpl.label}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{tpl.desc}</p>
+                      </div>
+                      <button onClick={() => { setEditingTemplate(editingTemplate === tpl.key ? null : tpl.key); setTemplatePreview(false); }}
+                        className="text-xs text-indigo-600 hover:underline font-medium">
+                        {editingTemplate === tpl.key ? "Close" : "Edit Template"}
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-gray-400 mt-2">
+                      Subject: <span className="text-gray-600">{getTemplateSubject(tpl.key).substring(0, 80)}{getTemplateSubject(tpl.key).length > 80 ? "..." : ""}</span>
+                    </p>
+
+                    {editingTemplate === tpl.key && (
+                      <div className="mt-4 space-y-3 border-t pt-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Email Subject</label>
+                          <input
+                            value={getTemplateSubject(tpl.key)}
+                            onChange={(e) => updateSetting(`email_template_${tpl.key}_subject`, e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+                            placeholder="Email subject line..."
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-medium text-gray-600">Email Body (HTML)</label>
+                            <button onClick={() => setTemplatePreview(!templatePreview)}
+                              className="text-xs text-indigo-600 hover:underline">
+                              {templatePreview ? "Edit" : "Preview"}
+                            </button>
+                          </div>
+                          {templatePreview ? (
+                            <div className="border rounded-lg p-4 bg-white min-h-[200px] text-sm"
+                              dangerouslySetInnerHTML={{ __html: renderPreview(getTemplateBody(tpl.key)) }} />
+                          ) : (
+                            <textarea
+                              value={getTemplateBody(tpl.key)}
+                              onChange={(e) => updateSetting(`email_template_${tpl.key}_body`, e.target.value)}
+                              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 font-mono h-48"
+                              placeholder="Email body in HTML..."
+                            />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => {
+                            updateSetting(`email_template_${tpl.key}_subject`, DEFAULT_TEMPLATES[tpl.key]?.subject || "");
+                            updateSetting(`email_template_${tpl.key}_body`, DEFAULT_TEMPLATES[tpl.key]?.body || "");
+                          }} className="text-xs text-orange-600 hover:underline">
+                            Reset to Default
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Program Types Management */}
-        {isAdmin && (
+        {/* ========== NOTIFICATIONS ========== */}
+        {activeTab === "notifications" && isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Email Notifications</p>
+                  <p className="text-xs text-gray-500">Send email when student applies, interview scheduled, etc.</p>
+                </div>
+                <input type="checkbox" checked={settings.email_notifications === "true"}
+                  onChange={(e) => updateSetting("email_notifications", e.target.checked ? "true" : "false")}
+                  className="w-5 h-5 rounded" />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">WhatsApp Notifications</p>
+                  <p className="text-xs text-gray-500">Send WhatsApp messages for important updates</p>
+                </div>
+                <input type="checkbox" checked={settings.whatsapp_notifications === "true"}
+                  onChange={(e) => updateSetting("whatsapp_notifications", e.target.checked ? "true" : "false")}
+                  className="w-5 h-5 rounded" />
+              </div>
+              {settings.whatsapp_notifications === "true" && (
+                <div className="ml-4 pl-4 border-l-2 border-green-200 space-y-3 py-2">
+                  <p className="text-xs text-gray-500">Configure WhatsApp Business API (Meta Cloud API)</p>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Phone Number ID</label>
+                    <input value={settings.whatsapp_phone_id || ""} onChange={(e) => updateSetting("whatsapp_phone_id", e.target.value)}
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="From Meta Business Suite" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Access Token</label>
+                    <input type="password" value={settings.whatsapp_token || ""} onChange={(e) => updateSetting("whatsapp_token", e.target.value)}
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="Permanent access token" />
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Auto Attendance</p>
+                  <p className="text-xs text-gray-500">Automatically mark student present when they open dashboard</p>
+                </div>
+                <input type="checkbox" checked={settings.auto_attendance !== "false"}
+                  onChange={(e) => updateSetting("auto_attendance", e.target.checked ? "true" : "false")}
+                  className="w-5 h-5 rounded" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========== PAYMENTS ========== */}
+        {activeTab === "payments" && isAdmin && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Gateway (Razorpay)</h2>
+            <p className="text-sm text-gray-500 mb-4">Configure Razorpay for paid program enrollments.</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key ID</label>
+                <input value={settings.razorpay_key_id || ""} onChange={(e) => updateSetting("razorpay_key_id", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="rzp_live_xxxx" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key Secret</label>
+                <input type="password" value={settings.razorpay_key_secret || ""} onChange={(e) => updateSetting("razorpay_key_secret", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Secret key" />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">Get keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Razorpay Dashboard</a>. Use test keys for testing.</p>
+          </div>
+        )}
+
+        {/* ========== PROGRAM TYPES ========== */}
+        {activeTab === "program_types" && isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Program Types (Public Page)</h2>
             <p className="text-sm text-gray-500 mb-6">Manage the 4 program types shown on the public <a href="/programs" target="_blank" className="text-indigo-600 underline">Programs</a> page. Changes apply after saving.</p>
 
             {[
               { id: "premium_paid_training", label: "1. Premium Paid Training Program", color: "#4f46e5",
-                defaults: { title: "Premium Paid Training Program", fees: "₹5,000", fees_note: "3 Months", duration: "3 Months", mode: "Online",
+                defaults: { title: "Premium Paid Training Program", fees: "\u20B95,000", fees_note: "3 Months", duration: "3 Months", mode: "Online",
                 ideal_for: "2nd & 3rd year students who want serious learning, strong portfolio and job readiness",
                 highlights: "Complete structured online training\nReal-time projects on Live Client Work / Industry Projects\nWeekly doubt sessions with mentors\nFinal project report + presentation\nCertificate + Experience Letter + Recommendation Letter\nBest for students who want strong portfolio and job readiness" }},
               { id: "basic_certification", label: "2. Basic Certification Program", color: "#059669",
-                defaults: { title: "Basic Certification Program", fees: "₹999", fees_note: "One Time", duration: "1-15 Days (Self-paced)", mode: "Online",
+                defaults: { title: "Basic Certification Program", fees: "\u20B9999", fees_note: "One Time", duration: "1-15 Days (Self-paced)", mode: "Online",
                 ideal_for: "Students who want quick certificate at low cost and basic knowledge",
                 highlights: "High-quality training material (PDF + Videos)\nTopic-wise study modules\nOnline Quiz / Assignment (MCQ + Subjective)\nPerformance-based percentage certificate\nDigital Certificate with your Percentage / Grade\nProject files included (if applicable)" }},
               { id: "free_hybrid_internship", label: "3. Free Hybrid Internship", color: "#d97706",
-                defaults: { title: "Free Hybrid Internship", fees: "₹0", fees_note: "Completely Free", duration: "1-3 Months", mode: "Online + Offline",
+                defaults: { title: "Free Hybrid Internship", fees: "\u20B90", fees_note: "Completely Free", duration: "1-3 Months", mode: "Online + Offline",
                 ideal_for: "Students who want flexibility and can manage studies + internship together",
-                highlights: "Mix of Online + Offline work experience\nWeekly tasks and real projects\nMentorship from experienced team\nCertificate of Completion\nNo stipend, no fees — completely free\nFlexible schedule for working students" }},
+                highlights: "Mix of Online + Offline work experience\nWeekly tasks and real projects\nMentorship from experienced team\nCertificate of Completion\nNo stipend, no fees \u2014 completely free\nFlexible schedule for working students" }},
               { id: "stipend_office_internship", label: "4. Stipend Based Office Internship", color: "#dc2626",
-                defaults: { title: "Stipend Based Office Internship", fees: "₹5,000/month", fees_note: "Stipend (You Earn)", duration: "1-3 Months", mode: "Office (Jaipur)",
+                defaults: { title: "Stipend Based Office Internship", fees: "\u20B95,000/month", fees_note: "Stipend (You Earn)", duration: "1-3 Months", mode: "Office (Jaipur)",
                 ideal_for: "Serious students who can come to office daily, minimum 6 days a week",
                 highlights: "Full-time office work in Jaipur\nWorking on Live Client Projects daily\nDaily learning + hands-on professional experience\nProfessional corporate work environment\nCertificate + Experience Letter on completion\nBest performing interns can get Pre-Placement Offer" }},
             ].map((prog) => (
@@ -593,210 +803,11 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Notification Settings */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Email Notifications</p>
-                  <p className="text-xs text-gray-500">Send email when student applies, interview scheduled, etc.</p>
-                </div>
-                <input type="checkbox" checked={settings.email_notifications === "true"}
-                  onChange={(e) => updateSetting("email_notifications", e.target.checked ? "true" : "false")}
-                  className="w-5 h-5 rounded" />
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">WhatsApp Notifications</p>
-                  <p className="text-xs text-gray-500">Send WhatsApp messages for important updates</p>
-                </div>
-                <input type="checkbox" checked={settings.whatsapp_notifications === "true"}
-                  onChange={(e) => updateSetting("whatsapp_notifications", e.target.checked ? "true" : "false")}
-                  className="w-5 h-5 rounded" />
-              </div>
-              {settings.whatsapp_notifications === "true" && (
-                <div className="ml-4 pl-4 border-l-2 border-green-200 space-y-3 py-2">
-                  <p className="text-xs text-gray-500">Configure WhatsApp Business API (Meta Cloud API)</p>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Phone Number ID</label>
-                    <input value={settings.whatsapp_phone_id || ""} onChange={(e) => updateSetting("whatsapp_phone_id", e.target.value)}
-                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="From Meta Business Suite" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Access Token</label>
-                    <input type="password" value={settings.whatsapp_token || ""} onChange={(e) => updateSetting("whatsapp_token", e.target.value)}
-                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="Permanent access token" />
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Auto Attendance</p>
-                  <p className="text-xs text-gray-500">Automatically mark student present when they open dashboard</p>
-                </div>
-                <input type="checkbox" checked={settings.auto_attendance !== "false"}
-                  onChange={(e) => updateSetting("auto_attendance", e.target.checked ? "true" : "false")}
-                  className="w-5 h-5 rounded" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SMTP / Email Settings */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Email (SMTP) Settings</h2>
-            <p className="text-sm text-gray-500 mb-4">Configure SMTP to send emails for login, signup, forgot password, and letter notifications.</p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
-                <input value={settings.smtp_host || ""} onChange={(e) => updateSetting("smtp_host", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="smtp.gmail.com" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Port</label>
-                <input value={settings.smtp_port || ""} onChange={(e) => updateSetting("smtp_port", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="587" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP User (Email)</label>
-                <input value={settings.smtp_user || ""} onChange={(e) => updateSetting("smtp_user", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Password / App Password</label>
-                <input type="password" value={settings.smtp_pass || ""} onChange={(e) => updateSetting("smtp_pass", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="••••••••" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From Email</label>
-                <input value={settings.smtp_from || ""} onChange={(e) => updateSetting("smtp_from", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From Name</label>
-                <input value={settings.smtp_from_name || ""} onChange={(e) => updateSetting("smtp_from_name", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media" />
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-4 pt-4 border-t">
-              <button onClick={handleSmtpTest} disabled={smtpTesting}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
-                {smtpTesting ? "Testing..." : "Send Test Email"}
-              </button>
-              {smtpTestResult && (
-                <p className={`text-sm ${smtpTestResult.ok ? "text-green-600" : "text-red-600"}`}>
-                  {smtpTestResult.msg}
-                </p>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 mt-3">For Gmail: use smtp.gmail.com, port 587, and an App Password (not your regular password).</p>
-          </div>
-        )}
-
-        {/* Email Templates */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Email Templates</h2>
-            <p className="text-sm text-gray-500 mb-4">Jab letter/certificate generate hota hai tab student ko ye email jaata hai. Subject aur body customize kar sakte ho.</p>
-            <p className="text-xs text-gray-400 mb-4">
-              Variables use karo: <code className="bg-gray-100 px-1 rounded">{"{{student_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_type}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_name}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_phone}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{company_email}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{dashboard_link}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{date}}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{{letter_number}}"}</code>
-            </p>
-            <div className="space-y-3">
-              {EMAIL_TEMPLATES.map((tpl) => (
-                <div key={tpl.key} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-800">{tpl.label}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{tpl.desc}</p>
-                    </div>
-                    <button onClick={() => { setEditingTemplate(editingTemplate === tpl.key ? null : tpl.key); setTemplatePreview(false); }}
-                      className="text-xs text-indigo-600 hover:underline font-medium">
-                      {editingTemplate === tpl.key ? "Close" : "Edit Template"}
-                    </button>
-                  </div>
-
-                  {/* Current subject preview */}
-                  <p className="text-xs text-gray-400 mt-2">
-                    Subject: <span className="text-gray-600">{getTemplateSubject(tpl.key).substring(0, 80)}{getTemplateSubject(tpl.key).length > 80 ? "..." : ""}</span>
-                  </p>
-
-                  {/* Edit form */}
-                  {editingTemplate === tpl.key && (
-                    <div className="mt-4 space-y-3 border-t pt-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Email Subject</label>
-                        <input
-                          value={getTemplateSubject(tpl.key)}
-                          onChange={(e) => updateSetting(`email_template_${tpl.key}_subject`, e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
-                          placeholder="Email subject line..."
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-medium text-gray-600">Email Body (HTML)</label>
-                          <button onClick={() => setTemplatePreview(!templatePreview)}
-                            className="text-xs text-indigo-600 hover:underline">
-                            {templatePreview ? "Edit" : "Preview"}
-                          </button>
-                        </div>
-                        {templatePreview ? (
-                          <div className="border rounded-lg p-4 bg-white min-h-[200px] text-sm"
-                            dangerouslySetInnerHTML={{ __html: renderPreview(getTemplateBody(tpl.key)) }} />
-                        ) : (
-                          <textarea
-                            value={getTemplateBody(tpl.key)}
-                            onChange={(e) => updateSetting(`email_template_${tpl.key}_body`, e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 font-mono h-48"
-                            placeholder="Email body in HTML..."
-                          />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => {
-                          updateSetting(`email_template_${tpl.key}_subject`, DEFAULT_TEMPLATES[tpl.key]?.subject || "");
-                          updateSetting(`email_template_${tpl.key}_body`, DEFAULT_TEMPLATES[tpl.key]?.body || "");
-                        }} className="text-xs text-orange-600 hover:underline">
-                          Reset to Default
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Razorpay Payment Gateway */}
-        {isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Payment Gateway (Razorpay)</h2>
-            <p className="text-sm text-gray-500 mb-4">Configure Razorpay for paid program enrollments.</p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key ID</label>
-                <input value={settings.razorpay_key_id || ""} onChange={(e) => updateSetting("razorpay_key_id", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="rzp_live_xxxx" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key Secret</label>
-                <input type="password" value={settings.razorpay_key_secret || ""} onChange={(e) => updateSetting("razorpay_key_secret", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="••••••••" />
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 mt-3">Get keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Razorpay Dashboard</a>. Use test keys for testing.</p>
-          </div>
-        )}
-
-        {/* Letter Templates */}
-        {isAdmin && (
+        {/* ========== LETTER DESIGN ========== */}
+        {activeTab === "letter_design" && isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Letter Templates (Design)</h2>
-            <p className="text-sm text-gray-500 mb-4">Letter ka design change karna hai to yahan se karo. Email template upar section mein hai.</p>
+            <p className="text-sm text-gray-500 mb-4">Letter ka design change karna hai to yahan se karo. Email template &quot;SMTP &amp; Email&quot; tab mein hai.</p>
             <div className="space-y-3">
               {["offer_letter", "experience_letter", "internship_certificate", "id_card"].map((type) => {
                 const labels: Record<string, string> = {
@@ -826,24 +837,27 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Platform Info */}
-        <div className="bg-white rounded-xl p-6 border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Platform Info</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">Platform</span>
-              <span className="font-medium text-gray-900">InternPro v1.0</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">Framework</span>
-              <span className="font-medium text-gray-900">Next.js + Prisma + SQLite</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-gray-600">Support</span>
-              <span className="font-medium text-gray-900">{settings.support_email || "support@internpro.com"}</span>
+        {/* ========== PLATFORM INFO ========== */}
+        {activeTab === "info" && (
+          <div className="bg-white rounded-xl p-6 border">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Platform Info</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">Platform</span>
+                <span className="font-medium text-gray-900">InternPro v1.0</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">Framework</span>
+                <span className="font-medium text-gray-900">Next.js + Prisma + SQLite</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">Support</span>
+                <span className="font-medium text-gray-900">{settings.support_email || "support@internpro.com"}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
       </div>
     </div>
   );
