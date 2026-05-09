@@ -38,7 +38,8 @@ async function sendEmailSafe(to: string, subject: string, html: string) {
 export async function notifyApplicationStatusChange(studentEmail: string, studentName: string, status: string, programTitle: string) {
   const statusMessages: Record<string, string> = {
     selected: `Congratulations ${studentName}! Your application for <b>${programTitle}</b> has been accepted. Welcome aboard!`,
-    rejected: `Dear ${studentName}, we regret to inform you that your application for <b>${programTitle}</b> was not successful this time.`,
+    rejected: `Dear ${studentName}, we regret to inform you that your application for <b>${programTitle}</b> was not successful this time. You can apply again for other programs.`,
+    shortlisted: `Dear ${studentName}, great news! You have been <b>shortlisted</b> for <b>${programTitle}</b>. Please stay tuned — you may be selected soon or called for a follow-up interview.`,
     interview: `Dear ${studentName}, you have been shortlisted for an interview for <b>${programTitle}</b>. Check your dashboard for details.`,
   };
 

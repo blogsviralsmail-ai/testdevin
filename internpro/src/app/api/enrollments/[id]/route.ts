@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     // Send notification on status change
-    if (status && ["selected", "rejected", "interview"].includes(status)) {
+    if (status && ["selected", "rejected", "shortlisted", "interview"].includes(status)) {
       notifyApplicationStatusChange(enrollment.student.email, enrollment.student.name, status, enrollment.batch.program.title).catch(() => {});
     }
 

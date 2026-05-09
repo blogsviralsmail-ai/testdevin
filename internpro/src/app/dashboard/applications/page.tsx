@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 interface StudentDoc {
   id: string;
@@ -33,6 +34,8 @@ interface Enrollment {
 }
 
 export default function ApplicationsPage() {
+  const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [filter, setFilter] = useState("applied");
   const [loading, setLoading] = useState(true);
@@ -47,6 +50,17 @@ export default function ApplicationsPage() {
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [editLinkModal, setEditLinkModal] = useState<{ interviewId: string; link: string } | null>(null);
 
+  // Check role and redirect students
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.user?.role === "student") {
+        router.replace("/dashboard");
+      } else {
+        setUserRole(data?.user?.role || null);
+      }
+    }).catch(() => {});
+  }, [router]);
+
   const fetchApplications = useCallback(async () => {
     const res = await fetch(`/api/enrollments?status=${filter}`);
     const data = await res.json();
@@ -54,7 +68,7 @@ export default function ApplicationsPage() {
     setLoading(false);
   }, [filter]);
 
-  useEffect(() => { fetchApplications(); }, [fetchApplications]);
+  useEffect(() => { if (userRole && userRole !== "student") fetchApplications(); }, [fetchApplications, userRole]);
 
   const openViewModal = async (e: Enrollment) => {
     setViewModal(e);

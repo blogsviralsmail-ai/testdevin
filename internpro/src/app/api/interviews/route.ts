@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { notifyApplicationStatusChange } from "@/lib/notifications";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -160,12 +161,14 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    // Update enrollment status based on result
+    // Update enrollment status based on result and send email
     if (result === "selected" || result === "shortlisted" || result === "rejected") {
-      await prisma.enrollment.update({
+      const enrollment = await prisma.enrollment.update({
         where: { id: interview.enrollmentId },
         data: { status: result },
+        include: { student: { select: { email: true, name: true } }, batch: { include: { program: { select: { title: true } } } } },
       });
+      notifyApplicationStatusChange(enrollment.student.email, enrollment.student.name, result, enrollment.batch.program.title).catch(() => {});
     }
 
     return NextResponse.json(interview);

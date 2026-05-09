@@ -432,6 +432,18 @@ export default function InterviewsPage() {
                       </button>
                     </div>
                   )}
+                  {i.result === "shortlisted" && (
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => handleResult(i.id, i.enrollment.id, "selected")}
+                        className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700">
+                        Select
+                      </button>
+                      <button onClick={() => handleResult(i.id, i.enrollment.id, "rejected")}
+                        className="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600">
+                        Reject
+                      </button>
+                    </div>
+                  )}
                   {i.result === "selected" && (
                     <button onClick={() => setEditEnrollment({
                       enrollmentId: i.enrollment.id,
