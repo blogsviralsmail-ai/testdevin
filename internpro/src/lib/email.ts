@@ -27,7 +27,10 @@ export async function sendEmail({ to, subject, html, attachments }: EmailOptions
     const smtpFrom = sMap.smtp_from || smtpUser;
     const smtpFromName = sMap.smtp_from_name || "InternPro";
 
-    if (!smtpHost || !smtpUser || !smtpPass) return false;
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      console.error("[sendEmail] SMTP not configured:", { host: !!smtpHost, user: !!smtpUser, pass: !!smtpPass });
+      return false;
+    }
 
     const transporter = nodemailer.createTransport({
       host: smtpHost,

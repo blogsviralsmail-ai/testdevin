@@ -4,33 +4,36 @@ import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
-  const session = await getSession();
-  if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const session = await getSession();
+    if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const { email, subject, htmlContent } = await request.json();
-  if (!email || !subject || !htmlContent) {
-    return NextResponse.json({ error: "Email, subject, and htmlContent are required" }, { status: 400 });
-  }
+    const { email, subject, htmlContent } = await request.json();
+    if (!email || !subject || !htmlContent) {
+      return NextResponse.json({ error: "Email, subject, and htmlContent are required" }, { status: 400 });
+    }
 
-  // Extract student name and letter type from subject (format: "Offer Letter — Student Name")
-  const parts = subject.split(" — ");
-  const letterType = parts[0] || "Document";
-  const studentName = parts[1] || "Student";
+    console.log("[send-letter-email] Starting for:", email, "subject:", subject.substring(0, 60));
 
-  // Get company logo from settings
-  const settings = await prisma.setting.findMany();
-  const sMap: Record<string, string> = {};
-  for (const s of settings) sMap[s.key] = s.value;
+    // Extract student name and letter type from subject (format: "Offer Letter — Student Name")
+    const parts = subject.split(" — ");
+    const letterType = parts[0] || "Document";
+    const studentName = parts[1] || "Student";
 
-  const siteUrl = "https://internship.kkhsmedia.com";
-  const logoPath = sMap.letterhead_logo || sMap.company_logo || "/uploads/kkhs-logo.png";
-  const logoFullUrl = logoPath.startsWith("http") ? logoPath : siteUrl + logoPath;
-  const companyName = sMap.letterhead_company_name || sMap.company_name || "KKHS Media Private Limited";
+    // Get company logo from settings
+    const settings = await prisma.setting.findMany();
+    const sMap: Record<string, string> = {};
+    for (const s of settings) sMap[s.key] = s.value;
 
-  // Build a proper email body with logo
-  const emailBody = `<div style="text-align:center;margin:0 0 20px;padding:16px 0;border-bottom:3px solid #0000AA;">
+    const siteUrl = "https://internship.kkhsmedia.com";
+    const logoPath = sMap.letterhead_logo || sMap.company_logo || "/uploads/kkhs-logo.png";
+    const logoFullUrl = logoPath.startsWith("http") ? logoPath : siteUrl + logoPath;
+    const companyName = sMap.letterhead_company_name || sMap.company_name || "KKHS Media Private Limited";
+
+    // Build a proper email body with logo
+    const emailBody = `<div style="text-align:center;margin:0 0 20px;padding:16px 0;border-bottom:3px solid #0000AA;">
 <img src="${logoFullUrl}" alt="${companyName}" style="height:70px;display:inline-block;object-fit:contain;" />
 <p style="margin:8px 0 0;font-size:18px;font-weight:700;color:#0000AA;letter-spacing:0.5px;">${companyName}</p>
 </div>
@@ -43,20 +46,29 @@ export async function POST(request: NextRequest) {
 <p style="color:#4b5563;line-height:1.6;margin:0 0 6px;">You can also view and download from your <a href="https://internship.kkhsmedia.com/dashboard/letters" style="color:#4f46e5;font-weight:600;">Letters page</a>.</p>
 <p style="color:#9ca3af;font-size:12px;margin-top:20px;">This is an automated email from ${companyName} Internship Platform.</p>`;
 
-  // Generate PDF attachment from the document HTML
-  let attachments: { filename: string; content: Buffer; contentType?: string }[] | undefined;
-  try {
-    const { htmlToPdfBuffer } = await import("@/lib/pdf");
-    const pdfBuffer = await htmlToPdfBuffer(htmlContent);
-    const safeFilename = subject.replace(/[^a-zA-Z0-9\s\-_]/g, "").replace(/\s+/g, "_").substring(0, 60);
-    attachments = [{ filename: `${safeFilename}.pdf`, content: pdfBuffer }];
-  } catch (err) {
-    console.error("PDF attachment generation failed:", err);
-  }
+    // Generate PDF attachment from the document HTML
+    let attachments: { filename: string; content: Buffer; contentType?: string }[] | undefined;
+    try {
+      console.log("[send-letter-email] Generating PDF...");
+      const { htmlToPdfBuffer } = await import("@/lib/pdf");
+      const pdfBuffer = await htmlToPdfBuffer(htmlContent);
+      const safeFilename = subject.replace(/[^a-zA-Z0-9\s\-_]/g, "").replace(/\s+/g, "_").substring(0, 60);
+      attachments = [{ filename: `${safeFilename}.pdf`, content: pdfBuffer }];
+      console.log("[send-letter-email] PDF generated:", pdfBuffer.length, "bytes");
+    } catch (err) {
+      console.error("[send-letter-email] PDF generation failed:", err);
+    }
 
-  const sent = await sendEmail({ to: email, subject: `${letterType} — ${companyName}`, html: emailBody, attachments });
-  if (sent) {
-    return NextResponse.json({ success: true });
+    console.log("[send-letter-email] Sending email to:", email, "attachments:", attachments ? "yes" : "no");
+    const sent = await sendEmail({ to: email, subject: `${letterType} — ${companyName}`, html: emailBody, attachments });
+    console.log("[send-letter-email] Email send result:", sent);
+
+    if (sent) {
+      return NextResponse.json({ success: true });
+    }
+    return NextResponse.json({ error: "Failed to send email. Check SMTP settings." }, { status: 500 });
+  } catch (err) {
+    console.error("[send-letter-email] Unhandled error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-  return NextResponse.json({ error: "Failed to send email. Check SMTP settings." }, { status: 500 });
 }
