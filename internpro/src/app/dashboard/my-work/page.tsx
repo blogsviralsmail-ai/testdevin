@@ -229,33 +229,39 @@ export default function MyWorkPage() {
 
         {/* Day Content */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white rounded-xl border p-6 mb-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Day {selectedDay}
-                {selectedDay === currentDay && <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">Today</span>}
-              </h2>
-              <div className="flex gap-2 text-sm text-gray-500">
-                <span>{dayResources.length} video(s)</span>
-                <span>|</span>
-                <span>{dayTasks.length} task(s)</span>
+          {/* Day Header */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-5 mb-4 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">Day {selectedDay}</h2>
+                <p className="text-indigo-200 text-sm mt-1">
+                  {dayResources.length} Video{dayResources.length !== 1 ? "s" : ""} &bull; {dayTasks.length} Task{dayTasks.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              {selectedDay === currentDay && (
+                <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">Today</span>
+              )}
+            </div>
+          </div>
+
+          {/* STEP 1: Watch Videos */}
+          <div className="bg-white rounded-xl border mb-4 overflow-hidden">
+            <div className="bg-red-50 border-b px-5 py-3 flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold">1</span>
+              <div>
+                <h3 className="font-semibold text-gray-900">Watch Video</h3>
+                <p className="text-xs text-gray-500">Pehle neeche ka video dhyan se dekho</p>
               </div>
             </div>
-
-            {/* Videos/Resources */}
-            {dayResources.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded bg-red-100 text-red-600 flex items-center justify-center text-xs">&#9654;</span>
-                  Study Material
-                </h3>
+            <div className="p-5">
+              {dayResources.length > 0 ? (
                 <div className="space-y-4">
                   {dayResources.map(r => {
                     const ytId = r.type === "video" ? getYouTubeId(r.url) : null;
                     return (
-                      <div key={r.id} className="bg-gray-50 rounded-lg border overflow-hidden">
+                      <div key={r.id} className="rounded-lg border overflow-hidden">
                         {ytId ? (
-                          <div className="aspect-video w-full">
+                          <div className="aspect-video w-full bg-black">
                             <iframe
                               src={`https://www.youtube.com/embed/${ytId}`}
                               className="w-full h-full"
@@ -265,71 +271,112 @@ export default function MyWorkPage() {
                             />
                           </div>
                         ) : null}
-                        <div className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-sm shrink-0">
-                              {r.type === "video" ? "🎥" : r.type === "pdf" ? "📄" : "🔗"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 text-sm truncate">{r.title}</p>
-                            </div>
-                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 font-medium shrink-0">
-                              Open &#8599;
-                            </a>
-                          </div>
+                        <div className="p-3 bg-gray-50 flex items-center gap-3">
+                          <span className="text-lg">{r.type === "video" ? "🎥" : r.type === "pdf" ? "📄" : "🔗"}</span>
+                          <p className="flex-1 text-sm font-medium text-gray-800 truncate">{r.title}</p>
+                          <a href={r.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 font-medium shrink-0">
+                            YouTube pe dekho &#8599;
+                          </a>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-gray-400 text-sm text-center py-4">Aaj ke liye koi video nahi hai</p>
+              )}
+            </div>
+          </div>
 
-            {/* Tasks */}
-            {dayTasks.length > 0 && (
+          {/* STEP 2: Read Task */}
+          <div className="bg-white rounded-xl border mb-4 overflow-hidden">
+            <div className="bg-orange-50 border-b px-5 py-3 flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">2</span>
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded bg-orange-100 text-orange-600 flex items-center justify-center text-xs">&#9998;</span>
-                  Tasks
-                </h3>
-                <div className="space-y-3">
+                <h3 className="font-semibold text-gray-900">Aaj Ka Task</h3>
+                <p className="text-xs text-gray-500">Video dekhne ke baad ye kaam karo</p>
+              </div>
+            </div>
+            <div className="p-5">
+              {dayTasks.length > 0 ? (
+                <div className="space-y-4">
+                  {dayTasks.map(t => {
+                    const sub = getSubmissionStatus(t.id);
+                    return (
+                      <div key={t.id} className="border rounded-lg p-4 bg-orange-50/50">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h4 className="font-semibold text-gray-900">{t.title}</h4>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${sub.color}`}>{sub.label}</span>
+                        </div>
+                        {t.description && (
+                          <div className="bg-white rounded-lg p-3 border border-orange-100">
+                            <p className="text-sm text-gray-700 leading-relaxed">{t.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm text-center py-4">Aaj ke liye koi task nahi hai</p>
+              )}
+            </div>
+          </div>
+
+          {/* STEP 3: Submit Work */}
+          <div className="bg-white rounded-xl border mb-4 overflow-hidden">
+            <div className="bg-green-50 border-b px-5 py-3 flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">3</span>
+              <div>
+                <h3 className="font-semibold text-gray-900">Submit Your Work</h3>
+                <p className="text-xs text-gray-500">Task complete karke neeche submit karo</p>
+              </div>
+            </div>
+            <div className="p-5">
+              {dayTasks.length > 0 ? (
+                <div className="space-y-4">
                   {dayTasks.map(t => {
                     const sub = getSubmissionStatus(t.id);
                     const isSubmitting = submitTask?.taskId === t.id;
-                    return (
-                      <div key={t.id} className="bg-gray-50 rounded-lg p-4 border">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">{t.title}</p>
-                            {t.description && <p className="text-sm text-gray-600 mt-1">{t.description}</p>}
+
+                    if (sub.status === "submitted" || sub.status === "reviewed") {
+                      return (
+                        <div key={t.id} className="border rounded-lg p-4 bg-green-50">
+                          <div className="flex items-center gap-2">
+                            <span className="text-green-600 text-lg">&#10003;</span>
+                            <p className="font-medium text-green-800">{t.title} — {sub.label}</p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${sub.color}`}>{sub.label}</span>
                         </div>
-                        {sub.status === "not_started" && !isSubmitting && (
-                          <button onClick={() => setSubmitTask({ taskId: t.id, content: "", fileUrl: "" })} className="mt-3 px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-                            Submit Task
+                      );
+                    }
+
+                    return (
+                      <div key={t.id} className="border rounded-lg p-4">
+                        <p className="font-medium text-gray-900 mb-3">{t.title}</p>
+                        {!isSubmitting ? (
+                          <button onClick={() => setSubmitTask({ taskId: t.id, content: "", fileUrl: "" })} className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
+                            Apna Kaam Submit Karo
                           </button>
-                        )}
-                        {isSubmitting && submitTask && (
-                          <div className="mt-3 space-y-3 bg-white p-4 rounded-lg border border-indigo-200">
+                        ) : submitTask && (
+                          <div className="space-y-3">
                             <textarea
                               value={submitTask.content}
                               onChange={e => setSubmitTask({ ...submitTask, content: e.target.value })}
-                              placeholder="Write your submission here..."
-                              className="w-full border rounded-lg p-3 text-sm min-h-[100px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="Yahan apna answer / notes / work likho..."
+                              className="w-full border-2 border-green-200 rounded-lg p-3 text-sm min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             />
                             <input
                               type="text"
                               value={submitTask.fileUrl}
                               onChange={e => setSubmitTask({ ...submitTask, fileUrl: e.target.value })}
-                              placeholder="File/Link URL (optional)"
-                              className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="File ya link URL paste karo (optional)"
+                              className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             />
                             <div className="flex gap-2">
-                              <button onClick={handleSubmitTask} disabled={submitting || !submitTask.content.trim()} className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium">
-                                {submitting ? "Submitting..." : "Submit"}
+                              <button onClick={handleSubmitTask} disabled={submitting || !submitTask.content.trim()} className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm">
+                                {submitting ? "Submit ho raha hai..." : "Submit Karo &#10003;"}
                               </button>
-                              <button onClick={() => setSubmitTask(null)} className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">
+                              <button onClick={() => setSubmitTask(null)} className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm">
                                 Cancel
                               </button>
                             </div>
@@ -339,16 +386,18 @@ export default function MyWorkPage() {
                     );
                   })}
                 </div>
-              </div>
-            )}
-
-            {dayResources.length === 0 && dayTasks.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-3xl mb-2">📭</p>
-                <p className="text-gray-500">No content scheduled for Day {selectedDay}</p>
-              </div>
-            )}
+              ) : (
+                <p className="text-gray-400 text-sm text-center py-4">Aaj ke liye koi submission nahi hai</p>
+              )}
+            </div>
           </div>
+
+          {dayResources.length === 0 && dayTasks.length === 0 && (
+            <div className="bg-white rounded-xl border p-8 text-center mb-4">
+              <p className="text-3xl mb-2">📭</p>
+              <p className="text-gray-500">Day {selectedDay} ke liye abhi koi content nahi hai</p>
+            </div>
+          )}
 
           {/* Quick Navigation */}
           <div className="flex gap-3">
