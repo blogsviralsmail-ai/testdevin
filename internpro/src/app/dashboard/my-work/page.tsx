@@ -38,24 +38,42 @@ interface EnrollmentInfo {
   totalDays: number;
 }
 
+interface QuizInfo {
+  id: string;
+  title: string;
+  description: string | null;
+  dayNumber: number | null;
+  questionCount: number;
+  timeLimit: number | null;
+  passingScore: number;
+  myAttempt: { id: string; score: number; totalPoints: number; passed: boolean } | null;
+}
+
 export default function MyWorkPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [enrollment, setEnrollment] = useState<EnrollmentInfo | null>(null);
+  const [quizzes, setQuizzes] = useState<QuizInfo[]>([]);
   const [selectedDay, setSelectedDay] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [submitTask, setSubmitTask] = useState<{ taskId: string; content: string; fileUrl: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [takingQuiz, setTakingQuiz] = useState<string | null>(null);
+  const [quizQuestions, setQuizQuestions] = useState<{ id: string; question: string; options: string[] }[]>([]);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
+  const [quizSubmitting, setQuizSubmitting] = useState(false);
+  const [quizResult, setQuizResult] = useState<{ score: number; totalPoints: number; passed: boolean } | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [resRes, tasksRes, subsRes, enrollRes] = await Promise.all([
+      const [resRes, tasksRes, subsRes, enrollRes, quizRes] = await Promise.all([
         fetch("/api/resources"),
         fetch("/api/tasks"),
         fetch("/api/submissions"),
         fetch("/api/my-enrollment"),
+        fetch("/api/quizzes"),
       ]);
       if (resRes.ok) setResources(await resRes.json());
       if (tasksRes.ok) setTasks(await tasksRes.json());
@@ -65,6 +83,7 @@ export default function MyWorkPage() {
         setEnrollment(eData);
         setSelectedDay(eData.currentDay || 1);
       }
+      if (quizRes.ok) setQuizzes(await quizRes.json());
     } catch { /* ignore */ }
     setLoading(false);
   }, []);
@@ -108,6 +127,46 @@ export default function MyWorkPage() {
     setUploading(false);
   };
 
+  const startQuiz = async (quizId: string) => {
+    try {
+      const res = await fetch(`/api/quizzes/${quizId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const qs = data.questions.map((q: { id: string; question: string; options: string }) => ({
+          id: q.id,
+          question: q.question,
+          options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
+        }));
+        setQuizQuestions(qs);
+        setQuizAnswers({});
+        setQuizResult(null);
+        setTakingQuiz(quizId);
+      }
+    } catch { alert("Error loading quiz"); }
+  };
+
+  const submitQuiz = async () => {
+    if (!takingQuiz) return;
+    setQuizSubmitting(true);
+    try {
+      const answers = quizQuestions.map(q => quizAnswers[q.id] ?? -1);
+      const res = await fetch(`/api/quizzes/${takingQuiz}/attempt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setQuizResult({ score: data.score, totalPoints: data.totalPoints || 50, passed: data.passed });
+        fetchData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Failed to submit quiz");
+      }
+    } catch { alert("Error submitting quiz"); }
+    setQuizSubmitting(false);
+  };
+
   const getYouTubeId = (url: string) => {
     const match = url.match(/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : null;
@@ -137,9 +196,10 @@ export default function MyWorkPage() {
     allDays.push(d);
   }
 
-  // Get resources and tasks for selected day
+  // Get resources, tasks, and quizzes for selected day
   const dayResources = resources.filter(r => r.dayNumber === selectedDay);
   const dayTasks = tasks.filter(t => t.dayNumber === selectedDay);
+  const dayQuizzes = quizzes.filter(q => q.dayNumber === selectedDay);
 
   const getSubmissionStatus = (taskId: string) => {
     const sub = submissions.find(s => s.taskId === taskId);
@@ -237,7 +297,7 @@ export default function MyWorkPage() {
                       Day {d}
                     </span>
                     <span className={`text-xs ${selectedDay === d ? "text-indigo-200" : "text-gray-400"}`}>
-                      {dResources.length}V {dTasks.length}T
+                      {dResources.length}V {dTasks.length}T{quizzes.filter(q => q.dayNumber === d).length > 0 ? ` ${quizzes.filter(q => q.dayNumber === d).length}Q` : ""}
                     </span>
                   </button>
                 );
@@ -254,7 +314,7 @@ export default function MyWorkPage() {
               <div>
                 <h2 className="text-xl font-bold">Day {selectedDay}</h2>
                 <p className="text-indigo-200 text-sm mt-1">
-                  {dayResources.length} Video{dayResources.length !== 1 ? "s" : ""} &bull; {dayTasks.length} Task{dayTasks.length !== 1 ? "s" : ""}
+                  {dayResources.length} Video{dayResources.length !== 1 ? "s" : ""} &bull; {dayTasks.length} Task{dayTasks.length !== 1 ? "s" : ""}{dayQuizzes.length > 0 ? ` \u2022 ${dayQuizzes.length} Quiz${dayQuizzes.length !== 1 ? "zes" : ""}` : ""}
                 </p>
               </div>
               {selectedDay === currentDay && (
@@ -425,7 +485,91 @@ export default function MyWorkPage() {
             </div>
           </div>
 
-          {dayResources.length === 0 && dayTasks.length === 0 && (
+          {/* Step 4: Quiz */}
+          {dayQuizzes.length > 0 && (
+            <div className="bg-white rounded-xl border mb-4 overflow-hidden">
+              <div className="bg-purple-50 border-b px-5 py-3 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-bold">4</span>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Take Quiz</h3>
+                  <p className="text-xs text-gray-500">Test your knowledge of today&apos;s topic</p>
+                </div>
+              </div>
+              <div className="p-5">
+                <div className="space-y-4">
+                  {dayQuizzes.map(quiz => (
+                    <div key={quiz.id} className="border rounded-lg p-4 bg-purple-50/50">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{quiz.title}</h4>
+                          {quiz.description && <p className="text-sm text-gray-600 mt-1">{quiz.description}</p>}
+                          <p className="text-xs text-gray-400 mt-1">{quiz.questionCount} Questions &bull; {quiz.timeLimit ? `${quiz.timeLimit} min` : "No time limit"} &bull; Pass: {quiz.passingScore}%</p>
+                        </div>
+                        {quiz.myAttempt ? (
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${quiz.myAttempt.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            {quiz.myAttempt.passed ? "Passed" : "Failed"} — {Math.round((quiz.myAttempt.score / quiz.myAttempt.totalPoints) * 100)}%
+                          </span>
+                        ) : (
+                          <button onClick={() => startQuiz(quiz.id)} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 font-medium whitespace-nowrap">
+                            Start Quiz
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Quiz Modal */}
+          {takingQuiz && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  {quizResult ? (
+                    <div className="text-center py-8">
+                      <p className="text-5xl mb-4">{quizResult.passed ? "🎉" : "😔"}</p>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{quizResult.passed ? "Congratulations! You Passed!" : "Quiz Not Passed"}</h2>
+                      <p className="text-lg text-gray-600 mb-4">Score: {quizResult.score} / {quizResult.totalPoints} ({Math.round((quizResult.score / quizResult.totalPoints) * 100)}%)</p>
+                      <button onClick={() => { setTakingQuiz(null); setQuizResult(null); }} className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                        Close
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-bold text-gray-900 mb-6">{quizzes.find(q => q.id === takingQuiz)?.title || "Quiz"}</h2>
+                      <div className="space-y-6">
+                        {quizQuestions.map((q, qi) => (
+                          <div key={q.id} className="border rounded-lg p-4">
+                            <p className="font-medium text-gray-900 mb-3">Q{qi + 1}. {q.question}</p>
+                            <div className="space-y-2">
+                              {q.options.map((opt, oi) => (
+                                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${quizAnswers[q.id] === oi ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                                  <input type="radio" name={q.id} checked={quizAnswers[q.id] === oi} onChange={() => setQuizAnswers({ ...quizAnswers, [q.id]: oi })} className="accent-purple-600" />
+                                  <span className="text-sm text-gray-700">{opt}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-3 mt-6">
+                        <button onClick={submitQuiz} disabled={quizSubmitting || Object.keys(quizAnswers).length < quizQuestions.length} className="flex-1 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium">
+                          {quizSubmitting ? "Submitting..." : "Submit Quiz"}
+                        </button>
+                        <button onClick={() => setTakingQuiz(null)} className="px-6 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {dayResources.length === 0 && dayTasks.length === 0 && dayQuizzes.length === 0 && (
             <div className="bg-white rounded-xl border p-8 text-center mb-4">
               <p className="text-3xl mb-2">📭</p>
               <p className="text-gray-500">No content scheduled for Day {selectedDay}</p>
