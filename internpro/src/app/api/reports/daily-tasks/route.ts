@@ -83,7 +83,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Build day-wise rows — only show up to current working day (no future blank rows)
-  const currentDay = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || 0);
+  const rawDay = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || 0);
+  const currentDay = Math.max(rawDay, 1);
   let taskRows = "";
   const sortedDays = [...dayMap.keys()].sort((a, b) => a - b).filter(day => day === 0 || day <= currentDay);
   for (const day of sortedDays) {
@@ -139,7 +140,7 @@ ${LH}
 <tr><td style="padding:4px 0;width:50%;"><strong>Student Name:</strong> ${studentName}</td><td style="padding:4px 0;"><strong>Program:</strong> ${programName}</td></tr>
 <tr><td style="padding:4px 0;"><strong>Batch:</strong> ${batchName}</td><td style="padding:4px 0;"><strong>Team Leader:</strong> ${leaderName}</td></tr>
 <tr><td style="padding:4px 0;"><strong>College:</strong> ${collegeName}</td><td style="padding:4px 0;"><strong>Period:</strong> ${startDate} to ${endDate}</td></tr>
-<tr><td style="padding:4px 0;"><strong>Report Date:</strong> ${todayStr}</td><td style="padding:4px 0;"><strong>Current Day:</strong> ${enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : enrollment.currentWorkDay} / ${enrollment.batch.program.duration}</td></tr>
+<tr><td style="padding:4px 0;"><strong>Report Date:</strong> ${todayStr}</td><td style="padding:4px 0;"><strong>Current Day:</strong> ${currentDay} / ${enrollment.batch.program.duration}</td></tr>
 </table>
 
 <div style="display:flex;gap:10px;margin-bottom:14px;">

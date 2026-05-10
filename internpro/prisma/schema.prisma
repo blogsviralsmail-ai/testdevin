@@ -425,6 +425,7 @@ model Quiz {
   description  String?
   batchId      String?
   programId    String?
+  dayNumber    Int?
   timeLimit    Int?
   passingScore Int            @default(60)
   isPublished  Boolean        @default(false)

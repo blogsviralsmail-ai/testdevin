@@ -98,7 +98,7 @@ export default function ReportsPage() {
                 <div>
                   {!isStudent && <p className="font-semibold text-gray-900">{enr.student.name}</p>}
                   <p className="text-sm text-gray-600">{enr.batch.program.title} — {enr.batch.name}</p>
-                  <p className="text-xs text-gray-400 mt-1">Day {enr.joiningDate ? calculateWorkingDay(enr.joiningDate) : enr.currentWorkDay} / {enr.batch.program.duration} | Status: {enr.status}</p>
+                  <p className="text-xs text-gray-400 mt-1">Day {Math.max(enr.joiningDate ? calculateWorkingDay(enr.joiningDate) : enr.currentWorkDay, 1)} / {enr.batch.program.duration} | Status: {enr.status}</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => viewDailyReport(enr)} disabled={generating === enr.id}
