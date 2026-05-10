@@ -47,6 +47,13 @@ export default function QuizzesPage() {
     fetchQuizzes();
   };
 
+  const deleteQuiz = async (id: string, title: string) => {
+    if (!confirm(`Delete quiz "${title}"? This will also delete all attempts.`)) return;
+    const r = await fetch(`/api/quizzes/${id}`, { method: "DELETE" });
+    if (r.ok) fetchQuizzes();
+    else alert("Failed to delete quiz");
+  };
+
   const isAdmin = user?.role === "admin" || user?.role === "organization" || user?.role === "teamleader";
 
   // Quiz taking view
@@ -152,9 +159,14 @@ export default function QuizzesPage() {
                 <button onClick={() => startQuiz(quiz.id)} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Start Quiz</button>
               )}
               {isAdmin && (
-                <button onClick={() => togglePublish(quiz.id, quiz.isPublished)} className="text-sm text-indigo-600 hover:underline">
-                  {quiz.isPublished ? "Unpublish" : "Publish"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => togglePublish(quiz.id, quiz.isPublished)} className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100">
+                    {quiz.isPublished ? "Unpublish" : "Publish"}
+                  </button>
+                  <button onClick={() => deleteQuiz(quiz.id, quiz.title)} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">
+                    Delete
+                  </button>
+                </div>
               )}
             </div>
           </div>

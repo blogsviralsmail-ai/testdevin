@@ -42,6 +42,12 @@ export default function LiveSessionsPage() {
     fetchData();
   };
 
+  const deleteSession = async (id: string, title: string) => {
+    if (!confirm(`Delete session "${title}"?`)) return;
+    const r = await fetch(`/api/live-sessions/${id}`, { method: "DELETE" });
+    if (r.ok) fetchData();
+  };
+
   const now = new Date();
   const upcoming = sessions.filter(s => new Date(s.scheduledAt) > now && s.status === "scheduled");
   const past = sessions.filter(s => new Date(s.scheduledAt) <= now || s.status === "completed");
@@ -125,9 +131,14 @@ export default function LiveSessionsPage() {
                       <span>{s.duration} min</span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     {s.meetLink && <a href={s.meetLink} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs">Join</a>}
-                    {isAdmin && <button onClick={() => updateStatus(s.id, "completed")} className="text-xs text-gray-500 hover:underline">Mark Done</button>}
+                    {isAdmin && (
+                      <>
+                        <button onClick={() => updateStatus(s.id, "completed")} className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100">Mark Done</button>
+                        <button onClick={() => deleteSession(s.id, s.title)} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">Delete</button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -153,7 +164,10 @@ export default function LiveSessionsPage() {
                       <span className="capitalize">{s.status}</span>
                     </div>
                   </div>
-                  {s.recordingUrl && <a href={s.recordingUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline">Watch Recording</a>}
+                  <div className="flex gap-2 items-center">
+                    {s.recordingUrl && <a href={s.recordingUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline">Watch Recording</a>}
+                    {isAdmin && <button onClick={() => deleteSession(s.id, s.title)} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">Delete</button>}
+                  </div>
                 </div>
               </div>
             ))}

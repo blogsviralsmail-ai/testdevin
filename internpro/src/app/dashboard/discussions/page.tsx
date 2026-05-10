@@ -60,6 +60,20 @@ export default function DiscussionsPage() {
     if (detail && detail.id === id) viewDiscussion(id);
   };
 
+  const deleteDiscussion = async (id: string, title: string) => {
+    if (!confirm(`Delete discussion "${title}"?`)) return;
+    const r = await fetch(`/api/discussions/${id}`, { method: "DELETE" });
+    if (r.ok) { fetchData(); if (viewingId === id) { setViewingId(null); setDetail(null); } }
+  };
+
+  const togglePin = async (id: string, current: boolean) => {
+    await fetch(`/api/discussions/${id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPinned: !current }),
+    });
+    fetchData();
+  };
+
   if (viewingId && detail) {
     return (
       <div className="space-y-4">
@@ -154,9 +168,9 @@ export default function DiscussionsPage() {
       ) : (
         <div className="space-y-3">
           {discussions.map(d => (
-            <div key={d.id} onClick={() => viewDiscussion(d.id)} className="bg-white rounded-xl p-5 border hover:shadow-md transition-shadow cursor-pointer">
+            <div key={d.id} className="bg-white rounded-xl p-5 border hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
-                <div className="flex-1">
+                <div className="flex-1 cursor-pointer" onClick={() => viewDiscussion(d.id)}>
                   <div className="flex items-center gap-2">
                     {d.isPinned && <span className="text-xs">📌</span>}
                     <h3 className="font-semibold text-gray-900">{d.title}</h3>
@@ -170,6 +184,19 @@ export default function DiscussionsPage() {
                     <span>{new Date(d.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-1 shrink-0 ml-3">
+                    <button onClick={(e) => { e.stopPropagation(); togglePin(d.id, d.isPinned); }} className="text-xs px-2 py-1 bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100">
+                      {d.isPinned ? "Unpin" : "Pin"}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); toggleResolved(d.id, d.isResolved); }} className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded hover:bg-green-100">
+                      {d.isResolved ? "Reopen" : "Resolve"}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteDiscussion(d.id, d.title); }} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

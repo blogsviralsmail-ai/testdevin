@@ -44,6 +44,8 @@ export default function ResourcesPage() {
   const [form, setForm] = useState({ batchId: "", title: "", type: "video", url: "", fileUrl: "", dayNumber: "", order: "0" });
   const [fileUploading, setFileUploading] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", type: "video", url: "", fileUrl: "", dayNumber: "", order: "0", batchId: "" });
 
   const fetchData = useCallback(async () => {
     const [resRes, batchesRes, meRes] = await Promise.all([
@@ -78,6 +80,39 @@ export default function ResourcesPage() {
     }
   };
 
+  const handleEdit = async () => {
+    if (!editingResource) return;
+    const res = await fetch(`/api/resources/${editingResource.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editForm),
+    });
+    if (res.ok) {
+      setEditingResource(null);
+      fetchData();
+    }
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete "${title}"?`)) return;
+    const res = await fetch(`/api/resources/${id}`, { method: "DELETE" });
+    if (res.ok) fetchData();
+  };
+
+  const openEdit = (r: Resource) => {
+    setEditingResource(r);
+    setEditForm({
+      title: r.title,
+      type: r.type,
+      url: r.url,
+      fileUrl: r.fileUrl || "",
+      dayNumber: r.dayNumber ? String(r.dayNumber) : "",
+      order: String(r.order),
+      batchId: r.batchId,
+    });
+  };
+
+  const isAdmin = user && ["admin", "organization", "teamleader"].includes(user.role);
   const isStudent = user?.role === "student";
 
   // Filter resources by selected batch/course
@@ -102,6 +137,33 @@ export default function ResourcesPage() {
     return numA - numB;
   });
 
+  const ResourceRow = ({ resource }: { resource: Resource }) => (
+    <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <span className="text-2xl">{typeIcons[resource.type] || "📎"}</span>
+        <div className="min-w-0">
+          <h3 className="text-sm font-medium text-gray-900 truncate">{resource.title}</h3>
+          <p className="text-xs text-gray-500 capitalize">{resource.type}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+          Open →
+        </a>
+        {isAdmin && (
+          <>
+            <button onClick={() => openEdit(resource)} className="text-xs px-2 py-1 bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100">
+              Edit
+            </button>
+            <button onClick={() => handleDelete(resource.id, resource.title)} className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100">
+              Delete
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -115,7 +177,7 @@ export default function ResourcesPage() {
               : "Manage day-based pre-recorded videos and study materials"}
           </p>
         </div>
-        {!isStudent && (
+        {isAdmin && (
           <button onClick={() => setShowForm(!showForm)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
             {showForm ? "Cancel" : "+ Add Resource"}
           </button>
@@ -157,7 +219,7 @@ export default function ResourcesPage() {
       )}
 
       {/* Add Resource Form (Admin/TeamLeader) */}
-      {showForm && !isStudent && (
+      {showForm && isAdmin && (
         <form onSubmit={handleCreate} className="bg-white rounded-xl p-6 border mb-6">
           <h2 className="text-lg font-semibold mb-4">Add New Resource</h2>
           <div className="grid md:grid-cols-2 gap-4">
@@ -213,11 +275,61 @@ export default function ResourcesPage() {
                 </label>
                 {form.fileUrl && <span className="text-xs text-green-600">File uploaded: {form.fileUrl}</span>}
               </div>
-              <p className="text-xs text-gray-500 mt-1">Koi bhi format ka file link — YouTube, Google Drive, Dropbox, direct URL ya file upload karo</p>
             </div>
           </div>
           <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">Add Resource</button>
         </form>
+      )}
+
+      {/* Edit Resource Modal */}
+      {editingResource && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Edit Resource</h2>
+            <div className="grid gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                    <option value="video">Video</option>
+                    <option value="pdf">PDF</option>
+                    <option value="link">Link</option>
+                    <option value="document">Document</option>
+                    <option value="image">Image</option>
+                    <option value="word">Word</option>
+                    <option value="excel">Excel</option>
+                    <option value="ppt">PPT</option>
+                    <option value="file">File</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Day Number</label>
+                  <input type="number" min="1" value={editForm.dayNumber} onChange={(e) => setEditForm({ ...editForm, dayNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                <input value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Batch</label>
+                <select value={editForm.batchId} onChange={(e) => setEditForm({ ...editForm, batchId: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                  {batches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.program.title} — {b.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={handleEdit} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Save Changes</button>
+              <button onClick={() => setEditingResource(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {filteredResources.length === 0 ? (
@@ -230,23 +342,13 @@ export default function ResourcesPage() {
           {/* Day-based Resources */}
           {sortedDays.map((dayLabel) => (
             <div key={dayLabel} className="bg-white rounded-xl border overflow-hidden">
-              <div className="bg-indigo-50 px-6 py-3 border-b">
+              <div className="bg-indigo-50 px-6 py-3 border-b flex items-center justify-between">
                 <h2 className="text-base font-semibold text-indigo-900">{dayLabel}</h2>
+                <span className="text-xs text-indigo-600">{dayGroups[dayLabel].length} item(s)</span>
               </div>
               <div className="divide-y">
                 {dayGroups[dayLabel].map((resource) => (
-                  <div key={resource.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{typeIcons[resource.type] || "📎"}</span>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900">{resource.title}</h3>
-                        <p className="text-xs text-gray-500 capitalize">{resource.type}</p>
-                      </div>
-                    </div>
-                    <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                      Open →
-                    </a>
-                  </div>
+                  <ResourceRow key={resource.id} resource={resource} />
                 ))}
               </div>
             </div>
@@ -260,18 +362,7 @@ export default function ResourcesPage() {
               </div>
               <div className="divide-y">
                 {generalResources.map((resource) => (
-                  <div key={resource.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{typeIcons[resource.type] || "📎"}</span>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900">{resource.title}</h3>
-                        <p className="text-xs text-gray-500 capitalize">{resource.type}</p>
-                      </div>
-                    </div>
-                    <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                      Open →
-                    </a>
-                  </div>
+                  <ResourceRow key={resource.id} resource={resource} />
                 ))}
               </div>
             </div>

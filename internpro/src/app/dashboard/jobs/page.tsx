@@ -35,6 +35,12 @@ export default function JobsPage() {
     fetchJobs();
   };
 
+  const deleteJob = async (id: string, title: string) => {
+    if (!confirm(`Delete job "${title}"?`)) return;
+    const r = await fetch(`/api/jobs/${id}`, { method: "DELETE" });
+    if (r.ok) fetchJobs();
+  };
+
   const isAdmin = user?.role === "admin" || user?.role === "organization";
 
   return (
@@ -132,7 +138,12 @@ export default function JobsPage() {
               ) : (
                 <button onClick={() => setViewApplicants(job.id)} className="text-sm text-indigo-600 hover:underline">{job.applicationCount} applications</button>
               )}
-              {isAdmin && <button onClick={() => toggleJob(job.id, job.isActive)} className="text-sm text-gray-500 hover:text-gray-700">{job.isActive ? "Close" : "Reopen"}</button>}
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <button onClick={() => toggleJob(job.id, job.isActive)} className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100">{job.isActive ? "Close" : "Reopen"}</button>
+                  <button onClick={() => deleteJob(job.id, job.title)} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">Delete</button>
+                </div>
+              )}
             </div>
           </div>
         ))}
