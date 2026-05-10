@@ -23,12 +23,19 @@ interface InterviewInfo {
   result: string | null;
 }
 
+interface BatchInfo {
+  id: string;
+  name: string;
+  program: { title: string; domain: string; mode: string };
+}
+
 interface Enrollment {
   id: string;
   status: string;
   createdAt: string;
+  batchId: string;
   student: { id: string; name: string; email: string; phone: string; avatar: string | null; collegeName: string; degree: string; year: string; address: string | null; dob: string | null; employeeId: string | null };
-  batch: { program: { title: string; domain: string; mode: string } };
+  batch: { id: string; program: { title: string; domain: string; mode: string } };
   interviews: InterviewInfo[];
   _count: { interviews: number };
 }
@@ -49,6 +56,9 @@ export default function ApplicationsPage() {
   const [viewDocs, setViewDocs] = useState<StudentDoc[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [editLinkModal, setEditLinkModal] = useState<{ interviewId: string; link: string } | null>(null);
+  const [changeBatchModal, setChangeBatchModal] = useState<Enrollment | null>(null);
+  const [allBatches, setAllBatches] = useState<BatchInfo[]>([]);
+  const [selectedNewBatchId, setSelectedNewBatchId] = useState<string>("");
 
   // Check role and redirect students
   useEffect(() => {
@@ -69,6 +79,30 @@ export default function ApplicationsPage() {
   }, [filter]);
 
   useEffect(() => { if (userRole && userRole !== "student") fetchApplications(); }, [fetchApplications, userRole]);
+
+  // Fetch all batches for change batch modal
+  useEffect(() => {
+    if (userRole && userRole !== "student") {
+      fetch("/api/batches").then(r => r.ok ? r.json() : []).then(setAllBatches).catch(() => {});
+    }
+  }, [userRole]);
+
+  const handleChangeBatch = async () => {
+    if (!changeBatchModal || !selectedNewBatchId) return;
+    const res = await fetch(`/api/enrollments/${changeBatchModal.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId: selectedNewBatchId }),
+    });
+    if (res.ok) {
+      alert("Batch/Program changed successfully!");
+      setChangeBatchModal(null);
+      setSelectedNewBatchId("");
+      fetchApplications();
+    } else {
+      alert("Failed to change batch");
+    }
+  };
 
   const openViewModal = async (e: Enrollment) => {
     setViewModal(e);
@@ -522,6 +556,12 @@ export default function ApplicationsPage() {
                       Select & Send Offer
                     </button>
                   )}
+                  <button
+                    onClick={() => { setChangeBatchModal(e); setSelectedNewBatchId(e.batch.id || e.batchId || ""); }}
+                    className="px-4 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 font-medium"
+                  >
+                    Change Program
+                  </button>
                 </div>
               </div>
             </div>
@@ -583,6 +623,49 @@ export default function ApplicationsPage() {
                 Reject & Send Email
               </button>
               <button onClick={() => setRejectModal(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Batch/Program Modal */}
+      {changeBatchModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Change Program / Batch</h2>
+            <p className="text-sm text-gray-600 mb-1">
+              Student: <strong>{changeBatchModal.student.name}</strong>
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              Current: <strong>{changeBatchModal.batch.program.title}</strong>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select New Program / Batch</label>
+              <select
+                value={selectedNewBatchId}
+                onChange={(e) => setSelectedNewBatchId(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+              >
+                <option value="">-- Select Batch --</option>
+                {allBatches.map(b => (
+                  <option key={b.id} value={b.id}>
+                    {b.program.title} — {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleChangeBatch}
+                disabled={!selectedNewBatchId || selectedNewBatchId === (changeBatchModal.batch.id || changeBatchModal.batchId)}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50"
+              >
+                Change Program
+              </button>
+              <button onClick={() => setChangeBatchModal(null)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>

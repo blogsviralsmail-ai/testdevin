@@ -15,6 +15,7 @@ interface User {
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "organization", "teamleader", "student", "agent"] },
+  { href: "/dashboard/my-work", label: "My Workspace", icon: "💼", roles: ["student"] },
   { href: "/dashboard/applications", label: "Applications", icon: "📋", roles: ["admin", "organization"] },
   { href: "/dashboard/interviews", label: "Interviews", icon: "🎤", roles: ["admin", "organization", "student"] },
   { href: "/dashboard/programs", label: "Programs", icon: "📚", roles: ["admin", "organization", "teamleader"] },

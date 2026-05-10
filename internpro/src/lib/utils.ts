@@ -130,7 +130,8 @@ export function calculateWorkingDay(joiningDate: Date | string): number {
     }
     current.setDate(current.getDate() + 1);
   }
-  return workingDays;
+  // If student has joined but today is a weekly off, show at least Day 1
+  return Math.max(workingDays, 1);
 }
 
 export function getStatusColor(status: string): string {
