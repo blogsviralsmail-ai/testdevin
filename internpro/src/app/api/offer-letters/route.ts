@@ -325,7 +325,7 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
           </div>
         </div>
       `;
-      sendEmail(student.email, `Congratulations! You are Selected for ${enrollment.batch.program.title} — Pay to Get Offer Letter`, payEmailHtml).catch(() => {});
+      sendEmail({ to: student.email, subject: `Congratulations! You are Selected for ${enrollment.batch.program.title} — Pay to Get Offer Letter`, html: payEmailHtml }).catch(() => {});
 
       logActivity("selected_paid", "enrollment", enrollmentId, `${student.name} selected for ${enrollment.batch.program.title} — payment pending ₹${feeAmount}`, session.id, session.name).catch(() => {});
 
