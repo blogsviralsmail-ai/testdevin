@@ -8,125 +8,106 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  phone         String?
-  password      String
-  role          String    @default("student")
-  avatar        String?
-  isActive      Boolean   @default(true)
-  resetToken    String?
-  resetExpiry   DateTime?
-  employeeId    String?   @unique
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Student-specific profile fields
-  collegeName   String?
-  degree        String?
-  year          String?
-  address       String?
-  state         String?
-  dob           DateTime?
-
-  // Login tracking
-  loginSessions LoginSession[]
-
-  organization    Organization? @relation("OrgAdmin")
-  enrollments     Enrollment[]
-  submissions     Submission[]
-  leaderBatches   Batch[]         @relation("BatchLeader")
-  notifications   Notification[]
-  attendances     Attendance[]
-  documents       Document[]
-  interviews      Interview[]
-  employeeCards   EmployeeCard[]
-  supportTickets  SupportTicket[]
-
-  // Gamification
-  points          GamificationPoint[] @relation("UserPoints")
-  badges          UserBadge[]         @relation("UserBadges")
-
-  // Quiz
-  quizAttempts    QuizAttempt[]       @relation("QuizAttempts")
-
-  // Announcements
-  announcements   Announcement[]      @relation("Announcements")
-
-  // Jobs
-  jobApplications JobApplication[]    @relation("JobApplications")
-
-  // Agent/Referral
+  id              String              @id @default(cuid())
+  name            String
+  email           String              @unique
+  phone           String?
+  password        String
+  role            String              @default("student")
+  avatar          String?
+  isActive        Boolean             @default(true)
+  resetToken      String?
+  resetExpiry     DateTime?
+  employeeId      String?             @unique
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  collegeName     String?
+  degree          String?
+  year            String?
+  address         String?
+  dob             DateTime?
+  state           String?
   agentProfile    Agent?              @relation("AgentProfile")
+  announcements   Announcement[]      @relation("Announcements")
+  attendances     Attendance[]
+  leaderBatches   Batch[]             @relation("BatchLeader")
+  documents       Document[]
+  employeeCards   EmployeeCard[]
+  enrollments     Enrollment[]
+  points          GamificationPoint[] @relation("UserPoints")
+  interviews      Interview[]
+  jobApplications JobApplication[]    @relation("JobApplications")
+  loginSessions   LoginSession[]
+  notifications   Notification[]
+  organization    Organization?       @relation("OrgAdmin")
+  quizAttempts    QuizAttempt[]       @relation("QuizAttempts")
   referredBy      Referral[]          @relation("ReferredBy")
+  submissions     Submission[]
+  supportTickets  SupportTicket[]
+  badges          UserBadge[]         @relation("UserBadges")
 }
 
 model Organization {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
-  type        String   @default("company")
+  type        String    @default("company")
   logo        String?
   description String?
   website     String?
   address     String?
   phone       String?
-  adminId     String   @unique
-  admin       User     @relation("OrgAdmin", fields: [adminId], references: [id])
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  adminId     String    @unique
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  admin       User      @relation("OrgAdmin", fields: [adminId], references: [id])
   programs    Program[]
 }
 
 model Program {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   title         String
-  slug          String   @unique
+  slug          String       @unique
   description   String?
   domain        String
-  mode          String   @default("online")
+  mode          String       @default("online")
   duration      Int
-  feeType       String   @default("free")
-  feeAmount     Float    @default(0)
-  stipendAmount Float    @default(0)
-  maxSeats      Int      @default(50)
+  feeType       String       @default("free")
+  feeAmount     Float        @default(0)
+  stipendAmount Float        @default(0)
+  maxSeats      Int          @default(50)
   thumbnail     String?
-  isPublished   Boolean  @default(false)
-  totalDays     Int      @default(30)
-  weekoffs      String   @default("sunday")
+  isPublished   Boolean      @default(false)
+  totalDays     Int          @default(30)
+  weekoffs      String       @default("sunday")
   workingHours  String?
   orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   batches       Batch[]
+  organization  Organization @relation(fields: [orgId], references: [id])
 }
 
 model Batch {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
   programId   String
-  program     Program  @relation(fields: [programId], references: [id])
   leaderId    String?
-  leader      User?    @relation("BatchLeader", fields: [leaderId], references: [id])
   startDate   DateTime
   endDate     DateTime
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  leader      User?        @relation("BatchLeader", fields: [leaderId], references: [id])
+  program     Program      @relation(fields: [programId], references: [id])
   enrollments Enrollment[]
-  tasks       Task[]
   resources   Resource[]
+  tasks       Task[]
 }
 
 model Document {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   type      String
   title     String
   fileUrl   String
@@ -134,78 +115,73 @@ model Document {
   remarks   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Interview {
-  id            String   @id @default(cuid())
+  id            String     @id @default(cuid())
   enrollmentId  String
-  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id])
   scheduledAt   DateTime
-  duration      Int      @default(30)
-  mode          String   @default("online")
+  duration      Int        @default(30)
+  mode          String     @default("online")
   meetLink      String?
   location      String?
   interviewerId String
-  interviewer   User     @relation(fields: [interviewerId], references: [id])
-  status        String   @default("scheduled")
+  status        String     @default("scheduled")
   feedback      String?
   rating        Int?
   result        String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  interviewer   User       @relation(fields: [interviewerId], references: [id])
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id])
 }
 
 model Enrollment {
-  id          String   @id @default(cuid())
-  studentId   String
-  student     User     @relation(fields: [studentId], references: [id])
-  batchId     String
-  batch       Batch    @relation(fields: [batchId], references: [id])
-  status      String   @default("applied")
-  enrolledAt  DateTime @default(now())
-  completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Selection details (filled by admin after interview)
-  salary        Float?
-  weekoffs      Int?
-  paidLeaves    Int?
-  workTiming    String?
-  joiningDate   DateTime?
-  feeType       String?
-  feeAmount     Float?
-  stipendAmount Float?
-
-  // Completion
+  id                 String            @id @default(cuid())
+  studentId          String
+  batchId            String
+  status             String            @default("applied")
+  enrolledAt         DateTime          @default(now())
+  completedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  salary             Float?
+  weekoffs           Int?
+  paidLeaves         Int?
+  workTiming         String?
+  joiningDate        DateTime?
+  feeType            String?
+  feeAmount          Float?
+  stipendAmount      Float?
   teamLeaderCategory String?
   teamLeaderRemarks  String?
-  adminApproved      Boolean  @default(false)
+  adminApproved      Boolean           @default(false)
   adminRemarks       String?
-
-  // Working day tracking
-  currentWorkDay Int      @default(0)
-
-  attendances    Attendance[]
-  certificates   Certificate[]
-  payments       Payment[]
-  salaries       Salary[]
-  interviews     Interview[]
-  offerLetter    OfferLetter?
-  experienceLetter ExperienceLetter?
+  preferredMode      String?
+  currentWorkDay     Int               @default(0)
+  attendances        Attendance[]
+  certificates       Certificate[]
+  batch              Batch             @relation(fields: [batchId], references: [id])
+  student            User              @relation(fields: [studentId], references: [id])
+  experienceLetter   ExperienceLetter?
+  interviews         Interview[]
+  offerLetter        OfferLetter?
+  payments           Payment[]
+  salaries           Salary[]
 
   @@unique([studentId, batchId])
 }
 
 model OfferLetter {
-  id           String   @id @default(cuid())
-  enrollmentId String   @unique
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
-  letterNumber String   @unique
+  id           String     @id @default(cuid())
+  enrollmentId String     @unique
+  letterNumber String     @unique
   htmlContent  String?
   templateId   String?
-  issuedAt     DateTime @default(now())
-  createdAt    DateTime @default(now())
+  issuedAt     DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
 }
 
 model OfferLetterTemplate {
@@ -219,20 +195,19 @@ model OfferLetterTemplate {
 }
 
 model ExperienceLetter {
-  id           String   @id @default(cuid())
-  enrollmentId String   @unique
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
-  letterNumber String   @unique
+  id           String     @id @default(cuid())
+  enrollmentId String     @unique
+  letterNumber String     @unique
   category     String
   htmlContent  String?
-  issuedAt     DateTime @default(now())
-  createdAt    DateTime @default(now())
+  issuedAt     DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
 }
 
 model EmployeeCard {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
   cardNumber  String   @unique
   designation String
   department  String?
@@ -241,108 +216,108 @@ model EmployeeCard {
   photoUrl    String?
   qrCode      String?
   createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
 }
 
 model Attendance {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   enrollmentId String
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
   userId       String
-  user         User     @relation(fields: [userId], references: [id])
   date         DateTime
-  status       String   @default("present")
+  status       String     @default("present")
   workDay      Int?
   checkIn      String?
   checkOut     String?
-  method       String   @default("manual")
+  method       String     @default("manual")
   ipAddress    String?
   notes        String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id])
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
 
   @@unique([enrollmentId, date])
 }
 
 model Task {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   batchId     String
-  batch       Batch    @relation(fields: [batchId], references: [id])
   title       String
   description String?
-  type        String   @default("regular")
+  type        String       @default("regular")
   dayNumber   Int?
   dueDate     DateTime?
-  maxPoints   Int      @default(100)
+  maxPoints   Int          @default(100)
   resources   String?
-  isPublished Boolean  @default(true)
-  order       Int      @default(0)
-  scope       String   @default("all")
+  isPublished Boolean      @default(true)
+  order       Int          @default(0)
+  scope       String       @default("all")
   assignedTo  String?
-  isUrgent    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  isUrgent    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   submissions Submission[]
+  batch       Batch        @relation(fields: [batchId], references: [id])
 }
 
 model Submission {
-  id          String   @id @default(cuid())
-  taskId      String
-  task        Task     @relation(fields: [taskId], references: [id])
-  studentId   String
-  student     User     @relation(fields: [studentId], references: [id])
-  content     String?
-  fileUrl     String?
-  percentage  Float?
-  feedback    String?
-  reviewedBy  String?
-  status      String   @default("submitted")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  taskId     String
+  studentId  String
+  content    String?
+  fileUrl    String?
+  percentage Float?
+  feedback   String?
+  reviewedBy String?
+  status     String   @default("submitted")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  student    User     @relation(fields: [studentId], references: [id])
+  task       Task     @relation(fields: [taskId], references: [id])
 
   @@unique([taskId, studentId])
 }
 
 model Certificate {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   enrollmentId String
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
-  certNumber   String   @unique
-  type         String   @default("completion")
+  certNumber   String     @unique
+  type         String     @default("completion")
   studentName  String
   programName  String
   orgName      String
-  issueDate    DateTime @default(now())
+  issueDate    DateTime   @default(now())
   qrCode       String?
   templateData String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime   @default(now())
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
 }
 
 model Payment {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   enrollmentId String
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
   amount       Float
-  type         String   @default("fee")
-  status       String   @default("pending")
+  type         String     @default("fee")
+  status       String     @default("pending")
   paymentId    String?
   method       String?
   description  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
 }
 
 model Salary {
-  id           String   @id @default(cuid())
-  enrollmentId String
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
-  month        String
-  amount       Float
+  id             String     @id @default(cuid())
+  enrollmentId   String
+  month          String
+  amount         Float
   attendanceDays Int
-  totalDays    Int
-  status       String   @default("pending")
-  paidAt       DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  totalDays      Int
+  status         String     @default("pending")
+  paidAt         DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  enrollment     Enrollment @relation(fields: [enrollmentId], references: [id])
 
   @@unique([enrollmentId, month])
 }
@@ -350,7 +325,6 @@ model Salary {
 model Resource {
   id          String   @id @default(cuid())
   batchId     String
-  batch       Batch    @relation(fields: [batchId], references: [id])
   title       String
   type        String   @default("video")
   url         String
@@ -360,18 +334,19 @@ model Resource {
   isPublished Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  batch       Batch    @relation(fields: [batchId], references: [id])
 }
 
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   title     String
   message   String
   type      String   @default("info")
   isRead    Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Setting {
@@ -383,7 +358,6 @@ model Setting {
 model SupportTicket {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   subject   String
   message   String
   priority  String   @default("normal")
@@ -391,273 +365,260 @@ model SupportTicket {
   reply     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model LoginSession {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  date      String
-  loginTime String
-  logoutTime String?
-  totalMinutes Int   @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  date         String
+  loginTime    String
+  logoutTime   String?
+  totalMinutes Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, date])
 }
 
-// ===== GAMIFICATION =====
 model GamificationPoint {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation("UserPoints", fields: [userId], references: [id])
   points    Int
   reason    String
-  category  String   @default("task") // task, attendance, quiz, streak, bonus
+  category  String   @default("task")
   createdAt DateTime @default(now())
+  user      User     @relation("UserPoints", fields: [userId], references: [id])
 }
 
 model Badge {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String      @id @default(cuid())
+  name        String      @unique
   description String
-  icon        String   @default("🏆")
-  category    String   @default("achievement")
-  threshold   Int      @default(0) // points/days needed
-  createdAt   DateTime @default(now())
-
+  icon        String      @default("🏆")
+  category    String      @default("achievement")
+  threshold   Int         @default(0)
+  createdAt   DateTime    @default(now())
   users       UserBadge[]
 }
 
 model UserBadge {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation("UserBadges", fields: [userId], references: [id])
-  badgeId   String
-  badge     Badge    @relation(fields: [badgeId], references: [id])
-  earnedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+  badge    Badge    @relation(fields: [badgeId], references: [id])
+  user     User     @relation("UserBadges", fields: [userId], references: [id])
 
   @@unique([userId, badgeId])
 }
 
-// ===== QUIZ & ASSESSMENT =====
 model Quiz {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  batchId     String?
-  programId   String?
-  timeLimit   Int?     // minutes
-  passingScore Int     @default(60)
-  isPublished Boolean  @default(false)
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  questions   QuizQuestion[]
-  attempts    QuizAttempt[]
+  id           String         @id @default(cuid())
+  title        String
+  description  String?
+  batchId      String?
+  programId    String?
+  timeLimit    Int?
+  passingScore Int            @default(60)
+  isPublished  Boolean        @default(false)
+  createdBy    String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  attempts     QuizAttempt[]
+  questions    QuizQuestion[]
 }
 
 model QuizQuestion {
-  id          String   @id @default(cuid())
-  quizId      String
-  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  question    String
-  options     String   // JSON array of options
-  correctAnswer Int    // index of correct option
-  points      Int      @default(10)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  quizId        String
+  question      String
+  options       String
+  correctAnswer Int
+  points        Int      @default(10)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model QuizAttempt {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   quizId      String
-  quiz        Quiz     @relation(fields: [quizId], references: [id])
   userId      String
-  user        User     @relation("QuizAttempts", fields: [userId], references: [id])
-  answers     String   // JSON array of selected answers
+  answers     String
   score       Float
   totalPoints Int
-  passed      Boolean  @default(false)
-  timeTaken   Int?     // seconds
-  startedAt   DateTime @default(now())
+  passed      Boolean   @default(false)
+  timeTaken   Int?
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
+  user        User      @relation("QuizAttempts", fields: [userId], references: [id])
+  quiz        Quiz      @relation(fields: [quizId], references: [id])
 
   @@unique([quizId, userId])
 }
 
-// ===== ANNOUNCEMENTS =====
 model Announcement {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  category  String   @default("general") // general, urgent, event
-  isPinned  Boolean  @default(false)
-  authorId  String
-  author    User     @relation("Announcements", fields: [authorId], references: [id])
-  targetRole String  @default("all") // all, student, teamleader
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  title      String
+  content    String
+  category   String   @default("general")
+  isPinned   Boolean  @default(false)
+  authorId   String
+  targetRole String   @default("all")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  author     User     @relation("Announcements", fields: [authorId], references: [id])
 }
 
-// ===== PLACEMENT / JOB BOARD =====
 model JobPosting {
-  id          String   @id @default(cuid())
-  title       String
-  company     String
-  description String
-  location    String?
-  salary      String?
-  type        String   @default("full-time") // full-time, part-time, contract
-  skills      String?  // comma-separated
-  applyUrl    String?
-  isActive    Boolean  @default(true)
-  postedBy    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id           String           @id @default(cuid())
+  title        String
+  company      String
+  description  String
+  location     String?
+  salary       String?
+  type         String           @default("full-time")
+  skills       String?
+  applyUrl     String?
+  isActive     Boolean          @default(true)
+  postedBy     String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   applications JobApplication[]
 }
 
 model JobApplication {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   jobId     String
-  job       JobPosting @relation(fields: [jobId], references: [id])
   userId    String
-  user      User     @relation("JobApplications", fields: [userId], references: [id])
   resume    String?
   coverNote String?
-  status    String   @default("applied") // applied, shortlisted, hired, rejected
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    String     @default("applied")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation("JobApplications", fields: [userId], references: [id])
+  job       JobPosting @relation(fields: [jobId], references: [id])
 
   @@unique([jobId, userId])
 }
 
-// ===== AGENT/REFERRAL PROGRAM =====
 model Agent {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation("AgentProfile", fields: [userId], references: [id])
-  referralCode  String   @unique
-  commissionRate Float   @default(30) // percentage
-  totalEarnings Float    @default(0)
-  walletBalance Float    @default(0)
-  bankName      String?
-  accountNumber String?
-  ifscCode      String?
-  upiId         String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  referrals     Referral[]
-  payouts       AgentPayout[]
+  id             String        @id @default(cuid())
+  userId         String        @unique
+  referralCode   String        @unique
+  commissionRate Float         @default(30)
+  totalEarnings  Float         @default(0)
+  walletBalance  Float         @default(0)
+  bankName       String?
+  accountNumber  String?
+  ifscCode       String?
+  upiId          String?
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation("AgentProfile", fields: [userId], references: [id])
+  payouts        AgentPayout[]
+  referrals      Referral[]
 }
 
 model Referral {
-  id          String   @id @default(cuid())
-  agentId     String
-  agent       Agent    @relation(fields: [agentId], references: [id])
-  studentId   String
-  student     User     @relation("ReferredBy", fields: [studentId], references: [id])
-  programId   String?
-  amount      Float    @default(0)
-  commission  Float    @default(0)
-  status      String   @default("pending") // pending, converted, paid
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  agentId    String
+  studentId  String
+  programId  String?
+  amount     Float    @default(0)
+  commission Float    @default(0)
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  student    User     @relation("ReferredBy", fields: [studentId], references: [id])
+  agent      Agent    @relation(fields: [agentId], references: [id])
 }
 
 model AgentPayout {
-  id          String   @id @default(cuid())
-  agentId     String
-  agent       Agent    @relation(fields: [agentId], references: [id])
-  amount      Float
-  method      String   @default("manual") // manual, razorpay
-  status      String   @default("pending") // pending, processing, completed, failed
-  razorpayId  String?
-  reference   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  agentId    String
+  amount     Float
+  method     String   @default("manual")
+  status     String   @default("pending")
+  razorpayId String?
+  reference  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  agent      Agent    @relation(fields: [agentId], references: [id])
 }
 
-// ===== TESTIMONIALS =====
 model Testimonial {
-  id        String   @id @default(cuid())
-  name      String
-  role      String?  // e.g. "Full Stack Intern"
-  content   String
-  rating    Int      @default(5)
-  avatar    String?
-  videoUrl  String?
-  isPublished Boolean @default(true)
-  userId    String?  // linked user (optional — admin can add manually)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ===== DISCUSSION FORUM =====
-model Discussion {
   id          String   @id @default(cuid())
-  batchId     String?
-  programId   String?
-  authorId    String
-  title       String
+  name        String
+  role        String?
   content     String
-  category    String   @default("doubt") // doubt, discussion, resource
-  isPinned    Boolean  @default(false)
-  isResolved  Boolean  @default(false)
+  rating      Int      @default(5)
+  avatar      String?
+  videoUrl    String?
+  isPublished Boolean  @default(true)
+  userId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
 
-  replies     DiscussionReply[]
+model Discussion {
+  id         String            @id @default(cuid())
+  batchId    String?
+  programId  String?
+  authorId   String
+  title      String
+  content    String
+  category   String            @default("doubt")
+  isPinned   Boolean           @default(false)
+  isResolved Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  replies    DiscussionReply[]
 }
 
 model DiscussionReply {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   discussionId String
-  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   authorId     String
   content      String
-  isAnswer     Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  isAnswer     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
 }
 
-// ===== LIVE SESSIONS =====
 model LiveSession {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  batchId     String?
-  programId   String?
-  hostId      String
-  meetLink    String?
-  platform    String   @default("google_meet") // google_meet, zoom, other
-  scheduledAt DateTime
-  duration    Int      @default(60) // minutes
-  status      String   @default("scheduled") // scheduled, live, completed, cancelled
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  batchId      String?
+  programId    String?
+  hostId       String
+  meetLink     String?
+  platform     String   @default("google_meet")
+  scheduledAt  DateTime
+  duration     Int      @default(60)
+  status       String   @default("scheduled")
   recordingUrl String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
-// ===== EMAIL CAMPAIGNS =====
 model EmailCampaign {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   subject     String
   htmlContent String
-  targetRole  String   @default("all") // all, student, teamleader, agent
-  status      String   @default("draft") // draft, scheduled, sent
+  targetRole  String    @default("all")
+  status      String    @default("draft")
   scheduledAt DateTime?
   sentAt      DateTime?
-  sentCount   Int      @default(0)
-  openCount   Int      @default(0)
-  clickCount  Int      @default(0)
+  sentCount   Int       @default(0)
+  openCount   Int       @default(0)
+  clickCount  Int       @default(0)
   createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

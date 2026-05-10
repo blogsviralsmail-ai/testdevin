@@ -43,10 +43,10 @@ export default function InterviewsPage() {
   };
 
   const [selectionForm, setSelectionForm] = useState({
-    salary: "5000", weekoffs: "2", paidLeaves: "2",
+    weekoffs: "2", paidLeaves: "2",
     workTiming: "10:00 AM - 6:00 PM", joiningDate: getNextDay(),
     feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
-    programId: "", batchId: "",
+    programId: "", batchId: "", mode: "",
   });
   const [programs, setPrograms] = useState<ProgramBatch[]>([]);
 
@@ -115,20 +115,24 @@ export default function InterviewsPage() {
       alert("Program & Batch select karna zaroori hai!");
       return;
     }
-    // Update enrollment batch if changed
-    if (selectionForm.batchId) {
-      await fetch(`/api/enrollments/${selectingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batchId: selectionForm.batchId }),
-      });
+    if (!selectionForm.mode) {
+      alert("Mode (Online/Offline/Hybrid) select karna zaroori hai!");
+      return;
     }
+    // Update enrollment batch and mode
+    await fetch(`/api/enrollments/${selectingId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ batchId: selectionForm.batchId, preferredMode: selectionForm.mode }),
+    });
+    // Calculate salary from stipend
+    const stipendVal = selectionForm.feeType === "stipend" ? parseFloat(selectionForm.stipendAmount) : 0;
     await fetch("/api/offer-letters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         enrollmentId: selectingId,
-        salary: parseFloat(selectionForm.salary),
+        salary: stipendVal,
         weekoffs: parseInt(selectionForm.weekoffs),
         paidLeaves: parseInt(selectionForm.paidLeaves),
         workTiming: selectionForm.workTiming,
@@ -136,6 +140,7 @@ export default function InterviewsPage() {
         feeType: selectionForm.feeType,
         feeAmount: parseFloat(selectionForm.feeAmount),
         stipendAmount: parseFloat(selectionForm.stipendAmount),
+        mode: selectionForm.mode,
       }),
     });
     setSelectingId(null);
@@ -212,30 +217,30 @@ export default function InterviewsPage() {
                   {programs.find(p => p.id === selectionForm.programId)?.batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
                 <p className="text-xs text-indigo-600 mt-1">Program aur Batch select karna zaroori hai select karne se pehle</p>
+                <label className="block text-sm font-bold text-indigo-800 mb-1 mt-2">Mode <span className="text-red-500">*</span></label>
+                <select value={selectionForm.mode || ""} onChange={(e) => setSelectionForm(prev => ({ ...prev, mode: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                  <option value="">-- Select Mode --</option>
+                  <option value="online">Online (Work from Home)</option>
+                  <option value="offline">Offline (Work from Office)</option>
+                  <option value="hybrid">Hybrid (Online + Offline)</option>
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Salary/Stipend (₹)</label>
-                  <input type="number" value={selectionForm.salary} onChange={(e) => setSelectionForm({...selectionForm, salary: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Offs (days)</label>
                   <input type="number" value={selectionForm.weekoffs} onChange={(e) => setSelectionForm({...selectionForm, weekoffs: e.target.value})}
                     className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Paid Leaves/month</label>
                   <input type="number" value={selectionForm.paidLeaves} onChange={(e) => setSelectionForm({...selectionForm, paidLeaves: e.target.value})}
                     className="w-full px-3 py-2 rounded-lg border text-gray-900" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Work Timing</label>
-                  <input type="text" value={selectionForm.workTiming} onChange={(e) => setSelectionForm({...selectionForm, workTiming: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
-                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Work Timing</label>
+                <input type="text" value={selectionForm.workTiming} onChange={(e) => setSelectionForm({...selectionForm, workTiming: e.target.value})}
+                  className="w-full px-3 py-2 rounded-lg border text-gray-900" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date <span className="text-red-500">*</span></label>

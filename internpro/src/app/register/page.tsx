@@ -13,7 +13,9 @@ function RegisterForm() {
   const [form, setForm] = useState({
     name: "", email: "", password: "", phone: "",
     collegeName: "", degree: "", year: "", address: "", state: "",
+    programId: "", preferredMode: "",
   });
+  const [programsList, setProgramsList] = useState<{id: string; title: string; mode: string}[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -25,6 +27,12 @@ function RegisterForm() {
     const ref = searchParams.get("ref");
     if (ref) setReferralCode(ref);
   }, [searchParams]);
+
+  useEffect(() => {
+    fetch("/api/programs").then(r => r.ok ? r.json() : []).then(data => {
+      setProgramsList(Array.isArray(data) ? data : []);
+    }).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,6 +228,26 @@ function RegisterForm() {
                 <option value="Ladakh">Ladakh</option>
                 <option value="Lakshadweep">Lakshadweep</option>
                 <option value="Puducherry">Puducherry</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Program *</label>
+              <select value={form.programId} onChange={(e) => setForm({ ...form, programId: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" required>
+                <option value="">-- Select Program --</option>
+                {programsList.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Mode *</label>
+              <select value={form.preferredMode} onChange={(e) => setForm({ ...form, preferredMode: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" required>
+                <option value="">-- Select Mode --</option>
+                <option value="online">Online (Work from Home)</option>
+                <option value="offline">Offline (Work from Office)</option>
+                <option value="hybrid">Hybrid (Online + Offline)</option>
               </select>
             </div>
 

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password, phone, collegeName, degree, year, address, state, referralCode } = body;
+    const { name, email, password, phone, collegeName, degree, year, address, state, referralCode, programId, preferredMode } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });
@@ -19,17 +19,27 @@ export async function POST(request: NextRequest) {
       collegeName, degree, year, address, state,
     });
 
-    // Auto-create enrollment (application) in the first active batch
-    const firstBatch = await prisma.batch.findFirst({
-      where: { isActive: true },
-      orderBy: { createdAt: "desc" },
-    });
-    if (firstBatch) {
+    // Auto-create enrollment in the selected program's batch (or first active batch)
+    let targetBatch = null;
+    if (programId) {
+      targetBatch = await prisma.batch.findFirst({
+        where: { programId, isActive: true },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+    if (!targetBatch) {
+      targetBatch = await prisma.batch.findFirst({
+        where: { isActive: true },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+    if (targetBatch) {
       await prisma.enrollment.create({
         data: {
           studentId: user.id,
-          batchId: firstBatch.id,
+          batchId: targetBatch.id,
           status: "applied",
+          preferredMode: preferredMode || null,
         },
       });
     }
