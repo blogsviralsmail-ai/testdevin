@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function RegisterPage() {
+  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}><RegisterForm /></Suspense>;
+}
+
+function RegisterForm() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "", email: "", password: "", phone: "",
@@ -14,6 +18,13 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
+  const searchParams = useSearchParams();
+  const [referralCode, setReferralCode] = useState("");
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) setReferralCode(ref);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +35,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ...(referralCode ? { referralCode } : {}) }),
       });
 
       const data = await res.json();
@@ -227,6 +238,12 @@ export default function RegisterPage() {
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                 placeholder="Min 6 characters" required minLength={6} />
             </div>
+
+            {referralCode && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+                Referred by agent: <span className="font-semibold">{referralCode}</span>
+              </div>
+            )}
 
             <button type="submit" disabled={loading}
               className="w-full py-3 rounded-lg gradient-bg text-white font-medium hover:opacity-90 transition disabled:opacity-50">

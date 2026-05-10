@@ -60,6 +60,28 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Calculate agent commission if student was referred
+    try {
+      const enrollment = await prisma.enrollment.findUnique({ where: { id: enrollmentId }, select: { studentId: true } });
+      if (enrollment) {
+        const referral = await prisma.referral.findFirst({
+          where: { studentId: enrollment.studentId },
+          include: { agent: true },
+        });
+        if (referral && referral.agent) {
+          const commissionAmount = (parsedAmount * referral.agent.commissionRate) / 100;
+          await prisma.referral.update({
+            where: { id: referral.id },
+            data: { amount: { increment: parsedAmount }, commission: { increment: commissionAmount }, status: "converted" },
+          });
+          await prisma.agent.update({
+            where: { id: referral.agent.id },
+            data: { totalEarnings: { increment: commissionAmount }, walletBalance: { increment: commissionAmount } },
+          });
+        }
+      }
+    } catch { /* commission calculation failed, payment still recorded */ }
+
     return NextResponse.json(payment, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to record payment";

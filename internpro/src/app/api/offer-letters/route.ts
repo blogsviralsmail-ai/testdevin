@@ -269,6 +269,12 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
         },
       });
 
+      // Update referral status to "selected" if student was referred by an agent
+      const referral = await tx.referral.findFirst({ where: { studentId: enrollment.studentId } });
+      if (referral) {
+        await tx.referral.update({ where: { id: referral.id }, data: { status: "selected" } });
+      }
+
       return letter;
     });
 
