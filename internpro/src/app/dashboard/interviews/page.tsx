@@ -36,7 +36,7 @@ export default function InterviewsPage() {
   const [editMeetLink, setEditMeetLink] = useState<{ id: string; link: string } | null>(null);
   const [editEnrollment, setEditEnrollment] = useState<{ enrollmentId: string; salary: string; weekoffs: string; paidLeaves: string; workTiming: string; joiningDate: string; feeType: string; feeAmount: string; stipendAmount: string } | null>(null);
   const [viewDetails, setViewDetails] = useState<Interview | null>(null);
-  const [studentDocs, setStudentDocs] = useState<{documents: {id: string; type: string; url: string; name: string}[]; resume?: string} | null>(null);
+  const [studentDocs, setStudentDocs] = useState<{documents: {id: string; type: string; url: string; fileUrl?: string; name: string; title?: string}[]; resume?: string} | null>(null);
 
   const getNextDay = () => {
     const d = new Date();
@@ -444,16 +444,28 @@ export default function InterviewsPage() {
                   <p className="text-sm text-gray-400">No documents uploaded yet</p>
                 ) : (
                   <div className="grid grid-cols-1 gap-2">
-                    {studentDocs.documents.map((doc) => (
-                      <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-                        <span className="text-xl">{doc.type === 'resume' ? '📄' : doc.type === 'photo' ? '🖼️' : '📎'}</span>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{doc.name || doc.type}</p>
-                          <p className="text-xs text-gray-500 capitalize">{doc.type}</p>
+                    {studentDocs.documents.map((doc) => {
+                      const docUrl = doc.fileUrl || doc.url || "#";
+                      return (
+                        <div key={doc.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{doc.type === 'resume' ? '📄' : doc.type === 'photo' ? '🖼️' : '📎'}</span>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{doc.title || doc.name || doc.type}</p>
+                              <p className="text-xs text-gray-500 capitalize">{doc.type}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <a href={docUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 font-medium flex items-center gap-1">
+                              👁 View
+                            </a>
+                            <a href={docUrl} download className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 font-medium flex items-center gap-1">
+                              ⬇ Download
+                            </a>
+                          </div>
                         </div>
-                      </a>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
