@@ -1,7 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 
-interface Agent { id: string; userId: string; referralCode: string; commissionRate: number; totalEarnings: number; walletBalance: number; bankName?: string; accountNumber?: string; ifscCode?: string; upiId?: string; isActive: boolean; user: { id: string; name: string; email: string; phone?: string; avatar?: string }; referrals: { id: string; status: string; commission: number; student?: { name: string; email: string; phone?: string } }[]; payouts: { id: string; amount: number; status: string; method: string; createdAt: string }[]; }
+interface Enrollment { id: string; status: string; preferredMode?: string; feeType?: string; feeAmount?: number; stipendAmount?: number; batch?: { name: string; program?: { title: string } } }
+interface ReferralStudent { id?: string; name: string; email: string; phone?: string; collegeName?: string; degree?: string; state?: string; enrollments?: Enrollment[] }
+interface Referral { id: string; status: string; commission: number; amount: number; createdAt: string; student?: ReferralStudent }
+interface Agent { id: string; userId: string; referralCode: string; commissionRate: number; totalEarnings: number; walletBalance: number; bankName?: string; accountNumber?: string; ifscCode?: string; upiId?: string; isActive: boolean; user: { id: string; name: string; email: string; phone?: string; avatar?: string }; referrals: Referral[]; payouts: { id: string; amount: number; status: string; method: string; createdAt: string }[]; }
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -69,15 +72,57 @@ export default function AgentsPage() {
         </div>
 
         <div className="bg-white rounded-xl border overflow-hidden">
-          <div className="p-4 border-b"><h2 className="font-semibold">Referrals</h2></div>
-          <table className="w-full">
-            <thead className="bg-gray-50"><tr><th className="px-4 py-2 text-left text-xs">Student</th><th className="px-4 py-2 text-left text-xs">Status</th><th className="px-4 py-2 text-right text-xs">Commission</th></tr></thead>
-            <tbody className="divide-y">
-              {(agent.referrals || []).map(r => (
-                <tr key={r.id}><td className="px-4 py-3 text-sm">{r.student?.name || "—"}</td><td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded ${r.status === "paid" ? "bg-green-100 text-green-700" : r.status === "converted" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>{r.status}</span></td><td className="px-4 py-3 text-right text-sm font-medium">₹{r.commission}</td></tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="p-4 border-b flex items-center justify-between">
+            <h2 className="font-semibold">My Referred Students ({(agent.referrals || []).length})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">#</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Student Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">College</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Program</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Mode</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Fee Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Current Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Referral Date</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Commission</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {(agent.referrals || []).length === 0 ? (
+                  <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-400">No referrals yet. Share your referral link to get started!</td></tr>
+                ) : (agent.referrals || []).map((r, idx) => {
+                  const enrollment = r.student?.enrollments?.[0];
+                  const statusColor = r.status === "converted" ? "bg-green-100 text-green-800" : r.status === "selected" ? "bg-blue-100 text-blue-800" : r.status === "rejected" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800";
+                  const enrollStatus = enrollment?.status || "applied";
+                  const enrollStatusColor = enrollStatus === "selected" || enrollStatus === "active" ? "bg-green-100 text-green-800" : enrollStatus === "rejected" ? "bg-red-100 text-red-800" : enrollStatus === "interview_scheduled" ? "bg-purple-100 text-purple-800" : enrollStatus === "shortlisted" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600";
+                  return (
+                    <tr key={r.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{r.student?.name || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{r.student?.email || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{r.student?.phone || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{r.student?.collegeName || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{enrollment?.batch?.program?.title || "—"}</td>
+                      <td className="px-4 py-3 text-sm"><span className="capitalize">{enrollment?.preferredMode || "—"}</span></td>
+                      <td className="px-4 py-3 text-sm"><span className="capitalize">{enrollment?.feeType || "—"}</span></td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${enrollStatusColor}`}>
+                          {enrollStatus === "interview_scheduled" ? "Interview" : enrollStatus}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString("en-IN")}</td>
+                      <td className="px-4 py-3 text-right text-sm font-semibold">{r.commission > 0 ? <span className="text-green-700">₹{r.commission.toLocaleString()}</span> : <span className="text-gray-400">₹0</span>}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl border overflow-hidden">

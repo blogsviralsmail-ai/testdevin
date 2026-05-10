@@ -10,7 +10,27 @@ export async function GET() {
   if (session.role === "agent") {
     const agent = await prisma.agent.findUnique({
       where: { userId: session.id },
-      include: { user: { select: { name: true, email: true, phone: true, avatar: true } }, referrals: { include: { student: { select: { name: true, email: true, phone: true } } }, orderBy: { createdAt: "desc" } }, payouts: { orderBy: { createdAt: "desc" } } },
+      include: {
+        user: { select: { name: true, email: true, phone: true, avatar: true } },
+        referrals: {
+          include: {
+            student: {
+              select: {
+                id: true, name: true, email: true, phone: true, collegeName: true, degree: true, state: true,
+                enrollments: {
+                  select: {
+                    id: true, status: true, preferredMode: true, feeType: true, feeAmount: true, stipendAmount: true,
+                    batch: { select: { name: true, program: { select: { title: true } } } },
+                  },
+                  take: 1, orderBy: { createdAt: "desc" },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        payouts: { orderBy: { createdAt: "desc" } },
+      },
     });
     return NextResponse.json(agent);
   }
