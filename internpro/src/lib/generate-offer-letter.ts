@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { escapeHtml, generateUniqueId } from "@/lib/utils";
 import { sendLetterGeneratedEmail } from "@/lib/email";
 import { logActivity } from "@/lib/activity";
+import { generateEmployeeId } from "@/lib/employee-id";
 
 export async function generateOfferLetterForEnrollment(enrollmentId: string, actorId: string, actorName: string): Promise<{ success: boolean; letterNumber?: string; error?: string }> {
   try {
@@ -16,6 +17,12 @@ export async function generateOfferLetterForEnrollment(enrollmentId: string, act
 
     const existing = await prisma.offerLetter.findFirst({ where: { enrollmentId } });
     if (existing) return { success: true, letterNumber: existing.letterNumber };
+
+    // Auto-generate employee ID if not set
+    if (!enrollment.student.employeeId) {
+      const empId = await generateEmployeeId(enrollment.joiningDate || new Date());
+      await prisma.user.update({ where: { id: enrollment.studentId }, data: { employeeId: empId } });
+    }
 
     const template = await prisma.offerLetterTemplate.findFirst({ where: { isDefault: true, type: { not: "experience" } } });
     const org = enrollment.batch.program.organization;

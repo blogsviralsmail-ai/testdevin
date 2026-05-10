@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
         where: { batchId: enrollment.batchId },
         orderBy: [{ dayNumber: "asc" }, { order: "asc" }, { createdAt: "desc" }],
       });
-      const currentDay = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || 999);
+      const rawDay = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || 999);
+      const currentDay = Math.max(rawDay, 1);
       const filtered = batchResources.filter((r) => {
         if (r.dayNumber && r.dayNumber > currentDay) return false;
         return true;

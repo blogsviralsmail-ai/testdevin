@@ -45,6 +45,8 @@ export default function MyWorkPage() {
   const [enrollment, setEnrollment] = useState<EnrollmentInfo | null>(null);
   const [selectedDay, setSelectedDay] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [submitTask, setSubmitTask] = useState<{ taskId: string; content: string; fileUrl: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -67,6 +69,30 @@ export default function MyWorkPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleSubmitTask = async () => {
+    if (!submitTask || !submitTask.content.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: submitTask.taskId, content: submitTask.content, fileUrl: submitTask.fileUrl || undefined }),
+      });
+      if (res.ok) {
+        setSubmitTask(null);
+        fetchData();
+      } else {
+        alert("Failed to submit task");
+      }
+    } catch { alert("Error submitting task"); }
+    setSubmitting(false);
+  };
+
+  const getYouTubeId = (url: string) => {
+    const match = url.match(/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+  };
 
   if (loading) return <div className="p-6 text-center text-gray-600">Loading your workspace...</div>;
 
@@ -223,27 +249,38 @@ export default function MyWorkPage() {
                   <span className="w-6 h-6 rounded bg-red-100 text-red-600 flex items-center justify-center text-xs">&#9654;</span>
                   Study Material
                 </h3>
-                <div className="space-y-3">
-                  {dayResources.map(r => (
-                    <a
-                      key={r.id}
-                      href={r.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block bg-gray-50 hover:bg-indigo-50 rounded-lg p-4 transition border hover:border-indigo-200 group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-lg shrink-0">
-                          {r.type === "video" ? "🎥" : r.type === "pdf" ? "📄" : "🔗"}
+                <div className="space-y-4">
+                  {dayResources.map(r => {
+                    const ytId = r.type === "video" ? getYouTubeId(r.url) : null;
+                    return (
+                      <div key={r.id} className="bg-gray-50 rounded-lg border overflow-hidden">
+                        {ytId ? (
+                          <div className="aspect-video w-full">
+                            <iframe
+                              src={`https://www.youtube.com/embed/${ytId}`}
+                              className="w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              title={r.title}
+                            />
+                          </div>
+                        ) : null}
+                        <div className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-sm shrink-0">
+                              {r.type === "video" ? "🎥" : r.type === "pdf" ? "📄" : "🔗"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 text-sm truncate">{r.title}</p>
+                            </div>
+                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 font-medium shrink-0">
+                              Open &#8599;
+                            </a>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 group-hover:text-indigo-700 truncate">{r.title}</p>
-                          <p className="text-xs text-gray-500">{r.type.charAt(0).toUpperCase() + r.type.slice(1)} — Click to open</p>
-                        </div>
-                        <span className="text-gray-400 group-hover:text-indigo-500">&#8599;</span>
                       </div>
-                    </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -258,19 +295,45 @@ export default function MyWorkPage() {
                 <div className="space-y-3">
                   {dayTasks.map(t => {
                     const sub = getSubmissionStatus(t.id);
+                    const isSubmitting = submitTask?.taskId === t.id;
                     return (
                       <div key={t.id} className="bg-gray-50 rounded-lg p-4 border">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">{t.title}</p>
-                            {t.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{t.description}</p>}
+                            {t.description && <p className="text-sm text-gray-600 mt-1">{t.description}</p>}
                           </div>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${sub.color}`}>{sub.label}</span>
                         </div>
-                        {sub.status === "not_started" && (
-                          <a href="/dashboard/tasks" className="inline-block mt-3 px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+                        {sub.status === "not_started" && !isSubmitting && (
+                          <button onClick={() => setSubmitTask({ taskId: t.id, content: "", fileUrl: "" })} className="mt-3 px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
                             Submit Task
-                          </a>
+                          </button>
+                        )}
+                        {isSubmitting && submitTask && (
+                          <div className="mt-3 space-y-3 bg-white p-4 rounded-lg border border-indigo-200">
+                            <textarea
+                              value={submitTask.content}
+                              onChange={e => setSubmitTask({ ...submitTask, content: e.target.value })}
+                              placeholder="Write your submission here..."
+                              className="w-full border rounded-lg p-3 text-sm min-h-[100px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            <input
+                              type="text"
+                              value={submitTask.fileUrl}
+                              onChange={e => setSubmitTask({ ...submitTask, fileUrl: e.target.value })}
+                              placeholder="File/Link URL (optional)"
+                              className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            <div className="flex gap-2">
+                              <button onClick={handleSubmitTask} disabled={submitting || !submitTask.content.trim()} className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium">
+                                {submitting ? "Submitting..." : "Submit"}
+                              </button>
+                              <button onClick={() => setSubmitTask(null)} className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     );

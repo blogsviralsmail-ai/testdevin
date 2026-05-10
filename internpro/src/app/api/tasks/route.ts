@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
     const enrollment = await prisma.enrollment.findFirst({
       where: enrollmentWhere,
     });
-    const currentDay = enrollment?.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment?.currentWorkDay || 0);
+    const rawDay = enrollment?.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment?.currentWorkDay || 0);
+    const currentDay = Math.max(rawDay, 1);
     const isCompleted = enrollment?.status === "completed";
 
     const enrolledBatchIds = (await prisma.enrollment.findMany({

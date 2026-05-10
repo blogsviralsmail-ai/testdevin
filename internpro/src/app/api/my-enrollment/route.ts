@@ -28,9 +28,10 @@ export async function GET() {
     return NextResponse.json(null);
   }
 
-  const currentDay = enrollment.joiningDate
+  const rawDay = enrollment.joiningDate
     ? calculateWorkingDay(enrollment.joiningDate)
     : enrollment.currentWorkDay || 0;
+  const currentDay = Math.max(rawDay, 1);
 
   return NextResponse.json({
     programTitle: enrollment.batch.program.title,
