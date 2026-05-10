@@ -60,10 +60,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Calculate agent commission if student was referred
+    // Calculate agent commission only when student pays company (feeType = "paid")
+    // No commission for stipend (company pays student) or free enrollments
     try {
-      const enrollment = await prisma.enrollment.findUnique({ where: { id: enrollmentId }, select: { studentId: true } });
-      if (enrollment) {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: { id: enrollmentId },
+        select: { studentId: true, feeType: true },
+      });
+      if (enrollment && enrollment.feeType === "paid") {
         const referral = await prisma.referral.findFirst({
           where: { studentId: enrollment.studentId },
           include: { agent: true },
