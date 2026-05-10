@@ -13,6 +13,21 @@ export async function GET(request: NextRequest) {
   const where: Record<string, unknown> = {};
   if (programId) where.programId = programId;
 
+  // Students see only their enrolled program's live sessions + general sessions
+  if (session.role === "student" && !programId) {
+    const enrollments = await prisma.enrollment.findMany({
+      where: { studentId: session.id, status: { in: ["selected", "active", "completed"] } },
+      include: { batch: { select: { programId: true } } },
+    });
+    if (enrollments.length > 0) {
+      const myProgramIds = enrollments.map(e => e.batch.programId);
+      where.OR = [
+        { programId: { in: myProgramIds } },
+        { programId: null },
+      ];
+    }
+  }
+
   const sessions = await prisma.liveSession.findMany({
     where,
     orderBy: { scheduledAt: "desc" },

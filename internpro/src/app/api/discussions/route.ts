@@ -17,6 +17,23 @@ export async function GET(request: NextRequest) {
   if (batchId) where.batchId = batchId;
   if (category) where.category = category;
 
+  // Students see only their enrolled program's discussions + general discussions
+  if (session.role === "student" && !programId && !batchId) {
+    const enrollments = await prisma.enrollment.findMany({
+      where: { studentId: session.id, status: { in: ["selected", "active", "completed"] } },
+      include: { batch: { select: { programId: true } } },
+    });
+    if (enrollments.length > 0) {
+      const myProgramIds = enrollments.map(e => e.batch.programId);
+      const myBatchIds = enrollments.map(e => e.batchId);
+      where.OR = [
+        { programId: { in: myProgramIds } },
+        { batchId: { in: myBatchIds } },
+        { programId: null, batchId: null },
+      ];
+    }
+  }
+
   const discussions = await prisma.discussion.findMany({
     where,
     include: { replies: { select: { id: true, authorId: true, createdAt: true } } },

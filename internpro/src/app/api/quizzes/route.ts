@@ -5,11 +5,31 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const session = await getSession();
 
-  // Allow public access — show published quizzes only for non-admin
   const isAdmin = session && ["admin", "organization", "teamleader"].includes(session.role);
 
+  // For students, only show quizzes that belong to their enrolled program/batch
+  let where: Record<string, unknown> = isAdmin ? {} : { isPublished: true };
+  if (session && session.role === "student") {
+    const enrollments = await prisma.enrollment.findMany({
+      where: { studentId: session.id, status: { in: ["selected", "active", "completed"] } },
+      include: { batch: { select: { id: true, programId: true } } },
+    });
+    if (enrollments.length > 0) {
+      const batchIds = enrollments.map(e => e.batchId);
+      const programIds = enrollments.map(e => e.batch.programId);
+      where = {
+        isPublished: true,
+        OR: [
+          { batchId: { in: batchIds } },
+          { programId: { in: programIds } },
+          { batchId: null, programId: null },
+        ],
+      };
+    }
+  }
+
   const quizzes = await prisma.quiz.findMany({
-    where: isAdmin ? {} : { isPublished: true },
+    where,
     include: { questions: { select: { id: true } }, attempts: session ? (isAdmin ? { select: { id: true } } : { where: { userId: session.id } }) : { select: { id: true } } },
     orderBy: { createdAt: "desc" },
   });

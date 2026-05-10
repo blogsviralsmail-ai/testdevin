@@ -3,11 +3,21 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
+  const session = await getSession();
   const { searchParams } = new URL(request.url);
   const programId = searchParams.get("programId");
 
   const where: Record<string, unknown> = {};
   if (programId) where.programId = programId;
+
+  // Students should only see their enrolled batches
+  if (session && session.role === "student") {
+    const enrollments = await prisma.enrollment.findMany({
+      where: { studentId: session.id, status: { in: ["applied", "interview_scheduled", "shortlisted", "selected", "active", "completed"] } },
+      select: { batchId: true },
+    });
+    where.id = { in: enrollments.map(e => e.batchId) };
+  }
 
   const batches = await prisma.batch.findMany({
     where,
