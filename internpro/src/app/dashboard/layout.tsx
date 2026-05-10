@@ -15,35 +15,49 @@ interface User {
 }
 
 const navItems = [
+  // Core
   { href: "/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "organization", "teamleader", "student", "agent"] },
   { href: "/dashboard/my-work", label: "My Workspace", icon: "💼", roles: ["student"] },
+
+  // Recruitment
   { href: "/dashboard/applications", label: "Applications", icon: "📋", roles: ["admin", "organization"] },
   { href: "/dashboard/interviews", label: "Interviews", icon: "🎤", roles: ["admin", "organization", "student"] },
-  { href: "/dashboard/programs", label: "Programs", icon: "📚", roles: ["admin", "organization", "teamleader"] },
   { href: "/dashboard/students", label: "Students", icon: "👥", roles: ["admin", "organization", "teamleader"] },
-  { href: "/dashboard/attendance", label: "Attendance", icon: "📅", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/course-content", label: "Course Content", icon: "📚", roles: ["admin", "organization", "teamleader"] },
+
+  // Academics
+  { href: "/dashboard/programs", label: "Programs", icon: "📚", roles: ["admin", "organization", "teamleader"] },
+  { href: "/dashboard/course-content", label: "Course Content", icon: "📖", roles: ["admin", "organization", "teamleader"] },
   { href: "/dashboard/reviews", label: "Reviews", icon: "✅", roles: ["teamleader", "admin"] },
-  { href: "/dashboard/discussions", label: "Discussions", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/progress", label: "Progress Tracker", icon: "📊", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/live-sessions", label: "Live Sessions", icon: "📹", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/leaderboard", label: "Leaderboard", icon: "🏆", roles: ["admin", "organization", "teamleader", "student"] },
+
+  // Tracking
+  { href: "/dashboard/attendance", label: "Attendance", icon: "📅", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/progress", label: "Progress", icon: "📈", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/reports", label: "Reports", icon: "📑", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/completion", label: "Completion Approval", icon: "🎓", roles: ["admin", "organization", "teamleader"] },
-  { href: "/dashboard/letters", label: "Letters", icon: "📋", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/leaderboard", label: "Leaderboard", icon: "🏆", roles: ["admin", "organization", "teamleader", "student"] },
+
+  // Documents & Letters
+  { href: "/dashboard/letters", label: "Letters", icon: "📄", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/documents", label: "Documents", icon: "📎", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/completion", label: "Completion", icon: "🎓", roles: ["admin", "organization", "teamleader"] },
+
+  // Finance
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
-  { href: "/dashboard/documents", label: "My Documents", icon: "📄", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/announcements", label: "Announcements", icon: "📢", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/jobs", label: "Job Board", icon: "💼", roles: ["admin", "organization", "student"] },
-  { href: "/dashboard/team-leaders", label: "Team Leaders", icon: "👔", roles: ["admin", "organization"] },
   { href: "/dashboard/agents", label: "Agents", icon: "🤝", roles: ["admin", "organization", "agent"] },
+
+  // Communication
+  { href: "/dashboard/discussions", label: "Discussions", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/announcements", label: "Announcements", icon: "📢", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/chat", label: "Chat / Support", icon: "🗨️", roles: ["admin", "organization", "teamleader", "student"] },
+
+  // Analytics & Management
   { href: "/dashboard/analytics", label: "Analytics", icon: "📈", roles: ["admin", "organization"] },
-  { href: "/dashboard/attendance-analytics", label: "Attendance Analytics", icon: "📊", roles: ["admin", "organization", "teamleader"] },
-  { href: "/dashboard/campaigns", label: "Email Campaigns", icon: "📧", roles: ["admin", "organization"] },
+  { href: "/dashboard/team-leaders", label: "Team Leaders", icon: "👔", roles: ["admin", "organization"] },
+  { href: "/dashboard/campaigns", label: "Campaigns", icon: "📧", roles: ["admin", "organization"] },
+  { href: "/dashboard/jobs", label: "Job Board", icon: "💼", roles: ["admin", "organization", "student"] },
   { href: "/dashboard/testimonials", label: "Testimonials", icon: "⭐", roles: ["admin", "organization"] },
-  { href: "/dashboard/users", label: "User Management", icon: "🔑", roles: ["admin"] },
-  { href: "/dashboard/chat", label: "Chat / Support", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/activity-log", label: "Activity Log", icon: "📋", roles: ["admin", "organization"] },
+  { href: "/dashboard/activity-log", label: "Activity Log", icon: "🕐", roles: ["admin", "organization"] },
+  { href: "/dashboard/users", label: "Users", icon: "🔑", roles: ["admin"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
 
