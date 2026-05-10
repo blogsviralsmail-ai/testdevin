@@ -226,6 +226,9 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
       where: { enrollmentId },
     });
 
+    const isPaid = feeType === "paid" && feeAmount > 0;
+    const paymentStatusValue = isPaid ? "pending" : "not_required";
+
     // All DB writes in a single transaction for atomicity
     const offerLetter = await prisma.$transaction(async (tx) => {
       await tx.enrollment.update({
@@ -235,13 +238,30 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
           salary: salary || 0,
           weekoffs: weekoffs || 1,
           paidLeaves: paidLeaves || 0,
-          workTiming: workTiming || "10:00 AM - 6:00 PM",
+          workTiming: workTiming || "9:30 AM - 6:30 PM",
           joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
           feeType: feeType || "free",
           feeAmount: feeAmount || 0,
           stipendAmount: stipendAmount || 0,
+          paymentStatus: paymentStatusValue,
         },
       });
+
+      // For paid students, don't generate offer letter yet — wait for payment
+      if (isPaid) {
+        if (interview) {
+          await tx.interview.update({
+            where: { id: interview.id },
+            data: { status: "completed", result: "selected" },
+          });
+        }
+        // Update referral status
+        const referral = await tx.referral.findFirst({ where: { studentId: enrollment.studentId } });
+        if (referral) {
+          await tx.referral.update({ where: { id: referral.id }, data: { status: "selected" } });
+        }
+        return null; // No offer letter for paid — will be generated after payment
+      }
 
       const letter = await tx.offerLetter.create({
         data: {
@@ -279,14 +299,46 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
       return letter;
     });
 
-    // Send Offer Letter email with PDF attachment (non-blocking)
+    // For paid students — send "pay to get offer letter" email
     const student = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { name: true, email: true, avatar: true } });
-    if (student) {
+    if (isPaid && student) {
+      const paymentUrl = `${siteUrl}/dashboard/pay?enrollmentId=${enrollmentId}`;
+      const { sendEmail } = await import("@/lib/email");
+      const payEmailHtml = `
+        <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
+          <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:30px;text-align:center;border-radius:12px 12px 0 0;">
+            <img src="${siteUrl}${lhLogo}" style="height:50px;margin-bottom:10px;" />
+            <h1 style="color:white;margin:0;font-size:24px;">Congratulations! You are Selected!</h1>
+          </div>
+          <div style="padding:30px;">
+            <p style="font-size:16px;color:#333;">Dear <strong>${escapeHtml(student.name)}</strong>,</p>
+            <p style="font-size:14px;color:#555;line-height:1.6;">We are pleased to inform you that you have been <strong style="color:#059669;">selected</strong> for the <strong>${escapeHtml(enrollment.batch.program.title)}</strong> program at <strong>${escapeHtml(lhCompany)}</strong>.</p>
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:20px;margin:20px 0;">
+              <p style="margin:0 0 10px;font-size:14px;color:#333;">To receive your <strong>Offer Letter</strong>, please complete the payment:</p>
+              <p style="margin:0;font-size:24px;font-weight:bold;color:#059669;">₹${feeAmount.toLocaleString()}</p>
+            </div>
+            <a href="${paymentUrl}" style="display:block;text-align:center;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;margin:20px 0;">Pay Now & Get Offer Letter</a>
+            <p style="font-size:12px;color:#888;text-align:center;">After payment, your offer letter will be generated and emailed automatically.</p>
+          </div>
+          <div style="padding:15px;text-align:center;background:#f9fafb;border-radius:0 0 12px 12px;">
+            <p style="margin:0;font-size:12px;color:#888;">${escapeHtml(lhCompany)} | ${escapeHtml(lhAddress)}</p>
+          </div>
+        </div>
+      `;
+      sendEmail(student.email, `Congratulations! You are Selected for ${enrollment.batch.program.title} — Pay to Get Offer Letter`, payEmailHtml).catch(() => {});
+
+      logActivity("selected_paid", "enrollment", enrollmentId, `${student.name} selected for ${enrollment.batch.program.title} — payment pending ₹${feeAmount}`, session.id, session.name).catch(() => {});
+
+      return NextResponse.json({ message: "Student selected! Payment email sent. Offer letter will be generated after payment.", paymentPending: true }, { status: 201 });
+    }
+
+    // Send Offer Letter email with PDF attachment (non-blocking) — for free/stipend students
+    if (student && offerLetter) {
       const joiningDateStr = joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
       const extraDetails: Record<string, string> = {
         "{{program_name}}": enrollment.batch.program.title,
         "{{joining_date}}": joiningDateStr,
-        "{{work_timing}}": workTiming || "10:00 AM - 6:00 PM",
+        "{{work_timing}}": workTiming || "9:30 AM - 6:30 PM",
         "{{salary}}": String(salary || 0),
         "{{weekoffs}}": String(weekoffs || 1),
         "{{mode}}": enrollment.batch.program.mode,
@@ -316,7 +368,9 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
       }
     }
 
-    logActivity("generated", "offer_letter", offerLetter.id, `Offer Letter ${offerLetter.letterNumber} for ${student?.name || "student"}`, session.id, session.name).catch(() => {});
+    if (offerLetter) {
+      logActivity("generated", "offer_letter", offerLetter.id, `Offer Letter ${offerLetter.letterNumber} for ${student?.name || "student"}`, session.id, session.name).catch(() => {});
+    }
 
     return NextResponse.json(offerLetter, { status: 201 });
   } catch (error: unknown) {

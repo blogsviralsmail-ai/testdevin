@@ -38,5 +38,12 @@ export async function GET() {
     joiningDate: enrollment.joiningDate,
     currentDay,
     totalDays: enrollment.batch.program.totalDays || 45,
+    enrollment: {
+      id: enrollment.id,
+      feeType: enrollment.feeType,
+      feeAmount: enrollment.feeAmount,
+      paymentStatus: enrollment.paymentStatus,
+      batch: enrollment.batch,
+    },
   });
 }

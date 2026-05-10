@@ -163,6 +163,7 @@ model Enrollment {
   adminApproved      Boolean           @default(false)
   adminRemarks       String?
   preferredMode      String?
+  paymentStatus      String            @default("not_required")
   currentWorkDay     Int               @default(0)
   attendances        Attendance[]
   certificates       Certificate[]

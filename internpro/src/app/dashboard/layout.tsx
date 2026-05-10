@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import PaymentWall from "@/components/PaymentWall";
 
 interface User {
   id: string;
@@ -307,6 +308,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Page Content */}
         <main className="p-3 sm:p-6 overflow-x-hidden">{children}</main>
       </div>
+
+      {/* Payment Wall for unpaid students */}
+      {user.role === "student" && pathname !== "/dashboard/pay" && <PaymentWall />}
     </div>
   );
 }

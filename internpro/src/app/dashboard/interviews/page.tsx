@@ -35,6 +35,8 @@ export default function InterviewsPage() {
   const [selectingId, setSelectingId] = useState<string | null>(null);
   const [editMeetLink, setEditMeetLink] = useState<{ id: string; link: string } | null>(null);
   const [editEnrollment, setEditEnrollment] = useState<{ enrollmentId: string; salary: string; weekoffs: string; paidLeaves: string; workTiming: string; joiningDate: string; feeType: string; feeAmount: string; stipendAmount: string } | null>(null);
+  const [viewDetails, setViewDetails] = useState<Interview | null>(null);
+  const [studentDocs, setStudentDocs] = useState<{documents: {id: string; type: string; url: string; name: string}[]; resume?: string} | null>(null);
 
   const getNextDay = () => {
     const d = new Date();
@@ -43,8 +45,8 @@ export default function InterviewsPage() {
   };
 
   const [selectionForm, setSelectionForm] = useState({
-    weekoffs: "2", paidLeaves: "2",
-    workTiming: "10:00 AM - 6:00 PM", joiningDate: getNextDay(),
+    weekoffs: "4", paidLeaves: "1",
+    workTiming: "9:30 AM - 6:30 PM", joiningDate: getNextDay(),
     feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
     programId: "", batchId: "", mode: "",
   });
@@ -385,6 +387,82 @@ export default function InterviewsPage() {
         </div>
       )}
 
+      {/* View Details Modal */}
+      {viewDetails && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setViewDetails(null); setStudentDocs(null); }}>
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-xl">
+              <h2 className="text-xl font-bold">{viewDetails.enrollment.student.name}</h2>
+              <p className="text-indigo-100 text-sm">{viewDetails.enrollment.batch.program.title}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">Email</p>
+                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.email}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">Phone</p>
+                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.phone || "N/A"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">College</p>
+                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.collegeName || "N/A"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">Degree</p>
+                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.degree || "N/A"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">Program</p>
+                  <p className="text-sm text-gray-900">{viewDetails.enrollment.batch.program.title}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">Batch</p>
+                  <p className="text-sm text-gray-900">{viewDetails.enrollment.batch.name}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">Interview Date</p>
+                  <p className="text-sm text-gray-900">{new Date(viewDetails.scheduledAt).toLocaleString("en-IN")}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 font-medium">Mode</p>
+                  <p className="text-sm text-gray-900 capitalize">{viewDetails.mode}</p>
+                </div>
+              </div>
+              {viewDetails.feedback && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-xs text-yellow-700 font-medium mb-1">Feedback</p>
+                  <p className="text-sm text-gray-900">{viewDetails.feedback}</p>
+                </div>
+              )}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Documents & Resume</h3>
+                {studentDocs === null ? (
+                  <p className="text-sm text-gray-500">Loading documents...</p>
+                ) : studentDocs.documents.length === 0 ? (
+                  <p className="text-sm text-gray-400">No documents uploaded yet</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {studentDocs.documents.map((doc) => (
+                      <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                        <span className="text-xl">{doc.type === 'resume' ? '📄' : doc.type === 'photo' ? '🖼️' : '📎'}</span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{doc.name || doc.type}</p>
+                          <p className="text-xs text-gray-500 capitalize">{doc.type}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => { setViewDetails(null); setStudentDocs(null); }} className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {interviews.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center border">
           <p className="text-gray-500">{userRole === "student" ? "No interviews scheduled for you yet" : "No interviews scheduled yet"}</p>
@@ -520,11 +598,14 @@ export default function InterviewsPage() {
                       </button>
                     </div>
                   )}
+                  <button onClick={() => { setViewDetails(i); fetch(`/api/documents?userId=${i.enrollment.studentId}`).then(r => r.ok ? r.json() : []).then(d => setStudentDocs({ documents: Array.isArray(d) ? d : [] })).catch(() => setStudentDocs({ documents: [] })); }} className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs rounded-lg hover:bg-indigo-200 font-medium mt-1">
+                    👁 View Details
+                  </button>
                   {i.result === "selected" && (
                     <button onClick={() => setEditEnrollment({
                       enrollmentId: i.enrollment.id,
-                      salary: "5000", weekoffs: "2", paidLeaves: "2",
-                      workTiming: "10:00 AM - 6:00 PM", joiningDate: getNextDay(),
+                      salary: "5000", weekoffs: "4", paidLeaves: "1",
+                      workTiming: "9:30 AM - 6:30 PM", joiningDate: getNextDay(),
                       feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
                     })}
                       className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs rounded-lg hover:bg-indigo-200 mt-2">
