@@ -43,7 +43,8 @@ const navItems = [
   { href: "/dashboard/campaigns", label: "Email Campaigns", icon: "📧", roles: ["admin", "organization"] },
   { href: "/dashboard/testimonials", label: "Testimonials", icon: "⭐", roles: ["admin", "organization"] },
   { href: "/dashboard/users", label: "User Management", icon: "🔑", roles: ["admin"] },
-  { href: "/dashboard/support", label: "Support", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/chat", label: "Chat / Support", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/activity-log", label: "Activity Log", icon: "📋", roles: ["admin", "organization"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
 
@@ -55,7 +56,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<{ id: string; title: string; message: string; isRead: boolean; createdAt: string; link?: string }[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -78,6 +80,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Responsive: detect mobile and auto-close sidebar
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(true);
+      else setSidebarOpen(false);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Fetch notifications periodically
   useEffect(() => {
@@ -171,10 +186,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile overlay */}
+      {isMobile && sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
       <aside
-        className="fixed inset-y-0 left-0 z-30 bg-[#1e1b4b] transition-all duration-300 flex flex-col"
-        style={{ width: sidebarOpen ? '256px' : '80px' }}
+        className={`fixed inset-y-0 left-0 bg-[#1e1b4b] transition-all duration-300 flex flex-col ${
+          isMobile ? (sidebarOpen ? 'z-50 translate-x-0' : 'z-50 -translate-x-full') : 'z-30'
+        }`}
+        style={{ width: isMobile ? '280px' : (sidebarOpen ? '256px' : '80px') }}
       >
         <div className="p-4 flex items-center gap-3 border-b border-indigo-800">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shrink-0">IP</div>
@@ -188,13 +210,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => { if (isMobile) setSidebarOpen(false); }}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm",
                   isActive ? "bg-indigo-600 text-white" : "text-indigo-200 hover:bg-indigo-800 hover:text-white"
                 )}
               >
                 <span className="text-lg shrink-0">{item.icon}</span>
-                {sidebarOpen && <span>{item.label}</span>}
+                {(sidebarOpen || isMobile) && <span>{item.label}</span>}
               </Link>
             );
           })}
@@ -225,10 +248,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div
         className="flex-1 min-w-0 transition-all duration-300"
-        style={{ marginLeft: sidebarOpen ? '256px' : '80px' }}
+        style={{ marginLeft: isMobile ? 0 : (sidebarOpen ? '256px' : '80px') }}
       >
         {/* Top Bar */}
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+        <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-500 hover:text-gray-700 p-1">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,7 +305,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page Content */}
-        <main className="p-6 overflow-x-hidden">{children}</main>
+        <main className="p-3 sm:p-6 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

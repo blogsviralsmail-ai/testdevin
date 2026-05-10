@@ -27,6 +27,10 @@ model User {
   address         String?
   dob             DateTime?
   state           String?
+  bio             String?
+  skills          String?
+  linkedinUrl     String?
+  portfolioUrl    String?
   agentProfile    Agent?              @relation("AgentProfile")
   announcements   Announcement[]      @relation("Announcements")
   attendances     Attendance[]
@@ -621,4 +625,26 @@ model EmailCampaign {
   createdBy   String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  userName  String?
+  action    String
+  entity    String
+  entityId  String?
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String?
+  roomId     String
+  message    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }

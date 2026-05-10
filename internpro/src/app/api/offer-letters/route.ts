@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { escapeHtml, generateUniqueId } from "@/lib/utils";
 import { sendLetterGeneratedEmail } from "@/lib/email";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -314,6 +315,8 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
         sendLetterGeneratedEmail(student.name, student.email, "ID Card", idCard.cardNumber, idCardHtml).catch(() => {});
       }
     }
+
+    logActivity("generated", "offer_letter", offerLetter.id, `Offer Letter ${offerLetter.letterNumber} for ${student?.name || "student"}`, session.id, session.name).catch(() => {});
 
     return NextResponse.json(offerLetter, { status: 201 });
   } catch (error: unknown) {

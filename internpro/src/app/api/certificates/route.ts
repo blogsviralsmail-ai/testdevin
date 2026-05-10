@@ -1,88 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { generateCertNumber } from "@/lib/utils";
+import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity";
+import crypto from "crypto";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const session = await getSession();
-  if (!session) {
+  if (!session || !["admin", "organization"].includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const enrollmentId = searchParams.get("enrollmentId");
-  const certNumber = searchParams.get("certNumber");
+  const { enrollmentId } = await request.json();
+  if (!enrollmentId) return NextResponse.json({ error: "enrollmentId required" }, { status: 400 });
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: enrollmentId },
+    include: {
+      student: { select: { id: true, name: true, email: true } },
+      batch: { include: { program: { include: { organization: true } } } },
+    },
+  });
+
+  if (!enrollment) return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+  if (enrollment.status !== "completed") return NextResponse.json({ error: "Internship not completed yet" }, { status: 400 });
+
+  const existing = await prisma.certificate.findFirst({ where: { enrollmentId, type: "completion" } });
+  if (existing) return NextResponse.json({ error: "Certificate already generated", certificate: existing }, { status: 409 });
+
+  const certNumber = `CERT-${new Date().getFullYear()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+  const qrData = `https://internship.kkhsmedia.com/verify/${certNumber}`;
+
+  const certificate = await prisma.certificate.create({
+    data: {
+      enrollmentId,
+      certNumber,
+      type: "completion",
+      studentName: enrollment.student.name,
+      programName: enrollment.batch.program.title,
+      orgName: enrollment.batch.program.organization.name,
+      qrCode: qrData,
+    },
+  });
+
+  await logActivity("generated", "certificate", certificate.id, `Certificate ${certNumber} for ${enrollment.student.name}`, session.id, session.name);
+
+  return NextResponse.json({ certificate });
+}
+
+export async function GET() {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const where: Record<string, unknown> = {};
-  if (enrollmentId) where.enrollmentId = enrollmentId;
-  if (certNumber) where.certNumber = certNumber;
+  if (session.role === "student") {
+    const enrollments = await prisma.enrollment.findMany({ where: { studentId: session.id }, select: { id: true } });
+    where.enrollmentId = { in: enrollments.map(e => e.id) };
+  }
 
   const certificates = await prisma.certificate.findMany({
     where,
-    include: {
-      enrollment: {
-        include: {
-          student: { select: { name: true, email: true } },
-          batch: { include: { program: { select: { title: true, domain: true } } } },
-        },
-      },
-    },
     orderBy: { createdAt: "desc" },
+    include: { enrollment: { include: { student: { select: { name: true, email: true } }, batch: { include: { program: { select: { title: true } } } } } } },
   });
 
-  return NextResponse.json(certificates);
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getSession();
-    if (!session || !["admin", "organization"].includes(session.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { enrollmentId, type } = body;
-
-    if (!enrollmentId) {
-      return NextResponse.json({ error: "Enrollment ID is required" }, { status: 400 });
-    }
-
-    const enrollment = await prisma.enrollment.findUnique({
-      where: { id: enrollmentId },
-      include: {
-        student: true,
-        batch: { include: { program: { include: { organization: true } } } },
-      },
-    });
-
-    if (!enrollment) {
-      return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
-    }
-
-    let certificate;
-    for (let attempt = 0; attempt < 5; attempt++) {
-      try {
-        const certNumber = generateCertNumber();
-        certificate = await prisma.certificate.create({
-          data: {
-            enrollmentId,
-            certNumber,
-            type: type || "completion",
-            studentName: enrollment.student.name,
-            programName: enrollment.batch.program.title,
-            orgName: enrollment.batch.program.organization.name,
-          },
-        });
-        break;
-      } catch (err: unknown) {
-        const isPrismaUnique = err instanceof Error && "code" in err && (err as Record<string, unknown>).code === "P2002";
-        if (!isPrismaUnique || attempt === 4) throw err;
-      }
-    }
-
-    return NextResponse.json(certificate, { status: 201 });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to generate certificate";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return NextResponse.json({ certificates });
 }

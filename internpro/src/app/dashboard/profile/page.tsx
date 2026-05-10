@@ -14,6 +14,10 @@ interface Profile {
   year: string | null;
   address: string | null;
   dob: string | null;
+  bio: string | null;
+  skills: string | null;
+  linkedinUrl: string | null;
+  portfolioUrl: string | null;
 }
 
 export default function ProfilePage() {
@@ -23,22 +27,30 @@ export default function ProfilePage() {
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({
     name: "", phone: "", collegeName: "", degree: "", year: "", address: "", dob: "",
+    bio: "", skills: "", linkedinUrl: "", portfolioUrl: "",
   });
+  const [profileComplete, setProfileComplete] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [joiningDate, setJoiningDate] = useState<string | null>(null);
   const [loginHours, setLoginHours] = useState<{date: string; loginTime: string; logoutTime: string | null; totalMinutes: number}[]>([]);
 
   useEffect(() => {
     fetch("/api/profile").then(r => r.json()).then(data => {
-      setProfile(data);
+      setProfile(data.user || data);
+      setProfileComplete(data.profileComplete || 0);
+      const u = data.user || data;
       setForm({
-        name: data.name || "",
-        phone: data.phone || "",
-        collegeName: data.collegeName || "",
-        degree: data.degree || "",
-        year: data.year || "",
-        address: data.address || "",
-        dob: data.dob ? data.dob.split("T")[0] : "",
+        name: u.name || "",
+        phone: u.phone || "",
+        collegeName: u.collegeName || "",
+        degree: u.degree || "",
+        year: u.year || "",
+        address: u.address || "",
+        dob: u.dob ? u.dob.split("T")[0] : "",
+        bio: u.bio || "",
+        skills: u.skills || "",
+        linkedinUrl: u.linkedinUrl || "",
+        portfolioUrl: u.portfolioUrl || "",
       });
       setLoading(false);
     });
@@ -123,7 +135,15 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+        <div className="flex items-center gap-3">
+          <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all" style={{ width: `${profileComplete}%`, background: profileComplete === 100 ? '#10b981' : profileComplete >= 60 ? '#f59e0b' : '#ef4444' }} />
+          </div>
+          <span className={`text-sm font-bold ${profileComplete === 100 ? 'text-green-600' : profileComplete >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{profileComplete}%</span>
+        </div>
+      </div>
 
       {msg && (
         <div className="mb-4 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm">{msg}</div>
@@ -196,6 +216,31 @@ export default function ProfilePage() {
               className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={2} />
           </div>
         </div>
+
+        <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-4">Professional Details</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Bio / About</label>
+            <textarea value={form.bio} onChange={e => setForm({...form, bio: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={3} placeholder="Tell us about yourself..." />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Skills (comma-separated)</label>
+            <input value={form.skills} onChange={e => setForm({...form, skills: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="React, Node.js, Python, Design..." />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">LinkedIn URL</label>
+            <input value={form.linkedinUrl} onChange={e => setForm({...form, linkedinUrl: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://linkedin.com/in/..." />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Portfolio URL</label>
+            <input value={form.portfolioUrl} onChange={e => setForm({...form, portfolioUrl: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://your-portfolio.com" />
+          </div>
+        </div>
+
         <button type="submit" disabled={saving}
           className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
           {saving ? "Saving..." : "Save Changes"}

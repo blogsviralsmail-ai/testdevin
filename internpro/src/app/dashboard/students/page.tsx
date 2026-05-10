@@ -42,6 +42,9 @@ export default function StudentsPage() {
   const [teamLeaders, setTeamLeaders] = useState<{ id: string; name: string }[]>([]);
   const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkAction, setBulkAction] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const fetchEnrollments = useCallback(async () => {
     const [res, batchRes, tlRes, meRes] = await Promise.all([
@@ -180,6 +183,7 @@ export default function StudentsPage() {
           <p className="text-gray-600 text-sm">Manage enrolled students across all programs</p>
         </div>
         <div className="flex gap-2 flex-wrap items-center">
+          <button onClick={() => { window.open('/api/export?type=students&format=csv', '_blank'); }} className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700">📥 Export CSV</button>
           <div className="relative min-w-[220px]">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, email, phone..." className="w-full pl-9 pr-3 py-1.5 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
@@ -196,6 +200,33 @@ export default function StudentsPage() {
           ))}
         </div>
       </div>
+
+      {/* Bulk Actions Bar */}
+      {isAdmin && selectedIds.length > 0 && (
+        <div className="mb-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+          <span className="text-sm font-medium text-indigo-800">{selectedIds.length} selected</span>
+          <select value={bulkAction} onChange={e => setBulkAction(e.target.value)} className="text-sm border rounded px-2 py-1">
+            <option value="">Choose action...</option>
+            <option value="bulk_select">Select All</option>
+            <option value="bulk_reject">Reject All</option>
+            <option value="bulk_attendance">Mark Attendance</option>
+          </select>
+          <button disabled={!bulkAction || bulkLoading} onClick={async () => {
+            if (!bulkAction) return;
+            setBulkLoading(true);
+            const data: Record<string, string> = {};
+            if (bulkAction === "bulk_attendance") { data.date = new Date().toISOString().split("T")[0]; data.status = "present"; }
+            await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: bulkAction, ids: selectedIds, data }) });
+            setBulkLoading(false);
+            setSelectedIds([]);
+            setBulkAction("");
+            fetchEnrollments();
+          }} className="text-sm bg-indigo-600 text-white px-3 py-1 rounded disabled:opacity-50">
+            {bulkLoading ? "Processing..." : "Apply"}
+          </button>
+          <button onClick={() => setSelectedIds([])} className="text-sm text-gray-500 hover:text-gray-700">Clear</button>
+        </div>
+      )}
 
       {/* Edit Student Modal */}
       {editModal && (
@@ -413,6 +444,7 @@ export default function StudentsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  {isAdmin && <th className="px-3 py-3"><input type="checkbox" onChange={e => { if (e.target.checked) setSelectedIds(filtered.map(e2 => e2.id)); else setSelectedIds([]); }} checked={selectedIds.length === filtered.length && filtered.length > 0} /></th>}
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Employee ID</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Program</th>
@@ -426,7 +458,8 @@ export default function StudentsPage() {
                 {filtered.map((enrollment) => {
                   const joinStatus = getJoinStatus(enrollment);
                   return (
-                    <tr key={enrollment.id} className="hover:bg-gray-50">
+                    <tr key={enrollment.id} className={`hover:bg-gray-50 ${selectedIds.includes(enrollment.id) ? 'bg-indigo-50' : ''}`}>
+                      {isAdmin && <td className="px-3 py-4"><input type="checkbox" checked={selectedIds.includes(enrollment.id)} onChange={e => { if (e.target.checked) setSelectedIds([...selectedIds, enrollment.id]); else setSelectedIds(selectedIds.filter(x => x !== enrollment.id)); }} /></td>}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-bold shrink-0 overflow-hidden">

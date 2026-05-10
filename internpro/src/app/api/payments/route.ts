@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -85,6 +86,8 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch { /* commission calculation failed, payment still recorded */ }
+
+    logActivity("payment_received", "payment", payment.id, `Payment ₹${parsedAmount} received for enrollment`, session.id, session.name).catch(() => {});
 
     return NextResponse.json(payment, { status: 201 });
   } catch (error: unknown) {

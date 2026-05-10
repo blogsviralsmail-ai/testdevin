@@ -58,6 +58,7 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Payments & Salary</h1>
           <p className="text-gray-600 text-sm">Track fees, payments, and stipend management</p>
         </div>
+        <button onClick={() => { window.open('/api/export?type=payments&format=csv', '_blank'); }} className="bg-green-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700">📥 Export CSV</button>
       </div>
 
       {/* Summary Cards */}

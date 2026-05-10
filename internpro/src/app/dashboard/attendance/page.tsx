@@ -120,9 +120,12 @@ export default function AttendancePage() {
             className="px-3 py-2 border rounded-lg text-sm text-gray-900"
           />
           {!isStudent && (
-            <button onClick={() => setShowMark(!showMark)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
-              {showMark ? "View Records" : "Mark Attendance"}
-            </button>
+            <>
+              <button onClick={() => { window.open(`/api/export?type=attendance&format=csv&date=${selectedDate}`, '_blank'); }} className="bg-green-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700">📥 Export</button>
+              <button onClick={() => setShowMark(!showMark)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+                {showMark ? "View Records" : "Mark Attendance"}
+              </button>
+            </>
           )}
         </div>
       </div>

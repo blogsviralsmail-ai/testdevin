@@ -3,6 +3,7 @@ import { registerUser, createToken } from "@/lib/auth";
 import type { SessionUser } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
     const token = createToken(sessionUser);
     // Send welcome email (non-blocking)
     sendWelcomeEmail(user.name, user.email).catch(() => {});
+    logActivity("registered", "user", user.id, `New student registered: ${user.name} (${user.email})`, user.id, user.name).catch(() => {});
 
     const response = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     response.cookies.set("token", token, {
