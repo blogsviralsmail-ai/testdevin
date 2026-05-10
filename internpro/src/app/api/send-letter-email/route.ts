@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    console.log("[send-letter-email] Cookie token present:", !!token, token ? `(${token.length} chars)` : "");
+
     const session = await getSession();
+    console.log("[send-letter-email] Session:", session ? `${session.email} (${session.role})` : "null");
+
     if (!session || !["admin", "organization", "teamleader"].includes(session.role)) {
+      console.error("[send-letter-email] AUTH FAILED - session:", session, "token present:", !!token);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
