@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const batches = await prisma.batch.findMany({
     where,
     include: {
-      program: { select: { title: true, domain: true, mode: true } },
+      program: { select: { id: true, title: true, domain: true, mode: true } },
       leader: { select: { id: true, name: true, email: true } },
       _count: { select: { enrollments: true, tasks: true, resources: true } },
     },

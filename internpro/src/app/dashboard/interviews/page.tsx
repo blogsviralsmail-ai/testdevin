@@ -15,10 +15,17 @@ interface Interview {
   enrollment: {
     id: string;
     studentId: string;
+    batchId: string;
     student: { id: string; name: string; email: string; phone: string; collegeName: string; degree: string };
-    batch: { program: { title: string; domain: string } };
+    batch: { id: string; name: string; program: { id: string; title: string; domain: string } };
   };
   interviewer: { name: string; email: string } | null;
+}
+
+interface ProgramBatch {
+  id: string;
+  title: string;
+  batches: { id: string; name: string }[];
 }
 
 export default function InterviewsPage() {
@@ -39,7 +46,9 @@ export default function InterviewsPage() {
     salary: "5000", weekoffs: "2", paidLeaves: "2",
     workTiming: "10:00 AM - 6:00 PM", joiningDate: getNextDay(),
     feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
+    programId: "", batchId: "",
   });
+  const [programs, setPrograms] = useState<ProgramBatch[]>([]);
 
   const fetchInterviews = useCallback(async () => {
     const res = await fetch("/api/interviews");
@@ -59,8 +68,32 @@ export default function InterviewsPage() {
 
   useEffect(() => { fetchInterviews(); }, [fetchInterviews]);
 
+  useEffect(() => {
+    fetch("/api/batches").then(r => r.ok ? r.json() : []).then(batches => {
+      const programMap = new Map<string, ProgramBatch>();
+      for (const b of batches) {
+        const prog = b.program;
+        if (!prog) continue;
+        if (!programMap.has(prog.id)) {
+          programMap.set(prog.id, { id: prog.id, title: prog.title, batches: [] });
+        }
+        programMap.get(prog.id)!.batches.push({ id: b.id, name: b.name });
+      }
+      setPrograms(Array.from(programMap.values()));
+    }).catch(() => {});
+  }, []);
+
   const handleResult = async (id: string, enrollmentId: string, result: string) => {
     if (result === "selected") {
+      // Pre-fill current program/batch from interview's enrollment
+      const interview = interviews.find(i => i.enrollment.id === enrollmentId);
+      if (interview) {
+        setSelectionForm(prev => ({
+          ...prev,
+          programId: interview.enrollment.batch.program.id,
+          batchId: interview.enrollment.batchId,
+        }));
+      }
       setSelectingId(enrollmentId);
       return;
     }
@@ -77,6 +110,18 @@ export default function InterviewsPage() {
     if (!selectionForm.joiningDate) {
       alert("Joining date is required!");
       return;
+    }
+    if (!selectionForm.batchId) {
+      alert("Program & Batch select karna zaroori hai!");
+      return;
+    }
+    // Update enrollment batch if changed
+    if (selectionForm.batchId) {
+      await fetch(`/api/enrollments/${selectingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batchId: selectionForm.batchId }),
+      });
     }
     await fetch("/api/offer-letters", {
       method: "POST",
@@ -152,6 +197,22 @@ export default function InterviewsPage() {
           <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Select Candidate — Fill Details</h2>
             <div className="space-y-3">
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <label className="block text-sm font-bold text-indigo-800 mb-1">Program <span className="text-red-500">*</span></label>
+                <select value={selectionForm.programId} onChange={(e) => {
+                  const pid = e.target.value;
+                  setSelectionForm(prev => ({ ...prev, programId: pid, batchId: "" }));
+                }} className="w-full px-3 py-2 rounded-lg border text-gray-900 mb-2">
+                  <option value="">-- Select Program --</option>
+                  {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+                <label className="block text-sm font-bold text-indigo-800 mb-1">Batch <span className="text-red-500">*</span></label>
+                <select value={selectionForm.batchId} onChange={(e) => setSelectionForm(prev => ({ ...prev, batchId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                  <option value="">-- Select Batch --</option>
+                  {programs.find(p => p.id === selectionForm.programId)?.batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+                <p className="text-xs text-indigo-600 mt-1">Program aur Batch select karna zaroori hai select karne se pehle</p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Salary/Stipend (₹)</label>

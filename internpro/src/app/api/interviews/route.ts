@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       enrollment: {
         include: {
           student: { select: { id: true, name: true, email: true, phone: true, collegeName: true, degree: true } },
-          batch: { include: { program: { select: { title: true, domain: true } } } },
+          batch: { select: { id: true, name: true, program: { select: { id: true, title: true, domain: true } } } },
         },
       },
       interviewer: { select: { name: true, email: true } },
