@@ -16,6 +16,7 @@ export default function DiscussionsPage() {
   const [detail, setDetail] = useState<{ id: string; title: string; content: string; category: string; author: { name: string; role: string }; isResolved: boolean; replies: { id: string; content: string; author: { name: string; role: string }; isAnswer: boolean; createdAt: string }[]; createdAt: string } | null>(null);
   const [replyText, setReplyText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [fileUploading, setFileUploading] = useState(false);
 
   const fetchData = useCallback(async () => {
     const params = selectedProgramId !== "all" ? `?programId=${selectedProgramId}` : "";
@@ -109,7 +110,21 @@ export default function DiscussionsPage() {
 
         <div className="bg-white rounded-xl p-4 border">
           <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write your reply..." className="w-full px-3 py-2 border rounded-lg text-sm min-h-[80px]" />
-          <button onClick={submitReply} className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Post Reply</button>
+          <div className="flex items-center gap-3 mt-2">
+            <button onClick={submitReply} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Post Reply</button>
+            <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium border border-indigo-200 rounded-lg px-3 py-1.5 inline-block">
+              {fileUploading ? "Uploading..." : "Attach File"}
+              <input type="file" className="hidden" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setFileUploading(true);
+                const fd = new FormData(); fd.append("file", file);
+                const res = await fetch("/api/upload", { method: "POST", body: fd });
+                if (res.ok) { const d = await res.json(); setReplyText(prev => prev + `\n\nAttachment: ${d.url}`); }
+                setFileUploading(false);
+              }} />
+            </label>
+          </div>
         </div>
       </div>
     );
@@ -153,6 +168,21 @@ export default function DiscussionsPage() {
             <div className="space-y-3">
               <input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               <textarea placeholder="Describe your question or topic..." value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm min-h-[100px]" />
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium border border-indigo-200 rounded-lg px-3 py-1.5 inline-block">
+                  {fileUploading ? "Uploading..." : "Attach File"}
+                  <input type="file" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setFileUploading(true);
+                    const fd = new FormData(); fd.append("file", file);
+                    const res = await fetch("/api/upload", { method: "POST", body: fd });
+                    if (res.ok) { const d = await res.json(); setForm({...form, content: form.content + `\n\nAttachment: ${d.url}`}); }
+                    setFileUploading(false);
+                  }} />
+                </label>
+                <span className="text-xs text-gray-400">Any file format, any size</span>
+              </div>
               <select value={form.programId} onChange={e => setForm({ ...form, programId: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                 <option value="">General (No specific course)</option>
                 {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}

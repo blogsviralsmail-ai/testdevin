@@ -195,7 +195,7 @@ export default function DashboardPage() {
             <div className="relative z-10">
               <div className="text-6xl mb-4" style={{ animation: "pulse 1.5s infinite" }}>📄</div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Please Submit Your Documents</h2>
-              <p className="text-gray-600 mb-6">Apni application complete karne ke liye apne documents (Resume, ID Proof, etc.) upload karein.</p>
+              <p className="text-gray-600 mb-6">Upload your documents (Resume, ID Proof, etc.) to complete your application.</p>
               <button
                 onClick={() => { setShowDocsPrompt(false); window.location.href = "/dashboard/documents"; }}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-lg hover:opacity-90 transition"

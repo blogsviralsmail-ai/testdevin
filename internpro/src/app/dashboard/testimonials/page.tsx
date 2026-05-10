@@ -9,6 +9,7 @@ export default function TestimonialsPage() {
   const [editing, setEditing] = useState<Testimonial | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [form, setForm] = useState({ name: "", role: "", content: "", rating: 5, videoUrl: "", isPublished: true });
+  const [fileUploading, setFileUploading] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
@@ -91,6 +92,21 @@ export default function TestimonialsPage() {
                 ))}
               </div>
               <input placeholder="Video URL (optional)" value={form.videoUrl} onChange={e => setForm({ ...form, videoUrl: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium border border-indigo-200 rounded-lg px-3 py-1.5 inline-block">
+                  {fileUploading ? "Uploading..." : "Or Upload File"}
+                  <input type="file" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setFileUploading(true);
+                    const fd = new FormData(); fd.append("file", file);
+                    const res = await fetch("/api/upload", { method: "POST", body: fd });
+                    if (res.ok) { const d = await res.json(); setForm({...form, videoUrl: d.url}); }
+                    setFileUploading(false);
+                  }} />
+                </label>
+                {form.videoUrl && <span className="text-xs text-green-600">File attached</span>}
+              </div>
               <label className="flex items-center gap-2"><input type="checkbox" checked={form.isPublished} onChange={e => setForm({ ...form, isPublished: e.target.checked })} /><span className="text-sm">Published (show on homepage)</span></label>
             </div>
             <div className="flex justify-end gap-3 mt-6">

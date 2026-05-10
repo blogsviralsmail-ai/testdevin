@@ -287,7 +287,7 @@ export default function CompletionPage() {
                 placeholder="Final remarks..." />
             </div>
             <p className="text-xs text-gray-500 mt-3">
-              Approve karne pe instantly Experience Letter generate ho jayega.
+              On approval, an Experience Letter will be generated instantly.
             </p>
             <div className="flex gap-3 mt-6">
               <button onClick={handleApprove} className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">

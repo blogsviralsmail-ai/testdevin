@@ -47,6 +47,7 @@ export default function MyWorkPage() {
   const [loading, setLoading] = useState(true);
   const [submitTask, setSubmitTask] = useState<{ taskId: string; content: string; fileUrl: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -89,6 +90,24 @@ export default function MyWorkPage() {
     setSubmitting(false);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !submitTask) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        setSubmitTask({ ...submitTask, fileUrl: data.url });
+      } else {
+        alert("File upload failed");
+      }
+    } catch { alert("Error uploading file"); }
+    setUploading(false);
+  };
+
   const getYouTubeId = (url: string) => {
     const match = url.match(/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : null;
@@ -103,7 +122,7 @@ export default function MyWorkPage() {
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
           <p className="text-4xl mb-3">🎓</p>
           <h2 className="text-xl font-bold text-yellow-800 mb-2">Not Enrolled Yet</h2>
-          <p className="text-yellow-700">Aapka enrollment abhi active nahi hai. Admin ko contact karein ya apna application status check karein.</p>
+          <p className="text-yellow-700">Your enrollment is not active yet. Please contact admin or check your application status.</p>
         </div>
       </div>
     );
@@ -250,7 +269,7 @@ export default function MyWorkPage() {
               <span className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold">1</span>
               <div>
                 <h3 className="font-semibold text-gray-900">Watch Video</h3>
-                <p className="text-xs text-gray-500">Pehle neeche ka video dhyan se dekho</p>
+                <p className="text-xs text-gray-500">Watch the video below carefully</p>
               </div>
             </div>
             <div className="p-5">
@@ -275,7 +294,7 @@ export default function MyWorkPage() {
                           <span className="text-lg">{r.type === "video" ? "🎥" : r.type === "pdf" ? "📄" : "🔗"}</span>
                           <p className="flex-1 text-sm font-medium text-gray-800 truncate">{r.title}</p>
                           <a href={r.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 font-medium shrink-0">
-                            YouTube pe dekho &#8599;
+                            Watch on YouTube &#8599;
                           </a>
                         </div>
                       </div>
@@ -283,7 +302,7 @@ export default function MyWorkPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-4">Aaj ke liye koi video nahi hai</p>
+                <p className="text-gray-400 text-sm text-center py-4">No video available for today</p>
               )}
             </div>
           </div>
@@ -293,8 +312,8 @@ export default function MyWorkPage() {
             <div className="bg-orange-50 border-b px-5 py-3 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">2</span>
               <div>
-                <h3 className="font-semibold text-gray-900">Aaj Ka Task</h3>
-                <p className="text-xs text-gray-500">Video dekhne ke baad ye kaam karo</p>
+                <h3 className="font-semibold text-gray-900">Today's Task</h3>
+                <p className="text-xs text-gray-500">Complete this task after watching the video</p>
               </div>
             </div>
             <div className="p-5">
@@ -318,7 +337,7 @@ export default function MyWorkPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-4">Aaj ke liye koi task nahi hai</p>
+                <p className="text-gray-400 text-sm text-center py-4">No task available for today</p>
               )}
             </div>
           </div>
@@ -329,7 +348,7 @@ export default function MyWorkPage() {
               <span className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">3</span>
               <div>
                 <h3 className="font-semibold text-gray-900">Submit Your Work</h3>
-                <p className="text-xs text-gray-500">Task complete karke neeche submit karo</p>
+                <p className="text-xs text-gray-500">Submit your completed work below</p>
               </div>
             </div>
             <div className="p-5">
@@ -355,26 +374,40 @@ export default function MyWorkPage() {
                         <p className="font-medium text-gray-900 mb-3">{t.title}</p>
                         {!isSubmitting ? (
                           <button onClick={() => setSubmitTask({ taskId: t.id, content: "", fileUrl: "" })} className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
-                            Apna Kaam Submit Karo
+                            Submit Your Work
                           </button>
                         ) : submitTask && (
                           <div className="space-y-3">
                             <textarea
                               value={submitTask.content}
                               onChange={e => setSubmitTask({ ...submitTask, content: e.target.value })}
-                              placeholder="Yahan apna answer / notes / work likho..."
+                              placeholder="Write your answer / notes / work here..."
                               className="w-full border-2 border-green-200 rounded-lg p-3 text-sm min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             />
+                            <div className="border-2 border-dashed border-green-200 rounded-lg p-4 text-center">
+                              <label className="cursor-pointer block">
+                                <input type="file" className="hidden" onChange={handleFileUpload} />
+                                <span className="text-sm text-green-700 font-medium">{uploading ? "Uploading..." : "Click to upload a file (any format, any size)"}</span>
+                                <p className="text-xs text-gray-400 mt-1">Or paste a URL below</p>
+                              </label>
+                            </div>
+                            {submitTask.fileUrl && (
+                              <div className="flex items-center gap-2 bg-green-50 rounded-lg p-2">
+                                <span className="text-green-600 text-sm">&#10003;</span>
+                                <a href={submitTask.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-green-700 underline truncate flex-1">{submitTask.fileUrl}</a>
+                                <button onClick={() => setSubmitTask({ ...submitTask, fileUrl: "" })} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                              </div>
+                            )}
                             <input
                               type="text"
                               value={submitTask.fileUrl}
                               onChange={e => setSubmitTask({ ...submitTask, fileUrl: e.target.value })}
-                              placeholder="File ya link URL paste karo (optional)"
+                              placeholder="Or paste a link URL here (optional)"
                               className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             />
                             <div className="flex gap-2">
                               <button onClick={handleSubmitTask} disabled={submitting || !submitTask.content.trim()} className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm">
-                                {submitting ? "Submit ho raha hai..." : "Submit Karo &#10003;"}
+                                {submitting ? "Submitting..." : "Submit &#10003;"}
                               </button>
                               <button onClick={() => setSubmitTask(null)} className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm">
                                 Cancel
@@ -387,7 +420,7 @@ export default function MyWorkPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-4">Aaj ke liye koi submission nahi hai</p>
+                <p className="text-gray-400 text-sm text-center py-4">No submission required for today</p>
               )}
             </div>
           </div>
@@ -395,7 +428,7 @@ export default function MyWorkPage() {
           {dayResources.length === 0 && dayTasks.length === 0 && (
             <div className="bg-white rounded-xl border p-8 text-center mb-4">
               <p className="text-3xl mb-2">📭</p>
-              <p className="text-gray-500">Day {selectedDay} ke liye abhi koi content nahi hai</p>
+              <p className="text-gray-500">No content scheduled for Day {selectedDay}</p>
             </div>
           )}
 

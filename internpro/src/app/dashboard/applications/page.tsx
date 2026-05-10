@@ -454,7 +454,7 @@ export default function ApplicationsPage() {
                     onChange={(e) => setScheduleForm({ ...scheduleForm, meetLink: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
                     placeholder="https://meet.google.com/... or Zoom link" />
-                  <p className="text-xs text-gray-500 mt-1">Student ko ye link dikhega. Baad mein bhi add/edit kar sakte ho.</p>
+                  <p className="text-xs text-gray-500 mt-1">This link will be visible to the student. You can add/edit it later.</p>
                 </div>
               ) : (
                 <div>
@@ -463,7 +463,7 @@ export default function ApplicationsPage() {
                     onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value } as typeof scheduleForm)}
                     className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
                     placeholder="e.g., Office - 3rd Floor, Tower B, Sector 62, Noida" />
-                  <p className="text-xs text-gray-500 mt-1">Offline interview ka address student ko dikhega.</p>
+                  <p className="text-xs text-gray-500 mt-1">The offline interview address will be visible to the student.</p>
                 </div>
               )}
             </div>
@@ -585,7 +585,7 @@ export default function ApplicationsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h2 className="text-lg font-bold text-gray-900 mb-2">{editLinkModal.link ? "Edit Meeting Link" : "Add Meeting Link"}</h2>
-            <p className="text-sm text-gray-600 mb-4">Student ko ye link dikhega interview join karne ke liye.</p>
+            <p className="text-sm text-gray-600 mb-4">This link will be visible to the student for joining the interview.</p>
             <input
               type="url"
               value={editLinkModal.link}

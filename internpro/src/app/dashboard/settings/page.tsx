@@ -575,28 +575,28 @@ export default function SettingsPage() {
           <div className="space-y-6">
             {/* When emails are sent */}
             <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
-              <h3 className="text-sm font-semibold text-blue-800 mb-3">Email kab kab jayegi?</h3>
+              <h3 className="text-sm font-semibold text-blue-800 mb-3">When are emails sent?</h3>
               <div className="text-xs text-blue-700">
-                <p className="font-semibold text-green-700 mb-2">HAR EVENT PE EMAIL JAYEGI (SMTP configure hona chahiye):</p>
+                <p className="font-semibold text-green-700 mb-2">EMAILS ARE SENT ON EVERY EVENT (SMTP must be configured):</p>
                 <ul className="space-y-1 mb-3">
-                  <li>Student <strong>register</strong> kare — Welcome Email</li>
-                  <li>Student <strong>login</strong> kare — Login Notification</li>
-                  <li>Admin student ko <strong>Select/Reject/Interview</strong> kare — Status Change Email</li>
-                  <li>Offer Letter generate ho — <strong>Offer Letter Email</strong> (neeche template edit karo)</li>
-                  <li>Experience Letter generate ho — <strong>Experience Letter Email</strong></li>
-                  <li>Internship Certificate generate ho — <strong>Certificate Email</strong></li>
-                  <li>ID Card generate ho — <strong>ID Card Email</strong></li>
-                  <li>Student ki <strong>attendance</strong> mark ho — Attendance Confirmation Email</li>
-                  <li>Naya <strong>video/resource unlock</strong> ho — Video Unlock Email</li>
-                  <li><strong>Quiz attempt</strong> kare — Quiz Result Email (score + pass/fail)</li>
-                  <li><strong>Discussion</strong> me naya post ya reply ho — Discussion Notification Email</li>
-                  <li>Naya <strong>live session schedule</strong> ho — Live Session Email (join link ke saath)</li>
-                  <li><strong>Leaderboard points</strong> milein — Points Update Email</li>
-                  <li>Student <strong>task submit</strong> kare aur admin review kare — Task Reviewed Email</li>
-                  <li>Student <strong>document upload</strong> kare — Admin ko notification email</li>
-                  <li><strong>Password reset</strong> kare — Reset Link Email</li>
+                  <li>Student <strong>registers</strong> — Welcome Email</li>
+                  <li>Student <strong>logs in</strong> — Login Notification</li>
+                  <li>Admin <strong>Selects/Rejects/Interviews</strong> student — Status Change Email</li>
+                  <li>Offer Letter generated — <strong>Offer Letter Email</strong> (edit template below)</li>
+                  <li>Experience Letter generated — <strong>Experience Letter Email</strong></li>
+                  <li>Internship Certificate generated — <strong>Certificate Email</strong></li>
+                  <li>ID Card generated — <strong>ID Card Email</strong></li>
+                  <li>Student <strong>attendance</strong> marked — Attendance Confirmation Email</li>
+                  <li>New <strong>video/resource unlocked</strong> — Video Unlock Email</li>
+                  <li><strong>Quiz attempted</strong> — Quiz Result Email (score + pass/fail)</li>
+                  <li>New <strong>Discussion</strong> post or reply — Discussion Notification Email</li>
+                  <li>New <strong>live session scheduled</strong> — Live Session Email (with join link)</li>
+                  <li><strong>Leaderboard points</strong> earned — Points Update Email</li>
+                  <li>Student <strong>submits task</strong> and admin reviews — Task Reviewed Email</li>
+                  <li>Student <strong>uploads document</strong> — Admin notification email</li>
+                  <li><strong>Password reset</strong> requested — Reset Link Email</li>
                 </ul>
-                <p className="text-red-600 font-semibold">Note: Agar SMTP settings configure nahi hain toh koi bhi email nahi jayegi!</p>
+                <p className="text-red-600 font-semibold">Note: No emails will be sent if SMTP settings are not configured!</p>
               </div>
             </div>
 
@@ -653,9 +653,9 @@ export default function SettingsPage() {
             {/* Email Templates */}
             <div className="bg-white rounded-xl p-6 border">
               <h2 className="text-lg font-semibold text-gray-900 mb-2">Email Templates</h2>
-              <p className="text-sm text-gray-500 mb-2">Har event pe student ko styled email jaata hai. Subject aur body customize kar sakte ho.</p>
+              <p className="text-sm text-gray-500 mb-2">A styled email is sent to the student on every event. Customize the subject and body.</p>
               <details className="mb-4">
-                <summary className="text-xs text-indigo-600 cursor-pointer font-medium">Variables list dekho (click karo)</summary>
+                <summary className="text-xs text-indigo-600 cursor-pointer font-medium">View available variables (click to expand)</summary>
                 <div className="mt-2 text-xs text-gray-500 space-y-1">
                   <p><strong>Common:</strong> <code className="bg-gray-100 px-1 rounded">{"{{student_name}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_name}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_phone}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_email}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{dashboard_link}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{date}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{time}}"}</code></p>
                   <p><strong>Letters:</strong> <code className="bg-gray-100 px-1 rounded">{"{{letter_type}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{letter_number}}"}</code></p>
@@ -911,7 +911,7 @@ export default function SettingsPage() {
         {activeTab === "letter_design" && isAdmin && (
           <div className="bg-white rounded-xl p-6 border">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Letter Templates (Design)</h2>
-            <p className="text-sm text-gray-500 mb-4">Letter ka design change karna hai to yahan se karo. Email template &quot;SMTP &amp; Email&quot; tab mein hai.</p>
+            <p className="text-sm text-gray-500 mb-4">Change the letter design from here. Email templates are in the &quot;SMTP &amp; Email&quot; tab.</p>
             <div className="space-y-3">
               {["offer_letter", "experience_letter", "internship_certificate", "id_card"].map((type) => {
                 const labels: Record<string, string> = {

@@ -114,11 +114,11 @@ export default function InterviewsPage() {
       return;
     }
     if (!selectionForm.batchId) {
-      alert("Program & Batch select karna zaroori hai!");
+      alert("Program & Batch selection is required!");
       return;
     }
     if (!selectionForm.mode) {
-      alert("Mode (Online/Offline/Hybrid) select karna zaroori hai!");
+      alert("Mode (Online/Offline/Hybrid) selection is required!");
       return;
     }
     // Update enrollment batch and mode
@@ -218,7 +218,7 @@ export default function InterviewsPage() {
                   <option value="">-- Select Batch --</option>
                   {programs.find(p => p.id === selectionForm.programId)?.batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
-                <p className="text-xs text-indigo-600 mt-1">Program aur Batch select karna zaroori hai select karne se pehle</p>
+                <p className="text-xs text-indigo-600 mt-1">Program and Batch must be selected before proceeding</p>
                 <label className="block text-sm font-bold text-indigo-800 mb-1 mt-2">Mode <span className="text-red-500">*</span></label>
                 <select value={selectionForm.mode || ""} onChange={(e) => setSelectionForm(prev => ({ ...prev, mode: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-gray-900">
                   <option value="">-- Select Mode --</option>
@@ -259,7 +259,7 @@ export default function InterviewsPage() {
                   <option value="stipend">Stipend — Company pays student monthly</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {selectionForm.feeType === "free" && "Student ko koi paisa nahi dena na lena — completely free internship"}
+                  {selectionForm.feeType === "free" && "No payment required — completely free internship"}
                   {selectionForm.feeType === "paid" && "Student company ko fee dega — training ke liye payment"}
                   {selectionForm.feeType === "stipend" && "Company student ko monthly stipend/salary degi — as a salary/stipend"}
                 </p>
