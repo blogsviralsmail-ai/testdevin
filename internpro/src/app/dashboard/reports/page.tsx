@@ -18,8 +18,9 @@ export default function ReportsPage() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewingReport, setViewingReport] = useState<{ html: string; title: string } | null>(null);
+  const [viewingReport, setViewingReport] = useState<{ html: string; title: string; studentName: string; studentEmail: string } | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [meRes, enrollRes] = await Promise.all([
@@ -45,7 +46,7 @@ export default function ReportsPage() {
       const res = await fetch(`/api/reports/daily-tasks?studentId=${enrollment.studentId}`);
       if (res.ok) {
         const data = await res.json();
-        setViewingReport({ html: data.html, title: `Daily Task Report — ${data.studentName}` });
+        setViewingReport({ html: data.html, title: `Daily Task Report — ${data.studentName}`, studentName: data.studentName, studentEmail: enrollment.student.email });
       } else {
         alert("Failed to generate report");
       }
@@ -75,6 +76,28 @@ export default function ReportsPage() {
       w.document.close();
       setTimeout(() => w.print(), 500);
     }
+  };
+
+  const handleEmailReport = async () => {
+    if (!viewingReport) return;
+    setEmailing(true);
+    try {
+      const res = await fetch("/api/reports/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: viewingReport.studentEmail,
+          studentName: viewingReport.studentName,
+          reportHtml: viewingReport.html,
+        }),
+      });
+      if (res.ok) {
+        alert(`Report emailed to ${viewingReport.studentEmail} successfully!`);
+      } else {
+        alert("Failed to send email");
+      }
+    } catch { alert("Error sending email"); }
+    setEmailing(false);
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
@@ -119,6 +142,10 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="font-bold text-gray-900">{viewingReport.title}</h3>
               <div className="flex gap-2">
+                <button onClick={handleEmailReport} disabled={emailing}
+                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50">
+                  {emailing ? "Sending..." : "Email Report"}
+                </button>
                 <button onClick={handlePrint}
                   className="px-4 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">
                   Print / PDF

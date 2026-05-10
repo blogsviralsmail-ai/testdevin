@@ -17,8 +17,22 @@ interface Submission {
   student: { name: string; email: string };
 }
 
+interface QuizAttemptInfo {
+  id: string;
+  quizId: string;
+  userId: string;
+  score: number;
+  totalPoints: number;
+  passed: boolean;
+  completedAt: string;
+  user: { name: string; email: string; avatar: string | null };
+  quiz: { title: string; dayNumber: number | null; passingScore: number; program?: { title: string } | null };
+}
+
 export default function ReviewsPage() {
+  const [activeTab, setActiveTab] = useState<"tasks" | "quizzes">("tasks");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttemptInfo[]>([]);
   const [filter, setFilter] = useState<string>("submitted");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [reviewModal, setReviewModal] = useState<Submission | null>(null);
@@ -31,7 +45,12 @@ export default function ReviewsPage() {
     if (res.ok) setSubmissions(await res.json());
   }, []);
 
-  useEffect(() => { fetchSubmissions(); }, [fetchSubmissions]);
+  const fetchQuizAttempts = useCallback(async () => {
+    const res = await fetch("/api/quiz-results");
+    if (res.ok) setQuizAttempts(await res.json());
+  }, []);
+
+  useEffect(() => { fetchSubmissions(); fetchQuizAttempts(); }, [fetchSubmissions, fetchQuizAttempts]);
 
   const handleReview = async () => {
     if (!reviewModal) return;
@@ -64,20 +83,85 @@ export default function ReviewsPage() {
   const pendingCount = submissions.filter((s) => s.status === "submitted").length;
   const reviewedCount = submissions.filter((s) => s.status === "reviewed").length;
 
+  const quizPassedCount = quizAttempts.filter(a => a.passed).length;
+  const quizFailedCount = quizAttempts.filter(a => !a.passed).length;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Review Submissions</h1>
-          <p className="text-gray-600 text-sm">Review student work and assign percentage marks</p>
+          <p className="text-gray-600 text-sm">Review student tasks and quiz results</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">{pendingCount} Pending</span>
-          <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700">{reviewedCount} Reviewed</span>
+          {activeTab === "tasks" ? (
+            <>
+              <span className="text-xs px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">{pendingCount} Pending</span>
+              <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700">{reviewedCount} Reviewed</span>
+            </>
+          ) : (
+            <>
+              <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700">{quizPassedCount} Passed</span>
+              <span className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-700">{quizFailedCount} Failed</span>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Main Tab Switcher */}
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+        <button onClick={() => setActiveTab("tasks")} className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === "tasks" ? "bg-white text-indigo-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          Task Reviews ({pendingCount + reviewedCount})
+        </button>
+        <button onClick={() => setActiveTab("quizzes")} className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === "quizzes" ? "bg-white text-purple-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+          Quiz Results ({quizAttempts.length})
+        </button>
+      </div>
+
+      {activeTab === "quizzes" ? (
+        /* Quiz Results Section */
+        <div className="space-y-4">
+          {quizAttempts.length === 0 ? (
+            <div className="bg-white rounded-xl p-12 border text-center">
+              <p className="text-4xl mb-4">🧠</p>
+              <p className="text-gray-600">No quiz attempts yet.</p>
+            </div>
+          ) : (
+            quizAttempts.map((attempt) => (
+              <div key={attempt.id} className="bg-white rounded-xl p-5 border hover:shadow-md transition">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {attempt.quiz.dayNumber && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Day {attempt.quiz.dayNumber}</span>
+                      )}
+                      <h3 className="text-base font-semibold text-gray-900">{attempt.quiz.title}</h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${attempt.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {attempt.passed ? "Passed" : "Failed"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="font-medium text-gray-700">{attempt.user.name}</span>
+                      <span className="text-gray-400">|</span>
+                      <span className="text-gray-500">{attempt.user.email}</span>
+                      <span className="text-gray-400">|</span>
+                      <span className="text-gray-500">{attempt.quiz.program?.title || "General"}</span>
+                      <span className="text-gray-400">|</span>
+                      <span className="text-gray-500">{new Date(attempt.completedAt).toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <div className={`text-2xl font-bold ${attempt.passed ? "text-green-600" : "text-red-500"}`}>{Math.round(attempt.score)}%</div>
+                    <p className="text-xs text-gray-500">Pass: {attempt.quiz.passingScore}%</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      ) : (
+        <>
+      {/* Task Filters */}
       <div className="flex gap-2 mb-6 flex-wrap items-center">
         {[
           { key: "submitted", label: "Pending Review" },
@@ -257,6 +341,9 @@ export default function ReviewsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      </>
       )}
 
       {/* Review Modal */}
