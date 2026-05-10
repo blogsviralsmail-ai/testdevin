@@ -163,13 +163,24 @@ export default function LettersPage() {
               </button>
               {viewingLetter.email && (
                 <button onClick={async () => {
-                  const res = await fetch("/api/send-letter-email", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: viewingLetter.email, subject: viewingLetter.title, htmlContent: viewingLetter.html }),
-                  });
-                  if (res.ok) alert("Email sent successfully!");
-                  else alert("Failed to send email. Check SMTP settings.");
+                  try {
+                    const btn = document.activeElement as HTMLButtonElement;
+                    if (btn) { btn.disabled = true; btn.textContent = "Sending..."; }
+                    const res = await fetch("/api/send-letter-email", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email: viewingLetter.email, subject: viewingLetter.title, htmlContent: viewingLetter.html }),
+                    });
+                    if (res.ok) { alert("Email sent successfully!"); }
+                    else {
+                      const data = await res.json().catch(() => ({}));
+                      alert("Failed: " + (data.error || `Server returned ${res.status}`));
+                    }
+                    if (btn) { btn.disabled = false; btn.textContent = "Email"; }
+                  } catch (err: unknown) {
+                    const msg = err instanceof Error ? err.message : String(err);
+                    alert("Network error: " + msg);
+                  }
                 }}
                   className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">
                   Email
