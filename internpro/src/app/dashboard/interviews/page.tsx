@@ -447,7 +447,7 @@ export default function InterviewsPage() {
       ) : (
         /* Admin/TL View — existing cards with management actions */
         <div className="grid gap-4">
-          {interviews.filter(i => !searchQuery.trim() || i.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.student.email.toLowerCase().includes(searchQuery.toLowerCase())).map((i) => (
+          {interviews.filter(i => i.result !== "selected" && i.result !== "rejected").filter(i => !searchQuery.trim() || i.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.student.email.toLowerCase().includes(searchQuery.toLowerCase())).map((i) => (
             <div key={i.id} className="bg-white rounded-xl p-6 border">
               <div className="flex items-start justify-between">
                 <div>
