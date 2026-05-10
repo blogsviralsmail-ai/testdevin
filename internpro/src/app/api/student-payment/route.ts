@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { generateOfferLetterForEnrollment } from "@/lib/generate-offer-letter";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -105,21 +106,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Generate offer letter
-  try {
-    const offerRes = await fetch(new URL("/api/offer-letters/generate-after-payment", request.url).toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        cookie: request.headers.get("cookie") || "",
-      },
-      body: JSON.stringify({ enrollmentId }),
-    });
-    if (!offerRes.ok) {
-      console.error("[student-payment] Offer letter generation failed:", await offerRes.text());
-    }
-  } catch (e) {
-    console.error("[student-payment] Offer letter generation error:", e);
+  // Generate offer letter directly
+  const olResult = await generateOfferLetterForEnrollment(enrollmentId, session.id, session.name);
+  if (!olResult.success) {
+    console.error("[student-payment] Offer letter generation failed:", olResult.error);
   }
 
   logActivity("payment_received", "payment", payment.id, `₹${amount} fee from ${enrollment.student.name} for ${enrollment.batch.program.title} (${paymentMethod}: ${transactionId})`, session.id, session.name).catch(() => {});
@@ -192,21 +182,10 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
-  // Generate offer letter
-  try {
-    const offerRes = await fetch(new URL("/api/offer-letters/generate-after-payment", request.url).toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        cookie: request.headers.get("cookie") || "",
-      },
-      body: JSON.stringify({ enrollmentId: enrollment.id }),
-    });
-    if (!offerRes.ok) {
-      console.error("[admin-approve] Offer letter generation failed:", await offerRes.text());
-    }
-  } catch (e) {
-    console.error("[admin-approve] Offer letter generation error:", e);
+  // Generate offer letter directly
+  const olResult = await generateOfferLetterForEnrollment(enrollment.id, session.id, session.name);
+  if (!olResult.success) {
+    console.error("[admin-approve] Offer letter generation failed:", olResult.error);
   }
 
   logActivity("payment_approved", "payment", paymentId, `Cash payment of ₹${amount} from ${enrollment.student.name} approved — offer letter generated`, session.id, session.name).catch(() => {});
