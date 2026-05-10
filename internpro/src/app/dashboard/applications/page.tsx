@@ -59,6 +59,7 @@ export default function ApplicationsPage() {
   const [changeBatchModal, setChangeBatchModal] = useState<Enrollment | null>(null);
   const [allBatches, setAllBatches] = useState<BatchInfo[]>([]);
   const [selectedNewBatchId, setSelectedNewBatchId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Check role and redirect students
   useEffect(() => {
@@ -184,18 +185,28 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {["applied", "interview_scheduled", "shortlisted", "selected", "rejected"].map((s) => (
-          <button
-            key={s}
-            onClick={() => { setFilter(s); setLoading(true); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              filter === s ? "bg-indigo-600 text-white" : "bg-white text-gray-700 border hover:bg-gray-50"
-            }`}
-          >
-            {s.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-          </button>
-        ))}
+      {/* Search + Status Filter */}
+      <div className="bg-white rounded-xl border p-4 mb-6">
+        <div className="flex items-center gap-3 flex-wrap mb-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, email, phone, program..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+          </div>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {["applied", "interview_scheduled", "shortlisted", "selected", "rejected"].map((s) => (
+            <button
+              key={s}
+              onClick={() => { setFilter(s); setLoading(true); }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                filter === s ? "bg-indigo-600 text-white" : "bg-white text-gray-700 border hover:bg-gray-50"
+              }`}
+            >
+              {s.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* View Details Modal */}
@@ -478,7 +489,7 @@ export default function ApplicationsPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {enrollments.map((e) => (
+          {enrollments.filter(e => { if (!searchQuery.trim()) return true; const q = searchQuery.toLowerCase(); return e.student.name.toLowerCase().includes(q) || e.student.email.toLowerCase().includes(q) || (e.student.phone && e.student.phone.includes(q)) || e.batch.program.title.toLowerCase().includes(q); }).map((e) => (
             <div key={e.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">

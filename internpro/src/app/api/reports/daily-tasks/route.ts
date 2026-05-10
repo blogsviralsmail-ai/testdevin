@@ -82,9 +82,10 @@ export async function GET(request: NextRequest) {
     dayMap.get(day)!.push(t);
   }
 
-  // Build day-wise rows
+  // Build day-wise rows — only show up to current working day (no future blank rows)
+  const currentDay = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || 0);
   let taskRows = "";
-  const sortedDays = [...dayMap.keys()].sort((a, b) => a - b);
+  const sortedDays = [...dayMap.keys()].sort((a, b) => a - b).filter(day => day === 0 || day <= currentDay);
   for (const day of sortedDays) {
     const dayTasks = dayMap.get(day)!;
     const att = attendances.find(a => {
@@ -117,11 +118,12 @@ export async function GET(request: NextRequest) {
     taskRows = `<tr><td colspan="5" style="padding:20px;text-align:center;color:#888;border:1px solid #e0e0e0;">No tasks assigned yet.</td></tr>`;
   }
 
-  // Summary stats
-  const totalTasks = tasks.length;
-  const submitted = tasks.filter(t => t.submissions.length > 0).length;
-  const reviewed = tasks.filter(t => t.submissions[0]?.status === "reviewed").length;
-  const avgScore = tasks.filter(t => t.submissions[0]?.percentage).reduce((sum, t) => sum + (t.submissions[0]?.percentage || 0), 0) / (reviewed || 1);
+  // Summary stats — only count tasks up to current day
+  const activeTasks = tasks.filter(t => (t.dayNumber || 0) === 0 || (t.dayNumber || 0) <= currentDay);
+  const totalTasks = activeTasks.length;
+  const submitted = activeTasks.filter(t => t.submissions.length > 0).length;
+  const reviewed = activeTasks.filter(t => t.submissions[0]?.status === "reviewed").length;
+  const avgScore = activeTasks.filter(t => t.submissions[0]?.percentage).reduce((sum, t) => sum + (t.submissions[0]?.percentage || 0), 0) / (reviewed || 1);
   const presentDays = attendances.filter(a => a.status === "present").length;
   const totalDays = enrollment.joiningDate ? calculateWorkingDay(enrollment.joiningDate) : (enrollment.currentWorkDay || attendances.length);
 

@@ -11,6 +11,7 @@ export default function LiveSessionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [programFilter, setProgramFilter] = useState("all");
   const [form, setForm] = useState({ title: "", description: "", programId: "", meetLink: "", platform: "google_meet", scheduledAt: "", duration: "60" });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = useCallback(async () => {
     const params = programFilter !== "all" ? `?programId=${programFilter}` : "";
@@ -49,8 +50,9 @@ export default function LiveSessionsPage() {
   };
 
   const now = new Date();
-  const upcoming = sessions.filter(s => new Date(s.scheduledAt) > now && s.status === "scheduled");
-  const past = sessions.filter(s => new Date(s.scheduledAt) <= now || s.status === "completed");
+  const searchFiltered = sessions.filter(s => !searchQuery.trim() || s.title.toLowerCase().includes(searchQuery.toLowerCase()) || (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase())));
+  const upcoming = searchFiltered.filter(s => new Date(s.scheduledAt) > now && s.status === "scheduled");
+  const past = searchFiltered.filter(s => new Date(s.scheduledAt) <= now || s.status === "completed");
 
   const platformIcons: Record<string, string> = { google_meet: "📹", zoom: "💻", other: "🔗" };
 
@@ -64,18 +66,25 @@ export default function LiveSessionsPage() {
         {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ Schedule Session</button>}
       </div>
 
-      {/* Filter */}
-      {programs.length > 1 && (
-        <div className="bg-white rounded-xl border p-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-sm font-medium text-gray-700">Filter by Course:</label>
-            <select value={programFilter} onChange={e => setProgramFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]">
-              <option value="all">All Courses</option>
-              {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-            </select>
+      {/* Search + Filter */}
+      <div className="bg-white rounded-xl border p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search sessions..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
           </div>
+          {programs.length > 1 && (
+            <>
+              <label className="text-sm font-medium text-gray-700">Course:</label>
+              <select value={programFilter} onChange={e => setProgramFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]">
+                <option value="all">All Courses</option>
+                {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </select>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Create Modal */}
       {showForm && (

@@ -41,6 +41,7 @@ export default function StudentsPage() {
   const [transferModal, setTransferModal] = useState<Enrollment | null>(null);
   const [teamLeaders, setTeamLeaders] = useState<{ id: string; name: string }[]>([]);
   const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchEnrollments = useCallback(async () => {
     const [res, batchRes, tlRes, meRes] = await Promise.all([
@@ -146,9 +147,14 @@ export default function StudentsPage() {
     }
   };
 
-  const filtered = enrollments.filter((e) =>
-    filter === "" || e.status === filter
-  );
+  const filtered = enrollments.filter((e) => {
+    if (filter !== "" && e.status !== filter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return e.student.name.toLowerCase().includes(q) || e.student.email.toLowerCase().includes(q) || (e.student.phone && e.student.phone.includes(q)) || e.batch.program.title.toLowerCase().includes(q) || (e.student.employeeId && e.student.employeeId.toLowerCase().includes(q));
+    }
+    return true;
+  });
 
   const getJoinStatus = (e: Enrollment) => {
     if (e.status !== "selected") return null;
@@ -173,7 +179,12 @@ export default function StudentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Students</h1>
           <p className="text-gray-600 text-sm">Manage enrolled students across all programs</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          <div className="relative min-w-[220px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, email, phone..." className="w-full pl-9 pr-3 py-1.5 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+          </div>
           {["", "applied", "interview_scheduled", "selected", "active", "completed", "dropped", "rejected"].map((s) => (
             <button
               key={s}
@@ -492,10 +503,12 @@ export default function StudentsPage() {
                                   Mark Dropped
                                 </button>
                               )}
-                              <button onClick={() => generateOfferLetter(enrollment.id)}
-                                className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100">
-                                Offer Letter
-                              </button>
+                              {enrollment.status === "selected" && (
+                                <button onClick={() => generateOfferLetter(enrollment.id)}
+                                  className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100">
+                                  Offer Letter
+                                </button>
+                              )}
                               {enrollment.status === "completed" && enrollment._count.certificates === 0 && (
                                 <button onClick={() => generateCertificate(enrollment.id)}
                                   className="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-100">

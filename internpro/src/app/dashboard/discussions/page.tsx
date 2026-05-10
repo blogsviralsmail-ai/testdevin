@@ -14,6 +14,7 @@ export default function DiscussionsPage() {
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [detail, setDetail] = useState<{ id: string; title: string; content: string; category: string; author: { name: string; role: string }; isResolved: boolean; replies: { id: string; content: string; author: { name: string; role: string }; isAnswer: boolean; createdAt: string }[]; createdAt: string } | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = useCallback(async () => {
     const params = selectedProgramId !== "all" ? `?programId=${selectedProgramId}` : "";
@@ -123,18 +124,25 @@ export default function DiscussionsPage() {
         <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ New Discussion</button>
       </div>
 
-      {/* Filter */}
-      {programs.length > 1 && (
-        <div className="bg-white rounded-xl border p-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-sm font-medium text-gray-700">Filter by Course:</label>
-            <select value={selectedProgramId} onChange={e => setSelectedProgramId(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]">
-              <option value="all">All Courses</option>
-              {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-            </select>
+      {/* Search + Filter */}
+      <div className="bg-white rounded-xl border p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search discussions..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
           </div>
+          {programs.length > 1 && (
+            <>
+              <label className="text-sm font-medium text-gray-700">Course:</label>
+              <select value={selectedProgramId} onChange={e => setSelectedProgramId(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]">
+                <option value="all">All Courses</option>
+                {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </select>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Create Form */}
       {showForm && (
@@ -167,7 +175,7 @@ export default function DiscussionsPage() {
         <div className="text-center py-12 text-gray-400">No discussions yet. Start one!</div>
       ) : (
         <div className="space-y-3">
-          {discussions.map(d => (
+          {discussions.filter(d => !searchQuery.trim() || d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.content.toLowerCase().includes(searchQuery.toLowerCase())).map(d => (
             <div key={d.id} className="bg-white rounded-xl p-5 border hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex-1 cursor-pointer" onClick={() => viewDiscussion(d.id)}>

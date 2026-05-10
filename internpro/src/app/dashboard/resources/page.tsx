@@ -46,6 +46,7 @@ export default function ResourcesPage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [editForm, setEditForm] = useState({ title: "", type: "video", url: "", fileUrl: "", dayNumber: "", order: "0", batchId: "" });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = useCallback(async () => {
     const [resRes, batchesRes, meRes] = await Promise.all([
@@ -115,8 +116,15 @@ export default function ResourcesPage() {
   const isAdmin = user && ["admin", "organization", "teamleader"].includes(user.role);
   const isStudent = user?.role === "student";
 
-  // Filter resources by selected batch/course
-  const filteredResources = selectedBatchId === "all" ? resources : resources.filter(r => r.batchId === selectedBatchId);
+  // Filter resources by selected batch/course and search query
+  const filteredResources = resources.filter(r => {
+    if (selectedBatchId !== "all" && r.batchId !== selectedBatchId) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return r.title.toLowerCase().includes(q) || r.type.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   // Group resources by day number
   const dayGroups: Record<string, Resource[]> = {};
@@ -184,32 +192,50 @@ export default function ResourcesPage() {
         )}
       </div>
 
-      {/* Course/Program Filter */}
-      {batches.length > 1 && (
-        <div className="bg-white rounded-xl border p-4 mb-6">
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-sm font-medium text-gray-700">Filter by Course:</label>
-            <select
-              value={selectedBatchId}
-              onChange={(e) => setSelectedBatchId(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]"
-            >
-              <option value="all">All Courses ({resources.length} resources)</option>
-              {batches.map((b) => {
-                const count = resources.filter(r => r.batchId === b.id).length;
-                return (
-                  <option key={b.id} value={b.id}>{b.program.title} — {b.name} ({count})</option>
-                );
-              })}
-            </select>
-            {selectedBatchId !== "all" && (
-              <button onClick={() => setSelectedBatchId("all")} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                Clear Filter
-              </button>
+      {/* Search + Course Filter */}
+      <div className="bg-white rounded-xl border p-4 mb-6">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search resources by title..."
+              className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
             )}
           </div>
+          {batches.length > 1 && (
+            <>
+              <label className="text-sm font-medium text-gray-700">Course:</label>
+              <select
+                value={selectedBatchId}
+                onChange={(e) => setSelectedBatchId(e.target.value)}
+                className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]"
+              >
+                <option value="all">All Courses ({resources.length} resources)</option>
+                {batches.map((b) => {
+                  const count = resources.filter(r => r.batchId === b.id).length;
+                  return (
+                    <option key={b.id} value={b.id}>{b.program.title} — {b.name} ({count})</option>
+                  );
+                })}
+              </select>
+              {selectedBatchId !== "all" && (
+                <button onClick={() => setSelectedBatchId("all")} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                  Clear Filter
+                </button>
+              )}
+            </>
+          )}
         </div>
-      )}
+        {searchQuery && (
+          <p className="text-xs text-gray-500 mt-2">Found {filteredResources.length} result(s) for &quot;{searchQuery}&quot;</p>
+        )}
+      </div>
 
       {/* Info Banner for Students */}
       {isStudent && (

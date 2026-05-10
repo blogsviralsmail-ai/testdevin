@@ -8,6 +8,7 @@ export default function AnnouncementsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [form, setForm] = useState({ title: "", content: "", category: "general", isPinned: false, targetRole: "all" });
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
@@ -40,8 +41,17 @@ export default function AnnouncementsPage() {
         {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ New Announcement</button>}
       </div>
 
+      {/* Search */}
+      <div className="bg-white rounded-xl border p-4">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search announcements..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+          {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+        </div>
+      </div>
+
       <div className="space-y-4">
-        {announcements.map(a => (
+        {announcements.filter(a => !searchQuery.trim() || a.title.toLowerCase().includes(searchQuery.toLowerCase()) || a.content.toLowerCase().includes(searchQuery.toLowerCase())).map(a => (
           <div key={a.id} className={`bg-white rounded-xl p-5 border ${a.isPinned ? "border-l-4 border-l-amber-400" : ""}`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">

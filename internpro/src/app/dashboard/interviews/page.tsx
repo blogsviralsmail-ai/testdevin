@@ -49,6 +49,7 @@ export default function InterviewsPage() {
   }, []);
 
   const [userRole, setUserRole] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(data => {
@@ -134,6 +135,15 @@ export default function InterviewsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{userRole === "student" ? "My Interviews" : "Interviews"}</h1>
         <p className="text-gray-600">{userRole === "student" ? "View your scheduled interviews and meeting details" : "Manage scheduled interviews and select candidates"}</p>
+      </div>
+
+      {/* Search */}
+      <div className="bg-white rounded-xl border p-4 mb-6">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by student name, program..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+          {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+        </div>
       </div>
 
       {/* Selection Modal */}
@@ -316,7 +326,7 @@ export default function InterviewsPage() {
       ) : userRole === "student" ? (
         /* Student View — prominent interview details with meeting link */
         <div className="grid gap-4">
-          {interviews.map((i) => (
+          {interviews.filter(i => !searchQuery.trim() || i.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase())).map((i) => (
             <div key={i.id} className={`bg-white rounded-xl border overflow-hidden ${i.status === "scheduled" ? "border-indigo-200" : ""}`}>
               {i.status === "scheduled" && (
                 <div className="bg-indigo-600 text-white px-6 py-2 text-sm font-medium">Upcoming Interview</div>
@@ -371,7 +381,7 @@ export default function InterviewsPage() {
       ) : (
         /* Admin/TL View — existing cards with management actions */
         <div className="grid gap-4">
-          {interviews.map((i) => (
+          {interviews.filter(i => !searchQuery.trim() || i.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.student.email.toLowerCase().includes(searchQuery.toLowerCase())).map((i) => (
             <div key={i.id} className="bg-white rounded-xl p-6 border">
               <div className="flex items-start justify-between">
                 <div>

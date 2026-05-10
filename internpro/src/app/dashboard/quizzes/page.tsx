@@ -16,6 +16,7 @@ export default function QuizzesPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState<string>("all");
   const [form, setForm] = useState({ title: "", description: "", timeLimit: "", passingScore: "60", questions: [{ question: "", options: ["", "", "", ""], correctAnswer: 0, points: 10 }] as Question[] });
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
@@ -106,37 +107,35 @@ export default function QuizzesPage() {
         {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ Create Quiz</button>}
       </div>
 
-      {/* Program Filter */}
-      {programs.length > 1 && (
-        <div className="bg-white rounded-xl border p-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-sm font-medium text-gray-700">Filter by Course:</label>
-            <select
-              value={selectedProgramId}
-              onChange={(e) => setSelectedProgramId(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]"
-            >
-              <option value="all">All Courses ({quizzes.length} quizzes)</option>
-              {programs.map((p) => {
-                const count = quizzes.filter(q => q.programId === p.id).length;
-                if (count === 0) return null;
-                return (
-                  <option key={p.id} value={p.id}>{p.title} ({count})</option>
-                );
-              })}
-            </select>
-            {selectedProgramId !== "all" && (
-              <button onClick={() => setSelectedProgramId("all")} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                Clear Filter
-              </button>
-            )}
+      {/* Search + Program Filter */}
+      <div className="bg-white rounded-xl border p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search quizzes..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
           </div>
+          {programs.length > 1 && (
+            <>
+              <label className="text-sm font-medium text-gray-700">Course:</label>
+              <select value={selectedProgramId} onChange={(e) => setSelectedProgramId(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]">
+                <option value="all">All Courses ({quizzes.length} quizzes)</option>
+                {programs.map((p) => {
+                  const count = quizzes.filter(q => q.programId === p.id).length;
+                  if (count === 0) return null;
+                  return <option key={p.id} value={p.id}>{p.title} ({count})</option>;
+                })}
+              </select>
+              {selectedProgramId !== "all" && <button onClick={() => setSelectedProgramId("all")} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Clear Filter</button>}
+            </>
+          )}
         </div>
-      )}
+        {searchQuery && <p className="text-xs text-gray-500 mt-2">Searching for &quot;{searchQuery}&quot;</p>}
+      </div>
 
       {/* Quiz List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {(selectedProgramId === "all" ? quizzes : quizzes.filter(q => q.programId === selectedProgramId)).map(quiz => (
+        {(selectedProgramId === "all" ? quizzes : quizzes.filter(q => q.programId === selectedProgramId)).filter(q => !searchQuery.trim() || q.title.toLowerCase().includes(searchQuery.toLowerCase()) || (q.description && q.description.toLowerCase().includes(searchQuery.toLowerCase()))).map(quiz => (
           <div key={quiz.id} className="bg-white rounded-xl p-5 border hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between">
               <div>

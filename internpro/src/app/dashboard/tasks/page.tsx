@@ -72,6 +72,7 @@ export default function TasksPage() {
   const [editTaskForm, setEditTaskForm] = useState({ title: "", description: "", type: "regular", dayNumber: "", maxPoints: "100", isUrgent: false });
   const [viewTaskModal, setViewTaskModal] = useState<Task | null>(null);
   const [fileUploading, setFileUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = useCallback(async () => {
     const [tasksRes, batchesRes, meRes] = await Promise.all([
@@ -314,35 +315,39 @@ export default function TasksPage() {
         </form>
       )}
 
-      {/* Filters */}
-      {!isStudent && (
-        <div className="bg-white rounded-xl p-4 border mb-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Filter by Batch</label>
-              <select value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[200px]">
-                <option value="">All Batches</option>
-                {batches.map((b) => (
-                  <option key={b.id} value={`${b.program.title} - ${b.name}`}>{b.program.title} - {b.name}</option>
-                ))}
-              </select>
+      {/* Search + Filters */}
+      <div className="bg-white rounded-xl p-4 border mb-6">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Search Tasks</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by task title..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Filter by Student</label>
-              <input
-                type="text"
-                value={filterStudent}
-                onChange={(e) => setFilterStudent(e.target.value)}
-                placeholder="Type student name..."
-                className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[200px]"
-              />
-            </div>
-            {(filterBatch || filterStudent) && (
-              <button onClick={() => { setFilterBatch(""); setFilterStudent(""); }} className="text-xs text-red-600 hover:text-red-800 mt-5">Clear Filters</button>
-            )}
           </div>
+          {!isStudent && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Filter by Batch</label>
+                <select value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[200px]">
+                  <option value="">All Batches</option>
+                  {batches.map((b) => (
+                    <option key={b.id} value={`${b.program.title} - ${b.name}`}>{b.program.title} - {b.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Filter by Student</label>
+                <input type="text" value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)} placeholder="Type student name..." className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[200px]" />
+              </div>
+            </>
+          )}
+          {(filterBatch || filterStudent || searchQuery) && (
+            <button onClick={() => { setFilterBatch(""); setFilterStudent(""); setSearchQuery(""); }} className="text-xs text-red-600 hover:text-red-800 mt-5">Clear All</button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Batch-level Delete */}
       {(isAdmin || isTeamLeader) && batches.length > 0 && (
@@ -377,6 +382,7 @@ export default function TasksPage() {
           tasks.filter((task) => {
             if (filterBatch && `${task.batch.program.title} - ${task.batch.name}` !== filterBatch) return false;
             if (filterStudent && !task.assignedTo?.toLowerCase().includes(filterStudent.toLowerCase())) return false;
+            if (searchQuery.trim() && !task.title.toLowerCase().includes(searchQuery.toLowerCase()) && !(task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
             return true;
           }).map((task) => {
             const submission = getSubmissionForTask(task.id);
