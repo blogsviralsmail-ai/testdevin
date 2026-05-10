@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const where: Record<string, unknown> = {};
   if (enrollmentId) where.enrollmentId = enrollmentId;
   if (session.role === "student") {
-    where.enrollment = { studentId: session.id };
+    where.enrollment = { studentId: session.id, paymentStatus: { not: "pending" } };
   }
 
   const letters = await prisma.offerLetter.findMany({

@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
 
   if (session.role === "student") {
     enrollmentWhere.studentId = session.id;
+    enrollmentWhere.paymentStatus = { not: "pending" };
   } else if (session.role === "teamleader") {
     // Team leader sees only their team's batches
     const tlBatches = await prisma.batch.findMany({
