@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface Discussion { id: string; title: string; content: string; category: string; authorId: string; programId?: string; isPinned: boolean; isResolved: boolean; replyCount: number; author: { name: string; role: string }; createdAt: string; }
 interface Program { id: string; title: string; }
@@ -172,7 +173,10 @@ export default function DiscussionsPage() {
 
       {/* Discussion List */}
       {discussions.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">No discussions yet. Start one!</div>
+        <>
+          <PaymentBlockMessage feature="Discussions" />
+          <div className="text-center py-12 text-gray-400">No discussions yet. Start one!</div>
+        </>
       ) : (
         <div className="space-y-3">
           {discussions.filter(d => !searchQuery.trim() || d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.content.toLowerCase().includes(searchQuery.toLowerCase())).map(d => (

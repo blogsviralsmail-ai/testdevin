@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface LiveSession { id: string; title: string; description?: string; programId?: string; meetLink?: string; platform: string; scheduledAt: string; duration: number; status: string; recordingUrl?: string; hostName: string; programTitle?: string; }
 interface Program { id: string; title: string; }
@@ -121,7 +122,10 @@ export default function LiveSessionsPage() {
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Upcoming Sessions</h2>
         {upcoming.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 border text-center text-gray-400">No upcoming sessions scheduled.</div>
+          <>
+            <PaymentBlockMessage feature="Live Sessions" />
+            <div className="bg-white rounded-xl p-8 border text-center text-gray-400">No upcoming sessions scheduled.</div>
+          </>
         ) : (
           <div className="space-y-3">
             {upcoming.map(s => (

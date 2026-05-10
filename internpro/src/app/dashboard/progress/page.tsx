@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface ProgressItem {
   id: string;
@@ -88,7 +89,10 @@ export default function ProgressPage() {
 
       {/* Progress Cards */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">No progress data available.</div>
+        <>
+          <PaymentBlockMessage feature="Progress Tracker" />
+          <div className="text-center py-12 text-gray-400">No progress data available.</div>
+        </>
       ) : (
         <div className="space-y-4">
           {filtered.map(p => (

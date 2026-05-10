@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { formatDate } from "@/lib/utils";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface Task {
   id: string;
@@ -374,10 +375,15 @@ export default function TasksPage() {
       {/* Task List */}
       <div className="space-y-4">
         {tasks.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 border text-center">
-            <p className="text-4xl mb-4">📝</p>
-            <p className="text-gray-600">{isStudent ? "No tasks available yet. Tasks will appear as your working days progress." : "No tasks yet. Create your first task!"}</p>
-          </div>
+          <>
+            {isStudent && <PaymentBlockMessage feature="Tasks" />}
+            {!isStudent && (
+              <div className="bg-white rounded-xl p-12 border text-center">
+                <p className="text-4xl mb-4">📝</p>
+                <p className="text-gray-600">No tasks yet. Create your first task!</p>
+              </div>
+            )}
+          </>
         ) : (
           tasks.filter((task) => {
             if (filterBatch && `${task.batch.program.title} - ${task.batch.name}` !== filterBatch) return false;

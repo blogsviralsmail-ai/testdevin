@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface UserSession {
   id: string;
@@ -269,11 +270,14 @@ export default function LettersPage() {
 
       {/* Results */}
       {results.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
-          <p className="text-gray-500">
-            {searchQuery ? "No results for your search. Try a different search term." : "No documents available yet."}
-          </p>
-        </div>
+        <>
+          <PaymentBlockMessage feature="Letters & Documents" />
+          <div className="bg-white rounded-xl p-12 text-center border">
+            <p className="text-gray-500">
+              {searchQuery ? "No results for your search. Try a different search term." : "No documents available yet."}
+            </p>
+          </div>
+        </>
       ) : (
         <div className="space-y-4">
           {results.map((r) => (

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface Quiz { id: string; title: string; description?: string; programId?: string | null; timeLimit?: number; passingScore: number; isPublished: boolean; questionCount: number; attemptCount: number; myAttempt?: { score: number; passed: boolean; completedAt: string } | null; createdAt: string; }
 interface Program { id: string; title: string; }
@@ -172,7 +173,12 @@ export default function QuizzesPage() {
         ))}
       </div>
 
-      {quizzes.length === 0 && <div className="text-center py-12 text-gray-400">No quizzes available yet.</div>}
+      {quizzes.length === 0 && (
+        <>
+          <PaymentBlockMessage feature="Quizzes" />
+          <div className="text-center py-12 text-gray-400">No quizzes available yet.</div>
+        </>
+      )}
 
       {/* Create Modal */}
       {showCreate && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface Resource {
   id: string;
@@ -359,10 +360,15 @@ export default function ResourcesPage() {
       )}
 
       {filteredResources.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 border text-center">
-          <p className="text-4xl mb-4">🎥</p>
-          <p className="text-gray-600">{isStudent ? "No study materials available yet." : "No resources yet. Add pre-recorded videos and study materials."}</p>
-        </div>
+        <>
+          {isStudent && <PaymentBlockMessage feature="Study Material" />}
+          {!isStudent && (
+            <div className="bg-white rounded-xl p-12 border text-center">
+              <p className="text-4xl mb-4">🎥</p>
+              <p className="text-gray-600">No resources yet. Add pre-recorded videos and study materials.</p>
+            </div>
+          )}
+        </>
       ) : (
         <div className="space-y-6">
           {/* Day-based Resources */}

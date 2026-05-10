@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
 interface OfferLetter {
   id: string;
@@ -151,14 +152,17 @@ export default function OfferLetterPage() {
 
       {activeTab === "offer" ? (
         letters.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center border">
-            <div className="text-6xl mb-4">📨</div>
-            <h3 className="text-lg font-semibold text-gray-700">No Offer Letter Yet</h3>
-            <p className="text-gray-500 mt-2">Your offer letter will appear here once you are selected after the interview.</p>
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
-              <strong>Current Status Flow:</strong> Applied → Documents Review → Interview → Selection → Offer Letter
+          <>
+            <PaymentBlockMessage feature="Offer Letter" />
+            <div className="bg-white rounded-xl p-12 text-center border">
+              <div className="text-6xl mb-4">📨</div>
+              <h3 className="text-lg font-semibold text-gray-700">No Offer Letter Yet</h3>
+              <p className="text-gray-500 mt-2">Your offer letter will appear here once you are selected after the interview.</p>
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+                <strong>Current Status Flow:</strong> Applied → Documents Review → Interview → Selection → Offer Letter
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="grid gap-4">
             {letters.map((letter) => (
