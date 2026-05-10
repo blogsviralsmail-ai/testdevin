@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 export default function PaymentWall() {
   const [show, setShow] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [enrollmentId, setEnrollmentId] = useState("");
   const [amount, setAmount] = useState(0);
   const [program, setProgram] = useState("");
@@ -22,11 +23,20 @@ export default function PaymentWall() {
       .catch(() => {});
   }, []);
 
-  if (!show) return null;
+  if (!show || dismissed) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-[slideUp_0.5s_ease-out]">
+      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-[slideUp_0.5s_ease-out] relative">
+        {/* Close button */}
+        <button 
+          onClick={() => setDismissed(true)}
+          className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/30 hover:bg-white/50 rounded-full flex items-center justify-center text-white hover:text-gray-800 transition-all"
+          title="Close (you can browse but some features are locked)"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-center">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
             <span className="text-3xl">🔒</span>
@@ -39,7 +49,7 @@ export default function PaymentWall() {
             Congratulations on being selected for <strong className="text-gray-900">{program}</strong>! 
             Please complete the payment to access study materials, tasks, and your offer letter.
           </p>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
             <p className="text-sm text-amber-700">Amount to Pay</p>
             <p className="text-3xl font-bold text-amber-600">₹{amount.toLocaleString()}</p>
           </div>
@@ -48,6 +58,9 @@ export default function PaymentWall() {
             Pay Now
           </a>
           <p className="text-xs text-gray-400 mt-3">Your offer letter will be generated immediately after payment</p>
+          <button onClick={() => setDismissed(true)} className="text-xs text-gray-400 mt-2 underline hover:text-gray-600">
+            Browse without paying (limited access)
+          </button>
         </div>
       </div>
       <style jsx>{`

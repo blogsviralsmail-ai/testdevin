@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
   if (enrollment.paymentStatus === "completed") return NextResponse.json({ error: "Already paid" }, { status: 400 });
 
   const amount = enrollment.feeAmount || 0;
+  const isCash = paymentMethod === "cash";
+  const paymentStatus = isCash ? "pending_approval" : "completed";
 
   // Record payment
   const payment = await prisma.payment.create({
@@ -62,14 +64,22 @@ export async function POST(request: NextRequest) {
       enrollmentId,
       amount,
       type: "fee",
-      status: "completed",
+      status: paymentStatus,
       paymentId: transactionId,
       method: paymentMethod || "upi",
-      description: `Fee payment for ${enrollment.batch.program.title}`,
+      description: isCash
+        ? `Cash payment for ${enrollment.batch.program.title} (pending admin approval)`
+        : `Fee payment for ${enrollment.batch.program.title}`,
     },
   });
 
-  // Update enrollment payment status
+  if (isCash) {
+    // For cash, keep enrollment paymentStatus as "pending" — admin will approve
+    logActivity("cash_payment_submitted", "payment", payment.id, `₹${amount} cash payment from ${enrollment.student.name} for ${enrollment.batch.program.title} — awaiting admin approval`, session.id, session.name).catch(() => {});
+    return NextResponse.json({ success: true, paymentId: payment.id, pendingApproval: true });
+  }
+
+  // For non-cash, complete immediately
   await prisma.enrollment.update({
     where: { id: enrollmentId },
     data: { paymentStatus: "completed" },
@@ -95,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Now generate offer letter (trigger the same flow)
+  // Generate offer letter
   try {
     const offerRes = await fetch(new URL("/api/offer-letters/generate-after-payment", request.url).toString(), {
       method: "POST",
@@ -115,4 +125,91 @@ export async function POST(request: NextRequest) {
   logActivity("payment_received", "payment", payment.id, `₹${amount} fee from ${enrollment.student.name} for ${enrollment.batch.program.title} (${paymentMethod}: ${transactionId})`, session.id, session.name).catch(() => {});
 
   return NextResponse.json({ success: true, paymentId: payment.id });
+}
+
+// PATCH: Admin approves cash payment
+export async function PATCH(request: NextRequest) {
+  const session = await getSession();
+  if (!session || !["admin", "organization"].includes(session.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { paymentId, action } = body; // action: "approve" or "reject"
+
+  if (!paymentId || !action) {
+    return NextResponse.json({ error: "Missing paymentId or action" }, { status: 400 });
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      enrollment: {
+        include: {
+          student: true,
+          batch: { include: { program: { include: { organization: true } } } },
+        },
+      },
+    },
+  });
+
+  if (!payment) return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+  if (payment.status !== "pending_approval") return NextResponse.json({ error: "Payment is not pending approval" }, { status: 400 });
+
+  if (action === "reject") {
+    await prisma.payment.update({ where: { id: paymentId }, data: { status: "rejected" } });
+    logActivity("payment_rejected", "payment", paymentId, `Cash payment of ₹${payment.amount} from ${payment.enrollment.student.name} rejected`, session.id, session.name).catch(() => {});
+    return NextResponse.json({ success: true, message: "Payment rejected" });
+  }
+
+  // Approve
+  await prisma.payment.update({ where: { id: paymentId }, data: { status: "completed" } });
+  await prisma.enrollment.update({
+    where: { id: payment.enrollmentId },
+    data: { paymentStatus: "completed" },
+  });
+
+  const enrollment = payment.enrollment;
+  const amount = payment.amount;
+
+  // Agent commission
+  const referral = await prisma.referral.findFirst({ where: { studentId: enrollment.studentId } });
+  if (referral && enrollment.feeType === "paid" && amount > 0) {
+    const agent = await prisma.agent.findUnique({ where: { id: referral.agentId } });
+    if (agent) {
+      const commission = amount * (agent.commissionRate / 100);
+      await prisma.referral.update({
+        where: { id: referral.id },
+        data: { status: "converted", amount, commission },
+      });
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: {
+          totalEarnings: { increment: commission },
+          walletBalance: { increment: commission },
+        },
+      });
+    }
+  }
+
+  // Generate offer letter
+  try {
+    const offerRes = await fetch(new URL("/api/offer-letters/generate-after-payment", request.url).toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        cookie: request.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({ enrollmentId: enrollment.id }),
+    });
+    if (!offerRes.ok) {
+      console.error("[admin-approve] Offer letter generation failed:", await offerRes.text());
+    }
+  } catch (e) {
+    console.error("[admin-approve] Offer letter generation error:", e);
+  }
+
+  logActivity("payment_approved", "payment", paymentId, `Cash payment of ₹${amount} from ${enrollment.student.name} approved — offer letter generated`, session.id, session.name).catch(() => {});
+
+  return NextResponse.json({ success: true, message: "Payment approved, offer letter generated" });
 }

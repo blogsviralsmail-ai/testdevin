@@ -9,10 +9,15 @@ interface Payment {
   type: string;
   status: string;
   method: string | null;
+  paymentId: string | null;
   description: string | null;
   createdAt: string;
   enrollment: {
-    student: { name: string; email: string };
+    id: string;
+    feeType: string | null;
+    feeAmount: number | null;
+    paymentStatus: string;
+    student: { name: string; email: string; phone: string | null };
     batch: { program: { title: string } };
   };
 }
@@ -33,9 +38,10 @@ interface Salary {
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [salaries, setSalaries] = useState<Salary[]>([]);
-  const [activeTab, setActiveTab] = useState<"payments" | "salaries">("payments");
+  const [activeTab, setActiveTab] = useState<"payments" | "pending" | "salaries">("payments");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const [payRes, salRes] = await Promise.all([
@@ -48,8 +54,40 @@ export default function PaymentsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const totalRevenue = payments.filter((p) => p.type === "fee" && p.status === "completed").reduce((sum, p) => sum + p.amount, 0);
+  const pendingPayments = payments.filter(p => p.status === "pending_approval");
+  const completedPayments = payments.filter(p => p.status === "completed");
+  const totalRevenue = completedPayments.reduce((sum, p) => sum + p.amount, 0);
   const totalStipend = salaries.filter((s) => s.status === "paid").reduce((sum, s) => sum + s.amount, 0);
+
+  const handleApproval = async (paymentId: string, action: "approve" | "reject") => {
+    setActionLoading(paymentId);
+    try {
+      const res = await fetch("/api/student-payment", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId, action }),
+      });
+      if (res.ok) {
+        fetchData();
+        alert(action === "approve" ? "Payment approved! Offer letter generated." : "Payment rejected.");
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed");
+      }
+    } catch {
+      alert("Network error");
+    }
+    setActionLoading(null);
+  };
+
+  const filteredPayments = payments.filter(p => {
+    const matchSearch = !searchQuery || 
+      p.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.enrollment.student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   return (
     <div>
@@ -62,14 +100,18 @@ export default function PaymentsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white rounded-xl p-5 border border-gray-100">
           <p className="text-sm text-gray-600">Total Revenue</p>
           <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-gray-100">
           <p className="text-sm text-gray-600">Total Payments</p>
-          <p className="text-2xl font-bold text-gray-900">{payments.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{completedPayments.length}</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-amber-200 bg-amber-50">
+          <p className="text-sm text-amber-700">Pending Approvals</p>
+          <p className="text-2xl font-bold text-amber-600">{pendingPayments.length}</p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-gray-100">
           <p className="text-sm text-gray-600">Stipends Paid</p>
@@ -87,6 +129,12 @@ export default function PaymentsPage() {
           <button onClick={() => setActiveTab("payments")} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "payments" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
             Fee Payments
           </button>
+          <button onClick={() => setActiveTab("pending")} className={`px-4 py-2 rounded-lg text-sm font-medium transition relative ${activeTab === "pending" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+            Pending Approvals
+            {pendingPayments.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-pulse">{pendingPayments.length}</span>
+            )}
+          </button>
           <button onClick={() => setActiveTab("salaries")} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "salaries" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
             Stipend/Salary
           </button>
@@ -100,15 +148,64 @@ export default function PaymentsPage() {
           className="px-3 py-2 border rounded-lg text-sm text-gray-900">
           <option value="all">All Status</option>
           <option value="completed">Completed</option>
+          <option value="pending_approval">Pending Approval</option>
+          <option value="rejected">Rejected</option>
           <option value="pending">Pending</option>
-          <option value="failed">Failed</option>
-          <option value="paid">Paid</option>
         </select>
       </div>
 
-      {activeTab === "payments" ? (
+      {activeTab === "pending" ? (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          {payments.length === 0 ? (
+          {pendingPayments.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="text-4xl mb-4">✅</p>
+              <p className="text-gray-600">No pending approvals. All payments are up to date!</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {pendingPayments.map(p => (
+                <div key={p.id} className="p-5 hover:bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-2xl">💵</span>
+                        <div>
+                          <p className="font-semibold text-gray-900">{p.enrollment.student.name}</p>
+                          <p className="text-sm text-gray-500">{p.enrollment.student.email} {p.enrollment.student.phone && `• ${p.enrollment.student.phone}`}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 text-sm text-gray-600 ml-10">
+                        <span>📚 {p.enrollment.batch.program.title}</span>
+                        <span>💰 {formatCurrency(p.amount)}</span>
+                        <span>📅 {formatDate(p.createdAt)}</span>
+                        <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs capitalize">{p.method} payment</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <button
+                        onClick={() => handleApproval(p.id, "approve")}
+                        disabled={actionLoading === p.id}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50"
+                      >
+                        {actionLoading === p.id ? "..." : "✓ Approve"}
+                      </button>
+                      <button
+                        onClick={() => handleApproval(p.id, "reject")}
+                        disabled={actionLoading === p.id}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition disabled:opacity-50"
+                      >
+                        ✗ Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : activeTab === "payments" ? (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          {filteredPayments.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-4xl mb-4">💰</p>
               <p className="text-gray-600">No payment records yet.</p>
@@ -120,18 +217,21 @@ export default function PaymentsPage() {
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Program</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Amount</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Type</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Method</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
                   <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {payments.map((p) => (
+                {filteredPayments.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{p.enrollment.student.name}</td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-gray-900">{p.enrollment.student.name}</p>
+                      <p className="text-xs text-gray-500">{p.enrollment.student.email}</p>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{p.enrollment.batch.program.title}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">{formatCurrency(p.amount)}</td>
-                    <td className="px-6 py-4"><span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded capitalize">{p.type}</span></td>
+                    <td className="px-6 py-4"><span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded capitalize">{p.method || "—"}</span></td>
                     <td className="px-6 py-4"><span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(p.status)}`}>{p.status}</span></td>
                     <td className="px-6 py-4 text-sm text-gray-500">{formatDate(p.createdAt)}</td>
                   </tr>
@@ -161,7 +261,10 @@ export default function PaymentsPage() {
               <tbody className="divide-y divide-gray-100">
                 {salaries.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{s.enrollment.student.name}</td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-gray-900">{s.enrollment.student.name}</p>
+                      <p className="text-xs text-gray-500">{s.enrollment.student.email}</p>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{s.month}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{s.attendanceDays}/{s.totalDays} days</td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">{formatCurrency(s.amount)}</td>

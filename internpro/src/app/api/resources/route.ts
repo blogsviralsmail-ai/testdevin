@@ -28,6 +28,10 @@ export async function GET(request: NextRequest) {
     const enrollment = await prisma.enrollment.findFirst({
       where: enrollmentWhere,
     });
+    // Block resources for unpaid students
+    if (enrollment && enrollment.feeType === "paid" && enrollment.paymentStatus === "pending") {
+      return NextResponse.json([]);
+    }
     if (enrollment) {
       // Re-fetch resources only for the student's batch
       const batchResources = await prisma.resource.findMany({

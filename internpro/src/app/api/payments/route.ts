@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     include: {
       enrollment: {
         include: {
-          student: { select: { name: true, email: true } },
+          student: { select: { name: true, email: true, phone: true } },
           batch: { include: { program: { select: { title: true } } } },
         },
       },
