@@ -60,7 +60,7 @@ export default function ReportsPage() {
       const res = await fetch(`/api/certificates/internship?enrollmentId=${enrollment.id}`);
       if (res.ok) {
         const data = await res.json();
-        setViewingReport({ html: data.html, title: `Internship Certificate — ${data.studentName}` });
+        setViewingReport({ html: data.html, title: `Internship Certificate — ${data.studentName}`, studentName: data.studentName, studentEmail: "" });
       } else {
         alert("Failed to generate certificate");
       }
