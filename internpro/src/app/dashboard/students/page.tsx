@@ -512,7 +512,7 @@ export default function StudentsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-white">{enrollment.batch.program.title}</div>
-                        <div className="text-xs text-slate-500">{enrollment.batch.name} &middot; <span className="capitalize text-[#60a5fa]">{enrollment.batch.program.mode}</span></div>
+                        <div className="text-xs text-slate-500">{enrollment.batch.name} &middot; {enrollment.batch.program.mode.split(",").map((m: string) => <span key={m} className="capitalize text-[#60a5fa]">{m === "online" ? "💻" : m === "offline" ? "🏢" : "🔄"} </span>)}</div>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-xs text-slate-400">{enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN") : "—"}</span>

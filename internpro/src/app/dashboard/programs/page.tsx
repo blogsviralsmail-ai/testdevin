@@ -214,12 +214,22 @@ export default function ProgramsPage() {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Mode</label>
-              <select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white">
-                <option value="online">Online</option>
-                <option value="offline">Offline</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Mode (select multiple)</label>
+              <div className="flex flex-wrap gap-3 mt-1">
+                {[{v: "online", l: "💻 Online"}, {v: "offline", l: "🏢 Offline"}, {v: "hybrid", l: "🔄 Hybrid"}].map((m) => {
+                  const modes = form.mode.split(",").filter(Boolean);
+                  const checked = modes.includes(m.v);
+                  return (
+                    <label key={m.v} className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all text-sm font-medium ${checked ? "bg-[#0EA5B8]/20 text-[#22d3ee] border-[#0EA5B8]" : "bg-white/5 text-slate-400 border-white/10"}`} style={{border: '1px solid'}}>
+                      <input type="checkbox" checked={checked} onChange={() => {
+                        const newModes = checked ? modes.filter((x: string) => x !== m.v) : [...modes, m.v];
+                        setForm({ ...form, mode: newModes.join(",") || "online" });
+                      }} className="accent-[#0EA5B8]" />
+                      {m.l}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Duration (days)</label>
@@ -285,7 +295,7 @@ export default function ProgramsPage() {
             <p className="text-slate-400">No programs yet. Create your first program!</p>
           </div>
         ) : (
-          programs.filter((p) => modeFilter === "all" || p.mode === modeFilter).map((program) => {
+          programs.filter((p) => modeFilter === "all" || p.mode.split(",").includes(modeFilter)).map((program) => {
             const totalStudents = program.batches.reduce((sum, b) => sum + b._count.enrollments, 0);
             return (
               <div key={program.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border border-white/[0.06] card-hover relative">
@@ -303,7 +313,11 @@ export default function ProgramsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3">
                       <span className="text-xs bg-transparent text-[#22d3ee] px-2 py-1 rounded">{getDomainLabel(program.domain)}</span>
-                      <span className="text-xs bg-transparent text-[#60a5fa] px-2 py-1 rounded">{getModeLabel(program.mode)}</span>
+                      {program.mode.split(",").map((m: string) => (
+                        <span key={m} className="text-xs bg-transparent text-[#60a5fa] px-2 py-1 rounded">
+                          {m === "online" ? "💻 Online" : m === "offline" ? "🏢 Offline" : m === "hybrid" ? "🔄 Hybrid" : getModeLabel(m)}
+                        </span>
+                      ))}
                       <span className="text-xs bg-transparent text-[#a78bfa] px-2 py-1 rounded">{program.duration} days</span>
                       <span className="text-xs bg-transparent text-emerald-400 px-2 py-1 rounded">{getFeeTypeLabel(program.feeType)}{program.feeType === "paid" ? ` - ${formatCurrency(program.feeAmount)}` : program.feeType === "stipend" ? ` - ${formatCurrency(program.stipendAmount)}/mo` : ""}</span>
                     </div>

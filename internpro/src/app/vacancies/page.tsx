@@ -34,7 +34,7 @@ export default function VacanciesPage() {
 
   const filtered = programs.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.domain.toLowerCase().includes(search.toLowerCase());
-    const matchMode = modeFilter === "all" || p.mode === modeFilter;
+    const matchMode = modeFilter === "all" || p.mode.split(",").includes(modeFilter);
     return matchSearch && matchMode;
   });
 
@@ -115,14 +115,11 @@ export default function VacanciesPage() {
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: `${color}15`, color, border: `1px solid ${color}30`}}>{program.domain}</span>
-                      <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)'}}>{program.mode}</span>
-                      <span className="text-xs px-3 py-1 rounded-full font-bold" style={{
-                        background: program.feeType === "free" ? "rgba(52,211,153,0.1)" : program.feeType === "stipend" ? "rgba(96,165,250,0.1)" : "rgba(255,107,107,0.1)",
-                        color: program.feeType === "free" ? "#6ee7b7" : program.feeType === "stipend" ? "#93c5fd" : "#fca5a5",
-                        border: `1px solid ${program.feeType === "free" ? "rgba(52,211,153,0.2)" : program.feeType === "stipend" ? "rgba(96,165,250,0.2)" : "rgba(255,107,107,0.2)"}`,
-                      }}>
-                        {program.feeType === "free" ? "Free" : program.feeType === "stipend" ? `Stipend: ₹${program.feeAmount}/mo` : `Fee: ₹${program.feeAmount}`}
-                      </span>
+                      {program.mode.split(",").map((m: string) => (
+                        <span key={m} className="text-xs px-3 py-1 rounded-full font-medium" style={{background: 'rgba(14,165,184,0.1)', color: '#22d3ee', border: '1px solid rgba(14,165,184,0.2)'}}>
+                          {m === "online" ? "💻 Online" : m === "offline" ? "🏢 Offline" : m === "hybrid" ? "🔄 Hybrid" : m}
+                        </span>
+                      ))}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#22d3ee] transition-colors">{program.title}</h3>
                     {program.description && <p className="text-sm text-slate-500 mb-4 line-clamp-2">{program.description}</p>}

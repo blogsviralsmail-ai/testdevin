@@ -65,6 +65,27 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data.joiningDate = new Date();
     }
 
+    // Auto-generate employee ID when student is selected or active
+    if (status && ["selected", "active"].includes(status)) {
+      const enrollmentForId = await prisma.enrollment.findUnique({
+        where: { id },
+        select: { studentId: true },
+      });
+      if (enrollmentForId) {
+        const studentForId = await prisma.user.findUnique({
+          where: { id: enrollmentForId.studentId },
+          select: { employeeId: true },
+        });
+        if (!studentForId?.employeeId) {
+          const empId = await generateEmployeeId(new Date());
+          await prisma.user.update({
+            where: { id: enrollmentForId.studentId },
+            data: { employeeId: empId },
+          });
+        }
+      }
+    }
+
     if (status === "completed") {
       data.completedAt = new Date();
     }

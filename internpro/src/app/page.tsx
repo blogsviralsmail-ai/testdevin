@@ -333,7 +333,7 @@ export default function Home() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {programs.filter((p) => modeFilter === "all" || p.mode === modeFilter).slice(0, 6).map((p) => {
+            {programs.filter((p) => modeFilter === "all" || p.mode.split(",").includes(modeFilter)).slice(0, 6).map((p) => {
               const enrolled = p.batches?.reduce((sum, b) => sum + (b._count?.enrollments || 0), 0) || 0;
               const seatsLeft = Math.max(0, p.maxSeats - enrolled);
               const color = domainColors[p.domain] || domainColors.default;
@@ -343,16 +343,13 @@ export default function Home() {
                   border: '1px solid rgba(255,255,255,0.06)',
                 }}>
                   <div className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center gap-2 mb-4 flex-wrap">
                       <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: `${color}15`, color, border: `1px solid ${color}30`}}>{p.domain}</span>
-                      <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)'}}>{p.mode}</span>
-                      <span className="ml-auto text-xs px-3 py-1 rounded-full font-bold" style={{
-                        background: p.feeType === 'free' ? 'rgba(52,211,153,0.1)' : 'rgba(255,107,107,0.1)',
-                        color: p.feeType === 'free' ? '#6ee7b7' : '#fca5a5',
-                        border: `1px solid ${p.feeType === 'free' ? 'rgba(52,211,153,0.2)' : 'rgba(255,107,107,0.2)'}`,
-                      }}>
-                        {p.feeType === 'free' ? 'Free' : `₹${p.feeAmount?.toLocaleString()}`}
-                      </span>
+                      {p.mode.split(",").map((m: string) => (
+                        <span key={m} className="text-xs px-3 py-1 rounded-full font-medium" style={{background: 'rgba(14,165,184,0.1)', color: '#22d3ee', border: '1px solid rgba(14,165,184,0.2)'}}>
+                          {m === "online" ? "💻 Online" : m === "offline" ? "🏢 Offline" : m === "hybrid" ? "🔄 Hybrid" : m}
+                        </span>
+                      ))}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#22d3ee] transition-colors">{p.title}</h3>
                     <p className="text-slate-500 text-sm mb-4">{p.description || `${p.title} — ${p.duration} day program`}</p>

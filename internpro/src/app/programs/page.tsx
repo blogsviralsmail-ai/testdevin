@@ -192,9 +192,10 @@ export default function ProgramsPage() {
             <div className="grid lg:grid-cols-2 gap-8">
               {programs.filter((p) => {
                 if (modeFilter === "all") return true;
-                if (modeFilter === "online") return p.modeIcon === "laptop";
-                if (modeFilter === "offline") return p.modeIcon === "office";
-                if (modeFilter === "hybrid") return p.modeIcon === "hybrid";
+                const modes = (p.mode || "").split(",");
+                if (modeFilter === "online") return modes.includes("online") || p.modeIcon === "laptop";
+                if (modeFilter === "offline") return modes.includes("offline") || p.modeIcon === "office";
+                if (modeFilter === "hybrid") return modes.includes("hybrid") || p.modeIcon === "hybrid";
                 return true;
               }).map((program, idx) => {
                 const imgSrc = program.image || fallbackImages[program.id] || fallbackImages.premium_paid_training;
@@ -235,10 +236,11 @@ export default function ProgramsPage() {
                           {program.title}
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full">
-                            <ModeIcon type={program.modeIcon} color="#fff" />
-                            {program.mode}
-                          </span>
+                          {program.mode.split(",").map((m: string) => (
+                            <span key={m} className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full">
+                              {m === "online" ? "💻 Online" : m === "offline" ? "🏢 Offline" : m === "hybrid" ? "🔄 Hybrid" : m}
+                            </span>
+                          ))}
                           <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                             {program.duration}
@@ -333,7 +335,7 @@ export default function ProgramsPage() {
                 <tr style={{borderBottom: '1px solid rgba(255,255,255,0.04)'}}>
                   <td className="py-3 px-4 text-sm text-slate-300 font-medium">Mode</td>
                   {programs.map((p) => (
-                    <td key={p.id} className="py-3 px-4 text-center text-sm text-slate-400">{p.mode}</td>
+                    <td key={p.id} className="py-3 px-4 text-center text-sm text-slate-400">{p.mode.split(",").map((m: string) => m === "online" ? "💻" : m === "offline" ? "🏢" : "🔄").join(" ")}</td>
                   ))}
                 </tr>
                 {["Certificate", "Experience Letter", "Live Projects", "Mentorship", "Stipend"].map((feature) => (
