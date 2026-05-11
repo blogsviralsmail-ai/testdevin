@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
+import { generateOfferLetterForEnrollment } from "@/lib/generate-offer-letter";
 import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
@@ -37,6 +39,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payment verification failed" }, { status: 400 });
     }
 
+    // Check enrollment
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+      include: {
+        student: true,
+        batch: { include: { program: { include: { organization: true } } } },
+      },
+    });
+
+    if (!enrollment) {
+      return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+    }
+
     // Record payment
     const payment = await prisma.payment.create({
       data: {
@@ -50,9 +65,44 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Update enrollment payment status
+    await prisma.enrollment.update({
+      where: { id: enrollmentId },
+      data: { paymentStatus: "completed" },
+    });
+
+    // Agent commission calculation
+    const referral = await prisma.referral.findFirst({ where: { studentId: enrollment.studentId } });
+    if (referral && enrollment.feeType === "paid" && parseFloat(amount) > 0) {
+      const agent = await prisma.agent.findUnique({ where: { id: referral.agentId } });
+      if (agent) {
+        const commission = parseFloat(amount) * (agent.commissionRate / 100);
+        await prisma.referral.update({
+          where: { id: referral.id },
+          data: { status: "converted", amount: parseFloat(amount), commission },
+        });
+        await prisma.agent.update({
+          where: { id: agent.id },
+          data: {
+            totalEarnings: { increment: commission },
+            walletBalance: { increment: commission },
+          },
+        });
+      }
+    }
+
+    // Generate offer letter
+    const olResult = await generateOfferLetterForEnrollment(enrollmentId, session.id, session.name);
+    if (!olResult.success) {
+      console.error("[razorpay-verify] Offer letter generation failed:", olResult.error);
+    }
+
+    logActivity("payment_received", "payment", payment.id, `₹${amount} Razorpay payment from ${enrollment.student.name} for ${enrollment.batch.program.title} (${razorpay_payment_id})`, session.id, session.name).catch(() => {});
+
     return NextResponse.json({ success: true, payment });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Payment verification failed";
+    console.error("[razorpay-verify] Error:", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
