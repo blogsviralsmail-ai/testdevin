@@ -327,7 +327,7 @@ export default function StudentsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">New Password (blank = no change)</label>
-                  {editModal.student.plainPassword && <p className="text-xs text-amber-400 mb-1">Current: {editModal.student.plainPassword}</p>}
+                  {editModal.student.plainPassword ? <p className="text-xs text-amber-400 mb-1">Current: {editModal.student.plainPassword}</p> : <p className="text-xs text-slate-500 mb-1">Password hidden (set new below or use &quot;Reset &amp; Show&quot; in View)</p>}
                   <input type="text" value={studentForm.password} onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Leave blank to keep" />
                 </div>
@@ -440,7 +440,22 @@ export default function StudentsPage() {
                 <p className="text-sm text-slate-500">{viewProfile.student.email}</p>
                 {viewProfile.student.phone && <p className="text-sm text-slate-500">{viewProfile.student.phone}</p>}
                 {viewProfile.student.employeeId && <p className="text-xs text-[#22d3ee] font-medium mt-1">ID: {viewProfile.student.employeeId}</p>}
-                {isAdmin && viewProfile.student.plainPassword && <p className="text-xs text-amber-400 mt-1">Password: {viewProfile.student.plainPassword}</p>}
+                {isAdmin && (
+                  viewProfile.student.plainPassword 
+                    ? <p className="text-xs text-amber-400 mt-1">Password: {viewProfile.student.plainPassword}</p>
+                    : <button onClick={async () => {
+                        const newPass = "KKHS@" + Math.random().toString(36).slice(2, 8);
+                        const res = await fetch(`/api/users/${viewProfile.student.id}`, {
+                          method: "PUT", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ password: newPass }),
+                        });
+                        if (res.ok) {
+                          alert(`New password set: ${newPass}`);
+                          setViewProfile({ ...viewProfile, student: { ...viewProfile.student, plainPassword: newPass } });
+                          fetchEnrollments();
+                        }
+                      }} className="text-xs text-amber-400 mt-1 underline hover:text-amber-300 cursor-pointer">Reset & Show Password</button>
+                )}
               </div>
             </div>
             <div className="space-y-3 text-sm">
