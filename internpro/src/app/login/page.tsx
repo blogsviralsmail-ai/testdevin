@@ -48,8 +48,8 @@ export default function LoginPage() {
         <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, rgba(14,165,184,0.1) 0%, rgba(167,139,250,0.08) 50%, rgba(255,107,107,0.05) 100%)'}} />
         <div className="relative z-10 max-w-lg">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold text-white" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-            <span className="text-3xl font-bold gradient-text">InternPro</span>
+            <img src="/logo-kkhs.png" alt="KKHS Media" className="h-12 w-auto" />
+            <span className="text-3xl font-bold gradient-text">KKHS Media</span>
           </div>
           <h2 className="text-4xl font-bold text-white mb-5 leading-tight">Manage Internships<br/>with Ease</h2>
           <p className="text-lg text-slate-400 mb-10 leading-relaxed">
@@ -70,8 +70,8 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-            <span className="text-xl font-bold gradient-text">InternPro</span>
+            <img src="/logo-kkhs.png" alt="KKHS Media" className="h-9 w-auto" />
+            <span className="text-xl font-bold gradient-text">KKHS Media</span>
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-2">Welcome back</h1>

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import PublicNavbar from "@/components/PublicNavbar";
+import PublicFooter from "@/components/PublicFooter";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
 
 interface Program {
   id: string;
@@ -141,15 +144,6 @@ export default function Home() {
     return m ? m[1] : "";
   };
 
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/programs", label: "Programs" },
-    { href: "/vacancies", label: "Openings" },
-    { href: "/team", label: "Our Team" },
-    { href: "/contact", label: "Contact Us" },
-    { href: "/about", label: "About Us" },
-  ];
-
   return (
     <div className="min-h-screen" style={{background: '#0a0e1a', color: '#f1f5f9'}}>
       {/* Organic Background Blobs */}
@@ -159,52 +153,7 @@ export default function Home() {
         <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px]" style={{borderRadius: '50% 50% 33% 67% / 55% 27% 73% 45%', background: 'radial-gradient(ellipse, rgba(255,107,107,0.04), transparent 70%)', animation: 'morphBlob 20s ease-in-out infinite'}} />
       </div>
 
-      {/* ===== NAVBAR ===== */}
-      <nav className="fixed top-0 w-full z-50" style={{background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)'}}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            {settings.company_logo ? (
-              <img src={settings.company_logo} alt="Logo" className="h-10 w-auto" />
-            ) : (
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>KM</div>
-            )}
-            <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
-              {settings.company_name || "KKHS Media"}
-            </span>
-          </Link>
-          <div className="hidden md:flex items-center gap-2">
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} className={`text-sm px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 ${l.href === "/" ? "text-white" : "text-slate-400 hover:text-white"}`}
-                style={l.href === "/" ? {background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 3px 0 #0a7c8a, 0 4px 12px rgba(14,165,184,0.3)'} : {background: 'rgba(255,255,255,0.05)', boxShadow: '0 3px 0 rgba(255,255,255,0.03), 0 4px 8px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)'}}>
-                {l.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className={`text-sm text-white px-5 py-2.5 rounded-xl font-semibold ${btn3d}`}
-              style={{background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 0 #3730a3, 0 6px 15px rgba(99,102,241,0.3)'}}>
-              Login
-            </Link>
-            <Link href="/register" className={`hidden sm:inline-flex text-sm text-white px-5 py-2.5 rounded-xl font-semibold ${btn3d}`}
-              style={btn3dStyle('linear-gradient(135deg, #0EA5B8, #0891b2)', '#0a7c8a')}>
-              Get Started
-            </Link>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white text-2xl ml-2">
-              {mobileMenu ? "✕" : "☰"}
-            </button>
-          </div>
-        </div>
-        {/* Mobile Menu */}
-        {mobileMenu && (
-          <div className="md:hidden px-6 pb-4 space-y-2" style={{background: 'rgba(10,14,26,0.95)'}}>
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setMobileMenu(false)} className="block text-sm px-4 py-2.5 rounded-xl text-slate-300 hover:text-white transition" style={{background: 'rgba(255,255,255,0.05)'}}>
-                {l.label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </nav>
+      <PublicNavbar activePath="/" />
 
       {/* ===== HERO SECTION ===== */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-20 pb-16 overflow-hidden">
@@ -501,53 +450,7 @@ export default function Home() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="relative py-12" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-3 mb-4">
-                {settings.company_logo ? (
-                  <img src={settings.company_logo} alt="Logo" className="h-10 w-auto" />
-                ) : (
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>KM</div>
-                )}
-                <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
-                  {settings.company_name || "KKHS Media"}
-                </span>
-              </div>
-              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-                A product of KKHS Media Private Limited. Complete internship management platform — student onboarding, video LMS, task management, auto certificates, and payment tracking.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white mb-4">Platform</h4>
-              <div className="space-y-2">
-                <Link href="/programs" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Programs</Link>
-                <Link href="/vacancies" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Openings</Link>
-                <Link href="/register" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Register</Link>
-                <Link href="/login" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Login</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white mb-4">Company</h4>
-              <div className="space-y-2">
-                <Link href="/about" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>About Us</Link>
-                <Link href="/privacy-policy" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Privacy Policy</Link>
-                <Link href="/terms" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Terms & Conditions</Link>
-              </div>
-            </div>
-          </div>
-          <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
-            <p className="text-slate-600 text-sm">&copy; 2020 KKHS Media Private Limited. All rights reserved.</p>
-            <div className="flex items-center gap-6 text-sm text-slate-600">
-              <Link href="/about" className="hover:text-white transition">About</Link>
-              <Link href="/privacy-policy" className="hover:text-white transition">Privacy</Link>
-              <Link href="/terms" className="hover:text-white transition">Terms</Link>
-              <Link href="/contact" className="hover:text-white transition">Contact</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {/* ===== APPLY NOW POPUP (20 sec) ===== */}
       {showPopup && (
@@ -568,14 +471,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ===== WHATSAPP WIDGET ===== */}
-      {settings.whatsapp_number && (
-        <a href={`https://wa.me/${settings.whatsapp_number.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl transition-all hover:scale-110 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)]"
-          style={{background: '#25d366', boxShadow: '0 4px 0 #1da851, 0 6px 20px rgba(37,211,102,0.3)'}}>
-          💬
-        </a>
-      )}
+      <WhatsAppWidget />
 
       <style jsx>{`
         @keyframes morphBlob {

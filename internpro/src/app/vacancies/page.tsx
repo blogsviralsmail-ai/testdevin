@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import PublicNavbar from "@/components/PublicNavbar";
+import PublicFooter from "@/components/PublicFooter";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
 
 interface Program {
   id: string;
@@ -46,24 +49,7 @@ export default function VacanciesPage() {
         <div className="absolute bottom-0 -left-40 w-[500px] h-[500px]" style={{borderRadius: '70% 30% 30% 70% / 70% 70% 30% 30%', background: 'radial-gradient(ellipse, rgba(167,139,250,0.06), transparent 70%)', animation: 'morphBlob 18s ease-in-out infinite reverse'}} />
       </div>
 
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50" style={{background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)'}}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-            <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-sm text-slate-400 hover:text-white transition">Home</Link>
-            <Link href="/programs" className="text-sm text-slate-400 hover:text-white transition">Programs</Link>
-            <Link href="/vacancies" className="text-sm text-white font-semibold">Openings</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-slate-300 hover:text-white transition px-4 py-2">Login</Link>
-            <Link href="/register" className="text-sm text-white px-5 py-2.5 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>Apply Now</Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNavbar activePath="/vacancies" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-16">
         <div className="text-center mb-12">
@@ -127,7 +113,7 @@ export default function VacanciesPage() {
                       <span>⏲ {program.duration} days</span>
                       <span>👥 {seatsLeft > 0 ? `${seatsLeft} seats left` : "Full"}</span>
                     </div>
-                    <Link href="/register" className="block text-center py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-[0_0_20px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
+                    <Link href={`/register?program=${encodeURIComponent(program.title)}`} className="block text-center py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-[0_0_20px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
                       Apply for this Program
                     </Link>
                   </div>
@@ -138,21 +124,8 @@ export default function VacanciesPage() {
         )}
       </div>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 mt-16" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-            <span className="text-sm text-slate-500">InternPro by KKHS Media</span>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-slate-500">
-            <Link href="/about" className="hover:text-white transition">About Us</Link>
-            <Link href="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition">Terms & Conditions</Link>
-          </div>
-          <p className="text-sm text-slate-600">&copy; {new Date().getFullYear()} InternPro. All rights reserved.</p>
-        </div>
-      </footer>
+      <PublicFooter />
+      <WhatsAppWidget />
     </div>
   );
 }

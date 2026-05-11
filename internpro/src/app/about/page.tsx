@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import PublicNavbar from "@/components/PublicNavbar";
+import PublicFooter from "@/components/PublicFooter";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
 
 interface AboutData {
   heroTitle: string;
@@ -44,10 +47,6 @@ export default function AboutPage() {
   );
 
   const valueIcons = ["🎯", "🏆", "🌍", "🔍"];
-  const navLinks = [
-    { href: "/", label: "Home" }, { href: "/programs", label: "Programs" }, { href: "/vacancies", label: "Openings" },
-    { href: "/team", label: "Our Team" }, { href: "/contact", label: "Contact Us" }, { href: "/about", label: "About Us" },
-  ];
 
   return (
     <div className="min-h-screen" style={{ background: '#0a0e1a', color: '#f1f5f9' }}>
@@ -56,26 +55,7 @@ export default function AboutPage() {
         <div className="absolute bottom-20 -right-40 w-96 h-96 rounded-full opacity-15 animate-pulse" style={{ background: 'radial-gradient(circle, #a78bfa, transparent 70%)', animationDelay: '2s' }} />
       </div>
 
-      <nav className="fixed top-0 w-full z-50" style={{ background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            {settings.company_logo ? <img src={settings.company_logo} alt="Logo" className="h-10 w-auto" /> : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>KM</div>}
-            <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>{settings.company_name || "KKHS Media"}</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-2">
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} className={`text-sm px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 ${l.href === "/about" ? "text-white" : "text-slate-400 hover:text-white"}`}
-                style={l.href === "/about" ? {background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 3px 0 #0a7c8a'} : {background: 'rgba(255,255,255,0.05)', boxShadow: '0 3px 0 rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)'}}>
-                {l.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-1" style={{background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 0 #3730a3'}}>Login</Link>
-            <Link href="/register" className="hidden sm:inline-flex text-sm text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-1" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 4px 0 #0a7c8a'}}>Get Started</Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNavbar activePath="/about" />
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-6">
@@ -206,19 +186,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <footer className="relative py-12" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-slate-600 text-sm">&copy; 2020 KKHS Media Private Limited. All rights reserved.</p>
-        </div>
-      </footer>
-
-      {settings.whatsapp_number && (
-        <a href={`https://wa.me/${settings.whatsapp_number.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl transition-all hover:scale-110"
-          style={{background: '#25d366', boxShadow: '0 4px 0 #1da851, 0 6px 20px rgba(37,211,102,0.3)'}}>
-          💬
-        </a>
-      )}
+      <PublicFooter />
+      <WhatsAppWidget />
     </div>
   );
 }
