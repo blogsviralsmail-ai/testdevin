@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface HolidayInfo {
   id: string;
   title: string;
@@ -11,6 +13,7 @@ interface HolidayInfo {
 }
 
 export default function HolidaysManagementPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [holidays, setHolidays] = useState<HolidayInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -54,11 +57,36 @@ export default function HolidaysManagementPage() {
 
   const upcomingCount = holidays.filter(h => new Date(h.date) >= new Date()).length;
 
+  const getFilteredForExport = () => {
+    return (holidays || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Holidays", [{ key: "title", label: "Title" }, { key: "date", label: "Date" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "title", label: "Title" }, { key: "date", label: "Date" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }];
+    exportToPDF("Holidays", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Holiday Management</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search holidays..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-sm text-slate-400 mt-1">{holidays.length} total, {upcomingCount} upcoming</p>
         </div>
         <button onClick={() => { setShowForm(true); setEditing(null); setForm({ title: "", date: "", type: "public", description: "" }); }}

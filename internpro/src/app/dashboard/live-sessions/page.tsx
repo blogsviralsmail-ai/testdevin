@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface LiveSession { id: string; title: string; description?: string; programId?: string; meetLink?: string; platform: string; scheduledAt: string; duration: number; status: string; recordingUrl?: string; hostName: string; programTitle?: string; }
 interface Program { id: string; title: string; }
 
@@ -57,11 +59,36 @@ export default function LiveSessionsPage() {
 
   const platformIcons: Record<string, string> = { google_meet: "📹", zoom: "💻", other: "🔗" };
 
+  const getFilteredForExport = () => {
+    return (sessions || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Live Sessions", [{ key: "title", label: "Title" }, { key: "scheduledAt", label: "Scheduled" }, { key: "status", label: "Status" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "title", label: "Title" }, { key: "scheduledAt", label: "Scheduled" }, { key: "status", label: "Status" }];
+    exportToPDF("Live Sessions", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Live Sessions</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search sessions..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-sm text-slate-500">Scheduled doubt-clearing sessions and webinars</p>
         </div>
         {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Schedule Session</button>}

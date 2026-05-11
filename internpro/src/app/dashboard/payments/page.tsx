@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatCurrency, formatDate, getStatusColor } from "@/lib/utils";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Payment {
   id: string;
   amount: number;
@@ -89,11 +91,36 @@ export default function PaymentsPage() {
     return matchSearch && matchStatus;
   });
 
+  const getFilteredForExport = () => {
+    return (payments || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Payments", [{ key: "studentName", label: "Name" }, { key: "amount", label: "Amount" }, { key: "method", label: "Method" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Date" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "studentName", label: "Name" }, { key: "amount", label: "Amount" }, { key: "method", label: "Method" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Date" }];
+    exportToPDF("Payments", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Payments & Salary</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search payments..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-slate-400 text-sm">Track fees, payments, and stipend management</p>
         </div>
         <button onClick={() => { window.open('/api/export?type=payments&format=csv', '_blank'); }} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700">📥 Export CSV</button>

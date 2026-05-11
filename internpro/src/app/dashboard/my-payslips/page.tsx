@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 
 interface PayslipInfo {
   id: string;
@@ -25,6 +27,7 @@ interface PayslipInfo {
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 export default function MyPayslipsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [payslips, setPayslips] = useState<PayslipInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewPayslip, setViewPayslip] = useState<PayslipInfo | null>(null);
@@ -58,7 +61,8 @@ export default function MyPayslipsPage() {
     .total-row td{border:none;padding:14px}
     .footer{text-align:center;margin-top:30px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:11px}
     @media print{body{padding:20px}}</style></head><body>
-    <div class="header"><h1>KKHS Media Private Limited</h1><p>Payslip for ${MONTHS[parseInt(p.month)-1]} ${p.year}</p></div>
+    <div class="header"><h1>KKHS Media Private Limited</h1>
+<p>Payslip for ${MONTHS[parseInt(p.month)-1]} ${p.year}</p></div>
     <div class="info-grid">
       <div class="info-box"><label>Employee Name</label><span>${p.user?.name || "—"}</span></div>
       <div class="info-box"><label>Employee ID</label><span>${p.user?.employeeId || "—"}</span></div>
@@ -84,9 +88,22 @@ export default function MyPayslipsPage() {
     w.print();
   };
 
+
+  const handleExportCSV = () => {
+    const data = payslips as unknown as Record<string, unknown>[];
+    if (!data.length) return;
+    exportToCSV(data, "My Payslips", [{ key: "month", label: "Month" }, { key: "year", label: "Year" }, { key: "basicPay", label: "Basic Pay" }, { key: "allowances", label: "Allowances" }, { key: "deductions", label: "Deductions" }, { key: "bonus", label: "Bonus" }, { key: "netPay", label: "Net Pay" }, { key: "status", label: "Status" }]);
+  };
+  const handleExportPDF = () => {
+    const data = payslips as unknown as Record<string, unknown>[];
+    if (!data.length) return;
+    exportToPDF("My Payslips", buildTableHTML(data, [{ key: "month", label: "Month" }, { key: "year", label: "Year" }, { key: "basicPay", label: "Basic" }, { key: "netPay", label: "Net Pay" }, { key: "status", label: "Status" }]));
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-bold text-white">My Payslips</h1>
+      <DataToolbar searchValue={searchQuery} onSearchChange={setSearchQuery} searchPlaceholder="Search payslips..." onExportCSV={handleExportCSV} onExportPDF={handleExportPDF} />
 
       {loading ? <div className="text-center text-slate-500 py-8">Loading...</div> :
       payslips.length === 0 ? (

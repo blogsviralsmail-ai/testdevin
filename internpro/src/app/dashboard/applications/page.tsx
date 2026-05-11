@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface StudentDoc {
   id: string;
   type: string;
@@ -176,11 +178,36 @@ export default function ApplicationsPage() {
 
   if (loading) return <div className="p-6 text-slate-300">Loading...</div>;
 
+  const getFilteredForExport = () => {
+    return (enrollments || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Applications", [{ key: "student.name", label: "Name" }, { key: "student.email", label: "Email" }, { key: "batch.program.title", label: "Program" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Applied" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "student.name", label: "Name" }, { key: "student.email", label: "Email" }, { key: "batch.program.title", label: "Program" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Applied" }];
+    exportToPDF("Applications", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Student Applications</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search applications..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-slate-400">Review student applications, documents, and schedule interviews</p>
         </div>
       </div>

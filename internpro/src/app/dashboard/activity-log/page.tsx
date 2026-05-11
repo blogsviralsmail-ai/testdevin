@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface LogEntry {
   id: string;
   userId: string | null;
@@ -14,6 +16,7 @@ interface LogEntry {
 }
 
 export default function ActivityLogPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -44,10 +47,35 @@ export default function ActivityLogPage() {
     return "bg-transparent text-white";
   };
 
+  const getFilteredForExport = () => {
+    return (logs || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Activity Log", [{ key: "action", label: "Action" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }, { key: "createdAt", label: "Date" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "action", label: "Action" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }, { key: "createdAt", label: "Date" }];
+    exportToPDF("Activity Log", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-white">Activity Log</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search activity..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text" placeholder="Search..." value={search}

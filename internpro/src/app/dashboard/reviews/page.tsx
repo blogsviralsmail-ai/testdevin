@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Submission {
   id: string;
   taskId: string;
@@ -30,6 +32,7 @@ interface QuizAttemptInfo {
 }
 
 export default function ReviewsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"tasks" | "quizzes">("tasks");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttemptInfo[]>([]);
@@ -86,11 +89,36 @@ export default function ReviewsPage() {
   const quizPassedCount = quizAttempts.filter(a => a.passed).length;
   const quizFailedCount = quizAttempts.filter(a => !a.passed).length;
 
+  const getFilteredForExport = () => {
+    return (submissions || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Reviews", [{ key: "studentName", label: "Student" }, { key: "taskTitle", label: "Task" }, { key: "status", label: "Status" }, { key: "percentage", label: "Score" }, { key: "createdAt", label: "Submitted" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "studentName", label: "Student" }, { key: "taskTitle", label: "Task" }, { key: "status", label: "Status" }, { key: "percentage", label: "Score" }, { key: "createdAt", label: "Submitted" }];
+    exportToPDF("Reviews", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Review Submissions</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search submissions..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-slate-400 text-sm">Review student tasks and quiz results</p>
         </div>
         <div className="flex items-center gap-2">

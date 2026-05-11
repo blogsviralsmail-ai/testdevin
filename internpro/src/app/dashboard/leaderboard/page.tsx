@@ -1,11 +1,14 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface LeaderboardEntry { rank: number; userId: string; name: string; avatar?: string; employeeId?: string; points: number; }
 interface BadgeInfo { id: string; name: string; icon: string; description: string; threshold: number; }
 interface MyBadge { badge: BadgeInfo; earnedAt: string; }
 
 export default function LeaderboardPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [myStats, setMyStats] = useState<{ points: number; rank: number; badges: MyBadge[] }>({ points: 0, rank: 0, badges: [] });
   const [allBadges, setAllBadges] = useState<BadgeInfo[]>([]);
@@ -23,11 +26,36 @@ export default function LeaderboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const getFilteredForExport = () => {
+    return (leaderboard || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Leaderboard", [{ key: "name", label: "Name" }, { key: "points", label: "Points" }, { key: "tasksCompleted", label: "Tasks" }, { key: "attendance", label: "Attendance" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "name", label: "Name" }, { key: "points", label: "Points" }, { key: "tasksCompleted", label: "Tasks" }, { key: "attendance", label: "Attendance" }];
+    exportToPDF("Leaderboard", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Leaderboard</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search students..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-sm text-slate-500">Top performers based on points earned</p>
         </div>
         <div className="flex gap-2">

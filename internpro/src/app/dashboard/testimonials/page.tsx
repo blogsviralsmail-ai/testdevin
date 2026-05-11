@@ -1,9 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Testimonial { id: string; name: string; role?: string; content: string; rating: number; avatar?: string; videoUrl?: string; isPublished: boolean; createdAt: string; }
 
 export default function TestimonialsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Testimonial | null>(null);
@@ -39,11 +42,36 @@ export default function TestimonialsPage() {
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
 
+  const getFilteredForExport = () => {
+    return (testimonials || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Testimonials", [{ key: "studentName", label: "Name" }, { key: "content", label: "Content" }, { key: "rating", label: "Rating" }, { key: "status", label: "Status" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "studentName", label: "Name" }, { key: "content", label: "Content" }, { key: "rating", label: "Rating" }, { key: "status", label: "Status" }];
+    exportToPDF("Testimonials", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Testimonials</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search testimonials..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-sm text-slate-500">Student reviews and success stories</p>
         </div>
         {isAdmin && <button onClick={() => { setEditing(null); setForm({ name: "", role: "", content: "", rating: 5, videoUrl: "", isPublished: true }); setShowForm(true); }} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Add Testimonial</button>}

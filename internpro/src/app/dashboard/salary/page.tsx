@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface SalaryRecord {
   id: string;
   enrollmentId: string;
@@ -20,6 +22,7 @@ interface SalaryRecord {
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 export default function SalaryManagementPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -66,10 +69,35 @@ export default function SalaryManagementPage() {
   const [y, m] = selectedMonth.split("-");
   const monthLabel = `${MONTHS[parseInt(m) - 1]} ${y}`;
 
+  const getFilteredForExport = () => {
+    return (salaries || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Salary Management", [{ key: "employeeName", label: "Employee" }, { key: "program", label: "Program" }, { key: "attendanceDays", label: "Days Present" }, { key: "amount", label: "Amount" }, { key: "status", label: "Status" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "employeeName", label: "Employee" }, { key: "program", label: "Program" }, { key: "attendanceDays", label: "Days Present" }, { key: "amount", label: "Amount" }, { key: "status", label: "Status" }];
+    exportToPDF("Salary Management", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white">Salary Management</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search employees..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
         <div className="flex items-center gap-3">
           <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}
             className="px-3 py-2 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white text-sm" />

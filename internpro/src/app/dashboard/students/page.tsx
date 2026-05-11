@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { getStatusColor, formatDate } from "@/lib/utils";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Enrollment {
   id: string;
   status: string;
@@ -175,11 +177,36 @@ export default function StudentsPage() {
     return "Free";
   };
 
+  const getFilteredForExport = () => {
+    return (enrollments || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Students", [{ key: "studentName", label: "Name" }, { key: "studentEmail", label: "Email" }, { key: "program", label: "Program" }, { key: "status", label: "Status" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "studentName", label: "Name" }, { key: "studentEmail", label: "Email" }, { key: "program", label: "Program" }, { key: "status", label: "Status" }];
+    exportToPDF("Students", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Students</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search students..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-slate-400 text-sm">Manage enrolled students across all programs</p>
         </div>
         <div className="flex gap-2 flex-wrap items-center">

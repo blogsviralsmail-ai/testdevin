@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { getStatusColor, formatDate } from "@/lib/utils";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface AttendanceRecord {
   id: string;
   date: string;
@@ -26,6 +28,7 @@ interface UserSession {
 }
 
 export default function AttendancePage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [user, setUser] = useState<UserSession | null>(null);
@@ -103,11 +106,36 @@ export default function AttendancePage() {
   const todayStr = new Date().toISOString().split("T")[0];
   const todayRecord = isStudent && selectedDate === todayStr ? records[0] : undefined;
 
+  const getFilteredForExport = () => {
+    return (records || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Attendance", [{ key: "studentName", label: "Name" }, { key: "date", label: "Date" }, { key: "status", label: "Status" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "studentName", label: "Name" }, { key: "date", label: "Date" }, { key: "status", label: "Status" }];
+    exportToPDF("Attendance", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Attendance</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search attendance..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-slate-400 text-sm">
             {isStudent ? "Your attendance is auto-tracked when you open this page" : "Track daily attendance for all students"}
           </p>

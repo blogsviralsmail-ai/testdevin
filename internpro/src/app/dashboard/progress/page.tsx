@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import PaymentBlockMessage from "@/components/PaymentBlockMessage";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface ProgressItem {
   id: string;
   student: { id: string; name: string; email: string; avatar?: string };
@@ -19,6 +21,7 @@ interface ProgressItem {
 }
 
 export default function ProgressPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [progress, setProgress] = useState<ProgressItem[]>([]);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [programFilter, setProgramFilter] = useState("all");
@@ -41,10 +44,35 @@ export default function ProgressPage() {
 
   if (loading) return <div className="p-6">Loading...</div>;
 
+  const getFilteredForExport = () => {
+    return (progress || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Progress", [{ key: "studentName", label: "Name" }, { key: "program", label: "Program" }, { key: "completion", label: "Completion %" }, { key: "tasksCompleted", label: "Tasks" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "studentName", label: "Name" }, { key: "program", label: "Program" }, { key: "completion", label: "Completion %" }, { key: "tasksCompleted", label: "Tasks" }];
+    exportToPDF("Progress", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">{isStudent ? "My Progress" : "Student Progress Tracker"}</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search students..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
         <p className="text-sm text-slate-500">{isStudent ? "Track your internship journey" : "Monitor student progress across all programs"}</p>
       </div>
 

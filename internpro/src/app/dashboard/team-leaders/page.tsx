@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface User {
   id: string;
   name: string;
@@ -27,6 +29,7 @@ interface Enrollment {
 }
 
 export default function TeamLeadersPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -103,11 +106,36 @@ export default function TeamLeadersPage() {
     return batches.filter((b) => b.leaderId === userId);
   };
 
+  const getFilteredForExport = () => {
+    return (users || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Team Leaders", [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }];
+    exportToPDF("Team Leaders", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Team Leaders</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search leaders..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-slate-400 text-sm">Manage team leaders and assign them to batches</p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">

@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Announcement { id: string; title: string; content: string; category: string; isPinned: boolean; targetRole: string; author: { name: string; avatar?: string }; createdAt: string; }
 
 export default function AnnouncementsPage() {
@@ -31,11 +33,36 @@ export default function AnnouncementsPage() {
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const categoryColors: Record<string, string> = { general: "bg-blue-500/10 text-[#60a5fa]", urgent: "bg-red-500/10 text-red-400", event: "bg-purple-500/10 text-[#a78bfa]" };
 
+  const getFilteredForExport = () => {
+    return (announcements || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Announcements", [{ key: "title", label: "Title" }, { key: "content", label: "Content" }, { key: "createdAt", label: "Date" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "title", label: "Title" }, { key: "content", label: "Content" }, { key: "createdAt", label: "Date" }];
+    exportToPDF("Announcements", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Announcements</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search announcements..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-sm text-slate-500">Important updates and notices</p>
         </div>
         {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ New Announcement</button>}

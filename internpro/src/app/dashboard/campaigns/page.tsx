@@ -1,9 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Campaign { id: string; title: string; subject: string; htmlContent: string; targetRole: string; status: string; scheduledAt?: string; sentAt?: string; sentCount: number; openCount: number; clickCount: number; createdAt: string; }
 
 export default function CampaignsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ title: "", subject: "", htmlContent: "", targetRole: "all", scheduledAt: "" });
@@ -32,11 +35,36 @@ export default function CampaignsPage() {
 
   const statusColors: Record<string, string> = { draft: "bg-transparent text-slate-400", scheduled: "bg-blue-500/10 text-[#60a5fa]", sent: "bg-emerald-500/10 text-emerald-400" };
 
+  const getFilteredForExport = () => {
+    return (campaigns || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Campaigns", [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Created" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Created" }];
+    exportToPDF("Campaigns", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Email Campaigns</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search campaigns..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-sm text-slate-500">Create and send bulk email campaigns</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ New Campaign</button>

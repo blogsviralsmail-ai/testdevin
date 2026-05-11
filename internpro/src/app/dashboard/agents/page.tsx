@@ -1,12 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Enrollment { id: string; status: string; preferredMode?: string; feeType?: string; feeAmount?: number; stipendAmount?: number; batch?: { name: string; program?: { title: string } } }
 interface ReferralStudent { id?: string; name: string; email: string; phone?: string; collegeName?: string; degree?: string; state?: string; enrollments?: Enrollment[] }
 interface Referral { id: string; status: string; commission: number; amount: number; createdAt: string; student?: ReferralStudent }
 interface Agent { id: string; userId: string; referralCode: string; commissionRate: number; totalEarnings: number; walletBalance: number; bankName?: string; accountNumber?: string; ifscCode?: string; upiId?: string; isActive: boolean; user: { id: string; name: string; email: string; phone?: string; avatar?: string }; referrals: Referral[]; payouts: { id: string; amount: number; status: string; method: string; createdAt: string }[]; }
 
 export default function AgentsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [showPayout, setShowPayout] = useState<string | null>(null);
@@ -39,12 +42,37 @@ export default function AgentsPage() {
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const isAgent = user?.role === "agent";
 
+  const getFilteredForExport = () => {
+    return (agents || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Agents", [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }, { key: "commissionRate", label: "Commission %" }, { key: "totalEarnings", label: "Earnings" }, { key: "walletBalance", label: "Balance" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }, { key: "commissionRate", label: "Commission %" }, { key: "totalEarnings", label: "Earnings" }, { key: "walletBalance", label: "Balance" }];
+    exportToPDF("Agents", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   // Agent Panel View
   if (isAgent && agents.length === 1) {
     const agent = agents[0];
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Agent Dashboard</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search agents..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-5 text-white">
             <p className="text-sm opacity-80">Total Earnings</p>

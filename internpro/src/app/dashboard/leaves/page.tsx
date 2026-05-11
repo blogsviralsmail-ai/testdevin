@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface LeaveInfo {
   id: string;
   userId: string;
@@ -17,6 +19,7 @@ interface LeaveInfo {
 }
 
 export default function LeavesManagementPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [leaves, setLeaves] = useState<LeaveInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -48,9 +51,34 @@ export default function LeavesManagementPage() {
   const approvedCount = leaves.filter(l => l.status === "approved").length;
   const rejectedCount = leaves.filter(l => l.status === "rejected").length;
 
+  const getFilteredForExport = () => {
+    return (leaves || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Leave Requests", [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "status", label: "Status" }, { key: "reason", label: "Reason" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "status", label: "Status" }, { key: "reason", label: "Reason" }];
+    exportToPDF("Leave Requests", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-bold text-white">Leave Management</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search leave requests..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">

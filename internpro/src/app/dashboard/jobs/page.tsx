@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface JobApplication { id: string; userId: string; user?: { name: string; email: string; phone?: string }; resume?: string; coverNote?: string; status: string; createdAt: string; }
 interface Job { id: string; title: string; company: string; description: string; location?: string; salary?: string; type: string; skills?: string; isActive: boolean; hasApplied: boolean; applicationCount: number; applications?: JobApplication[]; createdAt: string; }
 
 export default function JobsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [user, setUser] = useState<{ role: string } | null>(null);
@@ -43,11 +46,36 @@ export default function JobsPage() {
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
 
+  const getFilteredForExport = () => {
+    return (jobs || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Jobs", [{ key: "title", label: "Title" }, { key: "company", label: "Company" }, { key: "location", label: "Location" }, { key: "type", label: "Type" }, { key: "salary", label: "Salary" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "title", label: "Title" }, { key: "company", label: "Company" }, { key: "location", label: "Location" }, { key: "type", label: "Type" }, { key: "salary", label: "Salary" }];
+    exportToPDF("Jobs", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Job Board</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search jobs..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-sm text-slate-500">Placement opportunities for top performers</p>
         </div>
         {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Post Job</button>}

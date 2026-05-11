@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface User {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [filter, setFilter] = useState("");
   const [editUser, setEditUser] = useState<User | null>(null);
@@ -69,11 +72,36 @@ export default function UsersPage() {
     return colors[role] || "bg-transparent text-slate-300";
   };
 
+  const getFilteredForExport = () => {
+    return (users || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "Users", [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "role", label: "Role" }, { key: "isActive", label: "Active" }, { key: "createdAt", label: "Joined" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "role", label: "Role" }, { key: "isActive", label: "Active" }, { key: "createdAt", label: "Joined" }];
+    exportToPDF("Users", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">User Management</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search users..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
           <p className="text-slate-400 text-sm">Manage all platform users — create, edit, delete</p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">

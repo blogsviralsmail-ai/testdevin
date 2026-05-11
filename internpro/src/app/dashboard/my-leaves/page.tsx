@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+import DataToolbar from "@/components/DataToolbar";
+import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface LeaveInfo {
   id: string;
   leaveType: string;
@@ -23,6 +25,7 @@ interface HolidayInfo {
 }
 
 export default function MyLeavesPage() {
+  const [searchQuery, setSearchQuery] = useState("");
   const [leaves, setLeaves] = useState<LeaveInfo[]>([]);
   const [holidays, setHolidays] = useState<HolidayInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +61,35 @@ export default function MyLeavesPage() {
   const totalLeaveDays = leaves.filter(l => l.status === "approved").reduce((a, b) => a + b.totalDays, 0);
   const upcomingHolidays = holidays.filter(h => new Date(h.date) >= new Date());
 
+  const getFilteredForExport = () => {
+    return (leaves || []) as unknown as Record<string, unknown>[];
+  };
+
+  const handleExportCSV = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    exportToCSV(data as Record<string, unknown>[], "My Leaves", [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "reason", label: "Reason" }, { key: "status", label: "Status" }]);
+  };
+
+  const handleExportPDF = () => {
+    const data = getFilteredForExport();
+    if (!data.length) return alert("No data to export");
+    const cols = [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "reason", label: "Reason" }, { key: "status", label: "Status" }];
+    exportToPDF("My Leaves", buildTableHTML(data as Record<string, unknown>[], cols));
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white">Leaves & Holidays</h1>
+      
+        <DataToolbar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search leaves..."
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+        />
         <button onClick={() => setShowApply(true)}
           className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm font-medium hover:bg-[#0d96a7] transition-all transform hover:scale-[1.02] shadow-lg">
           Apply for Leave
