@@ -19,7 +19,33 @@ interface Program {
   _count: { batches: number };
 }
 
-const benefits = [
+interface SiteSettings {
+  whatsapp_number?: string;
+  homepage_video_url?: string;
+  homepage_video_enabled?: string;
+  company_name?: string;
+  company_logo?: string;
+}
+
+interface HomeContent {
+  heroTitle?: string;
+  heroHighlight?: string;
+  heroSubtitle?: string;
+  heroBadge?: string;
+  benefits?: { icon: string; title: string; desc: string }[];
+  features?: { icon: string; title: string; desc: string }[];
+  testimonials?: { name: string; role: string; text: string; rating: number }[];
+  stats?: { number: string; label: string; icon: string }[];
+  steps?: { step: string; title: string; desc: string }[];
+  whyChooseTitle?: string;
+  whyChooseSubtitle?: string;
+  programsSectionTitle?: string;
+  programsSectionSubtitle?: string;
+  ctaTitle?: string;
+  ctaSubtitle?: string;
+}
+
+const defaultBenefits = [
   { icon: "🎯", title: "Industry-Ready Skills", desc: "Work on real projects used by companies. Build a portfolio that gets you hired, not just a certificate." },
   { icon: "📜", title: "UGC-Compliant Certificate", desc: "Get a verified certificate with QR code. Recognized by universities and employers across India." },
   { icon: "💼", title: "Offer Letter on Day 1", desc: "Receive a professional offer letter as soon as you join. Perfect for college credit and placement records." },
@@ -28,7 +54,7 @@ const benefits = [
   { icon: "🏆", title: "Experience Letter + LOR", desc: "Complete your internship and receive an experience letter and letter of recommendation." },
 ];
 
-const features = [
+const defaultFeatures = [
   { icon: "📚", title: "Program Management", desc: "Create online/offline/hybrid programs with flexible pricing — Free, Paid, or Stipend models." },
   { icon: "📅", title: "Smart Attendance", desc: "QR code scan for offline, auto login tracking for online. Real-time reports & reminders." },
   { icon: "🎥", title: "Video LMS", desc: "Upload video lessons & materials. Students learn at their own pace and complete daily tasks." },
@@ -39,40 +65,56 @@ const features = [
   { icon: "📊", title: "Analytics Dashboard", desc: "Real-time stats — revenue, attendance, performance tracking for admin, leaders, and students." },
 ];
 
-const testimonials = [
+const defaultTestimonials = [
   { name: "Priya Sharma", role: "Digital Marketing Intern", text: "This platform made my internship experience seamless. The daily video lessons and task system helped me learn faster than any classroom.", rating: 5 },
   { name: "Arjun Mehta", role: "Web Development Intern", text: "Got my offer letter on day 1 and certificate with QR verification. My college accepted it instantly for placement credit.", rating: 5 },
   { name: "Sneha Patel", role: "Graphic Design Intern", text: "The mentorship was amazing. I built a real portfolio during the internship that helped me land my first freelance client.", rating: 5 },
 ];
 
-const stats = [
+const defaultStats = [
   { number: "10,000+", label: "Students Certified", icon: "🎓" },
   { number: "500+", label: "Programs Created", icon: "📚" },
   { number: "100+", label: "Institutes Trust Us", icon: "🏛️" },
   { number: "95%", label: "Satisfaction Rate", icon: "⭐" },
 ];
 
-const steps = [
+const defaultSteps = [
   { step: "01", title: "Choose Your Program", desc: "Browse 13+ internship domains — Marketing, Tech, Design, HR and more. Pick what excites you." },
   { step: "02", title: "Get Your Offer Letter", desc: "Register, get instant offer letter. Start your internship journey with professional documentation." },
   { step: "03", title: "Learn & Build Daily", desc: "Watch video lessons, complete daily tasks, submit work. Track your progress on the dashboard." },
   { step: "04", title: "Get Certified", desc: "Complete the program and receive your QR-verified certificate, experience letter, and LOR." },
 ];
 
+const btn3d = "relative transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0";
+const btn3dStyle = (bg: string, shadow: string) => ({
+  background: bg,
+  boxShadow: `0 4px 0 ${shadow}, 0 6px 20px rgba(0,0,0,0.3)`,
+  textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+});
+
 export default function Home() {
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [modeFilter, setModeFilter] = useState<string>("all");
+  const [showPopup, setShowPopup] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>({});
+  const [cms, setCms] = useState<HomeContent>({});
   const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setIsVisible(true);
-    fetch("/api/programs?published=true").then(r => r.ok ? r.json() : []).then(data => {
-      setPrograms(data);
-    }).catch(() => {});
+    fetch("/api/programs?published=true").then(r => r.ok ? r.json() : []).then(data => setPrograms(data)).catch(() => {});
+    fetch("/api/settings/public").then(r => r.ok ? r.json() : {}).then(data => setSettings(data)).catch(() => {});
+    fetch("/api/site-content?slug=homepage").then(r => r.ok ? r.json() : null).then(d => { if (d) try { setCms(JSON.parse(d.content)); } catch {} }).catch(() => {});
   }, []);
+
+  const benefits = cms.benefits?.length ? cms.benefits : defaultBenefits;
+  const features = cms.features?.length ? cms.features : defaultFeatures;
+  const testimonials = cms.testimonials?.length ? cms.testimonials : defaultTestimonials;
+  const stats = cms.stats?.length ? cms.stats : defaultStats;
+  const steps = cms.steps?.length ? cms.steps : defaultSteps;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -81,19 +123,32 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Apply Now popup after 20 seconds
   useEffect(() => {
-    if (programs.length > 0) {
-      const interval = setInterval(() => {
-        setCurrentSlide(prev => (prev + 1) % Math.min(programs.length, 6));
-      }, 4000);
-      return () => clearInterval(interval);
-    }
-  }, [programs]);
+    const timer = setTimeout(() => setShowPopup(true), 20000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const domainColors: Record<string, string> = {
     Technology: "#0EA5B8", Marketing: "#a78bfa", Design: "#FF6B6B", Business: "#f59e0b",
     Finance: "#34d399", Science: "#60a5fa", Arts: "#f472b6", default: "#94a3b8",
   };
+
+  const videoEnabled = settings.homepage_video_enabled === "true";
+  const videoUrl = settings.homepage_video_url || "https://www.youtube.com/watch?v=elz6HHphxP4";
+  const getYoutubeId = (url: string) => {
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?]+)/);
+    return m ? m[1] : "";
+  };
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/programs", label: "Programs" },
+    { href: "/vacancies", label: "Openings" },
+    { href: "/team", label: "Our Team" },
+    { href: "/contact", label: "Contact Us" },
+    { href: "/about", label: "About Us" },
+  ];
 
   return (
     <div className="min-h-screen" style={{background: '#0a0e1a', color: '#f1f5f9'}}>
@@ -108,59 +163,81 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-50" style={{background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)'}}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-            <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
+            {settings.company_logo ? (
+              <img src={settings.company_logo} alt="Logo" className="h-10 w-auto" />
+            ) : (
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>KM</div>
+            )}
+            <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+              {settings.company_name || "KKHS Media"}
+            </span>
           </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-sm text-white font-semibold transition">Home</Link>
-            <Link href="/programs" className="text-sm text-slate-400 hover:text-white transition">Programs</Link>
-            <Link href="/vacancies" className="text-sm text-slate-400 hover:text-white transition">Openings</Link>
-            <Link href="/about" className="text-sm text-slate-400 hover:text-white transition">About Us</Link>
+          <div className="hidden md:flex items-center gap-2">
+            {navLinks.map((l) => (
+              <Link key={l.href} href={l.href} className={`text-sm px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 ${l.href === "/" ? "text-white" : "text-slate-400 hover:text-white"}`}
+                style={l.href === "/" ? {background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 3px 0 #0a7c8a, 0 4px 12px rgba(14,165,184,0.3)'} : {background: 'rgba(255,255,255,0.05)', boxShadow: '0 3px 0 rgba(255,255,255,0.03), 0 4px 8px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)'}}>
+                {l.label}
+              </Link>
+            ))}
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-slate-300 hover:text-white transition px-4 py-2">Login</Link>
-            <Link href="/register" className="text-sm text-white px-5 py-2.5 rounded-xl transition-all hover:shadow-[0_0_30px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>Get Started Free</Link>
+            <Link href="/login" className={`text-sm text-white px-5 py-2.5 rounded-xl font-semibold ${btn3d}`}
+              style={{background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 0 #3730a3, 0 6px 15px rgba(99,102,241,0.3)'}}>
+              Login
+            </Link>
+            <Link href="/register" className={`hidden sm:inline-flex text-sm text-white px-5 py-2.5 rounded-xl font-semibold ${btn3d}`}
+              style={btn3dStyle('linear-gradient(135deg, #0EA5B8, #0891b2)', '#0a7c8a')}>
+              Get Started
+            </Link>
+            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white text-2xl ml-2">
+              {mobileMenu ? "✕" : "☰"}
+            </button>
           </div>
         </div>
+        {/* Mobile Menu */}
+        {mobileMenu && (
+          <div className="md:hidden px-6 pb-4 space-y-2" style={{background: 'rgba(10,14,26,0.95)'}}>
+            {navLinks.map((l) => (
+              <Link key={l.href} href={l.href} onClick={() => setMobileMenu(false)} className="block text-sm px-4 py-2.5 rounded-xl text-slate-300 hover:text-white transition" style={{background: 'rgba(255,255,255,0.05)'}}>
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* ===== HERO SECTION ===== */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-20 pb-16 overflow-hidden">
-        {/* Animated grid lines */}
         <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
         
         <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-          {/* Badge */}
           <div className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{background: 'rgba(14,165,184,0.1)', border: '1px solid rgba(14,165,184,0.2)', color: '#22d3ee'}}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{background: '#22d3ee'}} />
-            Trusted by 10,000+ Students & 100+ Institutes
+            {cms.heroBadge || "A Product of KKHS Media Private Limited"}
           </div>
 
-          {/* Main Headline */}
           <h1 className={`text-5xl sm:text-6xl md:text-7xl font-black leading-tight mb-6 tracking-tight transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            Land Your Dream{" "}
+            {cms.heroTitle || "Launch Your Career with"}{" "}
             <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa, #FF6B6B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
-              Online Internship
+              {cms.heroHighlight || "Real Internships"}
             </span>
           </h1>
 
-          {/* Subheadline */}
           <p className={`text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            Real Experience, Real Growth. Get industry-ready with video lessons, daily tasks,
-            expert mentorship, and verified certificates — all from home.
+            {cms.heroSubtitle || "Real Experience, Real Growth. Get industry-ready with video lessons, daily tasks, expert mentorship, and verified certificates — powered by KKHS Media."}
           </p>
 
-          {/* CTA Buttons */}
           <div className={`flex flex-col sm:flex-row gap-4 justify-center mb-12 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <Link href="/register" className="text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:shadow-[0_0_40px_rgba(14,165,184,0.4)] hover:-translate-y-1 hover:brightness-110" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
+            <Link href="/register" className={`text-white px-8 py-4 rounded-2xl text-lg font-semibold ${btn3d}`}
+              style={btn3dStyle('linear-gradient(135deg, #0EA5B8, #0891b2)', '#0a7c8a')}>
               Start Your Internship — Free
             </Link>
-            <Link href="/programs" className="px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:bg-white/10 hover:-translate-y-1" style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1'}}>
+            <Link href="/programs" className={`px-8 py-4 rounded-2xl text-lg font-semibold ${btn3d}`}
+              style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1', boxShadow: '0 4px 0 rgba(255,255,255,0.03), 0 6px 15px rgba(0,0,0,0.2)'}}>
               Explore Programs →
             </Link>
           </div>
 
-          {/* Trust Metrics */}
           <div className={`flex flex-wrap justify-center gap-8 transition-all duration-700 delay-400 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             {["No Credit Card Required", "Instant Offer Letter", "UGC Compliant", "100% Online"].map((item) => (
               <div key={item} className="flex items-center gap-2 text-sm text-slate-500">
@@ -185,17 +262,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== WHY INTERN WITH US (BENEFITS) ===== */}
+      {/* ===== WHY CHOOSE US (BENEFITS) ===== */}
       <section id="benefits" className="relative py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <span className="text-sm font-semibold tracking-wider uppercase mb-4 inline-block" style={{color: '#22d3ee'}}>Why Choose Us</span>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-              Your Internship,{" "}
-              <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Your Advantage</span>
+              {cms.whyChooseTitle || "Your Internship,"}{" "}
+              <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>{cms.whyChooseSubtitle || "Your Advantage"}</span>
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto text-lg">
-              More than just an internship — we give you the skills, proof, and connections to launch your career.
+              {cms.heroSubtitle ? "" : "More than just an internship — we give you the skills, proof, and connections to launch your career."}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -211,6 +288,23 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* YouTube Video Section */}
+          {videoEnabled && (
+            <div className="mt-16">
+              <div className="max-w-3xl mx-auto">
+                <div className="relative w-full rounded-2xl overflow-hidden" style={{paddingBottom: '56.25%', background: '#000', border: '1px solid rgba(255,255,255,0.08)'}}>
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full"
+                    src={`https://www.youtube.com/embed/${getYoutubeId(videoUrl)}?rel=0`}
+                    title="About KKHS Media"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -257,7 +351,7 @@ export default function Home() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {features.map((f, i) => (
+            {features.map((f) => (
               <div key={f.title} className="p-6 rounded-2xl group transition-all duration-500 hover:-translate-y-1" style={{
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid rgba(255,255,255,0.06)',
@@ -312,7 +406,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== PROGRAMS CAROUSEL ===== */}
+      {/* ===== PROGRAMS SECTION ===== */}
       <section id="programs" className="relative py-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -325,8 +419,8 @@ export default function Home() {
             <div className="flex flex-wrap justify-center gap-3 mt-6">
               {[{v: "all", l: "All"}, {v: "online", l: "💻 Online"}, {v: "offline", l: "🏢 Offline"}, {v: "hybrid", l: "🔄 Hybrid"}].map((f) => (
                 <button key={f.v} onClick={() => setModeFilter(f.v)}
-                  className={`px-5 py-2 rounded-xl text-sm font-medium transition-all ${modeFilter === f.v ? "text-white shadow-lg" : "text-slate-400 hover:text-white"}`}
-                  style={modeFilter === f.v ? {background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 0 20px rgba(14,165,184,0.3)'} : {background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'}}>
+                  className={`px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 ${modeFilter === f.v ? "text-white" : "text-slate-400 hover:text-white"}`}
+                  style={modeFilter === f.v ? {background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 3px 0 #0a7c8a, 0 4px 15px rgba(14,165,184,0.3)'} : {background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 3px 0 rgba(255,255,255,0.02)'}}>
                   {f.l}
                 </button>
               ))}
@@ -357,8 +451,9 @@ export default function Home() {
                       <span className="flex items-center gap-1">⏲ {p.duration} days</span>
                       <span className="flex items-center gap-1">👥 {seatsLeft} seats left</span>
                     </div>
-                    <Link href="/register" className="block w-full text-center py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-[0_0_20px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
-                      Apply Now
+                    <Link href={`/register?program=${encodeURIComponent(p.title)}`} className={`block w-full text-center py-3 rounded-xl text-sm font-semibold text-white ${btn3d}`}
+                      style={btn3dStyle('linear-gradient(135deg, #0EA5B8, #0891b2)', '#0a7c8a')}>
+                      Apply for this Program
                     </Link>
                   </div>
                 </div>
@@ -367,7 +462,8 @@ export default function Home() {
           </div>
           {programs.length > 6 && (
             <div className="text-center mt-10">
-              <Link href="/vacancies" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:-translate-y-0.5" style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1'}}>
+              <Link href="/vacancies" className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${btn3d}`}
+                style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1', boxShadow: '0 3px 0 rgba(255,255,255,0.03), 0 4px 12px rgba(0,0,0,0.2)'}}>
                 View All {programs.length} Programs →
               </Link>
             </div>
@@ -390,10 +486,12 @@ export default function Home() {
                 Join 10,000+ students who launched their careers with our internship programs. Free to start, no credit card needed.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/register" className="text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:shadow-[0_0_40px_rgba(14,165,184,0.4)] hover:-translate-y-1" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
+                <Link href="/register" className={`text-white px-8 py-4 rounded-2xl text-lg font-semibold ${btn3d}`}
+                  style={btn3dStyle('linear-gradient(135deg, #0EA5B8, #0891b2)', '#0a7c8a')}>
                   Start Free Internship
                 </Link>
-                <Link href="/login" className="px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:bg-white/10" style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1'}}>
+                <Link href="/login" className={`px-8 py-4 rounded-2xl text-lg font-semibold ${btn3d}`}
+                  style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1', boxShadow: '0 4px 0 rgba(255,255,255,0.03), 0 6px 15px rgba(0,0,0,0.2)'}}>
                   Login to Dashboard
                 </Link>
               </div>
@@ -408,41 +506,91 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-                <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
+                {settings.company_logo ? (
+                  <img src={settings.company_logo} alt="Logo" className="h-10 w-auto" />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>KM</div>
+                )}
+                <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+                  {settings.company_name || "KKHS Media"}
+                </span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-                Complete internship management platform — student onboarding, video LMS, task management, auto certificates, and payment tracking. Trusted by 100+ institutes.
+                A product of KKHS Media Private Limited. Complete internship management platform — student onboarding, video LMS, task management, auto certificates, and payment tracking.
               </p>
             </div>
             <div>
               <h4 className="text-sm font-bold text-white mb-4">Platform</h4>
               <div className="space-y-2">
-                <Link href="/programs" className="block text-sm text-slate-500 hover:text-white transition">Programs</Link>
-                <Link href="/vacancies" className="block text-sm text-slate-500 hover:text-white transition">Openings</Link>
-                <Link href="/register" className="block text-sm text-slate-500 hover:text-white transition">Register</Link>
-                <Link href="/login" className="block text-sm text-slate-500 hover:text-white transition">Login</Link>
+                <Link href="/programs" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Programs</Link>
+                <Link href="/vacancies" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Openings</Link>
+                <Link href="/register" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Register</Link>
+                <Link href="/login" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Login</Link>
               </div>
             </div>
             <div>
               <h4 className="text-sm font-bold text-white mb-4">Company</h4>
               <div className="space-y-2">
-                <Link href="/about" className="block text-sm text-slate-500 hover:text-white transition">About Us</Link>
-                <Link href="/privacy-policy" className="block text-sm text-slate-500 hover:text-white transition">Privacy Policy</Link>
-                <Link href="/terms" className="block text-sm text-slate-500 hover:text-white transition">Terms & Conditions</Link>
+                <Link href="/about" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>About Us</Link>
+                <Link href="/privacy-policy" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Privacy Policy</Link>
+                <Link href="/terms" className={`block text-sm text-slate-500 hover:text-white transition-all duration-300 transform hover:translate-x-1 px-3 py-1.5 rounded-lg hover:bg-white/5`}>Terms & Conditions</Link>
               </div>
             </div>
           </div>
           <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
-            <p className="text-slate-600 text-sm">&copy; {new Date().getFullYear()} KKHS Media Private Limited. All rights reserved.</p>
+            <p className="text-slate-600 text-sm">&copy; 2020 KKHS Media Private Limited. All rights reserved.</p>
             <div className="flex items-center gap-6 text-sm text-slate-600">
               <Link href="/about" className="hover:text-white transition">About</Link>
               <Link href="/privacy-policy" className="hover:text-white transition">Privacy</Link>
               <Link href="/terms" className="hover:text-white transition">Terms</Link>
+              <Link href="/contact" className="hover:text-white transition">Contact</Link>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* ===== APPLY NOW POPUP (20 sec) ===== */}
+      {showPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'}}>
+          <div className="relative max-w-md w-full rounded-3xl p-8 text-center animate-bounce-in" style={{background: '#111827', border: '1px solid rgba(14,165,184,0.3)', boxShadow: '0 0 60px rgba(14,165,184,0.15)'}}>
+            <button onClick={() => setShowPopup(false)} className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${btn3d}`}
+              style={{background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 3px 0 #991b1b'}}>
+              ✕
+            </button>
+            <div className="text-5xl mb-4">🚀</div>
+            <h3 className="text-2xl font-black text-white mb-2">Ready to Apply?</h3>
+            <p className="text-slate-400 mb-6">Start your internship journey today. Free to join, no credit card required!</p>
+            <Link href="/register" onClick={() => setShowPopup(false)} className={`inline-block text-white px-8 py-4 rounded-2xl text-lg font-semibold w-full ${btn3d}`}
+              style={btn3dStyle('linear-gradient(135deg, #0EA5B8, #0891b2)', '#0a7c8a')}>
+              Apply Now — Free
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* ===== WHATSAPP WIDGET ===== */}
+      {settings.whatsapp_number && (
+        <a href={`https://wa.me/${settings.whatsapp_number.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl transition-all hover:scale-110 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)]"
+          style={{background: '#25d366', boxShadow: '0 4px 0 #1da851, 0 6px 20px rgba(37,211,102,0.3)'}}>
+          💬
+        </a>
+      )}
+
+      <style jsx>{`
+        @keyframes morphBlob {
+          0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+          25% { border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%; }
+          50% { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
+          75% { border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%; }
+        }
+        @keyframes bounce-in {
+          0% { transform: scale(0.5); opacity: 0; }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-bounce-in { animation: bounce-in 0.5s ease-out; }
+      `}</style>
     </div>
   );
 }

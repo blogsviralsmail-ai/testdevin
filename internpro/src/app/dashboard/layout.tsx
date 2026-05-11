@@ -64,6 +64,8 @@ const navItems = [
   { href: "/dashboard/activity-log", label: "Activity Log", icon: "🕐", roles: ["admin", "organization"] },
   { href: "/dashboard/users", label: "Users", icon: "🔑", roles: ["admin"] },
   { href: "/dashboard/role-management", label: "Role Management", icon: "🛡️", roles: ["admin"] },
+  { href: "/dashboard/team-members", label: "Team Members", icon: "👥", roles: ["admin"] },
+  { href: "/dashboard/inquiries", label: "Contact Inquiries", icon: "📩", roles: ["admin"] },
   { href: "/dashboard/site-content", label: "Site Content", icon: "🌐", roles: ["admin"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
@@ -243,6 +245,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     "/dashboard/activity-log": "activity_log.view",
     "/dashboard/users": "users.view",
     "/dashboard/role-management": "roles.view",
+    "/dashboard/team-members": "site_content.manage",
+    "/dashboard/inquiries": "site_content.manage",
     "/dashboard/site-content": "site_content.manage",
     "/dashboard/settings": "settings.view",
   };
