@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { escapeHtml, generateUniqueId } from "@/lib/utils";
 import { sendLetterGeneratedEmail } from "@/lib/email";
 import { logActivity } from "@/lib/activity";
+import { generateQRDataUri } from "@/lib/qr";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     const siteUrl = sMap.site_url || "https://internship.kkhsmedia.com";
     const verifyUrl = `${siteUrl}/verify?number=${letterNumber}`;
-    const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(verifyUrl)}`;
+    const qrImg = await generateQRDataUri(verifyUrl, 70);
 
     const todayDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
     const joiningDateFormatted = joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : todayDate;
@@ -356,7 +357,7 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
       // Send ID Card email separately with PDF (non-blocking)
       const idCard = await prisma.employeeCard.findFirst({ where: { userId: enrollment.studentId }, orderBy: { createdAt: "desc" } });
       if (idCard) {
-        const idQr = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(siteUrl + "/verify/card/" + idCard.cardNumber)}`;
+        const idQr = await generateQRDataUri(siteUrl + "/verify/card/" + idCard.cardNumber, 80);
         const photo = student.avatar || "";
         const photoHtml = photo ? `<img src="${photo.startsWith("http") ? photo : siteUrl + photo}" style="width:100%;height:100%;object-fit:cover;" />` : `<div style="font-size:40px;color:#2563eb;">👤</div>`;
         const idCardHtml = `<div style="font-family:'Segoe UI','Calibri',Arial,sans-serif;width:210mm;padding:30mm 50mm;background:white;display:flex;flex-direction:column;align-items:center;gap:20px;">

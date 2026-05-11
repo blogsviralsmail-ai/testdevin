@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { escapeHtml, generateUniqueId } from "@/lib/utils";
 import { sendLetterGeneratedEmail } from "@/lib/email";
+import { generateQRDataUri } from "@/lib/qr";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
     // QR code for verification
     const siteUrl = sMap.site_url || "https://internship.kkhsmedia.com";
     const verifyUrl = `${siteUrl}/verify?number=${letterNumber}`;
-    const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(verifyUrl)}`;
+    const qrImg = await generateQRDataUri(verifyUrl, 70);
 
     const safeOrgName = escapeHtml(org.name);
     const safeStudentName = escapeHtml(enrollment.student.name);

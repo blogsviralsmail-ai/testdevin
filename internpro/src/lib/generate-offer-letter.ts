@@ -3,6 +3,7 @@ import { escapeHtml, generateUniqueId } from "@/lib/utils";
 import { sendLetterGeneratedEmail } from "@/lib/email";
 import { logActivity } from "@/lib/activity";
 import { generateEmployeeId } from "@/lib/employee-id";
+import { generateQRDataUri } from "@/lib/qr";
 
 export async function generateOfferLetterForEnrollment(enrollmentId: string, actorId: string, actorName: string): Promise<{ success: boolean; letterNumber?: string; error?: string }> {
   try {
@@ -37,7 +38,7 @@ export async function generateOfferLetterForEnrollment(enrollmentId: string, act
     const cardNumber = generateUniqueId("EMP");
     const siteUrl = sMap.site_url || "https://internship.kkhsmedia.com";
     const verifyUrl = `${siteUrl}/verify?number=${letterNumber}`;
-    const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(verifyUrl)}`;
+    const qrImg = await generateQRDataUri(verifyUrl, 70);
     const todayDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
     const joiningDateFormatted = enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : todayDate;
 

@@ -17,16 +17,14 @@ interface ProgramType {
   highlights: string[];
 }
 
-// Fallback images for each program type — high quality stock photos from Unsplash
+// Local SVG placeholders — no external dependencies, never expires
+const makePlaceholder = (color1: string, color2: string, icon: string) =>
+  `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:${color1}"/><stop offset="100%" style="stop-color:${color2}"/></linearGradient></defs><rect width="600" height="400" fill="url(#g)"/><text x="300" y="200" font-size="80" text-anchor="middle" dominant-baseline="central">${icon}</text></svg>`)}`;
 const fallbackImages: Record<string, string> = {
-  premium_paid_training:
-    "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop&q=80",
-  basic_certification:
-    "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&h=400&fit=crop&q=80",
-  free_hybrid_internship:
-    "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&h=400&fit=crop&q=80",
-  stipend_office_internship:
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=400&fit=crop&q=80",
+  premium_paid_training: makePlaceholder("#0EA5B8", "#6366f1", "🎓"),
+  basic_certification: makePlaceholder("#8b5cf6", "#ec4899", "📜"),
+  free_hybrid_internship: makePlaceholder("#f59e0b", "#ef4444", "💼"),
+  stipend_office_internship: makePlaceholder("#10b981", "#0EA5B8", "🏢"),
 };
 
 // SVG icons for each mode

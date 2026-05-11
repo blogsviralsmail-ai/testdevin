@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { generateQRDataUri } from "@/lib/qr";
 
 function escapeHtml(s: string) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   const siteUrl = sMap.site_url || "https://internship.kkhsmedia.com";
   const verifyUrl = `${siteUrl}/verify?number=${encodeURIComponent(refNo)}`;
-  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(verifyUrl)}`;
+  const qrImg = await generateQRDataUri(verifyUrl, 80);
 
   // Landscape A4: 297mm x 210mm
   const html = `<div style="font-family:'Calibri','Segoe UI',Arial,sans-serif;margin:0 auto;padding:0;background:white;color:#222;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">
