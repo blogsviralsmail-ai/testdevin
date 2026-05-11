@@ -405,12 +405,12 @@ export default function StudentsPage() {
       {/* View Profile Modal */}
       {viewProfile && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-white">Student Profile</h2>
               <button onClick={() => setViewProfile(null)} className="text-slate-500 hover:text-slate-400 text-xl">&times;</button>
             </div>
-            <div className="flex items-center gap-4 mb-5 pb-4 border-b">
+            <div className="flex items-center gap-4 mb-5 pb-4 border-b border-white/10">
               <div className="w-20 h-20 rounded-full bg-[#0EA5B8]/10 flex items-center justify-center text-[#22d3ee] text-2xl font-bold overflow-hidden border-2 border-[#0EA5B8]/20">
                 {viewProfile.student.avatar ? (
                   <img src={viewProfile.student.avatar} className="w-full h-full object-cover" alt="" />
@@ -457,7 +457,7 @@ export default function StudentsPage() {
                 <div><span className="text-slate-500 text-xs">Work Timing</span><p className="font-medium text-white">{viewProfile.workTiming || "—"}</p></div>
               </div>
             </div>
-            <button onClick={() => setViewProfile(null)} className="mt-5 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
+            <button onClick={() => setViewProfile(null)} className="mt-5 w-full px-4 py-2.5 rounded-lg text-white font-medium transition-all hover:opacity-90" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
               Close
             </button>
           </div>
