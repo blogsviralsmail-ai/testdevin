@@ -204,6 +204,51 @@ export default function IDCardsPage() {
     printWindow.document.close();
   };
 
+  const handleEmailIDCard = async (card: EmployeeCard) => {
+    const photoSrc = card.user.avatar || card.photoUrl || "";
+    const idCardHtml = `<div style="font-family:'Segoe UI','Calibri',Arial,sans-serif;max-width:600px;margin:0 auto;">
+<div style="text-align:center;margin-bottom:20px;">
+  <h2 style="color:#0000AA;margin:0;">Employee ID Card</h2>
+  <p style="color:#666;font-size:13px;margin:4px 0 0;">Please find the ID card details below</p>
+</div>
+<div style="width:240px;margin:0 auto 20px;border-radius:12px;overflow:hidden;background:white;box-shadow:0 4px 20px rgba(0,0,0,0.15);border:1px solid #e0e0e0;">
+  <div style="background:linear-gradient(135deg,#1a365d,#2563eb);padding:12px 10px;text-align:center;">
+    <img src="${companyLogo.startsWith("http") ? companyLogo : "https://internship.kkhsmedia.com" + companyLogo}" alt="${companyName}" style="height:28px;display:inline-block;" />
+    <div style="font-size:8px;color:white;font-weight:700;margin-top:3px;letter-spacing:0.5px;">${companyName}</div>
+  </div>
+  <div style="text-align:center;padding:12px 0 8px;">
+    ${photoSrc ? `<img src="${photoSrc.startsWith("http") ? photoSrc : "https://internship.kkhsmedia.com" + photoSrc}" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;object-fit:cover;" />` : `<div style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;background:#f0f4ff;display:inline-flex;align-items:center;justify-content:center;font-size:32px;color:#2563eb;margin:0 auto;">👤</div>`}
+  </div>
+  <div style="text-align:center;padding:4px 10px;">
+    <div style="font-size:14px;font-weight:800;color:#1a202c;">${card.user.name}</div>
+    <span style="display:inline-block;background:#2563eb;color:white;font-size:8px;font-weight:700;padding:2px 10px;border-radius:10px;text-transform:uppercase;margin-top:4px;">${card.designation}</span>
+  </div>
+  <div style="padding:8px 16px 12px;">
+    <div style="font-size:9px;margin-bottom:4px;"><strong style="color:#1a202c;">ID No:</strong> <span style="color:#4a5568;">${card.cardNumber}</span></div>
+    <div style="font-size:9px;margin-bottom:4px;"><strong style="color:#1a202c;">Email:</strong> <span style="color:#4a5568;">${card.user.email}</span></div>
+    ${card.user.phone ? `<div style="font-size:9px;margin-bottom:4px;"><strong style="color:#1a202c;">Phone:</strong> <span style="color:#4a5568;">${card.user.phone}</span></div>` : ""}
+    <div style="font-size:9px;"><strong style="color:#1a202c;">Valid:</strong> <span style="color:#4a5568;">${new Date(card.validFrom).toLocaleDateString("en-IN")} - ${new Date(card.validUntil).toLocaleDateString("en-IN")}</span></div>
+  </div>
+</div>
+</div>`;
+
+    try {
+      const res = await fetch("/api/send-letter-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: card.user.email, subject: `ID Card — ${card.user.name}`, htmlContent: idCardHtml }),
+      });
+      if (res.ok) { alert("ID Card emailed successfully to " + card.user.email); }
+      else {
+        const data = await res.json().catch(() => ({}));
+        alert("Failed: " + (data.error || `Server returned ${res.status}`));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert("Network error: " + msg);
+    }
+  };
+
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const isStudent = user?.role === "student";
 
@@ -333,10 +378,11 @@ export default function IDCardsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-5 justify-center">
+            <div className="flex gap-3 mt-5 justify-center flex-wrap">
               <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm hover:bg-white/20 font-medium">← Back</button>
               <button onClick={() => handlePrint(previewCard)} className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] font-medium">Print (Both Sides)</button>
               <button onClick={() => handlePrint(previewCard)} className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-red-700 font-medium">Download PDF</button>
+              <button onClick={async (e) => { const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Sending..."; await handleEmailIDCard(previewCard); btn.disabled = false; btn.textContent = "📧 Email"; }} className="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-emerald-700 font-medium">📧 Email</button>
               <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg text-sm hover:bg-red-500/30 font-medium">✕ Close</button>
             </div>
           </div>
@@ -371,6 +417,7 @@ export default function IDCardsPage() {
               <div className="px-4 pb-3 flex gap-2">
                 <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-[#0EA5B8]/10 text-[#22d3ee] border border-[#0EA5B8]/30 px-3 py-1.5 rounded-lg hover:bg-[#0EA5B8]/20 font-medium">View</button>
                 <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/20 font-medium">Print</button>
+                <button onClick={async (e) => { const btn = e.currentTarget; btn.disabled = true; btn.textContent = "..."; await handleEmailIDCard(card); btn.disabled = false; btn.textContent = "📧"; }} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 font-medium" title="Email ID Card">📧</button>
               </div>
             </div>
           ))}

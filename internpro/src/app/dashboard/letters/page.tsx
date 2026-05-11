@@ -310,12 +310,33 @@ export default function LettersPage() {
               <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-white/[0.06]">
                 {/* ID Card */}
                 {r.idCard ? (
-                  <button
-                    onClick={() => viewIDCard(r.studentId)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-                  >
-                    ID Card
-                  </button>
+                  <>
+                    <button
+                      onClick={() => viewIDCard(r.studentId)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                    >
+                      ID Card
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        const btn = e.currentTarget;
+                        btn.disabled = true; btn.textContent = "Sending...";
+                        try {
+                          const res = await fetch("/api/send-id-card-email", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ studentId: r.studentId }),
+                          });
+                          if (res.ok) alert("ID Card emailed to " + r.studentEmail);
+                          else { const d = await res.json().catch(() => ({})); alert("Failed: " + (d.error || res.status)); }
+                        } catch (err: unknown) { alert("Error: " + (err instanceof Error ? err.message : String(err))); }
+                        btn.disabled = false; btn.textContent = "📧 Email ID Card";
+                      }}
+                      className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition"
+                    >
+                      📧 Email ID Card
+                    </button>
+                  </>
                 ) : (
                   <span className="px-4 py-2 bg-transparent text-slate-500 rounded-lg text-sm border border-dashed border-white/[0.08]">ID Card — Not Generated</span>
                 )}
