@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface HolidayInfo {
   id: string;
   title: string;
@@ -59,22 +59,9 @@ export default function HolidaysManagementPage() {
 
   const upcomingCount = holidays.filter(h => new Date(h.date) >= new Date()).length;
 
-  const getFilteredForExport = () => {
-    return (holidays || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("holidays");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Holidays", [{ key: "title", label: "Title" }, { key: "date", label: "Date" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "title", label: "Title" }, { key: "date", label: "Date" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }];
-    exportToPDF("Holidays", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("holidays", "Holidays");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

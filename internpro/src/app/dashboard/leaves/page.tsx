@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface LeaveInfo {
   id: string;
   userId: string;
@@ -53,22 +53,9 @@ export default function LeavesManagementPage() {
   const approvedCount = leaves.filter(l => l.status === "approved").length;
   const rejectedCount = leaves.filter(l => l.status === "rejected").length;
 
-  const getFilteredForExport = () => {
-    return (leaves || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("leaves");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Leave Requests", [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "status", label: "Status" }, { key: "reason", label: "Reason" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "status", label: "Status" }, { key: "reason", label: "Reason" }];
-    exportToPDF("Leave Requests", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("leaves", "Leaves");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

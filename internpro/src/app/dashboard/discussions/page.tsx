@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import PaymentBlockMessage from "@/components/PaymentBlockMessage";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 
 interface Discussion { id: string; title: string; content: string; category: string; authorId: string; programId?: string; isPinned: boolean; isResolved: boolean; replyCount: number; author: { name: string; role: string }; createdAt: string; }
 interface Program { id: string; title: string; }
@@ -180,8 +180,8 @@ export default function DiscussionsPage() {
               </select>
             </>
           )}
-          <button onClick={() => { const data = discussions as unknown as Record<string, unknown>[]; if (!data.length) return; exportToCSV(data, "Discussions", [{ key: "title", label: "Title" }, { key: "category", label: "Category" }, { key: "replyCount", label: "Replies" }, { key: "createdAt", label: "Created" }]); }} className="px-3 py-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-xs font-medium hover:bg-green-500/30 flex items-center gap-1">CSV</button>
-          <button onClick={() => { const data = discussions as unknown as Record<string, unknown>[]; if (!data.length) return; exportToPDF("Discussions", buildTableHTML(data, [{ key: "title", label: "Title" }, { key: "category", label: "Category" }, { key: "replyCount", label: "Replies" }, { key: "createdAt", label: "Created" }])); }} className="px-3 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-medium hover:bg-red-500/30 flex items-center gap-1">PDF</button>
+          <button onClick={() => serverExportCSV("discussions")} className="px-3 py-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-xs font-medium hover:bg-green-500/30 flex items-center gap-1">CSV</button>
+          <button onClick={() => serverExportPDF("discussions", "Discussions")} className="px-3 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-medium hover:bg-red-500/30 flex items-center gap-1">PDF</button>
         </div>
       </div>
 

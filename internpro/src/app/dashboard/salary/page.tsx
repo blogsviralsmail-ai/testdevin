@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface SalaryRecord {
   id: string;
   enrollmentId: string;
@@ -71,22 +71,9 @@ export default function SalaryManagementPage() {
   const [y, m] = selectedMonth.split("-");
   const monthLabel = `${MONTHS[parseInt(m) - 1]} ${y}`;
 
-  const getFilteredForExport = () => {
-    return (salaries || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("salary");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Salary Management", [{ key: "employeeName", label: "Employee" }, { key: "program", label: "Program" }, { key: "attendanceDays", label: "Days Present" }, { key: "amount", label: "Amount" }, { key: "status", label: "Status" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "employeeName", label: "Employee" }, { key: "program", label: "Program" }, { key: "attendanceDays", label: "Days Present" }, { key: "amount", label: "Amount" }, { key: "status", label: "Status" }];
-    exportToPDF("Salary Management", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("salary", "Salary");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

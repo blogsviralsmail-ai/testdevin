@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getStatusColor, formatDate } from "@/lib/utils";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Enrollment {
   id: string;
   status: string;
@@ -193,22 +193,9 @@ export default function StudentsPage() {
     return "Free";
   };
 
-  const getFilteredForExport = () => {
-    return (enrollments || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("students");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Students", [{ key: "studentName", label: "Name" }, { key: "studentEmail", label: "Email" }, { key: "program", label: "Program" }, { key: "status", label: "Status" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "studentName", label: "Name" }, { key: "studentEmail", label: "Email" }, { key: "program", label: "Program" }, { key: "status", label: "Status" }];
-    exportToPDF("Students", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("students", "Students");
 
   return (
     <div>

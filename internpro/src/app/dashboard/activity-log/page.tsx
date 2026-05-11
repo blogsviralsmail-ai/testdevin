@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface LogEntry {
   id: string;
   userId: string | null;
@@ -47,22 +47,9 @@ export default function ActivityLogPage() {
     return "bg-transparent text-white";
   };
 
-  const getFilteredForExport = () => {
-    return (logs || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("activity-log");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Activity Log", [{ key: "action", label: "Action" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }, { key: "createdAt", label: "Date" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "action", label: "Action" }, { key: "type", label: "Type" }, { key: "description", label: "Description" }, { key: "createdAt", label: "Date" }];
-    exportToPDF("Activity Log", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("activity-log", "Activity Log");
 
   return (
     <div>

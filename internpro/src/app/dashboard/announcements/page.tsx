@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Announcement { id: string; title: string; content: string; category: string; isPinned: boolean; targetRole: string; author: { name: string; avatar?: string }; createdAt: string; }
 
 export default function AnnouncementsPage() {
@@ -35,22 +35,9 @@ export default function AnnouncementsPage() {
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const categoryColors: Record<string, string> = { general: "bg-blue-500/10 text-[#60a5fa]", urgent: "bg-red-500/10 text-red-400", event: "bg-purple-500/10 text-[#a78bfa]" };
 
-  const getFilteredForExport = () => {
-    return (announcements || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("announcements");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Announcements", [{ key: "title", label: "Title" }, { key: "content", label: "Content" }, { key: "createdAt", label: "Date" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "title", label: "Title" }, { key: "content", label: "Content" }, { key: "createdAt", label: "Date" }];
-    exportToPDF("Announcements", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("announcements", "Announcements");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

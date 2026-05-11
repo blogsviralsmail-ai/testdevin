@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Interview {
   id: string;
   scheduledAt: string;
@@ -184,22 +184,9 @@ export default function InterviewsPage() {
 
   if (loading) return <div className="p-6 text-slate-300">Loading...</div>;
 
-  const getFilteredForExport = () => {
-    return (interviews || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("interviews");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Interviews", [{ key: "studentName", label: "Student" }, { key: "program", label: "Program" }, { key: "scheduledAt", label: "Scheduled" }, { key: "status", label: "Status" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "studentName", label: "Student" }, { key: "program", label: "Program" }, { key: "scheduledAt", label: "Scheduled" }, { key: "status", label: "Status" }];
-    exportToPDF("Interviews", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("interviews", "Interviews");
 
   return (
     <div>

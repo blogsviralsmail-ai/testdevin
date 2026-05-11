@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Testimonial { id: string; name: string; role?: string; content: string; rating: number; avatar?: string; videoUrl?: string; isPublished: boolean; createdAt: string; }
 
 export default function TestimonialsPage() {
@@ -44,22 +44,9 @@ export default function TestimonialsPage() {
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
 
-  const getFilteredForExport = () => {
-    return (testimonials || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("testimonials");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Testimonials", [{ key: "studentName", label: "Name" }, { key: "content", label: "Content" }, { key: "rating", label: "Rating" }, { key: "status", label: "Status" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "studentName", label: "Name" }, { key: "content", label: "Content" }, { key: "rating", label: "Rating" }, { key: "status", label: "Status" }];
-    exportToPDF("Testimonials", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("testimonials", "Testimonials");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

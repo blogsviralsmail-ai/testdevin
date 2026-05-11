@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { formatCurrency, formatDate, getStatusColor } from "@/lib/utils";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Payment {
   id: string;
   amount: number;
@@ -91,22 +91,9 @@ export default function PaymentsPage() {
     return matchSearch && matchStatus;
   });
 
-  const getFilteredForExport = () => {
-    return (payments || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("payments");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Payments", [{ key: "studentName", label: "Name" }, { key: "amount", label: "Amount" }, { key: "method", label: "Method" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Date" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "studentName", label: "Name" }, { key: "amount", label: "Amount" }, { key: "method", label: "Method" }, { key: "status", label: "Status" }, { key: "createdAt", label: "Date" }];
-    exportToPDF("Payments", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("payments", "Payments");
 
   return (
     <div>

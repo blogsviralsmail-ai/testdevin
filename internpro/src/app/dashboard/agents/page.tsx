@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Enrollment { id: string; status: string; preferredMode?: string; feeType?: string; feeAmount?: number; stipendAmount?: number; batch?: { name: string; program?: { title: string } } }
 interface ReferralStudent { id?: string; name: string; email: string; phone?: string; collegeName?: string; degree?: string; state?: string; enrollments?: Enrollment[] }
 interface Referral { id: string; status: string; commission: number; amount: number; createdAt: string; student?: ReferralStudent }
@@ -42,22 +42,9 @@ export default function AgentsPage() {
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const isAgent = user?.role === "agent";
 
-  const getFilteredForExport = () => {
-    return (agents || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("agents");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Agents", [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }, { key: "commissionRate", label: "Commission %" }, { key: "totalEarnings", label: "Earnings" }, { key: "walletBalance", label: "Balance" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }, { key: "commissionRate", label: "Commission %" }, { key: "totalEarnings", label: "Earnings" }, { key: "walletBalance", label: "Balance" }];
-    exportToPDF("Agents", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("agents", "Agents");
 
   // Agent Panel View
   if (isAgent && agents.length === 1) {

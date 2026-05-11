@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface LeaderboardEntry { rank: number; userId: string; name: string; avatar?: string; employeeId?: string; points: number; }
 interface BadgeInfo { id: string; name: string; icon: string; description: string; threshold: number; }
 interface MyBadge { badge: BadgeInfo; earnedAt: string; }
@@ -26,22 +26,9 @@ export default function LeaderboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const getFilteredForExport = () => {
-    return (leaderboard || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("leaderboard");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Leaderboard", [{ key: "name", label: "Name" }, { key: "points", label: "Points" }, { key: "tasksCompleted", label: "Tasks" }, { key: "attendance", label: "Attendance" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "name", label: "Name" }, { key: "points", label: "Points" }, { key: "tasksCompleted", label: "Tasks" }, { key: "attendance", label: "Attendance" }];
-    exportToPDF("Leaderboard", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("leaderboard", "Leaderboard");
 
   return (
     <div className="space-y-6">

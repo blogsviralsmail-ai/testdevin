@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 
 interface PayslipInfo {
   id: string;
@@ -89,16 +89,8 @@ export default function MyPayslipsPage() {
   };
 
 
-  const handleExportCSV = () => {
-    const data = payslips as unknown as Record<string, unknown>[];
-    if (!data.length) return;
-    exportToCSV(data, "My Payslips", [{ key: "month", label: "Month" }, { key: "year", label: "Year" }, { key: "basicPay", label: "Basic Pay" }, { key: "allowances", label: "Allowances" }, { key: "deductions", label: "Deductions" }, { key: "bonus", label: "Bonus" }, { key: "netPay", label: "Net Pay" }, { key: "status", label: "Status" }]);
-  };
-  const handleExportPDF = () => {
-    const data = payslips as unknown as Record<string, unknown>[];
-    if (!data.length) return;
-    exportToPDF("My Payslips", buildTableHTML(data, [{ key: "month", label: "Month" }, { key: "year", label: "Year" }, { key: "basicPay", label: "Basic" }, { key: "netPay", label: "Net Pay" }, { key: "status", label: "Status" }]));
-  };
+  const handleExportCSV = () => serverExportCSV("my-payslips");
+  const handleExportPDF = () => serverExportPDF("my-payslips", "My Payslips");
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

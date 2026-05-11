@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Submission {
   id: string;
   taskId: string;
@@ -91,22 +91,9 @@ export default function ReviewsPage() {
   const quizPassedCount = quizAttempts.filter(a => a.passed).length;
   const quizFailedCount = quizAttempts.filter(a => !a.passed).length;
 
-  const getFilteredForExport = () => {
-    return (submissions || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("reviews");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Reviews", [{ key: "studentName", label: "Student" }, { key: "taskTitle", label: "Task" }, { key: "status", label: "Status" }, { key: "percentage", label: "Score" }, { key: "createdAt", label: "Submitted" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "studentName", label: "Student" }, { key: "taskTitle", label: "Task" }, { key: "status", label: "Status" }, { key: "percentage", label: "Score" }, { key: "createdAt", label: "Submitted" }];
-    exportToPDF("Reviews", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("reviews", "Reviews");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

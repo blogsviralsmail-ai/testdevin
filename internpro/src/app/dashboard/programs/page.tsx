@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getDomainLabel, getModeLabel, getFeeTypeLabel, formatCurrency } from "@/lib/utils";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Program {
   id: string;
   title: string;
@@ -125,22 +125,9 @@ export default function ProgramsPage() {
     else { const data = await res.json(); alert(data.error || "Failed to delete"); }
   };
 
-  const getFilteredForExport = () => {
-    return (programs || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("programs");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Programs", [{ key: "title", label: "Title" }, { key: "domain", label: "Domain" }, { key: "duration", label: "Duration" }, { key: "mode", label: "Mode" }, { key: "feeType", label: "Fee Type" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "title", label: "Title" }, { key: "domain", label: "Domain" }, { key: "duration", label: "Duration" }, { key: "mode", label: "Mode" }, { key: "feeType", label: "Fee Type" }];
-    exportToPDF("Programs", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("programs", "Programs");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

@@ -86,6 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showNotifs, setShowNotifs] = useState(false);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
+  const prevUnreadRef = useRef<number>(0);
   const [menuSearch, setMenuSearch] = useState("");
 
   const checkAuth = useCallback(async () => {
@@ -131,19 +132,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Bell sound function using Web Audio API
+  const playBellSound = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(830, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    } catch { /* silent */ }
+  }, []);
+
   // Fetch notifications periodically
   useEffect(() => {
     if (!user) return;
     const fetchNotifs = () => {
       fetch("/api/notifications").then(r => r.json()).then(data => {
         if (data.notifications) setNotifications(data.notifications);
-        if (typeof data.unreadCount === "number") setUnreadCount(data.unreadCount);
+        if (typeof data.unreadCount === "number") {
+          if (data.unreadCount > prevUnreadRef.current && prevUnreadRef.current >= 0) {
+            playBellSound();
+          }
+          prevUnreadRef.current = data.unreadCount;
+          setUnreadCount(data.unreadCount);
+        }
       }).catch(() => {});
     };
     fetchNotifs();
     const interval = setInterval(fetchNotifs, 30000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, playBellSound]);
 
   // Close notification dropdown on outside click
   useEffect(() => {
@@ -398,10 +423,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                   <div>
                     {notifications.slice(0, 10).map(n => (
-                      <div key={n.id} className="p-3 text-sm transition-colors" style={{borderBottom: '1px solid rgba(255,255,255,0.04)', background: !n.isRead ? 'rgba(14,165,184,0.05)' : 'transparent'}}>
-                        <p className="font-medium text-white">{n.title}</p>
+                      <div key={n.id} className="p-3 text-sm transition-colors cursor-pointer hover:bg-white/5" style={{borderBottom: '1px solid rgba(255,255,255,0.04)', background: !n.isRead ? 'rgba(14,165,184,0.05)' : 'transparent'}} onClick={async () => {
+                        if (!n.isRead) {
+                          await fetch("/api/notifications", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) });
+                          setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, isRead: true } : x));
+                          setUnreadCount(prev => Math.max(0, prev - 1));
+                        }
+                        setShowNotifs(false);
+                        if (n.link) router.push(n.link);
+                      }}>
+                        <div className="flex items-center gap-2">
+                          {!n.isRead && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: '#0EA5B8'}} />}
+                          <p className="font-medium text-white">{n.title}</p>
+                        </div>
                         <p className="text-slate-500 text-xs mt-0.5">{n.message}</p>
-                        <p className="text-slate-600 text-[10px] mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-slate-600 text-[10px]">{new Date(n.createdAt).toLocaleString()}</p>
+                          {n.link && <span className="text-[10px]" style={{color: '#22d3ee'}}>View &rarr;</span>}
+                        </div>
                       </div>
                     ))}
                     {notifications.length === 0 && <div className="p-4 text-center text-slate-500 text-sm">No notifications</div>}

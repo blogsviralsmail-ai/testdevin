@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface User {
   id: string;
   name: string;
@@ -74,22 +74,9 @@ export default function UsersPage() {
     return colors[role] || "bg-transparent text-slate-300";
   };
 
-  const getFilteredForExport = () => {
-    return (users || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("users");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Users", [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "role", label: "Role" }, { key: "isActive", label: "Active" }, { key: "createdAt", label: "Joined" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "role", label: "Role" }, { key: "isActive", label: "Active" }, { key: "createdAt", label: "Joined" }];
-    exportToPDF("Users", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("users", "Users");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

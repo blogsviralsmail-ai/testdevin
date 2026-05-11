@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface LeaveInfo {
   id: string;
   leaveType: string;
@@ -61,22 +61,9 @@ export default function MyLeavesPage() {
   const totalLeaveDays = leaves.filter(l => l.status === "approved").reduce((a, b) => a + b.totalDays, 0);
   const upcomingHolidays = holidays.filter(h => new Date(h.date) >= new Date());
 
-  const getFilteredForExport = () => {
-    return (leaves || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("my-leaves");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "My Leaves", [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "reason", label: "Reason" }, { key: "status", label: "Status" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "leaveType", label: "Type" }, { key: "startDate", label: "Start Date" }, { key: "endDate", label: "End Date" }, { key: "totalDays", label: "Days" }, { key: "reason", label: "Reason" }, { key: "status", label: "Status" }];
-    exportToPDF("My Leaves", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("my-leaves", "My Leaves");
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface User {
   id: string;
   name: string;
@@ -108,22 +108,9 @@ export default function TeamLeadersPage() {
     return batches.filter((b) => b.leaderId === userId);
   };
 
-  const getFilteredForExport = () => {
-    return (users || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("team-leaders");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Team Leaders", [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "name", label: "Name" }, { key: "email", label: "Email" }, { key: "phone", label: "Phone" }];
-    exportToPDF("Team Leaders", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("team-leaders", "Team Leaders");
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {

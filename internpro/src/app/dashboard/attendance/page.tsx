@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getStatusColor, formatDate } from "@/lib/utils";
 
 import DataToolbar from "@/components/DataToolbar";
-import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
+import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface AttendanceRecord {
   id: string;
   date: string;
@@ -106,22 +106,9 @@ export default function AttendancePage() {
   const todayStr = new Date().toISOString().split("T")[0];
   const todayRecord = isStudent && selectedDate === todayStr ? records[0] : undefined;
 
-  const getFilteredForExport = () => {
-    return (records || []) as unknown as Record<string, unknown>[];
-  };
+  const handleExportCSV = () => serverExportCSV("attendance");
 
-  const handleExportCSV = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    exportToCSV(data as Record<string, unknown>[], "Attendance", [{ key: "studentName", label: "Name" }, { key: "date", label: "Date" }, { key: "status", label: "Status" }]);
-  };
-
-  const handleExportPDF = () => {
-    const data = getFilteredForExport();
-    if (!data.length) return alert("No data to export");
-    const cols = [{ key: "studentName", label: "Name" }, { key: "date", label: "Date" }, { key: "status", label: "Status" }];
-    exportToPDF("Attendance", buildTableHTML(data as Record<string, unknown>[], cols));
-  };
+  const handleExportPDF = () => serverExportPDF("attendance", "Attendance");
 
   return (
     <div>
