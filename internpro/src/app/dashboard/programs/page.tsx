@@ -36,6 +36,8 @@ export default function ProgramsPage() {
     feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "",
   });
   const [uploading, setUploading] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [modeFilter, setModeFilter] = useState<string>("all");
 
   const fetchPrograms = useCallback(async () => {
     const res = await fetch("/api/programs");
@@ -62,22 +64,48 @@ export default function ProgramsPage() {
     setUploading(false);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setForm({ title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "" });
+    setEditId(null);
+    setShowForm(false);
+  };
+
+  const startEdit = (program: Program) => {
+    setForm({
+      title: program.title,
+      description: "",
+      domain: program.domain,
+      customDomain: "",
+      mode: program.mode,
+      duration: String(program.duration),
+      feeType: program.feeType,
+      feeAmount: String(program.feeAmount),
+      stipendAmount: String(program.stipendAmount),
+      maxSeats: String(program.maxSeats),
+      thumbnail: program.thumbnail || "",
+    });
+    setEditId(program.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     const submitData = { ...form, domain: form.domain === "other" && form.customDomain.trim() ? form.customDomain.trim() : form.domain };
-    const res = await fetch("/api/programs", {
-      method: "POST",
+    const url = editId ? `/api/programs/${editId}` : "/api/programs";
+    const method = editId ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(submitData),
     });
     if (res.ok) {
-      setShowForm(false);
-      setForm({ title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "" });
+      resetForm();
       fetchPrograms();
     } else {
       const data = await res.json();
-      setError(data.error || "Failed to create program");
+      setError(data.error || (editId ? "Failed to update program" : "Failed to create program"));
     }
   };
 
@@ -159,15 +187,15 @@ export default function ProgramsPage() {
           <p className="text-slate-400 text-sm">Manage your internship programs</p>
         </div>
         {isAdmin && (
-          <button onClick={() => setShowForm(!showForm)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">
+          <button onClick={() => { if (showForm) resetForm(); else setShowForm(true); }} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">
             {showForm ? "Cancel" : "+ New Program"}
           </button>
         )}
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border border-white/[0.06] mb-6">
-          <h2 className="text-lg font-semibold mb-4">Create New Program</h2>
+        <form onSubmit={handleSubmit} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border border-white/[0.06] mb-6">
+          <h2 className="text-lg font-semibold mb-4">{editId ? "Edit Program" : "Create New Program"}</h2>
           {error && <p className="text-red-400 text-sm mb-4 bg-transparent p-2 rounded">{error}</p>}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -233,9 +261,22 @@ export default function ProgramsPage() {
             <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" rows={3} />
           </div>
-          <button type="submit" className="mt-4 bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">Create Program</button>
+          <div className="mt-4 flex gap-3">
+            <button type="submit" className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">{editId ? "Update Program" : "Create Program"}</button>
+            {editId && <button type="button" onClick={resetForm} className="bg-white/10 text-slate-300 px-6 py-2 rounded-lg text-sm hover:bg-white/20 transition">Cancel Edit</button>}
+          </div>
         </form>
       )}
+
+      {/* Mode Filter */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {[{ v: "all", l: "All" }, { v: "online", l: "💻 Online" }, { v: "offline", l: "🏢 Offline" }, { v: "hybrid", l: "🔄 Hybrid" }].map((f) => (
+          <button key={f.v} onClick={() => setModeFilter(f.v)}
+            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${modeFilter === f.v ? "bg-[#0EA5B8] text-white" : "bg-white/5 text-slate-400 hover:bg-white/10"}`}>
+            {f.l}
+          </button>
+        ))}
+      </div>
 
       <div className="grid gap-4">
         {programs.length === 0 ? (
@@ -244,7 +285,7 @@ export default function ProgramsPage() {
             <p className="text-slate-400">No programs yet. Create your first program!</p>
           </div>
         ) : (
-          programs.map((program) => {
+          programs.filter((p) => modeFilter === "all" || p.mode === modeFilter).map((program) => {
             const totalStudents = program.batches.reduce((sum, b) => sum + b._count.enrollments, 0);
             return (
               <div key={program.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border border-white/[0.06] card-hover relative">
@@ -276,6 +317,9 @@ export default function ProgramsPage() {
                     <div className="flex flex-col gap-2">
                       <button onClick={() => togglePublish(program.id, program.isPublished)} className="text-sm text-[#22d3ee] hover:text-[#0EA5B8]">
                         {program.isPublished ? "Unpublish" : "Publish"}
+                      </button>
+                      <button onClick={() => startEdit(program)} className="text-sm text-[#a78bfa] hover:text-[#8b5cf6]">
+                        Edit
                       </button>
                       <button onClick={() => deleteProgram(program.id, program.title)} className="text-sm text-red-400 hover:text-red-800">
                         Delete

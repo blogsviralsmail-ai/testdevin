@@ -107,7 +107,12 @@ export async function GET() {
       feesNote: sMap[`program_type_${def.id}_fees_note`] || def.feesNote,
       duration: sMap[`program_type_${def.id}_duration`] || def.duration,
       mode: sMap[`program_type_${def.id}_mode`] || def.mode,
-      modeIcon: def.modeIcon,
+      modeIcon: (() => {
+        const m = (sMap[`program_type_${def.id}_mode`] || def.mode).toLowerCase();
+        if (m.includes("hybrid") || m.includes("+")) return "hybrid";
+        if (m.includes("office") || m.includes("offline")) return "office";
+        return "laptop";
+      })(),
       image: sMap[`program_type_${def.id}_image`] || def.image,
       color: sMap[`program_type_${def.id}_color`] || def.color,
       idealFor: sMap[`program_type_${def.id}_ideal_for`] || def.idealFor,

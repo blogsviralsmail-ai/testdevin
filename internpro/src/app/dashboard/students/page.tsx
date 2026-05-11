@@ -18,7 +18,7 @@ interface Enrollment {
   feeAmount: number | null;
   stipendAmount: number | null;
   student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null };
-  batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number } };
+  batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number; mode: string } };
   _count: { attendances: number; certificates: number; payments: number };
 }
 
@@ -431,6 +431,10 @@ export default function StudentsPage() {
                 <div><span className="text-slate-500 text-xs">Batch</span><p className="font-medium text-white">{viewProfile.batch.name}</p></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-slate-500 text-xs">Mode</span><p className="font-medium text-[#60a5fa] capitalize">{viewProfile.batch.program.mode}</p></div>
+                <div><span className="text-slate-500 text-xs">Domain</span><p className="font-medium text-white">{viewProfile.batch.program.domain}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-slate-500 text-xs">Status</span><p><span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(viewProfile.status)}`}>{viewProfile.status.replace("_", " ")}</span></p></div>
                 <div><span className="text-slate-500 text-xs">Joining Date</span><p className="font-medium text-white">{viewProfile.joiningDate ? formatDate(viewProfile.joiningDate) : "—"}</p></div>
               </div>
@@ -508,7 +512,7 @@ export default function StudentsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-white">{enrollment.batch.program.title}</div>
-                        <div className="text-xs text-slate-500">{enrollment.batch.name}</div>
+                        <div className="text-xs text-slate-500">{enrollment.batch.name} &middot; <span className="capitalize text-[#60a5fa]">{enrollment.batch.program.mode}</span></div>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-xs text-slate-400">{enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN") : "—"}</span>

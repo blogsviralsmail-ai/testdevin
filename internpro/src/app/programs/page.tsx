@@ -80,6 +80,7 @@ export default function ProgramsPage() {
   const [programs, setPrograms] = useState<ProgramType[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [modeFilter, setModeFilter] = useState<string>("all");
 
   useEffect(() => {
     fetch("/api/program-types")
@@ -159,6 +160,24 @@ export default function ProgramsPage() {
         </div>
       </section>
 
+      {/* Mode Filter */}
+      <section className="px-4">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-3">
+          {[
+            { value: "all", label: "All Programs", icon: "📋" },
+            { value: "online", label: "Online", icon: "💻" },
+            { value: "offline", label: "Offline", icon: "🏢" },
+            { value: "hybrid", label: "Hybrid", icon: "🔄" },
+          ].map((f) => (
+            <button key={f.value} onClick={() => setModeFilter(f.value)}
+              className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${modeFilter === f.value ? "text-white shadow-lg" : "text-slate-400 hover:text-white"}`}
+              style={modeFilter === f.value ? { background: "linear-gradient(135deg, #0EA5B8, #0891b2)", boxShadow: "0 0 20px rgba(14,165,184,0.3)" } : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {f.icon} {f.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* Programs Grid */}
       <section className="py-12 px-4">
         <div className="max-w-7xl mx-auto">
@@ -171,7 +190,13 @@ export default function ProgramsPage() {
             </div>
           ) : (
             <div className="grid lg:grid-cols-2 gap-8">
-              {programs.map((program, idx) => {
+              {programs.filter((p) => {
+                if (modeFilter === "all") return true;
+                if (modeFilter === "online") return p.modeIcon === "laptop";
+                if (modeFilter === "offline") return p.modeIcon === "office";
+                if (modeFilter === "hybrid") return p.modeIcon === "hybrid";
+                return true;
+              }).map((program, idx) => {
                 const imgSrc = program.image || fallbackImages[program.id] || fallbackImages.premium_paid_training;
                 const isExpanded = expandedId === program.id;
                 return (

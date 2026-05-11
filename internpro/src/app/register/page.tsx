@@ -242,7 +242,7 @@ function RegisterForm() {
               <select value={form.programId} onChange={(e) => setForm({ ...form, programId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}} required>
                 <option value="">-- Select Program --</option>
-                {programsList.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                {programsList.map(p => <option key={p.id} value={p.id}>{p.title} ({p.mode === "online" ? "Online" : p.mode === "offline" ? "Offline" : p.mode === "hybrid" ? "Hybrid" : p.mode})</option>)}
               </select>
             </div>
 
