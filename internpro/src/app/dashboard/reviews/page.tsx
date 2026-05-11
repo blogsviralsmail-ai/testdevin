@@ -354,7 +354,7 @@ export default function ReviewsPage() {
       {/* View Work Modal */}
       {viewWork && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-semibold text-white mb-2">Submitted Work</h2>
             <p className="text-sm text-slate-400 mb-4">
               <strong>{viewWork.student.name}</strong> — {viewWork.task.title} (Day {viewWork.task.dayNumber || "N/A"})
@@ -409,7 +409,7 @@ export default function ReviewsPage() {
       {/* Review Modal */}
       {reviewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-semibold text-white mb-2">Review Submission</h2>
             <p className="text-sm text-slate-500 mb-4">
               <strong>{reviewModal.student.name}</strong> — {reviewModal.task.title}

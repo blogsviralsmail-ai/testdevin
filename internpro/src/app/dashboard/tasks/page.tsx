@@ -523,7 +523,7 @@ export default function TasksPage() {
       {/* View Task Modal */}
       {viewTaskModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-2">{viewTaskModal.title}</h2>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
@@ -547,7 +547,7 @@ export default function TasksPage() {
       {/* Edit Task Modal */}
       {editTaskModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-4">Edit Task</h2>
             <div className="space-y-3">
               <div>
@@ -588,7 +588,7 @@ export default function TasksPage() {
       {/* Submit Task Modal */}
       {submitModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-semibold mb-4">Submit Your Work</h2>
             <div className="space-y-4">
               <div>

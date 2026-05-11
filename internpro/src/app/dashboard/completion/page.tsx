@@ -227,7 +227,7 @@ export default function CompletionPage() {
       {/* Categorize Modal */}
       {categorizeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-4">Categorize Student</h2>
             <p className="text-sm text-slate-400 mb-4">
               <strong className="text-white">{categorizeModal.student.name}</strong> — {categorizeModal.batch.program.title}
@@ -271,7 +271,7 @@ export default function CompletionPage() {
       {/* Admin Approve Modal */}
       {approveModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-4">Approve Completion</h2>
             <p className="text-sm text-slate-400 mb-2">
               <strong className="text-white">{approveModal.student.name}</strong> — {approveModal.batch.program.title}

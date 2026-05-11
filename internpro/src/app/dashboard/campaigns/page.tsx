@@ -136,7 +136,7 @@ export default function CampaignsPage() {
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-2xl">
+          <div className="rounded-xl p-6 w-full max-w-2xl" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold mb-4">New Email Campaign</h2>
             <div className="space-y-3">
               <input placeholder="Campaign Name" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />

@@ -258,7 +258,7 @@ export default function StudentsPage() {
       {/* Edit Student Modal */}
       {editModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-4">Edit Student</h2>
             <p className="text-sm text-slate-400 mb-4">
               <span className="font-medium text-white">{editModal.student.name}</span> — {editModal.batch.program.title}
@@ -378,7 +378,7 @@ export default function StudentsPage() {
       {/* Transfer Batch Modal */}
       {transferModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-2">Transfer Student to Another Batch</h2>
             <p className="text-sm text-slate-400 mb-4">
               <span className="font-medium text-white">{transferModal.student.name}</span> — Currently in {transferModal.batch.program.title} ({transferModal.batch.name})

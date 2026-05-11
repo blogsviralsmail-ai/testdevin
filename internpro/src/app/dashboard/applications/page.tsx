@@ -270,7 +270,7 @@ export default function ApplicationsPage() {
       {/* View Details Modal */}
       {viewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-lg font-bold text-white">Applicant Details</h2>
               <button onClick={() => setViewModal(null)} className="text-slate-500 hover:text-slate-400 text-xl">&times;</button>
@@ -458,7 +458,7 @@ export default function ApplicationsPage() {
       {/* Schedule Interview Modal */}
       {scheduleModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-2">Schedule Interview</h2>
             <p className="text-sm text-slate-400 mb-4">
               for <span className="font-medium text-white">{scheduleModal.student.name}</span> — {scheduleModal.batch.program.title}
@@ -642,7 +642,7 @@ export default function ApplicationsPage() {
       {/* Edit Meeting Link Modal */}
       {editLinkModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-2">{editLinkModal.link ? "Edit Meeting Link" : "Add Meeting Link"}</h2>
             <p className="text-sm text-slate-400 mb-4">This link will be visible to the student for joining the interview.</p>
             <input
@@ -670,7 +670,7 @@ export default function ApplicationsPage() {
       {/* Reject Modal with Reason */}
       {rejectModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-2">Reject Application</h2>
             <p className="text-sm text-slate-400 mb-4">
               <strong>{rejectModal.student.name}</strong> — {rejectModal.batch.program.title}
@@ -704,7 +704,7 @@ export default function ApplicationsPage() {
       {/* Change Batch/Program Modal */}
       {changeBatchModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-2">Change Program / Batch</h2>
             <p className="text-sm text-slate-400 mb-1">
               Student: <strong>{changeBatchModal.student.name}</strong>

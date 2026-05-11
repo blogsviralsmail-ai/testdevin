@@ -307,7 +307,7 @@ export default function IDCardsPage() {
       {/* Preview Modal — 2-sided ID Card */}
       {previewCard && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-auto">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h3 className="text-lg font-semibold text-white mb-4 text-center">ID Card Preview (2-Sided)</h3>
             <div className="flex gap-6 justify-center flex-wrap">
               {/* FRONT SIDE */}

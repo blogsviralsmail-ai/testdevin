@@ -197,7 +197,7 @@ export default function TeamLeadersPage() {
       {/* Edit Modal */}
       {editUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-4">Edit Team Leader</h2>
             <div className="space-y-4">
               <div>
@@ -232,7 +232,7 @@ export default function TeamLeadersPage() {
       {/* Assign Batch Modal */}
       {assignModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-4">Assign Batches to {assignModal.name}</h2>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {batches.map((batch) => (
@@ -261,7 +261,7 @@ export default function TeamLeadersPage() {
       {/* Assign Students Modal */}
       {assignStudentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-2">Assign Students to {assignStudentModal.name}</h2>
             <p className="text-xs text-slate-500 mb-4">Transfer students to {assignStudentModal.name}&apos;s assigned batches</p>
             {(() => {

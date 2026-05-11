@@ -137,7 +137,7 @@ export default function JobsPage() {
         if (!job || !job.applications) return null;
         return (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">Applicants — {job.title}</h2>
                 <button onClick={() => setViewApplicants(null)} className="text-slate-500 hover:text-slate-300">✕</button>
@@ -217,7 +217,7 @@ export default function JobsPage() {
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold mb-4">Post a Job</h2>
             <div className="space-y-3">
               <input placeholder="Job Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />

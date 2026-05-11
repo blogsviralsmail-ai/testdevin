@@ -228,7 +228,7 @@ export default function InterviewsPage() {
       {/* Selection Modal */}
       {selectingId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-xl font-bold text-white mb-4">Select Candidate — Fill Details</h2>
             <div className="space-y-3">
               <div className="bg-transparent border border-[#0EA5B8]/20 rounded-lg p-3">
@@ -321,7 +321,7 @@ export default function InterviewsPage() {
       {/* Edit Enrollment Modal */}
       {editEnrollment && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-xl font-bold text-white mb-4">Edit Selection Details</h2>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -392,7 +392,7 @@ export default function InterviewsPage() {
       {/* Meet Link Modal */}
       {editMeetLink && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold text-white mb-4">Set Meeting Link</h2>
             <p className="text-sm text-slate-400 mb-3">Student will see this link to join the interview.</p>
             <input

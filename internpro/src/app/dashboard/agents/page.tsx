@@ -226,7 +226,7 @@ export default function AgentsPage() {
       {/* Create Agent Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold mb-4">Add Agent</h2>
             <div className="space-y-3">
               <input placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
@@ -250,7 +250,7 @@ export default function AgentsPage() {
       {/* Payout Modal */}
       {showPayout && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-sm">
+          <div className="rounded-xl p-6 w-full max-w-sm" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <h2 className="text-lg font-bold mb-4">Process Payout</h2>
             <input placeholder="Amount (₹)" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} className="w-full px-3 py-2 border rounded-lg" type="number" />
             <div className="flex justify-end gap-3 mt-6">
@@ -264,7 +264,7 @@ export default function AgentsPage() {
       {/* Agent Detail Modal */}
       {selectedAgent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">{selectedAgent.user.name} — Agent Details</h2>
               <button onClick={() => setSelectedAgent(null)} className="text-slate-500 hover:text-slate-400 text-xl">&times;</button>
