@@ -142,6 +142,13 @@ export async function GET(request: NextRequest) {
       }
       return match;
     });
+    // Replace empty signature placeholder div with actual signature image
+    if (currentSignature) {
+      result = result.replace(
+        /<div style="height:\s*(?:40|50)px;\s*margin-bottom:\s*\d+px;"><\/div>/g,
+        `<img src="${currentSignature}" alt="Signature" style="height: 50px; display: block; margin-bottom: 4px; object-fit: contain;" />`
+      );
+    }
     return result;
   }
 
