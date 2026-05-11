@@ -110,7 +110,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)]">
-      <h1 className="text-2xl font-bold text-white mb-4">Chat / Support</h1>
+      <h1 className="text-2xl font-bold text-white mb-4">Live Chat</h1>
 
       <div className="flex flex-1 border rounded-xl bg-transparent overflow-hidden min-h-0">
         {/* Rooms List */}

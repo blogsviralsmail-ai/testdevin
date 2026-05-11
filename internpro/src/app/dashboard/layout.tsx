@@ -46,9 +46,9 @@ const navItems = [
   { href: "/dashboard/agents", label: "Agents", icon: "🤝", roles: ["admin", "organization", "agent"] },
 
   // Communication
+  { href: "/dashboard/chat", label: "Live Chat", icon: "🗨️", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/discussions", label: "Discussions", icon: "💬", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/announcements", label: "Announcements", icon: "📢", roles: ["admin", "organization", "teamleader", "student"] },
-  { href: "/dashboard/chat", label: "Chat / Support", icon: "🗨️", roles: ["admin", "organization", "teamleader", "student"] },
 
   // Analytics & Management
   { href: "/dashboard/analytics", label: "Analytics", icon: "📈", roles: ["admin", "organization"] },
