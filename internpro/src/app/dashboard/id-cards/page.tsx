@@ -417,14 +417,20 @@ export default function IDCardsPage() {
                     <img src={card.user.avatar || card.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                   ) : "👤"}
                 </div>
+                {!card.user.avatar && !card.photoUrl && (
+                  <button onClick={() => { window.location.href = user?.role === "student" ? "/dashboard/profile" : "/dashboard/students"; }}
+                    className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full mb-1 hover:bg-amber-500/20">
+                    📸 Upload Photo Required
+                  </button>
+                )}
                 <div className="font-bold text-white text-sm uppercase truncate w-full">{card.user.name}</div>
                 <div className="text-[10px] text-[#FF6B6B] font-bold uppercase">{card.designation}</div>
                 <div className="text-[9px] text-slate-400 mt-1">{card.cardNumber}</div>
               </div>
               <div className="px-4 pb-3 flex gap-2">
-                <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-[#0EA5B8]/10 text-[#22d3ee] border border-[#0EA5B8]/30 px-3 py-1.5 rounded-lg hover:bg-[#0EA5B8]/20 font-medium">View</button>
-                <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/20 font-medium">Print</button>
-                <button onClick={async (e) => { const btn = e.currentTarget; btn.disabled = true; btn.textContent = "..."; await handleEmailIDCard(card); btn.disabled = false; btn.textContent = "📧"; }} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 font-medium" title="Email ID Card">📧</button>
+                <button onClick={() => { if (!card.user.avatar && !card.photoUrl) { setShowPhotoAlert(true); return; } setPreviewCard(card); }} className="flex-1 text-xs bg-[#0EA5B8]/10 text-[#22d3ee] border border-[#0EA5B8]/30 px-3 py-1.5 rounded-lg hover:bg-[#0EA5B8]/20 font-medium">View</button>
+                <button onClick={() => { if (!card.user.avatar && !card.photoUrl) { setShowPhotoAlert(true); return; } handlePrint(card); }} className="flex-1 text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/20 font-medium">Print</button>
+                <button onClick={async (e) => { if (!card.user.avatar && !card.photoUrl) { setShowPhotoAlert(true); return; } const btn = e.currentTarget; btn.disabled = true; btn.textContent = "..."; await handleEmailIDCard(card); btn.disabled = false; btn.textContent = "📧"; }} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 font-medium" title="Email ID Card">📧</button>
               </div>
             </div>
           ))}
