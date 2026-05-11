@@ -124,8 +124,8 @@ export default function StudentsPage() {
     fetchEnrollments();
   };
 
-  const generateOfferLetter = (enrollmentId: string) => {
-    window.open(`/api/documents/offer-letter?enrollmentId=${enrollmentId}`, "_blank");
+  const viewOfferLetter = () => {
+    window.location.href = "/dashboard/letters";
   };
 
   const handleTransfer = async (enrollmentId: string, newBatchId: string) => {
@@ -537,7 +537,7 @@ export default function StudentsPage() {
                                 </button>
                               )}
                               {enrollment.status === "selected" && (
-                                <button onClick={() => generateOfferLetter(enrollment.id)}
+                                <button onClick={() => viewOfferLetter()}
                                   className="text-xs bg-transparent text-[#22d3ee] px-2 py-1 rounded hover:bg-[#0EA5B8]/10">
                                   Offer Letter
                                 </button>
