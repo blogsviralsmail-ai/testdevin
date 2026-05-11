@@ -15,10 +15,11 @@ interface SettingItem {
   value: string;
 }
 
-type TabKey = "profile" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "info";
+type TabKey = "profile" | "admins" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "info";
 
 const TABS: { key: TabKey; label: string; icon: string; adminOnly?: boolean }[] = [
   { key: "profile", label: "Profile", icon: "👤" },
+  { key: "admins", label: "Admin Management", icon: "🛡️", adminOnly: true },
   { key: "branding", label: "Branding", icon: "🎨", adminOnly: true },
   { key: "letterhead", label: "Letterhead & Signature", icon: "📄", adminOnly: true },
   { key: "email", label: "SMTP & Email", icon: "📧", adminOnly: true },
@@ -40,6 +41,12 @@ export default function SettingsPage() {
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [templatePreview, setTemplatePreview] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
+  const [profileForm, setProfileForm] = useState({ name: "", email: "", phone: "", currentPassword: "", newPassword: "" });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [adminList, setAdminList] = useState<{ id: string; name: string; email: string; role: string; createdAt: string }[]>([]);
+  const [newAdmin, setNewAdmin] = useState({ name: "", email: "", phone: "", password: "" });
+  const [addingAdmin, setAddingAdmin] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [meRes, settingsRes] = await Promise.all([
@@ -49,6 +56,7 @@ export default function SettingsPage() {
     if (meRes.ok) {
       const data = await meRes.json();
       setUser(data.user);
+      setProfileForm(prev => ({ ...prev, name: data.user.name || "", email: data.user.email || "", phone: data.user.phone || "" }));
     }
     if (settingsRes.ok) {
       const data: SettingItem[] = await settingsRes.json();
@@ -63,6 +71,52 @@ export default function SettingsPage() {
   const updateSetting = (key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
+  };
+
+  const fetchAdmins = useCallback(async () => {
+    const res = await fetch("/api/users?role=admin");
+    if (res.ok) { const data = await res.json(); setAdminList(data); }
+    const res2 = await fetch("/api/users?role=organization");
+    if (res2.ok) { const data2 = await res2.json(); setAdminList(prev => [...prev, ...data2]); }
+  }, []);
+
+  useEffect(() => { if (activeTab === "admins") fetchAdmins(); }, [activeTab, fetchAdmins]);
+
+  const saveProfile = async () => {
+    setProfileSaving(true);
+    setProfileMsg(null);
+    const res = await fetch("/api/auth/me", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profileForm),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setProfileMsg({ ok: true, msg: data.message || "Profile updated!" });
+      if (data.user) setUser(data.user);
+      setProfileForm(prev => ({ ...prev, currentPassword: "", newPassword: "" }));
+    } else {
+      setProfileMsg({ ok: false, msg: data.error || "Failed to update" });
+    }
+    setProfileSaving(false);
+  };
+
+  const addAdmin = async () => {
+    if (!newAdmin.name || !newAdmin.email || !newAdmin.password) return alert("Name, email and password required");
+    setAddingAdmin(true);
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...newAdmin, role: "admin" }),
+    });
+    if (res.ok) {
+      setNewAdmin({ name: "", email: "", phone: "", password: "" });
+      fetchAdmins();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to add admin");
+    }
+    setAddingAdmin(false);
   };
 
   const handleSave = async () => {
@@ -329,23 +383,101 @@ export default function SettingsPage() {
         {activeTab === "profile" && (
           <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
             <h2 className="text-lg font-semibold text-white mb-4">Profile</h2>
+            {profileMsg && (
+              <div className={`p-3 rounded-lg mb-4 text-sm ${profileMsg.ok ? "bg-green-500/10 text-green-400 border border-green-500/30" : "bg-red-500/10 text-red-400 border border-red-500/30"}`}>
+                {profileMsg.msg}
+              </div>
+            )}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
-                <input value={user?.name || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent" readOnly />
+                <input value={profileForm.name} onChange={e => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
-                <input value={user?.email || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent" readOnly />
+                <input value={profileForm.email} onChange={e => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" type="email" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Role</label>
-                <input value={user?.role || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent capitalize" readOnly />
+                <input value={user?.role || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-white/5 capitalize" readOnly />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Phone</label>
-                <input value={user?.phone || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent" readOnly />
+                <input value={profileForm.phone} onChange={e => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" />
               </div>
+            </div>
+            <div className="mt-6 border-t border-white/[0.06] pt-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Change Password (optional)</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Current Password</label>
+                  <input type="password" value={profileForm.currentPassword} onChange={e => setProfileForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Enter current password" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">New Password</label>
+                  <input type="password" value={profileForm.newPassword} onChange={e => setProfileForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Enter new password" />
+                </div>
+              </div>
+            </div>
+            <button onClick={saveProfile} disabled={profileSaving}
+              className="mt-4 px-6 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2] disabled:opacity-50">
+              {profileSaving ? "Saving..." : "Save Profile"}
+            </button>
+          </div>
+        )}
+
+        {/* ========== ADMIN MANAGEMENT ========== */}
+        {activeTab === "admins" && isAdmin && (
+          <div className="space-y-6">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+              <h2 className="text-lg font-semibold text-white mb-4">Add New Admin</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
+                  <input value={newAdmin.name} onChange={e => setNewAdmin(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Admin name" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                  <input value={newAdmin.email} onChange={e => setNewAdmin(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" type="email" placeholder="admin@example.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Phone</label>
+                  <input value={newAdmin.phone} onChange={e => setNewAdmin(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Phone number" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+                  <input value={newAdmin.password} onChange={e => setNewAdmin(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" type="password" placeholder="Set password" />
+                </div>
+              </div>
+              <button onClick={addAdmin} disabled={addingAdmin}
+                className="mt-4 px-6 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2] disabled:opacity-50">
+                {addingAdmin ? "Adding..." : "Add Admin"}
+              </button>
+            </div>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+              <h2 className="text-lg font-semibold text-white mb-4">Current Admins</h2>
+              <div className="space-y-3">
+                {adminList.map(a => (
+                  <div key={a.id} className="flex items-center justify-between p-3 bg-white/[0.02] rounded-lg border border-white/[0.04]">
+                    <div>
+                      <p className="text-sm font-medium text-white">{a.name}</p>
+                      <p className="text-xs text-slate-500">{a.email}</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-red-500/20 text-red-400 rounded-full capitalize">{a.role}</span>
+                  </div>
+                ))}
+                {adminList.length === 0 && <p className="text-sm text-slate-500">No admins found</p>}
+              </div>
+              <p className="text-xs text-slate-500 mt-4">For detailed role management, go to <a href="/dashboard/role-management" className="text-[#22d3ee] hover:underline">Role Management</a></p>
             </div>
           </div>
         )}

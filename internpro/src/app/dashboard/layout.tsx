@@ -63,6 +63,7 @@ const navItems = [
   { href: "/dashboard/testimonials", label: "Testimonials", icon: "⭐", roles: ["admin", "organization"] },
   { href: "/dashboard/activity-log", label: "Activity Log", icon: "🕐", roles: ["admin", "organization"] },
   { href: "/dashboard/users", label: "Users", icon: "🔑", roles: ["admin"] },
+  { href: "/dashboard/role-management", label: "Role Management", icon: "🛡️", roles: ["admin"] },
   { href: "/dashboard/site-content", label: "Site Content", icon: "🌐", roles: ["admin"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
@@ -81,6 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifications, setNotifications] = useState<{ id: string; title: string; message: string; isRead: boolean; createdAt: string; link?: string }[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const checkAuth = useCallback(async () => {
@@ -89,6 +91,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
       setUser(data.user);
+      // Fetch user permissions
+      const permRes = await fetch("/api/my-permissions");
+      if (permRes.ok) {
+        const permData = await permRes.json();
+        setUserPermissions(permData.permissions || []);
+      }
     } catch {
       router.push("/login");
     } finally {
@@ -203,7 +211,54 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!user) return null;
 
-  const filteredNav = navItems.filter((item) => item.roles.includes(user.role));
+  // Permission-based nav filtering
+  const navPermMap: Record<string, string> = {
+    "/dashboard/applications": "applications.view",
+    "/dashboard/interviews": "interviews.view",
+    "/dashboard/students": "students.view",
+    "/dashboard/programs": "programs.view",
+    "/dashboard/course-content": "course_content.view",
+    "/dashboard/reviews": "reviews.view",
+    "/dashboard/live-sessions": "live_sessions.view",
+    "/dashboard/attendance": "attendance.view",
+    "/dashboard/progress": "progress.view",
+    "/dashboard/reports": "reports.view",
+    "/dashboard/leaderboard": "leaderboard.view",
+    "/dashboard/letters": "letters.view",
+    "/dashboard/documents": "documents.view",
+    "/dashboard/completion": "completion.view",
+    "/dashboard/salary": "salary.view",
+    "/dashboard/leaves": "leaves.view",
+    "/dashboard/holidays": "holidays.view",
+    "/dashboard/payments": "payments.view",
+    "/dashboard/agents": "agents.view",
+    "/dashboard/chat": "chat.view",
+    "/dashboard/discussions": "discussions.view",
+    "/dashboard/announcements": "announcements.view",
+    "/dashboard/analytics": "analytics.view",
+    "/dashboard/team-leaders": "team_leaders.view",
+    "/dashboard/campaigns": "campaigns.view",
+    "/dashboard/jobs": "jobs.view",
+    "/dashboard/testimonials": "testimonials.view",
+    "/dashboard/activity-log": "activity_log.view",
+    "/dashboard/users": "users.view",
+    "/dashboard/role-management": "roles.view",
+    "/dashboard/site-content": "site_content.manage",
+    "/dashboard/settings": "settings.view",
+  };
+
+  const hasPerm = (perm: string) => userPermissions.includes("*") || userPermissions.includes(perm);
+
+  const filteredNav = navItems.filter((item) => {
+    // Always show by role first (backward compatible)
+    if (!item.roles.includes(user.role)) return false;
+    // If permissions loaded, also check permission
+    if (userPermissions.length > 0) {
+      const requiredPerm = navPermMap[item.href];
+      if (requiredPerm && !hasPerm(requiredPerm)) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-[#0a0e1a] flex">
