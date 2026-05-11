@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     const performanceMap: Record<string, string> = { excellent: "Outstanding", good: "Very Good", average: "Satisfactory" };
     const performanceLabel = performanceMap[enrollment.teamLeaderCategory || "good"] || "Good";
-    const startDateStr = enrollment.batch.startDate ? enrollment.batch.startDate.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : "N/A";
+    const startDateStr = enrollment.joiningDate ? enrollment.joiningDate.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : (enrollment.batch.startDate ? enrollment.batch.startDate.toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }) : "N/A");
     const endDateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
     const todayFormatted = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 

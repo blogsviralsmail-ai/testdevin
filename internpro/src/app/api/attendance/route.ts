@@ -25,6 +25,9 @@ export async function GET(request: NextRequest) {
   if (batchId) {
     where.enrollment = { batchId };
   }
+  if (session.role === "student") {
+    where.userId = session.id;
+  }
 
   const attendance = await prisma.attendance.findMany({
     where,
