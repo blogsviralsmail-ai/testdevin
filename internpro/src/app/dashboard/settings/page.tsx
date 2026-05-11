@@ -15,7 +15,17 @@ interface SettingItem {
   value: string;
 }
 
-type TabKey = "profile" | "admins" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "website" | "info";
+type TabKey = "profile" | "admins" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "website" | "site_content" | "info";
+
+interface SitePage {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  isPublished: boolean;
+  updatedAt: string;
+  createdAt: string;
+}
 
 const TABS: { key: TabKey; label: string; icon: string; adminOnly?: boolean }[] = [
   { key: "profile", label: "Profile", icon: "👤" },
@@ -28,6 +38,7 @@ const TABS: { key: TabKey; label: string; icon: string; adminOnly?: boolean }[] 
   { key: "program_types", label: "Program Types", icon: "📋", adminOnly: true },
   { key: "letter_design", label: "Letter Design", icon: "🖨️", adminOnly: true },
   { key: "website", label: "Website Settings", icon: "🌐", adminOnly: true },
+  { key: "site_content", label: "Site Content", icon: "📝", adminOnly: true },
   { key: "info", label: "Platform Info", icon: "ℹ️" },
 ];
 
@@ -48,6 +59,18 @@ export default function SettingsPage() {
   const [adminList, setAdminList] = useState<{ id: string; name: string; email: string; role: string; createdAt: string }[]>([]);
   const [newAdmin, setNewAdmin] = useState({ name: "", email: "", phone: "", password: "" });
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [sitePages, setSitePages] = useState<SitePage[]>([]);
+  const [siteLoading, setSiteLoading] = useState(false);
+  const [siteEditing, setSiteEditing] = useState<SitePage | null>(null);
+  const [siteCreating, setSiteCreating] = useState(false);
+  const [siteSaving, setSiteSaving] = useState(false);
+  const [siteFormTitle, setSiteFormTitle] = useState("");
+  const [siteFormSlug, setSiteFormSlug] = useState("");
+  const [siteFormContent, setSiteFormContent] = useState("");
+  const [siteFormPublished, setSiteFormPublished] = useState(true);
+  const [siteEditMode, setSiteEditMode] = useState<"visual" | "raw">("visual");
+  const [siteVisualData, setSiteVisualData] = useState<Record<string, unknown>>({});
+  const [siteMsg, setSiteMsg] = useState("");
 
   const fetchData = useCallback(async () => {
     const [meRes, settingsRes] = await Promise.all([
@@ -82,6 +105,119 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => { if (activeTab === "admins") fetchAdmins(); }, [activeTab, fetchAdmins]);
+
+  const fetchSitePages = useCallback(async () => {
+    setSiteLoading(true);
+    const res = await fetch("/api/site-content");
+    if (res.ok) setSitePages(await res.json());
+    setSiteLoading(false);
+  }, []);
+
+  useEffect(() => { if (activeTab === "site_content") fetchSitePages(); }, [activeTab, fetchSitePages]);
+
+  const startSiteEdit = (page: SitePage) => {
+    setSiteEditing(page);
+    setSiteFormTitle(page.title);
+    setSiteFormSlug(page.slug);
+    setSiteFormContent(page.content);
+    setSiteFormPublished(page.isPublished);
+    setSiteCreating(false);
+    try {
+      const parsed = JSON.parse(page.content);
+      setSiteVisualData(parsed);
+      setSiteEditMode("visual");
+    } catch {
+      setSiteVisualData({});
+      setSiteEditMode("raw");
+    }
+  };
+
+  const startSiteCreate = () => {
+    setSiteEditing(null);
+    setSiteCreating(true);
+    setSiteFormTitle("");
+    setSiteFormSlug("");
+    setSiteFormContent("{}");
+    setSiteFormPublished(true);
+    setSiteVisualData({});
+    setSiteEditMode("visual");
+  };
+
+  const saveSitePage = async () => {
+    setSiteSaving(true);
+    setSiteMsg("");
+    const contentToSave = siteEditMode === "visual" ? JSON.stringify(siteVisualData, null, 2) : siteFormContent;
+    const method = siteEditing ? "PUT" : "POST";
+    const url = siteEditing ? `/api/site-content/${siteEditing.id}` : "/api/site-content";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: siteFormTitle, slug: siteFormSlug, content: contentToSave, isPublished: siteFormPublished }),
+    });
+    if (res.ok) {
+      setSiteMsg("Saved!");
+      fetchSitePages();
+      if (siteCreating) { setSiteCreating(false); }
+      if (siteEditing) {
+        const updated = await res.json();
+        setSiteEditing(updated);
+        setSiteFormContent(updated.content || contentToSave);
+        try { setSiteVisualData(JSON.parse(updated.content || contentToSave)); } catch { /* ignore */ }
+      }
+    } else { setSiteMsg("Failed to save"); }
+    setSiteSaving(false);
+  };
+
+  const deleteSitePage = async (id: string) => {
+    if (!confirm("Delete this page?")) return;
+    await fetch(`/api/site-content/${id}`, { method: "DELETE" });
+    fetchSitePages();
+    if (siteEditing?.id === id) { setSiteEditing(null); setSiteCreating(false); }
+  };
+
+  const updateVisualField = (key: string, value: unknown) => {
+    setSiteVisualData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const renderVisualEditor = () => {
+    return Object.entries(siteVisualData).map(([key, value]) => (
+      <div key={key} className="mb-4">
+        <label className="block text-sm font-medium text-slate-300 mb-1 capitalize">{key.replace(/([A-Z])/g, " $1")}</label>
+        {Array.isArray(value) ? (
+          <div className="space-y-2">
+            {(value as Record<string, string>[]).map((item, idx) => (
+              <div key={idx} className="p-3 rounded-lg border border-white/[0.08] bg-white/[0.02]">
+                {Object.entries(item).map(([k, v]) => (
+                  <div key={k} className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-slate-500 w-20 capitalize">{k}:</span>
+                    <input value={String(v)} onChange={e => {
+                      const newArr = [...value as Record<string, string>[]];
+                      newArr[idx] = { ...newArr[idx], [k]: e.target.value };
+                      updateVisualField(key, newArr);
+                    }} className="flex-1 px-2 py-1 rounded text-sm bg-white/[0.05] border border-white/[0.1] text-white" />
+                  </div>
+                ))}
+                <button onClick={() => {
+                  const newArr = (value as Record<string, string>[]).filter((_, i) => i !== idx);
+                  updateVisualField(key, newArr);
+                }} className="text-xs text-red-400 hover:text-red-300 mt-1">Remove</button>
+              </div>
+            ))}
+            <button onClick={() => {
+              const template = (value as Record<string, string>[]).length > 0 ? Object.fromEntries(Object.keys((value as Record<string, string>[])[0]).map(k => [k, ""])) : { title: "", desc: "" };
+              updateVisualField(key, [...value as Record<string, string>[], template]);
+            }} className="text-xs px-3 py-1 rounded bg-teal-600/20 text-teal-400 hover:bg-teal-600/30">+ Add Item</button>
+          </div>
+        ) : typeof value === "object" && value !== null ? (
+          <textarea value={JSON.stringify(value, null, 2)} onChange={e => { try { updateVisualField(key, JSON.parse(e.target.value)); } catch { /* skip */ } }}
+            rows={4} className="w-full px-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.1] text-white font-mono" />
+        ) : (
+          <input value={String(value || "")} onChange={e => updateVisualField(key, e.target.value)}
+            className="w-full px-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.1] text-white" />
+        )}
+      </div>
+    ));
+  };
 
   const saveProfile = async () => {
     setProfileSaving(true);
@@ -1139,6 +1275,74 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* ========== SITE CONTENT ========== */}
+        {activeTab === "site_content" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Site Content Management</h2>
+              <button onClick={startSiteCreate} className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 3px 0 #0a7c8a'}}>+ New Page</button>
+            </div>
+
+            {siteMsg && <div className="px-4 py-2 rounded-lg text-sm" style={{background: siteMsg === 'Saved!' ? 'rgba(16,185,129,0.1)' : 'rgba(248,113,113,0.1)', color: siteMsg === 'Saved!' ? '#34d399' : '#fca5a5'}}>{siteMsg}</div>}
+
+            {!siteEditing && !siteCreating && (
+              <div className="space-y-3">
+                {siteLoading ? <p className="text-slate-400 text-sm">Loading...</p> : sitePages.length === 0 ? <p className="text-slate-400 text-sm">No pages yet. Click "+ New Page" to create one.</p> : (
+                  sitePages.map(page => (
+                    <div key={page.id} className="flex items-center justify-between p-4 rounded-xl" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
+                      <div>
+                        <h3 className="text-white font-medium">{page.title}</h3>
+                        <p className="text-xs text-slate-500">/{page.slug} &middot; {page.isPublished ? 'Published' : 'Draft'} &middot; Updated {new Date(page.updatedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => startSiteEdit(page)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-white" style={{background: 'linear-gradient(135deg, #6366f1, #4f46e5)'}}>Edit</button>
+                        <button onClick={() => deleteSitePage(page.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-white" style={{background: 'linear-gradient(135deg, #ef4444, #dc2626)'}}>Delete</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {(siteEditing || siteCreating) && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <button onClick={() => { setSiteEditing(null); setSiteCreating(false); setSiteMsg(''); }} className="text-sm text-teal-400 hover:text-teal-300">&larr; Back to Pages</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => setSiteEditMode('visual')} className={`px-3 py-1 rounded text-xs font-medium ${siteEditMode === 'visual' ? 'bg-teal-600 text-white' : 'bg-white/5 text-slate-400'}`}>Visual Editor</button>
+                    <button onClick={() => { setSiteEditMode('raw'); setSiteFormContent(JSON.stringify(siteVisualData, null, 2)); }} className={`px-3 py-1 rounded text-xs font-medium ${siteEditMode === 'raw' ? 'bg-teal-600 text-white' : 'bg-white/5 text-slate-400'}`}>Raw JSON</button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Title</label>
+                    <input value={siteFormTitle} onChange={e => setSiteFormTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.1] text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Slug</label>
+                    <input value={siteFormSlug} onChange={e => setSiteFormSlug(e.target.value)} className="w-full px-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.1] text-white" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-slate-300">Published</label>
+                  <button onClick={() => setSiteFormPublished(!siteFormPublished)} className={`px-3 py-1 rounded text-xs font-medium text-white ${siteFormPublished ? 'bg-green-600' : 'bg-slate-600'}`}>{siteFormPublished ? 'Yes' : 'No'}</button>
+                </div>
+                <div className="rounded-xl p-4" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+                  {siteEditMode === 'visual' ? (
+                    <div>{renderVisualEditor()}</div>
+                  ) : (
+                    <textarea value={siteFormContent} onChange={e => { setSiteFormContent(e.target.value); try { setSiteVisualData(JSON.parse(e.target.value)); } catch { /* skip */ } }}
+                      rows={20} className="w-full px-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.1] text-white font-mono" />
+                  )}
+                </div>
+                <button onClick={saveSitePage} disabled={siteSaving} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 3px 0 #0a7c8a'}}>
+                  {siteSaving ? 'Saving...' : 'Save Page'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ========== PLATFORM INFO ========== */}
         {activeTab === "info" && (
           <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
@@ -1154,7 +1358,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-slate-400">Support</span>
-                <span className="font-medium text-white">{settings.support_email || "support@internpro.com"}</span>
+                <span className="font-medium text-white">{settings.support_email || "info@kkhsmedia.com"}</span>
               </div>
             </div>
           </div>

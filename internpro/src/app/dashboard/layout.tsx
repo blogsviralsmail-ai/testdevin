@@ -86,6 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showNotifs, setShowNotifs] = useState(false);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [menuSearch, setMenuSearch] = useState("");
 
   const checkAuth = useCallback(async () => {
     try {
@@ -285,13 +286,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {/* Logo */}
         <div className="p-4 flex items-center gap-3" style={{borderBottom: '1px solid rgba(255,255,255,0.06)'}}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shrink-0" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-          {(sidebarOpen || isMobile) && <span className="text-xl font-bold bg-gradient-to-r from-[#22d3ee] to-[#a78bfa] bg-clip-text text-transparent">InternPro</span>}
+            <img src="/logo-kkhs.png" alt="KKHS" className="h-10 w-auto shrink-0" />
+          {(sidebarOpen || isMobile) && <span className="text-xl font-bold bg-gradient-to-r from-[#22d3ee] to-[#a78bfa] bg-clip-text text-transparent">KKHS Media</span>}
         </div>
+
+        {/* Search */}
+        {(sidebarOpen || isMobile) && (
+          <div className="px-3 pt-3">
+            <input
+              type="text"
+              placeholder="Search menu..."
+              value={menuSearch}
+              onChange={e => setMenuSearch(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
+            />
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {filteredNav.map((item) => {
+          {filteredNav.filter(item => !menuSearch || item.label.toLowerCase().includes(menuSearch.toLowerCase())).map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
