@@ -45,12 +45,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Track referral if code provided
+    // Track referral if code provided (supports both agent and student referral codes)
     if (referralCode) {
-      const agent = await prisma.agent.findUnique({ where: { referralCode } });
+      let agent = await prisma.agent.findUnique({ where: { referralCode } });
+      if (!agent) {
+        // Check if it's a student referral code (format: STU-xxxxx)
+        // Or find user by any matching code pattern
+        const refUser = await prisma.user.findFirst({
+          where: { agentProfile: { referralCode } },
+        });
+        if (refUser) {
+          agent = await prisma.agent.findUnique({ where: { userId: refUser.id } });
+        }
+      }
       if (agent) {
         await prisma.referral.create({
-          data: { agentId: agent.id, studentId: user.id, status: "pending" },
+          data: { agentId: agent.id, studentId: user.id, status: "pending", programId: programId || null },
         });
       }
     }

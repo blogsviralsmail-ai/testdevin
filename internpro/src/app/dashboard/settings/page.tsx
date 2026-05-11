@@ -1042,12 +1042,45 @@ export default function SettingsPage() {
               )}
               <div className="flex items-center justify-between py-2">
                 <div>
+                  <p className="text-sm font-medium text-slate-300">Telegram Notifications</p>
+                  <p className="text-xs text-slate-500">Send all notifications to Telegram group/channel</p>
+                </div>
+                <input type="checkbox" checked={settings.telegram_enabled === "true"}
+                  onChange={(e) => updateSetting("telegram_enabled", e.target.checked ? "true" : "false")}
+                  className="w-5 h-5 rounded" />
+              </div>
+              {settings.telegram_enabled === "true" && (
+                <div className="ml-4 pl-4 border-l-2 border-blue-400 space-y-3 py-2">
+                  <p className="text-xs text-slate-500">Configure Telegram Bot API — create a bot via @BotFather and get the token</p>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Bot Token</label>
+                    <input type="password" value={settings.telegram_bot_token || ""} onChange={(e) => updateSetting("telegram_bot_token", e.target.value)}
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-white" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Chat ID</label>
+                    <input value={settings.telegram_chat_id || ""} onChange={(e) => updateSetting("telegram_chat_id", e.target.value)}
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-white" placeholder="Group/Channel ID (e.g., -1001234567890)" />
+                    <p className="text-[10px] text-slate-600 mt-1">Add bot to group, then send a message and check: https://api.telegram.org/bot[TOKEN]/getUpdates</p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center justify-between py-2">
+                <div>
                   <p className="text-sm font-medium text-slate-300">Auto Attendance</p>
                   <p className="text-xs text-slate-500">Automatically mark student present when they open dashboard</p>
                 </div>
                 <input type="checkbox" checked={settings.auto_attendance !== "false"}
                   onChange={(e) => updateSetting("auto_attendance", e.target.checked ? "true" : "false")}
                   className="w-5 h-5 rounded" />
+              </div>
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Referral Commission Rate (%)</label>
+                  <input type="number" min="0" max="100" value={settings.referral_commission_rate || "30"} onChange={(e) => updateSetting("referral_commission_rate", e.target.value)}
+                    className="w-full px-3 py-1.5 border rounded-lg text-sm text-white" placeholder="30" />
+                  <p className="text-[10px] text-slate-600 mt-1">Default referral commission percentage for agents/students</p>
+                </div>
               </div>
             </div>
           </div>

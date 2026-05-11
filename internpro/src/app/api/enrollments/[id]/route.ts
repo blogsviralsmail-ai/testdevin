@@ -108,6 +108,58 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       notifyApplicationStatusChange(enrollment.student.email, enrollment.student.name, status, enrollment.batch.program.title).catch(() => {});
     }
 
+    // Process referral commission when student is selected
+    if (status === "selected") {
+      try {
+        const referral = await prisma.referral.findFirst({
+          where: { studentId: enrollment.studentId, status: "pending" },
+          include: { agent: { include: { user: true } } },
+        });
+        if (referral) {
+          const commissionRate = referral.agent.commissionRate || 30;
+          const feeAmt = enrollment.feeAmount || 0;
+          const commissionAmount = feeAmt > 0 ? (feeAmt * commissionRate / 100) : 0;
+
+          // Update referral status
+          await prisma.referral.update({
+            where: { id: referral.id },
+            data: { status: "converted", commission: commissionAmount, amount: feeAmt },
+          });
+
+          // Add commission to agent wallet
+          if (commissionAmount > 0) {
+            await prisma.agent.update({
+              where: { id: referral.agentId },
+              data: {
+                walletBalance: { increment: commissionAmount },
+                totalEarnings: { increment: commissionAmount },
+              },
+            });
+            await prisma.walletTransaction.create({
+              data: {
+                userId: referral.agent.userId,
+                type: "referral_commission",
+                amount: commissionAmount,
+                balance: referral.agent.walletBalance + commissionAmount,
+                description: `Referral commission for ${enrollment.student.name} — ${enrollment.batch.program.title}`,
+                reference: referral.id,
+              },
+            });
+          }
+
+          // If referrer is a student, auto-create agent profile
+          if (referral.agent.user.role === "student") {
+            await prisma.user.update({
+              where: { id: referral.agent.userId },
+              data: { role: "agent" },
+            });
+          }
+        }
+      } catch {
+        // Don't block enrollment update if referral processing fails
+      }
+    }
+
     return NextResponse.json(enrollment);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to update enrollment";

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     where,
     include: {
       student: {
-        select: { id: true, name: true, email: true, phone: true, avatar: true, collegeName: true, degree: true, year: true, address: true, dob: true, employeeId: true, plainPassword: true },
+        select: { id: true, name: true, email: true, phone: true, avatar: true, collegeName: true, degree: true, year: true, address: true, dob: true, employeeId: true, plainPassword: true, referredBy: { include: { agent: { include: { user: { select: { name: true, email: true } } } } } } },
       },
       batch: {
         include: {

@@ -34,6 +34,7 @@ export default function IDCardsPage() {
   const [previewCard, setPreviewCard] = useState<EmployeeCard | null>(null);
   const [companyLogo, setCompanyLogo] = useState("/uploads/kkhs-logo.png");
   const [companyName, setCompanyName] = useState("KKHS Media Private Limited");
+  const [showPhotoAlert, setShowPhotoAlert] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [cardsRes, enrollRes, meRes, settingsRes] = await Promise.all([
@@ -61,6 +62,12 @@ export default function IDCardsPage() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Check if student has photo (avatar) uploaded
+    const selectedEnrollment = enrollments.find(en => en.student.id === generateForm.userId);
+    if (selectedEnrollment && !selectedEnrollment.student.avatar && !generateForm.photoUrl) {
+      setShowPhotoAlert(true);
+      return;
+    }
     const res = await fetch("/api/employee-cards", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -421,6 +428,27 @@ export default function IDCardsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Photo Required Alert */}
+      {showPhotoAlert && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPhotoAlert(false)}>
+          <div className="rounded-xl p-6 w-full max-w-sm text-center" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}} onClick={e => e.stopPropagation()}>
+            <div className="text-5xl mb-4">📸</div>
+            <h2 className="text-lg font-bold text-white mb-2">Photo Required</h2>
+            <p className="text-slate-400 text-sm mb-4">Please upload the student&apos;s profile photo first before generating an ID card.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowPhotoAlert(false)}
+                className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg text-sm hover:bg-white/20">
+                Cancel
+              </button>
+              <button onClick={() => { setShowPhotoAlert(false); window.location.href = "/dashboard/students"; }}
+                className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2] font-medium">
+                Upload Photo
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

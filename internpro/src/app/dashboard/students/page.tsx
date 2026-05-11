@@ -18,7 +18,7 @@ interface Enrollment {
   workTiming: string | null;
   feeAmount: number | null;
   stipendAmount: number | null;
-  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null; plainPassword: string | null };
+  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null; plainPassword: string | null; referredBy?: { id: string; status: string; agent: { referralCode: string; user: { name: string; email: string } } }[] };
   batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number; mode: string } };
   _count: { attendances: number; certificates: number; payments: number };
 }
@@ -471,6 +471,14 @@ export default function StudentsPage() {
                 <div><span className="text-slate-500 text-xs">Status</span><p><span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(viewProfile.status)}`}>{viewProfile.status.replace("_", " ")}</span></p></div>
                 <div><span className="text-slate-500 text-xs">Joining Date</span><p className="font-medium text-white">{viewProfile.joiningDate ? formatDate(viewProfile.joiningDate) : "—"}</p></div>
               </div>
+              {viewProfile.student.referredBy && viewProfile.student.referredBy.length > 0 && (
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <span className="text-amber-400 text-xs font-medium">🔗 Referred By</span>
+                  <p className="font-medium text-white">{viewProfile.student.referredBy[0].agent.user.name}</p>
+                  <p className="text-xs text-slate-400">{viewProfile.student.referredBy[0].agent.user.email} — Code: {viewProfile.student.referredBy[0].agent.referralCode}</p>
+                  <p className="text-xs text-slate-500 mt-1">Status: <span className={viewProfile.student.referredBy[0].status === "converted" ? "text-emerald-400" : "text-amber-400"}>{viewProfile.student.referredBy[0].status}</span></p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-slate-500 text-xs">College</span><p className="font-medium text-white">{viewProfile.student.collegeName || "—"}</p></div>
                 <div><span className="text-slate-500 text-xs">Degree</span><p className="font-medium text-white">{viewProfile.student.degree || "—"}</p></div>

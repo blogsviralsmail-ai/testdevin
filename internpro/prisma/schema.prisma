@@ -186,6 +186,9 @@ model OfferLetter {
   htmlContent  String?
   templateId   String?
   issuedAt     DateTime   @default(now())
+  acceptedAt   DateTime?
+  signatureUrl String?
+  isAccepted   Boolean    @default(false)
   createdAt    DateTime   @default(now())
   enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
 }
@@ -555,6 +558,35 @@ model AgentPayout {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   agent      Agent    @relation(fields: [agentId], references: [id])
+}
+
+model WalletTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  amount      Float
+  balance     Float    @default(0)
+  description String?
+  reference   String?
+  createdAt   DateTime @default(now())
+}
+
+model WithdrawalRequest {
+  id          String    @id @default(cuid())
+  userId      String
+  amount      Float
+  status      String    @default("pending")
+  method      String?
+  bankName    String?
+  accountNumber String?
+  ifscCode    String?
+  upiId       String?
+  remarks     String?
+  adminRemarks String?
+  processedAt DateTime?
+  processedBy String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Testimonial {

@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     include: {
       enrollment: {
         include: {
-          student: { select: { id: true, name: true, email: true, phone: true, collegeName: true, degree: true } },
+          student: { select: { id: true, name: true, email: true, phone: true, collegeName: true, degree: true, avatar: true, referredBy: { include: { agent: { include: { user: { select: { name: true, email: true } } } } } } } },
           batch: { select: { id: true, name: true, program: { select: { id: true, title: true, domain: true } } } },
         },
       },

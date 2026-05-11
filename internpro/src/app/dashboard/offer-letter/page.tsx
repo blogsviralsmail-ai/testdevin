@@ -8,6 +8,9 @@ interface OfferLetter {
   letterNumber: string;
   htmlContent: string;
   issuedAt: string;
+  isAccepted: boolean;
+  acceptedAt: string | null;
+  signatureUrl: string | null;
   enrollment: {
     salary: number;
     weekoffs: number;
@@ -38,6 +41,10 @@ export default function OfferLetterPage() {
   const [viewing, setViewing] = useState<OfferLetter | null>(null);
   const [viewingExp, setViewingExp] = useState<ExperienceLetter | null>(null);
   const [activeTab, setActiveTab] = useState<"offer" | "experience">("offer");
+  const [showSignModal, setShowSignModal] = useState<string | null>(null);
+  const [signFile, setSignFile] = useState<File | null>(null);
+  const [signPreview, setSignPreview] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -89,18 +96,64 @@ export default function OfferLetterPage() {
 
   if (loading) return <div className="p-6 text-slate-300">Loading...</div>;
 
+  const handleAccept = async () => {
+    if (!showSignModal || !signFile) return;
+    setAccepting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", signFile);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!uploadRes.ok) { alert("Failed to upload signature"); setAccepting(false); return; }
+      const uploadData = await uploadRes.json();
+      const res = await fetch("/api/offer-letters/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId: showSignModal, signatureUrl: uploadData.url }),
+      });
+      if (res.ok) {
+        setShowSignModal(null);
+        setSignFile(null);
+        setSignPreview(null);
+        // Refresh
+        const offerData = await fetch("/api/offer-letters").then(r => r.json());
+        setLetters(offerData);
+        alert("Offer letter accepted successfully!");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to accept");
+      }
+    } catch { alert("Error accepting offer letter"); }
+    setAccepting(false);
+  };
+
   if (viewing) {
     return (
       <div>
         <button onClick={() => setViewing(null)} className="mb-4 text-[#22d3ee] hover:underline text-sm">← Back to Letters</button>
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-8 border shadow-none">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              {viewing.isAccepted ? (
+                <span className="text-emerald-400 text-sm font-medium">✅ Accepted on {new Date(viewing.acceptedAt!).toLocaleDateString("en-IN")}</span>
+              ) : (
+                <button onClick={() => setShowSignModal(viewing.id)}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 font-medium">
+                  ✅ Accept Offer Letter
+                </button>
+              )}
+            </div>
             <button onClick={() => handlePrint(viewing.htmlContent || "", viewing.letterNumber)}
               className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2]">
               Print / Download PDF
             </button>
           </div>
           <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: viewing.htmlContent || "" }} />
+          {viewing.isAccepted && viewing.signatureUrl && (
+            <div className="mt-4 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <p className="text-emerald-400 text-sm font-medium mb-2">Your Signature:</p>
+              <img src={viewing.signatureUrl} alt="Signature" className="max-h-16" />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -182,7 +235,15 @@ export default function OfferLetterPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    {letter.isAccepted ? (
+                      <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-medium">✅ Accepted</span>
+                    ) : (
+                      <button onClick={() => setShowSignModal(letter.id)}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 font-medium">
+                        Accept
+                      </button>
+                    )}
                     <button onClick={() => setViewing(letter)}
                       className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2]">
                       View
@@ -240,6 +301,49 @@ export default function OfferLetterPage() {
             ))}
           </div>
         )
+      )}
+
+      {/* Signature Upload Modal */}
+      {showSignModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setShowSignModal(null); setSignFile(null); setSignPreview(null); }}>
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}} onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-white mb-4">Accept Offer Letter</h2>
+            <p className="text-slate-400 text-sm mb-4">Please upload your signature to accept the offer letter. This confirms your acceptance.</p>
+            <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center mb-4">
+              {signPreview ? (
+                <div>
+                  <img src={signPreview} alt="Signature Preview" className="max-h-24 mx-auto mb-3" />
+                  <button onClick={() => { setSignFile(null); setSignPreview(null); }} className="text-xs text-red-400 hover:underline">Remove</button>
+                </div>
+              ) : (
+                <label className="cursor-pointer">
+                  <div className="text-4xl mb-2">✍️</div>
+                  <p className="text-white text-sm font-medium">Click to upload your signature</p>
+                  <p className="text-slate-500 text-xs mt-1">PNG, JPG (Max 2MB)</p>
+                  <input type="file" accept="image/*" className="hidden" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSignFile(file);
+                      const reader = new FileReader();
+                      reader.onload = ev => setSignPreview(ev.target?.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }} />
+                </label>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setShowSignModal(null); setSignFile(null); setSignPreview(null); }}
+                className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg text-sm hover:bg-white/20">
+                Cancel
+              </button>
+              <button onClick={handleAccept} disabled={!signFile || accepting}
+                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 font-medium">
+                {accepting ? "Accepting..." : "Accept & Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

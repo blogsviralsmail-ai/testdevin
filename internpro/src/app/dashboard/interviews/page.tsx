@@ -18,7 +18,7 @@ interface Interview {
     id: string;
     studentId: string;
     batchId: string;
-    student: { id: string; name: string; email: string; phone: string; collegeName: string; degree: string };
+    student: { id: string; name: string; email: string; phone: string; collegeName: string; degree: string; avatar: string | null; referredBy: { id: string; status: string; agent: { referralCode: string; user: { name: string; email: string } } }[] };
     batch: { id: string; name: string; program: { id: string; title: string; domain: string } };
   };
   interviewer: { name: string; email: string } | null;
@@ -436,6 +436,13 @@ export default function InterviewsPage() {
                   <p className="text-xs text-slate-500 font-medium">College</p>
                   <p className="text-sm text-white">{viewDetails.enrollment.student.collegeName || "N/A"}</p>
                 </div>
+                {viewDetails.enrollment.student.referredBy && viewDetails.enrollment.student.referredBy.length > 0 && (
+                  <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3">
+                    <p className="text-xs text-amber-400 font-medium">Referred By</p>
+                    <p className="text-sm text-white">{viewDetails.enrollment.student.referredBy[0].agent.user.name}</p>
+                    <p className="text-xs text-slate-400">{viewDetails.enrollment.student.referredBy[0].agent.user.email} — Code: {viewDetails.enrollment.student.referredBy[0].agent.referralCode}</p>
+                  </div>
+                )}
                 <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
                   <p className="text-xs text-slate-500 font-medium">Degree</p>
                   <p className="text-sm text-white">{viewDetails.enrollment.student.degree || "N/A"}</p>
@@ -572,6 +579,9 @@ export default function InterviewsPage() {
                   <p className="text-sm text-slate-400">{i.enrollment.student.email} | {i.enrollment.student.phone}</p>
                   <p className="text-sm text-slate-500">{i.enrollment.student.collegeName} — {i.enrollment.student.degree}</p>
                   <p className="text-sm text-[#22d3ee] font-medium mt-1">{i.enrollment.batch.program.title}</p>
+                  {i.enrollment.student.referredBy && i.enrollment.student.referredBy.length > 0 && (
+                    <p className="text-xs text-amber-400 mt-1">🔗 Referred by: {i.enrollment.student.referredBy[0].agent.user.name} ({i.enrollment.student.referredBy[0].agent.referralCode})</p>
+                  )}
                   <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
                     <span>📅 {new Date(i.scheduledAt).toLocaleString("en-IN")}</span>
                     <span>⏱ {i.duration} min</span>

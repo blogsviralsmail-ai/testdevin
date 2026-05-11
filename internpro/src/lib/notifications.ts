@@ -35,6 +35,35 @@ async function sendEmailSafe(to: string, subject: string, html: string) {
   }
 }
 
+// Telegram Bot notification
+async function sendTelegramMessage(message: string) {
+  try {
+    const settings = await prisma.setting.findMany({
+      where: { key: { in: ["telegram_bot_token", "telegram_chat_id"] } },
+    });
+    const sMap: Record<string, string> = {};
+    for (const s of settings) sMap[s.key] = s.value;
+
+    const botToken = sMap.telegram_bot_token;
+    const chatId = sMap.telegram_chat_id;
+    if (!botToken || !chatId) return;
+
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "HTML",
+      }),
+    });
+  } catch {
+    // Silent fail
+  }
+}
+
+export { sendTelegramMessage };
+
 export async function notifyApplicationStatusChange(studentEmail: string, studentName: string, status: string, programTitle: string) {
   const statusMessages: Record<string, string> = {
     selected: `Congratulations ${studentName}! Your application for <b>${programTitle}</b> has been accepted. Welcome aboard!`,
@@ -61,6 +90,7 @@ export async function notifyApplicationStatusChange(studentEmail: string, studen
         link: "/dashboard",
       },
     }).catch(() => {}) : Promise.resolve(),
+    sendTelegramMessage(`📋 <b>Application ${status}</b>\nStudent: ${studentName}\nProgram: ${programTitle}`),
   ]);
 }
 
@@ -70,6 +100,7 @@ export async function notifyNewTask(batchId: string, taskTitle: string, programT
     include: { student: { select: { id: true, email: true, name: true } } },
   });
 
+  sendTelegramMessage(`📝 <b>New Task</b>: ${taskTitle} — ${programTitle}`).catch(() => {});
   for (const e of enrollments) {
     await Promise.all([
       sendEmailSafe(
@@ -113,6 +144,7 @@ export async function notifyTaskReviewed(studentId: string, studentEmail: string
     prisma.notification.create({
       data: { userId: studentId, title: "Task Reviewed", message: `${taskTitle}${percentage !== null ? ` — ${percentage}%` : ""}`, type: "info", link: "/dashboard/tasks" },
     }).catch(() => {}),
+    sendTelegramMessage(`✅ <b>Task Reviewed</b>: ${taskTitle}\nStudent: ${studentName}${percentage !== null ? `\nScore: ${percentage}%` : ""}`),
   ]);
 }
 
@@ -154,6 +186,7 @@ async function notifyAllChannels(email: string, phone: string | null, emailSubje
     prisma.notification.create({
       data: { userId, title: notifTitle, message: notifMessage, type: "info", link: notifLink },
     }).catch(() => {}),
+    sendTelegramMessage(`🔔 <b>${notifTitle}</b>\n${notifMessage}`),
   ]);
 }
 
@@ -176,6 +209,7 @@ export async function notifyLeaveApplied(studentName: string, studentEmail: stri
       }).catch(() => {}),
     ]);
   }
+  sendTelegramMessage(`🏖 <b>Leave Request</b>\n${studentName} applied for ${totalDays} day(s) ${leaveType} leave\n${new Date(startDate).toLocaleDateString()} — ${new Date(endDate).toLocaleDateString()}`).catch(() => {});
 }
 
 export async function notifyLeaveAction(studentId: string, studentEmail: string, studentName: string, action: "approved" | "rejected", leaveType: string, startDate: string, endDate: string, adminRemarks: string | null) {
@@ -186,6 +220,7 @@ export async function notifyLeaveAction(studentId: string, studentEmail: string,
     prisma.notification.create({
       data: { userId: studentId, title: `Leave ${action === "approved" ? "Approved" : "Rejected"}`, message: `Your ${leaveType} leave has been ${statusEmoji}`, type: action === "approved" ? "success" : "error", link: "/dashboard/my-leaves" },
     }).catch(() => {}),
+    sendTelegramMessage(`🏖 <b>Leave ${action === "approved" ? "Approved" : "Rejected"}</b>\n${studentName} — ${leaveType} leave`),
   ]);
 }
 
@@ -198,6 +233,7 @@ export async function notifySalaryGenerated(studentId: string, studentEmail: str
     prisma.notification.create({
       data: { userId: studentId, title: "Salary Generated", message: `₹${amount.toLocaleString()} for ${month}`, type: "info", link: "/dashboard/my-payslips" },
     }).catch(() => {}),
+    sendTelegramMessage(`💰 <b>Salary Generated</b>\n${studentName} — ₹${amount.toLocaleString()} for ${month}`),
   ]);
 }
 
@@ -208,6 +244,7 @@ export async function notifySalaryPaid(studentId: string, studentEmail: string, 
     prisma.notification.create({
       data: { userId: studentId, title: "Salary Paid", message: `₹${amount.toLocaleString()} for ${month} — paid via ${paymentMethod}`, type: "success", link: "/dashboard/my-payslips" },
     }).catch(() => {}),
+    sendTelegramMessage(`💸 <b>Salary Paid</b>\n${studentName} — ₹${amount.toLocaleString()} for ${month} via ${paymentMethod}`),
   ]);
 }
 
@@ -234,6 +271,7 @@ export async function notifyHolidayAdded(title: string, date: string, type: stri
       ).catch(() => {});
     }
   }
+  sendTelegramMessage(`🎉 <b>Holiday Announced</b>\n${title} on ${new Date(date).toLocaleDateString()} (${type})`).catch(() => {});
 }
 
 // --- Payment Notifications ---
@@ -250,6 +288,7 @@ export async function notifyPaymentReceived(studentName: string, studentEmail: s
       }).catch(() => {}),
     ]);
   }
+  sendTelegramMessage(`💳 <b>Payment Received</b>\n₹${amount.toLocaleString()} from ${studentName} for ${programTitle} via ${method}`).catch(() => {});
 }
 
 // --- Task Submission Notification ---
@@ -261,6 +300,7 @@ export async function notifyTaskSubmitted(studentName: string, taskTitle: string
       data: { userId: admin.id, title: "Task Submitted", message: `${studentName} submitted: ${taskTitle} (${programTitle})`, type: "info", link: "/dashboard/reviews" },
     }).catch(() => {});
   }
+  sendTelegramMessage(`📤 <b>Task Submitted</b>\n${studentName}: ${taskTitle} (${programTitle})`).catch(() => {});
 }
 
 function wrapEmailTemplate(body: string): string {

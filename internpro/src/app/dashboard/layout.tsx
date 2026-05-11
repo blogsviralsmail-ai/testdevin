@@ -49,6 +49,7 @@ const navItems = [
   { href: "/dashboard/holidays", label: "Holiday Calendar", icon: "📅", roles: ["admin", "organization"] },
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
   { href: "/dashboard/agents", label: "Agents", icon: "🤝", roles: ["admin", "organization", "agent"] },
+  { href: "/dashboard/withdrawals", label: "Withdrawals", icon: "💸", roles: ["admin", "organization", "agent", "student"] },
 
   // Communication
   { href: "/dashboard/chat", label: "Live Chat", icon: "🗨️", roles: ["admin", "organization", "teamleader", "student"] },
@@ -234,6 +235,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     "/dashboard/holidays": "holidays.view",
     "/dashboard/payments": "payments.view",
     "/dashboard/agents": "agents.view",
+    "/dashboard/withdrawals": "withdrawals.view",
     "/dashboard/chat": "chat.view",
     "/dashboard/discussions": "discussions.view",
     "/dashboard/announcements": "announcements.view",
