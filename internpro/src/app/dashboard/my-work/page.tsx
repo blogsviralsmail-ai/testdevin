@@ -36,6 +36,13 @@ interface EnrollmentInfo {
   joiningDate: string | null;
   currentDay: number;
   totalDays: number;
+  enrollment?: {
+    id: string;
+    feeType: string | null;
+    feeAmount: number | null;
+    paymentStatus: string | null;
+    batch?: { program?: { title?: string } };
+  };
 }
 
 interface QuizInfo {
@@ -183,6 +190,15 @@ export default function MyWorkPage() {
           <h2 className="text-xl font-bold text-yellow-800 mb-2">Not Enrolled Yet</h2>
           <p className="text-amber-400">Your enrollment is not active yet. Please contact admin or check your application status.</p>
         </div>
+      </div>
+    );
+  }
+
+  // Payment wall for paid programs with pending payment
+  if (enrollment.enrollment?.feeType === "paid" && enrollment.enrollment?.paymentStatus !== "completed" && enrollment.enrollment?.paymentStatus !== "not_required") {
+    return (
+      <div className="p-6">
+        <PaymentBlockMessage feature="My Workspace" />
       </div>
     );
   }
