@@ -64,6 +64,7 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [modeFilter, setModeFilter] = useState<string>("all");
   const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -321,9 +322,18 @@ export default function Home() {
               <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Internship Openings</span>
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto">Apply now for ongoing internship programs across 13+ domains</p>
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              {[{v: "all", l: "All"}, {v: "online", l: "💻 Online"}, {v: "offline", l: "🏢 Offline"}, {v: "hybrid", l: "🔄 Hybrid"}].map((f) => (
+                <button key={f.v} onClick={() => setModeFilter(f.v)}
+                  className={`px-5 py-2 rounded-xl text-sm font-medium transition-all ${modeFilter === f.v ? "text-white shadow-lg" : "text-slate-400 hover:text-white"}`}
+                  style={modeFilter === f.v ? {background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 0 20px rgba(14,165,184,0.3)'} : {background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'}}>
+                  {f.l}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {programs.slice(0, 6).map((p) => {
+            {programs.filter((p) => modeFilter === "all" || p.mode === modeFilter).slice(0, 6).map((p) => {
               const enrolled = p.batches?.reduce((sum, b) => sum + (b._count?.enrollments || 0), 0) || 0;
               const seatsLeft = Math.max(0, p.maxSeats - enrolled);
               const color = domainColors[p.domain] || domainColors.default;

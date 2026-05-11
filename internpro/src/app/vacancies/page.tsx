@@ -26,12 +26,17 @@ const domainColors: Record<string, string> = {
 export default function VacanciesPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [search, setSearch] = useState("");
+  const [modeFilter, setModeFilter] = useState<string>("all");
 
   useEffect(() => {
     fetch("/api/programs?published=true").then(r => r.ok ? r.json() : []).then(setPrograms).catch(() => {});
   }, []);
 
-  const filtered = programs.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || p.domain.toLowerCase().includes(search.toLowerCase()));
+  const filtered = programs.filter(p => {
+    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.domain.toLowerCase().includes(search.toLowerCase());
+    const matchMode = modeFilter === "all" || p.mode === modeFilter;
+    return matchSearch && matchMode;
+  });
 
   return (
     <div className="min-h-screen" style={{background: '#0a0e1a', color: '#f1f5f9'}}>
@@ -79,6 +84,15 @@ export default function VacanciesPage() {
               className="w-full px-5 py-3 rounded-xl text-white placeholder-slate-500 outline-none transition-all focus:shadow-[0_0_20px_rgba(14,165,184,0.2)]"
               style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
             />
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 mt-6">
+            {[{v: "all", l: "All"}, {v: "online", l: "💻 Online"}, {v: "offline", l: "🏢 Offline"}, {v: "hybrid", l: "🔄 Hybrid"}].map((f) => (
+              <button key={f.v} onClick={() => setModeFilter(f.v)}
+                className={`px-5 py-2 rounded-xl text-sm font-medium transition-all ${modeFilter === f.v ? "text-white shadow-lg" : "text-slate-400 hover:text-white"}`}
+                style={modeFilter === f.v ? {background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 0 20px rgba(14,165,184,0.3)'} : {background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'}}>
+                {f.l}
+              </button>
+            ))}
           </div>
         </div>
 
