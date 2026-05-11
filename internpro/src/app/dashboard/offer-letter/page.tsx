@@ -87,16 +87,16 @@ export default function OfferLetterPage() {
     }
   };
 
-  if (loading) return <div className="p-6 text-gray-700">Loading...</div>;
+  if (loading) return <div className="p-6 text-slate-300">Loading...</div>;
 
   if (viewing) {
     return (
       <div>
-        <button onClick={() => setViewing(null)} className="mb-4 text-indigo-600 hover:underline text-sm">← Back to Letters</button>
-        <div className="bg-white rounded-xl p-8 border shadow-sm">
+        <button onClick={() => setViewing(null)} className="mb-4 text-[#22d3ee] hover:underline text-sm">← Back to Letters</button>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-8 border shadow-none">
           <div className="flex justify-end mb-4">
             <button onClick={() => handlePrint(viewing.htmlContent || "", viewing.letterNumber)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+              className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2]">
               Print / Download PDF
             </button>
           </div>
@@ -109,18 +109,18 @@ export default function OfferLetterPage() {
   if (viewingExp) {
     return (
       <div>
-        <button onClick={() => setViewingExp(null)} className="mb-4 text-indigo-600 hover:underline text-sm">← Back to Letters</button>
-        <div className="bg-white rounded-xl p-8 border shadow-sm">
+        <button onClick={() => setViewingExp(null)} className="mb-4 text-[#22d3ee] hover:underline text-sm">← Back to Letters</button>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-8 border shadow-none">
           <div className="flex justify-end mb-4">
             <button onClick={() => handlePrint(viewingExp.htmlContent || "", viewingExp.letterNumber)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+              className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2]">
               Print / Download PDF
             </button>
           </div>
           {viewingExp.htmlContent ? (
             <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: viewingExp.htmlContent }} />
           ) : (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-slate-500">
               <p>Experience Letter #{viewingExp.letterNumber}</p>
               <p className="mt-2">Category: {viewingExp.category}</p>
               <p className="mt-1">Issued: {new Date(viewingExp.issuedAt).toLocaleDateString("en-IN")}</p>
@@ -134,18 +134,18 @@ export default function OfferLetterPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Letters</h1>
-        <p className="text-gray-600">View your offer letter, experience letter, and joining details</p>
+        <h1 className="text-2xl font-bold text-white">My Letters</h1>
+        <p className="text-slate-400">View your offer letter, experience letter, and joining details</p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         <button onClick={() => setActiveTab("offer")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "offer" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "offer" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400"}`}>
           Offer Letters ({letters.length})
         </button>
         <button onClick={() => setActiveTab("experience")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "experience" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "experience" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400"}`}>
           Experience Letters ({expLetters.length})
         </button>
       </div>
@@ -154,11 +154,11 @@ export default function OfferLetterPage() {
         letters.length === 0 ? (
           <>
             <PaymentBlockMessage feature="Offer Letter" />
-            <div className="bg-white rounded-xl p-12 text-center border">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
               <div className="text-6xl mb-4">📨</div>
-              <h3 className="text-lg font-semibold text-gray-700">No Offer Letter Yet</h3>
-              <p className="text-gray-500 mt-2">Your offer letter will appear here once you are selected after the interview.</p>
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+              <h3 className="text-lg font-semibold text-slate-300">No Offer Letter Yet</h3>
+              <p className="text-slate-500 mt-2">Your offer letter will appear here once you are selected after the interview.</p>
+              <div className="mt-6 p-4 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] text-sm text-blue-800">
                 <strong>Current Status Flow:</strong> Applied → Documents Review → Interview → Selection → Offer Letter
               </div>
             </div>
@@ -166,17 +166,17 @@ export default function OfferLetterPage() {
         ) : (
           <div className="grid gap-4">
             {letters.map((letter) => (
-              <div key={letter.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
+              <div key={letter.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{letter.enrollment.batch.program.title}</h3>
-                    <p className="text-sm text-gray-600">Letter No: {letter.letterNumber}</p>
-                    <div className="flex gap-4 mt-2 text-sm text-gray-500 flex-wrap">
+                    <h3 className="text-lg font-semibold text-white">{letter.enrollment.batch.program.title}</h3>
+                    <p className="text-sm text-slate-400">Letter No: {letter.letterNumber}</p>
+                    <div className="flex gap-4 mt-2 text-sm text-slate-500 flex-wrap">
                       <span>💰 ₹{letter.enrollment.salary}/month</span>
                       <span>📅 Joining: {new Date(letter.enrollment.joiningDate).toLocaleDateString("en-IN")}</span>
                       <span>🏢 {letter.enrollment.workTiming}</span>
                       {letter.enrollment.feeType && (
-                        <span className={`px-2 py-0.5 rounded text-xs ${letter.enrollment.feeType === "stipend" ? "bg-green-100 text-green-700" : letter.enrollment.feeType === "paid" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs ${letter.enrollment.feeType === "stipend" ? "bg-emerald-500/10 text-emerald-400" : letter.enrollment.feeType === "paid" ? "bg-red-500/10 text-red-400" : "bg-transparent text-slate-400"}`}>
                           {letter.enrollment.feeType === "stipend" ? "Company Pays You" : letter.enrollment.feeType === "paid" ? "You Pay Fee" : "Free"}
                         </span>
                       )}
@@ -184,11 +184,11 @@ export default function OfferLetterPage() {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setViewing(letter)}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+                      className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2]">
                       View
                     </button>
                     <button onClick={() => handlePrint(letter.htmlContent || "", letter.letterNumber)}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+                      className="px-4 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200">
                       Print
                     </button>
                   </div>
@@ -199,26 +199,26 @@ export default function OfferLetterPage() {
         )
       ) : (
         expLetters.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center border">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
             <div className="text-6xl mb-4">📜</div>
-            <h3 className="text-lg font-semibold text-gray-700">No Experience Letter Yet</h3>
-            <p className="text-gray-500 mt-2">Complete your internship and get approved by admin to receive your experience letter.</p>
+            <h3 className="text-lg font-semibold text-slate-300">No Experience Letter Yet</h3>
+            <p className="text-slate-500 mt-2">Complete your internship and get approved by admin to receive your experience letter.</p>
           </div>
         ) : (
           <div className="grid gap-4">
             {expLetters.map((letter) => (
-              <div key={letter.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
+              <div key={letter.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-white">
                       {letter.enrollment.student?.name ? `${letter.enrollment.student.name} — ` : ""}{letter.enrollment.batch.program.title}
                     </h3>
-                    <p className="text-sm text-gray-600">Letter No: {letter.letterNumber}</p>
-                    <div className="flex gap-4 mt-2 text-sm text-gray-500 flex-wrap">
+                    <p className="text-sm text-slate-400">Letter No: {letter.letterNumber}</p>
+                    <div className="flex gap-4 mt-2 text-sm text-slate-500 flex-wrap">
                       <span className={`px-2 py-0.5 rounded text-xs ${
-                        letter.category === "excellent" ? "bg-green-100 text-green-700" :
-                        letter.category === "good" ? "bg-blue-100 text-blue-700" :
-                        "bg-yellow-100 text-yellow-700"
+                        letter.category === "excellent" ? "bg-emerald-500/10 text-emerald-400" :
+                        letter.category === "good" ? "bg-blue-500/10 text-[#60a5fa]" :
+                        "bg-amber-500/10 text-amber-400"
                       }`}>
                         Category: {letter.category}
                       </span>
@@ -227,11 +227,11 @@ export default function OfferLetterPage() {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setViewingExp(letter)}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+                      className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2]">
                       View
                     </button>
                     <button onClick={() => handlePrint(letter.htmlContent || "", letter.letterNumber)}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+                      className="px-4 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200">
                       Print
                     </button>
                   </div>

@@ -61,22 +61,22 @@ export default function UsersPage() {
 
   const roleBadge = (role: string) => {
     const colors: Record<string, string> = {
-      admin: "bg-red-100 text-red-700",
-      organization: "bg-purple-100 text-purple-700",
-      teamleader: "bg-blue-100 text-blue-700",
-      student: "bg-green-100 text-green-700",
+      admin: "bg-red-500/10 text-red-400",
+      organization: "bg-purple-500/10 text-[#a78bfa]",
+      teamleader: "bg-blue-500/10 text-[#60a5fa]",
+      student: "bg-emerald-500/10 text-emerald-400",
     };
-    return colors[role] || "bg-gray-100 text-gray-700";
+    return colors[role] || "bg-transparent text-slate-300";
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 text-sm">Manage all platform users — create, edit, delete</p>
+          <h1 className="text-2xl font-bold text-white">User Management</h1>
+          <p className="text-slate-400 text-sm">Manage all platform users — create, edit, delete</p>
         </div>
-        <button onClick={() => setShowAdd(!showAdd)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+        <button onClick={() => setShowAdd(!showAdd)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
           {showAdd ? "Cancel" : "+ Add User"}
         </button>
       </div>
@@ -86,7 +86,7 @@ export default function UsersPage() {
           <button
             key={r}
             onClick={() => setFilter(r)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition ${filter === r ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+            className={`text-xs px-3 py-1.5 rounded-lg transition ${filter === r ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-gray-200"}`}
           >
             {r === "" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
           </button>
@@ -94,26 +94,26 @@ export default function UsersPage() {
       </div>
 
       {showAdd && (
-        <form onSubmit={handleAdd} className="bg-white rounded-xl p-6 border mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New User</h2>
+        <form onSubmit={handleAdd} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Add New User</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <input value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Full Name" required />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Full Name" required />
             <input type="email" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" required />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Email" required />
             <input value={addForm.phone} onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone" />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Phone" />
             <input type="password" value={addForm.password} onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Password" required />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Password" required />
             <select value={addForm.role} onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900">
+              className="px-3 py-2 border rounded-lg text-sm text-white">
               <option value="student">Student</option>
               <option value="teamleader">Team Leader</option>
               <option value="organization">Organization</option>
               <option value="admin">Admin</option>
             </select>
           </div>
-          <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">
+          <button type="submit" className="mt-4 bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
             Create User
           </button>
         </form>
@@ -121,33 +121,33 @@ export default function UsersPage() {
 
       {editUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Edit User</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-white mb-4">Edit User</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Name</label>
                 <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Name" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Name" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Email</label>
                 <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Email" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Phone</label>
                 <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Phone" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">New Password (blank = no change)</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">New Password (blank = no change)</label>
                 <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Leave blank to keep current" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Leave blank to keep current" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Role</label>
                 <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white">
                   <option value="student">Student</option>
                   <option value="teamleader">Team Leader</option>
                   <option value="organization">Organization</option>
@@ -156,44 +156,44 @@ export default function UsersPage() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleEdit} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Save</button>
-              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button onClick={handleEdit} className="flex-1 bg-[#0EA5B8] text-white px-4 py-2 rounded-lg hover:bg-[#0891b2]">Save</button>
+              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-transparent">
             <tr>
-              <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Name</th>
-              <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Email</th>
-              <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Role</th>
-              <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Joined</th>
-              <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Actions</th>
+              <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Name</th>
+              <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Email</th>
+              <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Role</th>
+              <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Joined</th>
+              <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.06]">
             {users.map((u) => (
-              <tr key={u.id} className="hover:bg-gray-50">
+              <tr key={u.id} className="hover:bg-transparent">
                 <td className="px-6 py-4">
-                  <div className="font-medium text-gray-900 text-sm">{u.name}</div>
-                  {u.phone && <div className="text-xs text-gray-400">{u.phone}</div>}
+                  <div className="font-medium text-white text-sm">{u.name}</div>
+                  {u.phone && <div className="text-xs text-slate-500">{u.phone}</div>}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{u.email}</td>
+                <td className="px-6 py-4 text-sm text-slate-400">{u.email}</td>
                 <td className="px-6 py-4">
                   <span className={`text-xs px-2 py-1 rounded-full capitalize ${roleBadge(u.role)}`}>{u.role}</span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString("en-IN")}</td>
+                <td className="px-6 py-4 text-sm text-slate-500">{new Date(u.createdAt).toLocaleDateString("en-IN")}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <button onClick={() => { setEditUser(u); setEditForm({ name: u.name, email: u.email, phone: u.phone || "", role: u.role, password: "" }); }}
-                      className="text-xs bg-gray-50 text-gray-700 px-2 py-1 rounded hover:bg-gray-100 border">
+                      className="text-xs bg-transparent text-slate-300 px-2 py-1 rounded hover:bg-transparent border">
                       Edit
                     </button>
                     <button onClick={() => handleDelete(u.id)}
-                      className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">
+                      className="text-xs bg-transparent text-red-400 px-2 py-1 rounded hover:bg-red-500/10">
                       Delete
                     </button>
                   </div>

@@ -86,11 +86,11 @@ export default function DocumentsPage() {
 
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      pending: "bg-yellow-100 text-yellow-800",
-      approved: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800",
+      pending: "bg-amber-500/10 text-yellow-800",
+      approved: "bg-emerald-500/10 text-green-800",
+      rejected: "bg-red-500/10 text-red-800",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-transparent text-white";
   };
 
   const filtered = documents.filter(d => {
@@ -110,17 +110,17 @@ export default function DocumentsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-white">
           {isStudent ? "My Documents" : "Student Documents"}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-slate-400">
           {isStudent ? "Upload your documents for verification." : "Review and verify student-submitted documents."}
         </p>
       </div>
 
       {/* Upload Form — Students only */}
       {isStudent && (
-        <div className="bg-white rounded-xl p-6 border mb-6">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
           <h2 className="text-lg font-semibold mb-4">Upload New Document</h2>
           <form onSubmit={handleUpload} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -139,24 +139,24 @@ export default function DocumentsPage() {
                 onChange={(e) => setForm({...form, title: e.target.value})}
                 className="px-3 py-2 rounded-lg border text-sm" required />
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Upload File</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Upload File</label>
                 <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
                   onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
                   className="w-full px-3 py-1.5 rounded-lg border text-sm" />
-                <p className="text-xs text-gray-400 mt-0.5">PDF, Images, Docs — max 10MB</p>
-                {fileUploading && <p className="text-xs text-blue-600 mt-0.5">Uploading file...</p>}
+                <p className="text-xs text-slate-500 mt-0.5">PDF, Images, Docs — max 10MB</p>
+                {fileUploading && <p className="text-xs text-[#60a5fa] mt-0.5">Uploading file...</p>}
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Or paste a URL</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Or paste a URL</label>
                 <input type="url" placeholder="https://..." value={form.fileUrl}
                   onChange={(e) => setForm({...form, fileUrl: e.target.value})}
                   className="w-full px-3 py-2 rounded-lg border text-sm" />
               </div>
-              {form.fileUrl && <span className="text-xs text-green-600 mt-4">File ready</span>}
+              {form.fileUrl && <span className="text-xs text-emerald-400 mt-4">File ready</span>}
               <button type="submit" disabled={uploading || !form.fileUrl}
-                className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm">
+                className="mt-4 px-6 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2] disabled:opacity-50 text-sm">
                 {uploading ? "Submitting..." : "Submit Document"}
               </button>
             </div>
@@ -170,7 +170,7 @@ export default function DocumentsPage() {
           <div className="flex gap-2 flex-wrap">
             {["pending", "approved", "rejected", "all"].map(s => (
               <button key={s} onClick={() => setFilterStatus(s)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium ${filterStatus === s ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+                className={`px-4 py-1.5 rounded-full text-sm font-medium ${filterStatus === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-gray-200"}`}>
                 {s === "all" ? `All (${documents.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${documents.filter(d => d.status === s).length})`}
               </button>
             ))}
@@ -181,7 +181,7 @@ export default function DocumentsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by student name, email, or document title..."
-              className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900"
+              className="w-full px-4 py-2 border rounded-lg text-sm text-white"
             />
           </div>
         </div>
@@ -189,31 +189,31 @@ export default function DocumentsPage() {
 
       {/* Documents List */}
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
-          <p className="text-gray-500">{isStudent ? "No documents uploaded yet." : "No documents to review."}</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
+          <p className="text-slate-500">{isStudent ? "No documents uploaded yet." : "No documents to review."}</p>
         </div>
       ) : isStudent ? (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-transparent border-b">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remarks</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Document</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Remarks</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {filtered.map((doc) => (
                 <tr key={doc.id}>
                   <td className="px-6 py-4">
-                    <a href={doc.fileUrl} target="_blank" className="text-indigo-600 hover:underline font-medium text-sm">{doc.title}</a>
+                    <a href={doc.fileUrl} target="_blank" className="text-[#22d3ee] hover:underline font-medium text-sm">{doc.title}</a>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 capitalize">{doc.type.replace("_", " ")}</td>
+                  <td className="px-6 py-4 text-sm text-slate-400 capitalize">{doc.type.replace("_", " ")}</td>
                   <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(doc.status)}`}>{doc.status}</span></td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{doc.remarks || "—"}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(doc.createdAt).toLocaleDateString("en-IN")}</td>
+                  <td className="px-6 py-4 text-sm text-slate-400">{doc.remarks || "—"}</td>
+                  <td className="px-6 py-4 text-sm text-slate-500">{new Date(doc.createdAt).toLocaleDateString("en-IN")}</td>
                 </tr>
               ))}
             </tbody>
@@ -232,43 +232,43 @@ export default function DocumentsPage() {
               const student = docs[0].user;
               const pendingCount = docs.filter(d => d.status === "pending").length;
               return (
-                <details key={userId} className="bg-white rounded-xl border overflow-hidden group" open={pendingCount > 0}>
-                  <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
+                <details key={userId} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden group" open={pendingCount > 0}>
+                  <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-transparent">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-bold">
+                      <div className="w-9 h-9 rounded-full bg-[#0EA5B8]/10 flex items-center justify-center text-[#22d3ee] text-sm font-bold">
                         {student?.name?.split(" ").map(n => n[0]).join("").substring(0, 2) || "?"}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 text-sm">{student?.name || "Unknown"}</p>
-                        <p className="text-xs text-gray-500">{student?.email}</p>
+                        <p className="font-medium text-white text-sm">{student?.name || "Unknown"}</p>
+                        <p className="text-xs text-slate-500">{student?.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{docs.length} docs</span>
-                      {pendingCount > 0 && <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">{pendingCount} pending</span>}
+                      <span className="text-xs bg-transparent text-slate-400 px-2 py-1 rounded-full">{docs.length} docs</span>
+                      {pendingCount > 0 && <span className="text-xs bg-amber-500/10 text-amber-400 px-2 py-1 rounded-full">{pendingCount} pending</span>}
                     </div>
                   </summary>
                   <div className="border-t">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-transparent">
                         <tr>
-                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Document</th>
-                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Type</th>
-                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Status</th>
-                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Date</th>
-                          <th className="px-6 py-2 text-left text-xs font-medium text-gray-500">Action</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Document</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Type</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Status</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Date</th>
+                          <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
                         {docs.map(doc => (
                           <tr key={doc.id}>
-                            <td className="px-6 py-3"><a href={doc.fileUrl} target="_blank" className="text-indigo-600 hover:underline text-sm">{doc.title}</a></td>
-                            <td className="px-6 py-3 text-xs text-gray-600 capitalize">{doc.type.replace("_", " ")}</td>
+                            <td className="px-6 py-3"><a href={doc.fileUrl} target="_blank" className="text-[#22d3ee] hover:underline text-sm">{doc.title}</a></td>
+                            <td className="px-6 py-3 text-xs text-slate-400 capitalize">{doc.type.replace("_", " ")}</td>
                             <td className="px-6 py-3"><span className={`px-2 py-0.5 rounded-full text-xs ${statusBadge(doc.status)}`}>{doc.status}</span></td>
-                            <td className="px-6 py-3 text-xs text-gray-500">{new Date(doc.createdAt).toLocaleDateString("en-IN")}</td>
+                            <td className="px-6 py-3 text-xs text-slate-500">{new Date(doc.createdAt).toLocaleDateString("en-IN")}</td>
                             <td className="px-6 py-3">
                               <button onClick={() => { setReviewDoc(doc); setReviewForm({ status: "approved", remarks: "" }); }}
-                                className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">Review</button>
+                                className="px-3 py-1 bg-[#0EA5B8] text-white rounded text-xs hover:bg-[#0891b2]">Review</button>
                             </td>
                           </tr>
                         ))}
@@ -285,12 +285,12 @@ export default function DocumentsPage() {
       {/* Review Modal */}
       {reviewDoc && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 max-w-md w-full">
             <h3 className="text-lg font-bold mb-2">Review Document</h3>
-            <p className="text-sm text-gray-600 mb-1"><strong>Student:</strong> {reviewDoc.user?.name}</p>
-            <p className="text-sm text-gray-600 mb-1"><strong>Title:</strong> {reviewDoc.title}</p>
-            <p className="text-sm text-gray-600 mb-3"><strong>Type:</strong> {reviewDoc.type.replace("_", " ")}</p>
-            <a href={reviewDoc.fileUrl} target="_blank" className="text-indigo-600 hover:underline text-sm mb-4 block">View Document →</a>
+            <p className="text-sm text-slate-400 mb-1"><strong>Student:</strong> {reviewDoc.user?.name}</p>
+            <p className="text-sm text-slate-400 mb-1"><strong>Title:</strong> {reviewDoc.title}</p>
+            <p className="text-sm text-slate-400 mb-3"><strong>Type:</strong> {reviewDoc.type.replace("_", " ")}</p>
+            <a href={reviewDoc.fileUrl} target="_blank" className="text-[#22d3ee] hover:underline text-sm mb-4 block">View Document →</a>
             <div className="space-y-3">
               <select value={reviewForm.status} onChange={(e) => setReviewForm({...reviewForm, status: e.target.value})}
                 className="w-full px-3 py-2 rounded-lg border text-sm">
@@ -303,10 +303,10 @@ export default function DocumentsPage() {
                 className="w-full px-3 py-2 rounded-lg border text-sm" rows={3} />
               <div className="flex gap-2">
                 <button onClick={handleReview}
-                  className={`flex-1 py-2 text-white rounded-lg text-sm ${reviewForm.status === "approved" ? "bg-green-600 hover:bg-green-700" : reviewForm.status === "rejected" ? "bg-red-600 hover:bg-red-700" : "bg-gray-600 hover:bg-gray-700"}`}>
+                  className={`flex-1 py-2 text-white rounded-lg text-sm ${reviewForm.status === "approved" ? "bg-emerald-600 hover:bg-green-700" : reviewForm.status === "rejected" ? "bg-red-600 hover:bg-red-700" : "bg-gray-600 hover:bg-gray-700"}`}>
                   {reviewForm.status === "approved" ? "Approve" : reviewForm.status === "rejected" ? "Reject" : "Save"}
                 </button>
-                <button onClick={() => setReviewDoc(null)} className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300">
+                <button onClick={() => setReviewDoc(null)} className="flex-1 py-2 bg-gray-200 text-slate-300 rounded-lg text-sm hover:bg-gray-300">
                   Cancel
                 </button>
               </div>

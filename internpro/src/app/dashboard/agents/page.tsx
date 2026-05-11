@@ -64,53 +64,53 @@ export default function AgentsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 border">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border">
           <h2 className="font-semibold mb-2">Your Referral Link</h2>
           <div className="flex gap-2">
-            <input readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${agent.referralCode}`} className="flex-1 px-3 py-2 bg-gray-50 border rounded-lg text-sm" />
-            <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/register?ref=${agent.referralCode}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${copied ? 'bg-green-500 text-white scale-105 shadow-lg' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+            <input readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${agent.referralCode}`} className="flex-1 px-3 py-2 bg-transparent border rounded-lg text-sm" />
+            <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/register?ref=${agent.referralCode}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${copied ? 'bg-transparent0 text-white scale-105 shadow-none' : 'bg-[#0EA5B8] text-white hover:bg-[#0891b2]'}`}>
               {copied ? (<span className="flex items-center gap-1"><svg className="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Copied!</span>) : 'Copy Link'}
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">
             <h2 className="font-semibold">My Referred Students ({(agent.referrals || []).length})</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-transparent">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">#</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Student Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Phone</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">College</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Program</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Mode</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Fee Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Current Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Referral Date</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Commission</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">#</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Student Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">College</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Program</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Mode</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Fee Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Current Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Referral Date</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Commission</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(agent.referrals || []).length === 0 ? (
-                  <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-400">No referrals yet. Share your referral link to get started!</td></tr>
+                  <tr><td colSpan={11} className="px-4 py-8 text-center text-slate-500">No referrals yet. Share your referral link to get started!</td></tr>
                 ) : (agent.referrals || []).map((r, idx) => {
                   const enrollment = r.student?.enrollments?.[0];
-                  const statusColor = r.status === "converted" ? "bg-green-100 text-green-800" : r.status === "selected" ? "bg-blue-100 text-blue-800" : r.status === "rejected" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800";
+                  const statusColor = r.status === "converted" ? "bg-emerald-500/10 text-green-800" : r.status === "selected" ? "bg-blue-500/10 text-blue-800" : r.status === "rejected" ? "bg-red-500/10 text-red-800" : "bg-amber-500/10 text-yellow-800";
                   const enrollStatus = enrollment?.status || "applied";
-                  const enrollStatusColor = enrollStatus === "selected" || enrollStatus === "active" ? "bg-green-100 text-green-800" : enrollStatus === "rejected" ? "bg-red-100 text-red-800" : enrollStatus === "interview_scheduled" ? "bg-purple-100 text-purple-800" : enrollStatus === "shortlisted" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600";
+                  const enrollStatusColor = enrollStatus === "selected" || enrollStatus === "active" ? "bg-emerald-500/10 text-green-800" : enrollStatus === "rejected" ? "bg-red-500/10 text-red-800" : enrollStatus === "interview_scheduled" ? "bg-purple-500/10 text-purple-800" : enrollStatus === "shortlisted" ? "bg-amber-500/10 text-yellow-800" : "bg-transparent text-slate-400";
                   return (
-                    <tr key={r.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{r.student?.name || "—"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{r.student?.email || "—"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{r.student?.phone || "—"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{r.student?.collegeName || "—"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{enrollment?.batch?.program?.title || "—"}</td>
+                    <tr key={r.id} className="hover:bg-transparent">
+                      <td className="px-4 py-3 text-sm text-slate-500">{idx + 1}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-white">{r.student?.name || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-slate-400">{r.student?.email || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-slate-400">{r.student?.phone || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-slate-400">{r.student?.collegeName || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-slate-400">{enrollment?.batch?.program?.title || "—"}</td>
                       <td className="px-4 py-3 text-sm"><span className="capitalize">{enrollment?.preferredMode || "—"}</span></td>
                       <td className="px-4 py-3 text-sm"><span className="capitalize">{enrollment?.feeType || "—"}</span></td>
                       <td className="px-4 py-3">
@@ -118,8 +118,8 @@ export default function AgentsPage() {
                           {enrollStatus === "interview_scheduled" ? "Interview" : enrollStatus}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString("en-IN")}</td>
-                      <td className="px-4 py-3 text-right text-sm font-semibold">{r.commission > 0 ? <span className="text-green-700">₹{r.commission.toLocaleString()}</span> : <span className="text-gray-400">₹0</span>}</td>
+                      <td className="px-4 py-3 text-sm text-slate-500">{new Date(r.createdAt).toLocaleDateString("en-IN")}</td>
+                      <td className="px-4 py-3 text-right text-sm font-semibold">{r.commission > 0 ? <span className="text-emerald-400">₹{r.commission.toLocaleString()}</span> : <span className="text-slate-500">₹0</span>}</td>
                     </tr>
                   );
                 })}
@@ -128,13 +128,13 @@ export default function AgentsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
           <div className="p-4 border-b"><h2 className="font-semibold">Payout History</h2></div>
           <table className="w-full">
-            <thead className="bg-gray-50"><tr><th className="px-4 py-2 text-left text-xs">Date</th><th className="px-4 py-2 text-left text-xs">Method</th><th className="px-4 py-2 text-left text-xs">Status</th><th className="px-4 py-2 text-right text-xs">Amount</th></tr></thead>
+            <thead className="bg-transparent"><tr><th className="px-4 py-2 text-left text-xs">Date</th><th className="px-4 py-2 text-left text-xs">Method</th><th className="px-4 py-2 text-left text-xs">Status</th><th className="px-4 py-2 text-right text-xs">Amount</th></tr></thead>
             <tbody className="divide-y">
               {(agent.payouts || []).map(p => (
-                <tr key={p.id}><td className="px-4 py-3 text-sm">{new Date(p.createdAt).toLocaleDateString()}</td><td className="px-4 py-3 text-sm">{p.method}</td><td className="px-4 py-3"><span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700">{p.status}</span></td><td className="px-4 py-3 text-right text-sm font-medium">₹{p.amount}</td></tr>
+                <tr key={p.id}><td className="px-4 py-3 text-sm">{new Date(p.createdAt).toLocaleDateString()}</td><td className="px-4 py-3 text-sm">{p.method}</td><td className="px-4 py-3"><span className="text-xs px-2 py-1 rounded bg-emerald-500/10 text-emerald-400">{p.status}</span></td><td className="px-4 py-3 text-right text-sm font-medium">₹{p.amount}</td></tr>
               ))}
             </tbody>
           </table>
@@ -148,45 +148,45 @@ export default function AgentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Agent Management</h1>
-          <p className="text-sm text-gray-500">Manage referral agents and commissions</p>
+          <h1 className="text-2xl font-bold text-white">Agent Management</h1>
+          <p className="text-sm text-slate-500">Manage referral agents and commissions</p>
         </div>
-        {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ Add Agent</button>}
+        {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Add Agent</button>}
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Total Agents</p><p className="text-2xl font-bold">{agents.length}</p></div>
-        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Total Referrals</p><p className="text-2xl font-bold">{agents.reduce((s, a) => s + (a.referrals?.length || 0), 0)}</p></div>
-        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Total Payouts</p><p className="text-2xl font-bold">₹{agents.reduce((s, a) => s + a.totalEarnings, 0).toLocaleString()}</p></div>
-        <div className="bg-white rounded-xl p-4 border"><p className="text-sm text-gray-500">Pending Payouts</p><p className="text-2xl font-bold">₹{agents.reduce((s, a) => s + a.walletBalance, 0).toLocaleString()}</p></div>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border"><p className="text-sm text-slate-500">Total Agents</p><p className="text-2xl font-bold">{agents.length}</p></div>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border"><p className="text-sm text-slate-500">Total Referrals</p><p className="text-2xl font-bold">{agents.reduce((s, a) => s + (a.referrals?.length || 0), 0)}</p></div>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border"><p className="text-sm text-slate-500">Total Payouts</p><p className="text-2xl font-bold">₹{agents.reduce((s, a) => s + a.totalEarnings, 0).toLocaleString()}</p></div>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border"><p className="text-sm text-slate-500">Pending Payouts</p><p className="text-2xl font-bold">₹{agents.reduce((s, a) => s + a.walletBalance, 0).toLocaleString()}</p></div>
       </div>
 
       {/* Agent List */}
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-transparent">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Agent</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Code</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Referrals</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Earnings</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Balance</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Agent</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Code</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-slate-500">Referrals</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Earnings</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Balance</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-slate-500">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {agents.map(agent => (
               <tr key={agent.id}>
-                <td className="px-4 py-3"><div><p className="text-sm font-medium">{agent.user.name}</p><p className="text-xs text-gray-500">{agent.user.email}</p></div></td>
-                <td className="px-4 py-3 text-sm font-mono text-indigo-600">{agent.referralCode}</td>
+                <td className="px-4 py-3"><div><p className="text-sm font-medium">{agent.user.name}</p><p className="text-xs text-slate-500">{agent.user.email}</p></div></td>
+                <td className="px-4 py-3 text-sm font-mono text-[#22d3ee]">{agent.referralCode}</td>
                 <td className="px-4 py-3 text-center text-sm">{agent.referrals?.length || 0}</td>
                 <td className="px-4 py-3 text-right text-sm font-medium">₹{agent.totalEarnings.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right text-sm font-medium text-green-600">₹{agent.walletBalance.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right text-sm font-medium text-emerald-400">₹{agent.walletBalance.toLocaleString()}</td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex gap-2 justify-center">
-                    <button onClick={() => setSelectedAgent(agent)} className="text-xs text-indigo-600 hover:underline">View</button>
-                    <button onClick={() => { setShowPayout(agent.id); setPayoutAmount(""); }} className="text-xs text-green-600 hover:underline">Payout</button>
+                    <button onClick={() => setSelectedAgent(agent)} className="text-xs text-[#22d3ee] hover:underline">View</button>
+                    <button onClick={() => { setShowPayout(agent.id); setPayoutAmount(""); }} className="text-xs text-emerald-400 hover:underline">Payout</button>
                   </div>
                 </td>
               </tr>
@@ -198,7 +198,7 @@ export default function AgentsPage() {
       {/* Create Agent Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
             <h2 className="text-lg font-bold mb-4">Add Agent</h2>
             <div className="space-y-3">
               <input placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
@@ -212,8 +212,8 @@ export default function AgentsPage() {
               <input placeholder="UPI ID" value={form.upiId} onChange={e => setForm({ ...form, upiId: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-gray-600">Cancel</button>
-              <button onClick={createAgent} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Create Agent</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-slate-400">Cancel</button>
+              <button onClick={createAgent} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg">Create Agent</button>
             </div>
           </div>
         </div>
@@ -222,12 +222,12 @@ export default function AgentsPage() {
       {/* Payout Modal */}
       {showPayout && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-sm">
             <h2 className="text-lg font-bold mb-4">Process Payout</h2>
             <input placeholder="Amount (₹)" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} className="w-full px-3 py-2 border rounded-lg" type="number" />
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowPayout(null)} className="px-4 py-2 text-gray-600">Cancel</button>
-              <button onClick={processPayout} className="px-4 py-2 bg-green-600 text-white rounded-lg">Pay</button>
+              <button onClick={() => setShowPayout(null)} className="px-4 py-2 text-slate-400">Cancel</button>
+              <button onClick={processPayout} className="px-4 py-2 bg-emerald-600 text-white rounded-lg">Pay</button>
             </div>
           </div>
         </div>
@@ -236,10 +236,10 @@ export default function AgentsPage() {
       {/* Agent Detail Modal */}
       {selectedAgent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">{selectedAgent.user.name} — Agent Details</h2>
-              <button onClick={() => setSelectedAgent(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              <button onClick={() => setSelectedAgent(null)} className="text-slate-500 hover:text-slate-400 text-xl">&times;</button>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
               <p><strong>Email:</strong> {selectedAgent.user.email}</p>
@@ -252,7 +252,7 @@ export default function AgentsPage() {
             <h3 className="font-semibold mb-2">Referrals ({selectedAgent.referrals?.length || 0})</h3>
             <div className="space-y-2">
               {(selectedAgent.referrals || []).map(r => (
-                <div key={r.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                <div key={r.id} className="flex items-center justify-between p-2 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] text-sm">
                   <span>{r.student?.name} ({r.student?.email})</span>
                   <span className="font-medium">₹{r.commission}</span>
                 </div>

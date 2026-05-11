@@ -105,27 +105,27 @@ export default function ReportsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-        <p className="text-gray-600">View daily task reports. Reports cover joining date to current/completion date.</p>
+        <h1 className="text-2xl font-bold text-white">Reports</h1>
+        <p className="text-slate-400">View daily task reports. Reports cover joining date to current/completion date.</p>
       </div>
 
       {selectedEnrollments.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
-          <p className="text-gray-500">No active enrollments found. Reports are generated for selected/completed students.</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
+          <p className="text-slate-500">No active enrollments found. Reports are generated for selected/completed students.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {selectedEnrollments.map((enr) => (
-            <div key={enr.id} className="bg-white rounded-xl p-5 border">
+            <div key={enr.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border">
               <div className="flex items-center justify-between">
                 <div>
-                  {!isStudent && <p className="font-semibold text-gray-900">{enr.student.name}</p>}
-                  <p className="text-sm text-gray-600">{enr.batch.program.title} — {enr.batch.name}</p>
-                  <p className="text-xs text-gray-400 mt-1">Day {Math.max(enr.joiningDate ? calculateWorkingDay(enr.joiningDate) : enr.currentWorkDay, 1)} / {enr.batch.program.duration} | Status: {enr.status}</p>
+                  {!isStudent && <p className="font-semibold text-white">{enr.student.name}</p>}
+                  <p className="text-sm text-slate-400">{enr.batch.program.title} — {enr.batch.name}</p>
+                  <p className="text-xs text-slate-500 mt-1">Day {Math.max(enr.joiningDate ? calculateWorkingDay(enr.joiningDate) : enr.currentWorkDay, 1)} / {enr.batch.program.duration} | Status: {enr.status}</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => viewDailyReport(enr)} disabled={generating === enr.id}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
+                    className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2] disabled:opacity-50">
                     {generating === enr.id ? "Generating..." : "Daily Task Report"}
                   </button>
                 </div>
@@ -138,25 +138,25 @@ export default function ReportsPage() {
       {/* Report Viewer Modal */}
       {viewingReport && (
         <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-auto">
-          <div className="bg-white rounded-xl shadow-2xl my-8 max-w-[900px] w-full">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] shadow-2xl my-8 max-w-[900px] w-full">
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-bold text-gray-900">{viewingReport.title}</h3>
+              <h3 className="font-bold text-white">{viewingReport.title}</h3>
               <div className="flex gap-2">
                 <button onClick={handleEmailReport} disabled={emailing}
-                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50">
+                  className="px-4 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50">
                   {emailing ? "Sending..." : "Email Report"}
                 </button>
                 <button onClick={handlePrint}
-                  className="px-4 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">
+                  className="px-4 py-1.5 bg-[#0EA5B8] text-white rounded text-sm hover:bg-[#0891b2]">
                   Print / PDF
                 </button>
                 <button onClick={() => setViewingReport(null)}
-                  className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">
+                  className="px-4 py-1.5 bg-gray-200 text-slate-300 rounded text-sm hover:bg-gray-300">
                   Close
                 </button>
               </div>
             </div>
-            <div className="p-4 bg-gray-100 overflow-auto max-h-[80vh]">
+            <div className="p-4 bg-transparent overflow-auto max-h-[80vh]">
               <div dangerouslySetInnerHTML={{ __html: viewingReport.html }} />
             </div>
           </div>

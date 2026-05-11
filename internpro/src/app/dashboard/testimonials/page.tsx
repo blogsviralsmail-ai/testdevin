@@ -43,43 +43,43 @@ export default function TestimonialsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Testimonials</h1>
-          <p className="text-sm text-gray-500">Student reviews and success stories</p>
+          <h1 className="text-2xl font-bold text-white">Testimonials</h1>
+          <p className="text-sm text-slate-500">Student reviews and success stories</p>
         </div>
-        {isAdmin && <button onClick={() => { setEditing(null); setForm({ name: "", role: "", content: "", rating: 5, videoUrl: "", isPublished: true }); setShowForm(true); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ Add Testimonial</button>}
+        {isAdmin && <button onClick={() => { setEditing(null); setForm({ name: "", role: "", content: "", rating: 5, videoUrl: "", isPublished: true }); setShowForm(true); }} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Add Testimonial</button>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {testimonials.map(t => (
-          <div key={t.id} className="bg-white rounded-xl p-5 border">
+          <div key={t.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">{t.name[0]}</div>
+              <div className="w-10 h-10 rounded-full bg-[#0EA5B8]/10 flex items-center justify-center text-[#22d3ee] font-bold">{t.name[0]}</div>
               <div>
                 <p className="font-medium text-sm">{t.name}</p>
-                {t.role && <p className="text-xs text-gray-500">{t.role}</p>}
+                {t.role && <p className="text-xs text-slate-500">{t.role}</p>}
               </div>
             </div>
             <div className="flex gap-0.5 mb-2">
               {[1, 2, 3, 4, 5].map(s => <span key={s} className={`text-sm ${s <= t.rating ? "text-yellow-400" : "text-gray-200"}`}>★</span>)}
             </div>
-            <p className="text-sm text-gray-600 line-clamp-4">{t.content}</p>
-            {t.videoUrl && <a href={t.videoUrl} target="_blank" rel="noopener" className="text-xs text-indigo-600 mt-2 block">🎥 Watch Video</a>}
+            <p className="text-sm text-slate-400 line-clamp-4">{t.content}</p>
+            {t.videoUrl && <a href={t.videoUrl} target="_blank" rel="noopener" className="text-xs text-[#22d3ee] mt-2 block">🎥 Watch Video</a>}
             {isAdmin && (
               <div className="flex gap-3 mt-3 pt-3 border-t">
-                <button onClick={() => editTestimonial(t)} className="text-xs text-indigo-600">Edit</button>
-                <button onClick={() => deleteTestimonial(t.id)} className="text-xs text-red-600">Delete</button>
-                {!t.isPublished && <span className="text-xs text-gray-400 ml-auto">Hidden</span>}
+                <button onClick={() => editTestimonial(t)} className="text-xs text-[#22d3ee]">Edit</button>
+                <button onClick={() => deleteTestimonial(t.id)} className="text-xs text-red-400">Delete</button>
+                {!t.isPublished && <span className="text-xs text-slate-500 ml-auto">Hidden</span>}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {testimonials.length === 0 && <div className="text-center py-12 text-gray-400">No testimonials yet.</div>}
+      {testimonials.length === 0 && <div className="text-center py-12 text-slate-500">No testimonials yet.</div>}
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
             <h2 className="text-lg font-bold mb-4">{editing ? "Edit" : "Add"} Testimonial</h2>
             <div className="space-y-3">
               <input placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
@@ -93,7 +93,7 @@ export default function TestimonialsPage() {
               </div>
               <input placeholder="Video URL (optional)" value={form.videoUrl} onChange={e => setForm({ ...form, videoUrl: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
               <div className="flex items-center gap-3">
-                <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium border border-indigo-200 rounded-lg px-3 py-1.5 inline-block">
+                <label className="text-xs text-[#22d3ee] hover:text-[#0EA5B8] cursor-pointer font-medium border border-[#0EA5B8]/20 rounded-lg px-3 py-1.5 inline-block">
                   {fileUploading ? "Uploading..." : "Or Upload File"}
                   <input type="file" className="hidden" onChange={async (e) => {
                     const file = e.target.files?.[0];
@@ -105,13 +105,13 @@ export default function TestimonialsPage() {
                     setFileUploading(false);
                   }} />
                 </label>
-                {form.videoUrl && <span className="text-xs text-green-600">File attached</span>}
+                {form.videoUrl && <span className="text-xs text-emerald-400">File attached</span>}
               </div>
               <label className="flex items-center gap-2"><input type="checkbox" checked={form.isPublished} onChange={e => setForm({ ...form, isPublished: e.target.checked })} /><span className="text-sm">Published (show on homepage)</span></label>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-gray-600">Cancel</button>
-              <button onClick={saveTestimonial} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Save</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-slate-400">Cancel</button>
+              <button onClick={saveTestimonial} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg">Save</button>
             </div>
           </div>
         </div>

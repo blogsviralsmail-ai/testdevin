@@ -152,21 +152,21 @@ export default function CompletionPage() {
   const getCategoryBadge = (cat: string | null) => {
     if (!cat) return null;
     const colors: Record<string, string> = {
-      excellent: "bg-green-100 text-green-700",
-      good: "bg-blue-100 text-blue-700",
-      average: "bg-yellow-100 text-yellow-700",
-      "below-average": "bg-orange-100 text-orange-700",
-      poor: "bg-red-100 text-red-700",
+      excellent: "bg-emerald-500/10 text-emerald-400",
+      good: "bg-blue-500/10 text-[#60a5fa]",
+      average: "bg-amber-500/10 text-amber-400",
+      "below-average": "bg-orange-500/10 text-orange-400",
+      poor: "bg-red-500/10 text-red-400",
     };
-    return colors[cat] || "bg-gray-100 text-gray-700";
+    return colors[cat] || "bg-transparent text-slate-300";
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Completion Approval</h1>
-          <p className="text-gray-600 text-sm">
+          <h1 className="text-2xl font-bold text-white">Completion Approval</h1>
+          <p className="text-slate-400 text-sm">
             {isTeamLeader ? "Categorize students based on their performance" :
              isAdmin ? "Review TL categorization and approve internship completion" :
              "Your completion status"}
@@ -184,7 +184,7 @@ export default function CompletionPage() {
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === tab.key ? "bg-indigo-600 text-white" : "bg-white text-gray-600 border hover:bg-gray-50"}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === tab.key ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 border hover:bg-transparent"}`}
           >
             {tab.label} ({enrollments.filter(e => {
               if (tab.key === "all") return e.status === "active" || e.status === "selected" || e.status === "completed";
@@ -198,7 +198,7 @@ export default function CompletionPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl p-4 border mb-6">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border mb-6">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-[200px]">
             <input
@@ -206,12 +206,12 @@ export default function CompletionPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, email, or employee ID..."
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white"
             />
           </div>
           <div>
             <select value={programFilter} onChange={(e) => setProgramFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900">
+              className="px-3 py-2 border rounded-lg text-sm text-white">
               <option value="">All Programs</option>
               {[...new Set(enrollments.map(e => e.batch.program.title))].map(p => (
                 <option key={p} value={p}>{p}</option>
@@ -219,7 +219,7 @@ export default function CompletionPage() {
             </select>
           </div>
           {(searchQuery || programFilter) && (
-            <button onClick={() => { setSearchQuery(""); setProgramFilter(""); }} className="text-xs text-red-600 hover:text-red-800">Clear</button>
+            <button onClick={() => { setSearchQuery(""); setProgramFilter(""); }} className="text-xs text-red-400 hover:text-red-800">Clear</button>
           )}
         </div>
       </div>
@@ -227,21 +227,21 @@ export default function CompletionPage() {
       {/* Categorize Modal */}
       {categorizeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Categorize Student</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              <strong className="text-gray-900">{categorizeModal.student.name}</strong> — {categorizeModal.batch.program.title}
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-white mb-4">Categorize Student</h2>
+            <p className="text-sm text-slate-400 mb-4">
+              <strong className="text-white">{categorizeModal.student.name}</strong> — {categorizeModal.batch.program.title}
             </p>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-slate-500 mb-4">
               Work Days: {getWorkDay(categorizeModal)}/{categorizeModal.batch.program.duration} | 
               Attendance: {categorizeModal._count.attendances} days | 
               Submissions: {categorizeModal._count.submissions}
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Category</label>
                 <select value={categoryForm.category} onChange={(e) => setCategoryForm({ ...categoryForm, category: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white">
                   <option value="excellent">Excellent (90%+ performance)</option>
                   <option value="good">Good (70-89% performance)</option>
                   <option value="average">Average (50-69% performance)</option>
@@ -250,17 +250,17 @@ export default function CompletionPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Remarks (optional)</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Remarks (optional)</label>
                 <textarea value={categoryForm.remarks} onChange={(e) => setCategoryForm({ ...categoryForm, remarks: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={3}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" rows={3}
                   placeholder="Student ke baare mein kuch likhna ho..." />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleCategorize} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+              <button onClick={handleCategorize} className="flex-1 bg-[#0EA5B8] text-white px-4 py-2 rounded-lg hover:bg-[#0891b2]">
                 Save Category
               </button>
-              <button onClick={() => setCategorizeModal(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setCategorizeModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -271,29 +271,29 @@ export default function CompletionPage() {
       {/* Admin Approve Modal */}
       {approveModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Approve Completion</h2>
-            <p className="text-sm text-gray-600 mb-2">
-              <strong className="text-gray-900">{approveModal.student.name}</strong> — {approveModal.batch.program.title}
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-white mb-4">Approve Completion</h2>
+            <p className="text-sm text-slate-400 mb-2">
+              <strong className="text-white">{approveModal.student.name}</strong> — {approveModal.batch.program.title}
             </p>
             <div className={`px-3 py-2 rounded-lg mb-4 text-sm ${getCategoryBadge(approveModal.teamLeaderCategory)}`}>
               TL Category: <strong>{approveModal.teamLeaderCategory}</strong>
               {approveModal.teamLeaderRemarks && <span className="ml-2">— {approveModal.teamLeaderRemarks}</span>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Admin Remarks (optional)</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Admin Remarks (optional)</label>
               <textarea value={approveRemarks} onChange={(e) => setApproveRemarks(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={3}
+                className="w-full px-3 py-2 border rounded-lg text-sm text-white" rows={3}
                 placeholder="Final remarks..." />
             </div>
-            <p className="text-xs text-gray-500 mt-3">
+            <p className="text-xs text-slate-500 mt-3">
               On approval, an Experience Letter will be generated instantly.
             </p>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleApprove} className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+              <button onClick={handleApprove} className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                 Approve & Generate Experience Letter
               </button>
-              <button onClick={() => setApproveModal(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setApproveModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -302,21 +302,21 @@ export default function CompletionPage() {
       )}
 
       {eligibleEnrollments.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
           <p className="text-4xl mb-4">🎓</p>
-          <p className="text-gray-600">No students in this category.</p>
+          <p className="text-slate-400">No students in this category.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {eligibleEnrollments.map((enrollment) => (
-            <div key={enrollment.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
+            <div key={enrollment.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900">{enrollment.student.name}</h3>
-                  <p className="text-sm text-gray-600">{enrollment.student.email}</p>
-                  {enrollment.student.employeeId && <p className="text-xs text-indigo-600 font-medium">{enrollment.student.employeeId}</p>}
-                  <p className="text-sm text-indigo-600 mt-1">{enrollment.batch.program.title} — {enrollment.batch.name}</p>
-                  <div className="flex gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                  <h3 className="text-base font-semibold text-white">{enrollment.student.name}</h3>
+                  <p className="text-sm text-slate-400">{enrollment.student.email}</p>
+                  {enrollment.student.employeeId && <p className="text-xs text-[#22d3ee] font-medium">{enrollment.student.employeeId}</p>}
+                  <p className="text-sm text-[#22d3ee] mt-1">{enrollment.batch.program.title} — {enrollment.batch.name}</p>
+                  <div className="flex gap-3 mt-2 text-xs text-slate-500 flex-wrap">
                     <span>Joining: {enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN") : "—"}</span>
                     <span>Working Day: {getWorkDay(enrollment)}/{enrollment.batch.program.duration}</span>
                     <span>Attendance: {enrollment._count.attendances} days</span>
@@ -330,12 +330,12 @@ export default function CompletionPage() {
                       </span>
                     )}
                     {enrollment.adminApproved && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                      <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
                         Admin Approved
                       </span>
                     )}
                     {enrollment.status === "completed" && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                      <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
                         Completed
                       </span>
                     )}
@@ -345,7 +345,7 @@ export default function CompletionPage() {
                   {(isTeamLeader || isAdmin) && !enrollment.teamLeaderCategory && enrollment.status !== "completed" && (
                     <button
                       onClick={() => { setCategorizeModal(enrollment); setCategoryForm({ category: "good", remarks: "" }); }}
-                      className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-xs hover:bg-yellow-200"
+                      className="px-3 py-2 bg-amber-500/10 text-amber-400 rounded-lg text-xs hover:bg-yellow-200"
                     >
                       Categorize
                     </button>
@@ -353,13 +353,13 @@ export default function CompletionPage() {
                   {isAdmin && enrollment.status !== "completed" && (
                     <button
                       onClick={() => { setApproveModal(enrollment); setApproveRemarks(""); }}
-                      className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200"
+                      className="px-3 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs hover:bg-green-200"
                     >
                       {enrollment.teamLeaderCategory ? "Approve & Complete" : "Direct Approve"}
                     </button>
                   )}
                   {enrollment.status === "completed" && (
-                    <span className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                    <span className="px-3 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-medium">
                       Internship Completed
                     </span>
                   )}
@@ -373,9 +373,9 @@ export default function CompletionPage() {
       {/* Experience Letter View Modal */}
       {viewingLetter && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
-              <h2 className="text-lg font-bold text-gray-900">Experience Letter</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-transparent">
+              <h2 className="text-lg font-bold text-white">Experience Letter</h2>
               <div className="flex gap-2">
                 <button onClick={() => {
                   const w = window.open("", "_blank");
@@ -384,14 +384,14 @@ export default function CompletionPage() {
                     w.document.close();
                   }
                 }} className="px-3 py-1.5 bg-[#0000AA] text-white rounded-lg text-xs hover:bg-blue-900">Print / PDF</button>
-                <button onClick={() => setViewingLetter(null)} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200">Close</button>
+                <button onClick={() => setViewingLetter(null)} className="px-3 py-1.5 bg-transparent text-slate-300 rounded-lg text-xs hover:bg-gray-200">Close</button>
               </div>
             </div>
             <div className="p-6">
               {viewingLetter.htmlContent ? (
                 <div dangerouslySetInnerHTML={{ __html: viewingLetter.htmlContent }} />
               ) : (
-                <p className="text-gray-500 text-center py-8">Letter content not available</p>
+                <p className="text-slate-500 text-center py-8">Letter content not available</p>
               )}
             </div>
           </div>

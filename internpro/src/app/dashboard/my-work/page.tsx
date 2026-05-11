@@ -172,16 +172,16 @@ export default function MyWorkPage() {
     return match ? match[1] : null;
   };
 
-  if (loading) return <div className="p-6 text-center text-gray-600">Loading your workspace...</div>;
+  if (loading) return <div className="p-6 text-center text-slate-400">Loading your workspace...</div>;
 
   if (!enrollment) {
     return (
       <div className="p-6">
         <PaymentBlockMessage feature="My Workspace" />
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
+        <div className="bg-transparent border border-yellow-200 rounded-xl p-8 text-center">
           <p className="text-4xl mb-3">🎓</p>
           <h2 className="text-xl font-bold text-yellow-800 mb-2">Not Enrolled Yet</h2>
-          <p className="text-yellow-700">Your enrollment is not active yet. Please contact admin or check your application status.</p>
+          <p className="text-amber-400">Your enrollment is not active yet. Please contact admin or check your application status.</p>
         </div>
       </div>
     );
@@ -203,10 +203,10 @@ export default function MyWorkPage() {
 
   const getSubmissionStatus = (taskId: string) => {
     const sub = submissions.find(s => s.taskId === taskId);
-    if (!sub) return { status: "not_started", label: "Not Started", color: "bg-gray-100 text-gray-600" };
-    if (sub.status === "reviewed") return { status: "reviewed", label: sub.grade ? `Reviewed (${sub.grade})` : "Reviewed", color: "bg-green-100 text-green-700" };
-    if (sub.status === "submitted") return { status: "submitted", label: "Submitted", color: "bg-blue-100 text-blue-700" };
-    return { status: sub.status, label: sub.status, color: "bg-yellow-100 text-yellow-700" };
+    if (!sub) return { status: "not_started", label: "Not Started", color: "bg-transparent text-slate-400" };
+    if (sub.status === "reviewed") return { status: "reviewed", label: sub.grade ? `Reviewed (${sub.grade})` : "Reviewed", color: "bg-emerald-500/10 text-emerald-400" };
+    if (sub.status === "submitted") return { status: "submitted", label: "Submitted", color: "bg-blue-500/10 text-[#60a5fa]" };
+    return { status: sub.status, label: sub.status, color: "bg-amber-500/10 text-amber-400" };
   };
 
   const completedDays = allDays.filter(d => {
@@ -224,46 +224,46 @@ export default function MyWorkPage() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Workspace</h1>
-        <p className="text-gray-600">{enrollment.programTitle} — {enrollment.batchName}</p>
+        <h1 className="text-2xl font-bold text-white">My Workspace</h1>
+        <p className="text-slate-400">{enrollment.programTitle} — {enrollment.batchName}</p>
       </div>
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border p-4 text-center">
-          <p className="text-3xl font-bold text-indigo-600">{currentDay}</p>
-          <p className="text-xs text-gray-500 mt-1">Current Day</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 text-center">
+          <p className="text-3xl font-bold text-[#22d3ee]">{currentDay}</p>
+          <p className="text-xs text-slate-500 mt-1">Current Day</p>
         </div>
-        <div className="bg-white rounded-xl border p-4 text-center">
-          <p className="text-3xl font-bold text-green-600">{completedDays}</p>
-          <p className="text-xs text-gray-500 mt-1">Days Completed</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 text-center">
+          <p className="text-3xl font-bold text-emerald-400">{completedDays}</p>
+          <p className="text-xs text-slate-500 mt-1">Days Completed</p>
         </div>
-        <div className="bg-white rounded-xl border p-4 text-center">
-          <p className="text-3xl font-bold text-purple-600">{totalDays}</p>
-          <p className="text-xs text-gray-500 mt-1">Total Days</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 text-center">
+          <p className="text-3xl font-bold text-[#a78bfa]">{totalDays}</p>
+          <p className="text-xs text-slate-500 mt-1">Total Days</p>
         </div>
-        <div className="bg-white rounded-xl border p-4 text-center">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 text-center">
           <p className="text-3xl font-bold text-orange-600">{progressPercent}%</p>
-          <p className="text-xs text-gray-500 mt-1">Progress</p>
+          <p className="text-xs text-slate-500 mt-1">Progress</p>
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-white rounded-xl border p-4 mb-6">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 mb-6">
         <div className="flex justify-between text-sm mb-2">
-          <span className="font-medium text-gray-700">Overall Progress</span>
-          <span className="text-gray-500">{completedDays} / {allDays.length} days</span>
+          <span className="font-medium text-slate-300">Overall Progress</span>
+          <span className="text-slate-500">{completedDays} / {allDays.length} days</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all" style={{ width: `${progressPercent}%` }}></div>
+          <div className="bg-gradient-to-r from-[#0EA5B8] to-[#a78bfa] h-3 rounded-full transition-all" style={{ width: `${progressPercent}%` }}></div>
         </div>
       </div>
 
       <div className="flex gap-6 flex-col lg:flex-row">
         {/* Day Selector Sidebar */}
         <div className="lg:w-64 shrink-0">
-          <div className="bg-white rounded-xl border p-4 sticky top-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Select Day</h3>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 sticky top-4">
+            <h3 className="font-semibold text-white mb-3">Select Day</h3>
             <div className="space-y-1 max-h-[60vh] overflow-y-auto">
               {allDays.map(d => {
                 const dTasks = tasks.filter(t => t.dayNumber === d);
@@ -280,23 +280,23 @@ export default function MyWorkPage() {
                     onClick={() => setSelectedDay(d)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition ${
                       selectedDay === d
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-[#0EA5B8] text-white"
                         : isToday
-                        ? "bg-indigo-50 text-indigo-700 font-medium"
-                        : "hover:bg-gray-50 text-gray-700"
+                        ? "bg-transparent text-[#22d3ee] font-medium"
+                        : "hover:bg-transparent text-slate-300"
                     }`}
                   >
                     <span className="flex items-center gap-2">
                       {allDone && dTasks.length > 0 ? (
-                        <span className="w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">&#10003;</span>
+                        <span className="w-5 h-5 rounded-full bg-transparent0 text-white text-xs flex items-center justify-center">&#10003;</span>
                       ) : isToday ? (
-                        <span className="w-5 h-5 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center">&#9679;</span>
+                        <span className="w-5 h-5 rounded-full bg-transparent0 text-white text-xs flex items-center justify-center">&#9679;</span>
                       ) : (
-                        <span className={`w-5 h-5 rounded-full border-2 text-xs flex items-center justify-center ${selectedDay === d ? "border-white" : "border-gray-300"}`}>{d}</span>
+                        <span className={`w-5 h-5 rounded-full border-2 text-xs flex items-center justify-center ${selectedDay === d ? "border-white" : "border-white/10"}`}>{d}</span>
                       )}
                       Day {d}
                     </span>
-                    <span className={`text-xs ${selectedDay === d ? "text-indigo-200" : "text-gray-400"}`}>
+                    <span className={`text-xs ${selectedDay === d ? "text-indigo-200" : "text-slate-500"}`}>
                       {dResources.length}V {dTasks.length}T{quizzes.filter(q => q.dayNumber === d).length > 0 ? ` ${quizzes.filter(q => q.dayNumber === d).length}Q` : ""}
                     </span>
                   </button>
@@ -309,7 +309,7 @@ export default function MyWorkPage() {
         {/* Day Content */}
         <div className="flex-1 min-w-0">
           {/* Day Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-5 mb-4 text-white">
+          <div className="bg-gradient-to-r from-[#0EA5B8] to-[#a78bfa] rounded-xl p-5 mb-4 text-white">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold">Day {selectedDay}</h2>
@@ -318,18 +318,18 @@ export default function MyWorkPage() {
                 </p>
               </div>
               {selectedDay === currentDay && (
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">Today</span>
+                <span className="px-3 py-1 bg-transparent/20 rounded-full text-sm font-medium">Today</span>
               )}
             </div>
           </div>
 
           {/* STEP 1: Watch Videos */}
-          <div className="bg-white rounded-xl border mb-4 overflow-hidden">
-            <div className="bg-red-50 border-b px-5 py-3 flex items-center gap-3">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
+            <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold">1</span>
               <div>
-                <h3 className="font-semibold text-gray-900">Watch Video</h3>
-                <p className="text-xs text-gray-500">Watch the video below carefully</p>
+                <h3 className="font-semibold text-white">Watch Video</h3>
+                <p className="text-xs text-slate-500">Watch the video below carefully</p>
               </div>
             </div>
             <div className="p-5">
@@ -350,9 +350,9 @@ export default function MyWorkPage() {
                             />
                           </div>
                         ) : null}
-                        <div className="p-3 bg-gray-50 flex items-center gap-3">
+                        <div className="p-3 bg-transparent flex items-center gap-3">
                           <span className="text-lg">{r.type === "video" ? "🎥" : r.type === "pdf" ? "📄" : "🔗"}</span>
-                          <p className="flex-1 text-sm font-medium text-gray-800 truncate">{r.title}</p>
+                          <p className="flex-1 text-sm font-medium text-white truncate">{r.title}</p>
                           <a href={r.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 font-medium shrink-0">
                             Watch on YouTube &#8599;
                           </a>
@@ -362,18 +362,18 @@ export default function MyWorkPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-4">No video available for today</p>
+                <p className="text-slate-500 text-sm text-center py-4">No video available for today</p>
               )}
             </div>
           </div>
 
           {/* STEP 2: Read Task */}
-          <div className="bg-white rounded-xl border mb-4 overflow-hidden">
-            <div className="bg-orange-50 border-b px-5 py-3 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">2</span>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
+            <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-transparent0 text-white flex items-center justify-center text-sm font-bold">2</span>
               <div>
-                <h3 className="font-semibold text-gray-900">Today's Task</h3>
-                <p className="text-xs text-gray-500">Complete this task after watching the video</p>
+                <h3 className="font-semibold text-white">Today's Task</h3>
+                <p className="text-xs text-slate-500">Complete this task after watching the video</p>
               </div>
             </div>
             <div className="p-5">
@@ -382,14 +382,14 @@ export default function MyWorkPage() {
                   {dayTasks.map(t => {
                     const sub = getSubmissionStatus(t.id);
                     return (
-                      <div key={t.id} className="border rounded-lg p-4 bg-orange-50/50">
+                      <div key={t.id} className="border rounded-lg p-4 bg-transparent/50">
                         <div className="flex items-start justify-between gap-3 mb-2">
-                          <h4 className="font-semibold text-gray-900">{t.title}</h4>
+                          <h4 className="font-semibold text-white">{t.title}</h4>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${sub.color}`}>{sub.label}</span>
                         </div>
                         {t.description && (
-                          <div className="bg-white rounded-lg p-3 border border-orange-100">
-                            <p className="text-sm text-gray-700 leading-relaxed">{t.description}</p>
+                          <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3 border border-orange-100">
+                            <p className="text-sm text-slate-300 leading-relaxed">{t.description}</p>
                           </div>
                         )}
                       </div>
@@ -397,18 +397,18 @@ export default function MyWorkPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-4">No task available for today</p>
+                <p className="text-slate-500 text-sm text-center py-4">No task available for today</p>
               )}
             </div>
           </div>
 
           {/* STEP 3: Submit Work */}
-          <div className="bg-white rounded-xl border mb-4 overflow-hidden">
-            <div className="bg-green-50 border-b px-5 py-3 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">3</span>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
+            <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">3</span>
               <div>
-                <h3 className="font-semibold text-gray-900">Submit Your Work</h3>
-                <p className="text-xs text-gray-500">Submit your completed work below</p>
+                <h3 className="font-semibold text-white">Submit Your Work</h3>
+                <p className="text-xs text-slate-500">Submit your completed work below</p>
               </div>
             </div>
             <div className="p-5">
@@ -420,9 +420,9 @@ export default function MyWorkPage() {
 
                     if (sub.status === "submitted" || sub.status === "reviewed") {
                       return (
-                        <div key={t.id} className="border rounded-lg p-4 bg-green-50">
+                        <div key={t.id} className="border rounded-lg p-4 bg-transparent">
                           <div className="flex items-center gap-2">
-                            <span className="text-green-600 text-lg">&#10003;</span>
+                            <span className="text-emerald-400 text-lg">&#10003;</span>
                             <p className="font-medium text-green-800">{t.title} — {sub.label}</p>
                           </div>
                         </div>
@@ -431,9 +431,9 @@ export default function MyWorkPage() {
 
                     return (
                       <div key={t.id} className="border rounded-lg p-4">
-                        <p className="font-medium text-gray-900 mb-3">{t.title}</p>
+                        <p className="font-medium text-white mb-3">{t.title}</p>
                         {!isSubmitting ? (
-                          <button onClick={() => setSubmitTask({ taskId: t.id, content: "", fileUrl: "" })} className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
+                          <button onClick={() => setSubmitTask({ taskId: t.id, content: "", fileUrl: "" })} className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
                             Submit Your Work
                           </button>
                         ) : submitTask && (
@@ -447,15 +447,15 @@ export default function MyWorkPage() {
                             <div className="border-2 border-dashed border-green-200 rounded-lg p-4 text-center">
                               <label className="cursor-pointer block">
                                 <input type="file" className="hidden" onChange={handleFileUpload} />
-                                <span className="text-sm text-green-700 font-medium">{uploading ? "Uploading..." : "Click to upload a file (any format, any size)"}</span>
-                                <p className="text-xs text-gray-400 mt-1">Or paste a URL below</p>
+                                <span className="text-sm text-emerald-400 font-medium">{uploading ? "Uploading..." : "Click to upload a file (any format, any size)"}</span>
+                                <p className="text-xs text-slate-500 mt-1">Or paste a URL below</p>
                               </label>
                             </div>
                             {submitTask.fileUrl && (
-                              <div className="flex items-center gap-2 bg-green-50 rounded-lg p-2">
-                                <span className="text-green-600 text-sm">&#10003;</span>
-                                <a href={submitTask.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-green-700 underline truncate flex-1">{submitTask.fileUrl}</a>
-                                <button onClick={() => setSubmitTask({ ...submitTask, fileUrl: "" })} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                              <div className="flex items-center gap-2 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-2">
+                                <span className="text-emerald-400 text-sm">&#10003;</span>
+                                <a href={submitTask.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-400 underline truncate flex-1">{submitTask.fileUrl}</a>
+                                <button onClick={() => setSubmitTask({ ...submitTask, fileUrl: "" })} className="text-xs text-red-500 hover:text-red-400">Remove</button>
                               </div>
                             )}
                             <input
@@ -466,10 +466,10 @@ export default function MyWorkPage() {
                               className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             />
                             <div className="flex gap-2">
-                              <button onClick={handleSubmitTask} disabled={submitting || !submitTask.content.trim()} className="flex-1 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm">
+                              <button onClick={handleSubmitTask} disabled={submitting || !submitTask.content.trim()} className="flex-1 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm">
                                 {submitting ? "Submitting..." : "Submit &#10003;"}
                               </button>
-                              <button onClick={() => setSubmitTask(null)} className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm">
+                              <button onClick={() => setSubmitTask(null)} className="px-4 py-2.5 bg-transparent text-slate-400 rounded-lg hover:bg-gray-200 text-sm">
                                 Cancel
                               </button>
                             </div>
@@ -480,33 +480,33 @@ export default function MyWorkPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm text-center py-4">No submission required for today</p>
+                <p className="text-slate-500 text-sm text-center py-4">No submission required for today</p>
               )}
             </div>
           </div>
 
           {/* Step 4: Quiz */}
           {dayQuizzes.length > 0 && (
-            <div className="bg-white rounded-xl border mb-4 overflow-hidden">
-              <div className="bg-purple-50 border-b px-5 py-3 flex items-center gap-3">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
+              <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
                 <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-bold">4</span>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Take Quiz</h3>
-                  <p className="text-xs text-gray-500">Test your knowledge of today&apos;s topic</p>
+                  <h3 className="font-semibold text-white">Take Quiz</h3>
+                  <p className="text-xs text-slate-500">Test your knowledge of today&apos;s topic</p>
                 </div>
               </div>
               <div className="p-5">
                 <div className="space-y-4">
                   {dayQuizzes.map(quiz => (
-                    <div key={quiz.id} className="border rounded-lg p-4 bg-purple-50/50">
+                    <div key={quiz.id} className="border rounded-lg p-4 bg-transparent/50">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div>
-                          <h4 className="font-semibold text-gray-900">{quiz.title}</h4>
-                          {quiz.description && <p className="text-sm text-gray-600 mt-1">{quiz.description}</p>}
-                          <p className="text-xs text-gray-400 mt-1">{quiz.questionCount} Questions &bull; {quiz.timeLimit ? `${quiz.timeLimit} min` : "No time limit"} &bull; Pass: {quiz.passingScore}%</p>
+                          <h4 className="font-semibold text-white">{quiz.title}</h4>
+                          {quiz.description && <p className="text-sm text-slate-400 mt-1">{quiz.description}</p>}
+                          <p className="text-xs text-slate-500 mt-1">{quiz.questionCount} Questions &bull; {quiz.timeLimit ? `${quiz.timeLimit} min` : "No time limit"} &bull; Pass: {quiz.passingScore}%</p>
                         </div>
                         {quiz.myAttempt ? (
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${quiz.myAttempt.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${quiz.myAttempt.passed ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
                             {quiz.myAttempt.passed ? "Passed" : "Failed"} — {Math.round((quiz.myAttempt.score / quiz.myAttempt.totalPoints) * 100)}%
                           </span>
                         ) : (
@@ -525,29 +525,29 @@ export default function MyWorkPage() {
           {/* Quiz Modal */}
           {takingQuiz && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                   {quizResult ? (
                     <div className="text-center py-8">
                       <p className="text-5xl mb-4">{quizResult.passed ? "🎉" : "😔"}</p>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{quizResult.passed ? "Congratulations! You Passed!" : "Quiz Not Passed"}</h2>
-                      <p className="text-lg text-gray-600 mb-4">Score: {quizResult.score} / {quizResult.totalPoints} ({Math.round((quizResult.score / quizResult.totalPoints) * 100)}%)</p>
-                      <button onClick={() => { setTakingQuiz(null); setQuizResult(null); }} className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                      <h2 className="text-2xl font-bold text-white mb-2">{quizResult.passed ? "Congratulations! You Passed!" : "Quiz Not Passed"}</h2>
+                      <p className="text-lg text-slate-400 mb-4">Score: {quizResult.score} / {quizResult.totalPoints} ({Math.round((quizResult.score / quizResult.totalPoints) * 100)}%)</p>
+                      <button onClick={() => { setTakingQuiz(null); setQuizResult(null); }} className="px-6 py-3 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2] font-medium">
                         Close
                       </button>
                     </div>
                   ) : (
                     <>
-                      <h2 className="text-xl font-bold text-gray-900 mb-6">{quizzes.find(q => q.id === takingQuiz)?.title || "Quiz"}</h2>
+                      <h2 className="text-xl font-bold text-white mb-6">{quizzes.find(q => q.id === takingQuiz)?.title || "Quiz"}</h2>
                       <div className="space-y-6">
                         {quizQuestions.map((q, qi) => (
                           <div key={q.id} className="border rounded-lg p-4">
-                            <p className="font-medium text-gray-900 mb-3">Q{qi + 1}. {q.question}</p>
+                            <p className="font-medium text-white mb-3">Q{qi + 1}. {q.question}</p>
                             <div className="space-y-2">
                               {q.options.map((opt, oi) => (
-                                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${quizAnswers[q.id] === oi ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${quizAnswers[q.id] === oi ? "border-purple-500 bg-transparent" : "border-white/[0.08] hover:bg-transparent"}`}>
                                   <input type="radio" name={q.id} checked={quizAnswers[q.id] === oi} onChange={() => setQuizAnswers({ ...quizAnswers, [q.id]: oi })} className="accent-purple-600" />
-                                  <span className="text-sm text-gray-700">{opt}</span>
+                                  <span className="text-sm text-slate-300">{opt}</span>
                                 </label>
                               ))}
                             </div>
@@ -558,7 +558,7 @@ export default function MyWorkPage() {
                         <button onClick={submitQuiz} disabled={quizSubmitting || Object.keys(quizAnswers).length < quizQuestions.length} className="flex-1 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium">
                           {quizSubmitting ? "Submitting..." : "Submit Quiz"}
                         </button>
-                        <button onClick={() => setTakingQuiz(null)} className="px-6 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
+                        <button onClick={() => setTakingQuiz(null)} className="px-6 py-3 bg-transparent text-slate-400 rounded-lg hover:bg-gray-200">
                           Cancel
                         </button>
                       </div>
@@ -570,21 +570,21 @@ export default function MyWorkPage() {
           )}
 
           {dayResources.length === 0 && dayTasks.length === 0 && dayQuizzes.length === 0 && (
-            <div className="bg-white rounded-xl border p-8 text-center mb-4">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-8 text-center mb-4">
               <p className="text-3xl mb-2">📭</p>
-              <p className="text-gray-500">No content scheduled for Day {selectedDay}</p>
+              <p className="text-slate-500">No content scheduled for Day {selectedDay}</p>
             </div>
           )}
 
           {/* Quick Navigation */}
           <div className="flex gap-3">
             {selectedDay > 1 && (
-              <button onClick={() => setSelectedDay(selectedDay - 1)} className="flex-1 px-4 py-3 bg-white border rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <button onClick={() => setSelectedDay(selectedDay - 1)} className="flex-1 px-4 py-3 bg-transparent border rounded-xl text-sm font-medium text-slate-300 hover:bg-transparent">
                 &#8592; Day {selectedDay - 1}
               </button>
             )}
             {selectedDay < currentDay && selectedDay < totalDays && (
-              <button onClick={() => setSelectedDay(selectedDay + 1)} className="flex-1 px-4 py-3 bg-white border rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <button onClick={() => setSelectedDay(selectedDay + 1)} className="flex-1 px-4 py-3 bg-transparent border rounded-xl text-sm font-medium text-slate-300 hover:bg-transparent">
                 Day {selectedDay + 1} &#8594;
               </button>
             )}

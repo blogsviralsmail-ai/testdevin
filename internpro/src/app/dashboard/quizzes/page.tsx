@@ -63,12 +63,12 @@ export default function QuizzesPage() {
     if (result) {
       return (
         <div className="max-w-2xl mx-auto">
-          <div className={`rounded-xl p-8 text-center ${result.passed ? "bg-green-50 border-2 border-green-200" : "bg-red-50 border-2 border-red-200"}`}>
+          <div className={`rounded-xl p-8 text-center ${result.passed ? "bg-transparent border-2 border-green-200" : "bg-transparent border-2 border-red-200"}`}>
             <span className="text-6xl">{result.passed ? "🎉" : "😔"}</span>
             <h2 className="text-2xl font-bold mt-4">{result.passed ? "Congratulations! You Passed!" : "Better Luck Next Time"}</h2>
-            <p className="text-4xl font-bold mt-4 text-indigo-600">{Math.round(result.score)}%</p>
-            <p className="text-sm text-gray-500 mt-2">Passing Score: {quizDetail.passingScore}%</p>
-            <button onClick={() => { setActiveQuiz(null); setQuizDetail(null); }} className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg">Back to Quizzes</button>
+            <p className="text-4xl font-bold mt-4 text-[#22d3ee]">{Math.round(result.score)}%</p>
+            <p className="text-sm text-slate-500 mt-2">Passing Score: {quizDetail.passingScore}%</p>
+            <button onClick={() => { setActiveQuiz(null); setQuizDetail(null); }} className="mt-6 px-6 py-2 bg-[#0EA5B8] text-white rounded-lg">Back to Quizzes</button>
           </div>
         </div>
       );
@@ -78,22 +78,22 @@ export default function QuizzesPage() {
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">{quizDetail.title}</h1>
-          <button onClick={() => { setActiveQuiz(null); setQuizDetail(null); }} className="text-sm text-gray-500 hover:text-gray-700">← Back</button>
+          <button onClick={() => { setActiveQuiz(null); setQuizDetail(null); }} className="text-sm text-slate-500 hover:text-slate-300">← Back</button>
         </div>
         {quizDetail.questions.map((q, qi) => (
-          <div key={qi} className="bg-white rounded-xl p-5 border">
+          <div key={qi} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border">
             <p className="font-medium mb-3">Q{qi + 1}. {q.question}</p>
             <div className="space-y-2">
               {q.options.map((opt, oi) => (
-                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${answers[qi] === oi ? "border-indigo-500 bg-indigo-50" : "hover:bg-gray-50"}`}>
-                  <input type="radio" name={`q-${qi}`} checked={answers[qi] === oi} onChange={() => { const a = [...answers]; a[qi] = oi; setAnswers(a); }} className="w-4 h-4 text-indigo-600" />
+                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${answers[qi] === oi ? "border-indigo-500 bg-transparent" : "hover:bg-transparent"}`}>
+                  <input type="radio" name={`q-${qi}`} checked={answers[qi] === oi} onChange={() => { const a = [...answers]; a[qi] = oi; setAnswers(a); }} className="w-4 h-4 text-[#22d3ee]" />
                   <span className="text-sm">{opt}</span>
                 </label>
               ))}
             </div>
           </div>
         ))}
-        <button onClick={submitQuiz} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">Submit Quiz</button>
+        <button onClick={submitQuiz} className="w-full py-3 bg-[#0EA5B8] text-white rounded-lg font-medium hover:bg-[#0891b2]">Submit Quiz</button>
       </div>
     );
   }
@@ -102,24 +102,24 @@ export default function QuizzesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quizzes & Assessments</h1>
-          <p className="text-sm text-gray-500">Test your knowledge and earn points</p>
+          <h1 className="text-2xl font-bold text-white">Quizzes & Assessments</h1>
+          <p className="text-sm text-slate-500">Test your knowledge and earn points</p>
         </div>
-        {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ Create Quiz</button>}
+        {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Create Quiz</button>}
       </div>
 
       {/* Search + Program Filter */}
-      <div className="bg-white rounded-xl border p-4">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search quizzes..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search quizzes..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-white focus:ring-2 focus:ring-[#0EA5B8] focus:border-indigo-500" />
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400">✕</button>}
           </div>
           {programs.length > 1 && (
             <>
-              <label className="text-sm font-medium text-gray-700">Course:</label>
-              <select value={selectedProgramId} onChange={(e) => setSelectedProgramId(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]">
+              <label className="text-sm font-medium text-slate-300">Course:</label>
+              <select value={selectedProgramId} onChange={(e) => setSelectedProgramId(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-white min-w-[250px]">
                 <option value="all">All Courses ({quizzes.length} quizzes)</option>
                 {programs.map((p) => {
                   const count = quizzes.filter(q => q.programId === p.id).length;
@@ -127,43 +127,43 @@ export default function QuizzesPage() {
                   return <option key={p.id} value={p.id}>{p.title} ({count})</option>;
                 })}
               </select>
-              {selectedProgramId !== "all" && <button onClick={() => setSelectedProgramId("all")} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Clear Filter</button>}
+              {selectedProgramId !== "all" && <button onClick={() => setSelectedProgramId("all")} className="text-xs text-[#22d3ee] hover:text-[#0EA5B8] font-medium">Clear Filter</button>}
             </>
           )}
         </div>
-        {searchQuery && <p className="text-xs text-gray-500 mt-2">Searching for &quot;{searchQuery}&quot;</p>}
+        {searchQuery && <p className="text-xs text-slate-500 mt-2">Searching for &quot;{searchQuery}&quot;</p>}
       </div>
 
       {/* Quiz List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(selectedProgramId === "all" ? quizzes : quizzes.filter(q => q.programId === selectedProgramId)).filter(q => !searchQuery.trim() || q.title.toLowerCase().includes(searchQuery.toLowerCase()) || (q.description && q.description.toLowerCase().includes(searchQuery.toLowerCase()))).map(quiz => (
-          <div key={quiz.id} className="bg-white rounded-xl p-5 border hover:shadow-md transition-shadow">
+          <div key={quiz.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border hover:shadow-none transition-shadow">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold">{quiz.title}</h3>
-                {quiz.description && <p className="text-sm text-gray-500 mt-1">{quiz.description}</p>}
+                {quiz.description && <p className="text-sm text-slate-500 mt-1">{quiz.description}</p>}
               </div>
-              {!quiz.isPublished && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Draft</span>}
+              {!quiz.isPublished && <span className="text-xs bg-transparent text-slate-400 px-2 py-1 rounded">Draft</span>}
             </div>
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+            <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
               <span>📝 {quiz.questionCount} questions</span>
               {quiz.timeLimit && <span>⏱ {quiz.timeLimit} min</span>}
               <span>🎯 Pass: {quiz.passingScore}%</span>
             </div>
             <div className="flex items-center justify-between mt-4">
               {quiz.myAttempt ? (
-                <span className={`text-sm font-medium ${quiz.myAttempt.passed ? "text-green-600" : "text-red-600"}`}>
+                <span className={`text-sm font-medium ${quiz.myAttempt.passed ? "text-emerald-400" : "text-red-400"}`}>
                   {quiz.myAttempt.passed ? "✓ Passed" : "✗ Failed"} ({Math.round(quiz.myAttempt.score)}%)
                 </span>
               ) : (
-                <button onClick={() => startQuiz(quiz.id)} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Start Quiz</button>
+                <button onClick={() => startQuiz(quiz.id)} className="px-4 py-2 bg-[#0EA5B8] text-white text-sm rounded-lg hover:bg-[#0891b2]">Start Quiz</button>
               )}
               {isAdmin && (
                 <div className="flex items-center gap-2">
-                  <button onClick={() => togglePublish(quiz.id, quiz.isPublished)} className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100">
+                  <button onClick={() => togglePublish(quiz.id, quiz.isPublished)} className="text-xs px-2 py-1 bg-transparent text-[#22d3ee] rounded hover:bg-[#0EA5B8]/10">
                     {quiz.isPublished ? "Unpublish" : "Publish"}
                   </button>
-                  <button onClick={() => deleteQuiz(quiz.id, quiz.title)} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">
+                  <button onClick={() => deleteQuiz(quiz.id, quiz.title)} className="text-xs px-2 py-1 bg-transparent text-red-400 rounded hover:bg-red-500/10">
                     Delete
                   </button>
                 </div>
@@ -176,14 +176,14 @@ export default function QuizzesPage() {
       {quizzes.length === 0 && (
         <>
           <PaymentBlockMessage feature="Quizzes" />
-          <div className="text-center py-12 text-gray-400">No quizzes available yet.</div>
+          <div className="text-center py-12 text-slate-500">No quizzes available yet.</div>
         </>
       )}
 
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">Create Quiz</h2>
             <div className="space-y-4">
               <input placeholder="Quiz Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
@@ -204,11 +204,11 @@ export default function QuizzesPage() {
                   ))}
                 </div>
               ))}
-              <button onClick={() => setForm({ ...form, questions: [...form.questions, { question: "", options: ["", "", "", ""], correctAnswer: 0, points: 10 }] })} className="text-sm text-indigo-600">+ Add Question</button>
+              <button onClick={() => setForm({ ...form, questions: [...form.questions, { question: "", options: ["", "", "", ""], correctAnswer: 0, points: 10 }] })} className="text-sm text-[#22d3ee]">+ Add Question</button>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-gray-600">Cancel</button>
-              <button onClick={createQuiz} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Create</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-slate-400">Cancel</button>
+              <button onClick={createQuiz} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg">Create</button>
             </div>
           </div>
         </div>

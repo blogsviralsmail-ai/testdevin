@@ -22,8 +22,8 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="text-sm text-gray-500">Platform performance overview</p>
+        <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
+        <p className="text-sm text-slate-500">Platform performance overview</p>
       </div>
 
       {/* Overview Cards */}
@@ -51,26 +51,26 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Program Completion */}
-      <div className="bg-white rounded-xl p-6 border">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
         <h2 className="text-lg font-semibold mb-4">Program Completion Rates</h2>
         <div className="space-y-3">
           {data.programCompletion.map(p => (
             <div key={p.name}>
               <div className="flex items-center justify-between text-sm mb-1">
                 <span className="font-medium">{p.name}</span>
-                <span className="text-gray-500">{p.completed}/{p.total} ({p.rate}%)</span>
+                <span className="text-slate-500">{p.completed}/{p.total} ({p.rate}%)</span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-3">
-                <div className="bg-indigo-600 h-3 rounded-full transition-all" style={{ width: `${p.rate}%` }} />
+              <div className="w-full bg-transparent rounded-full h-3">
+                <div className="bg-[#0EA5B8] h-3 rounded-full transition-all" style={{ width: `${p.rate}%` }} />
               </div>
             </div>
           ))}
-          {data.programCompletion.length === 0 && <p className="text-gray-400 text-sm">No program data yet</p>}
+          {data.programCompletion.length === 0 && <p className="text-slate-500 text-sm">No program data yet</p>}
         </div>
       </div>
 
       {/* Attendance Trend */}
-      <div className="bg-white rounded-xl p-6 border">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
         <h2 className="text-lg font-semibold mb-4">Attendance Trend (Last 14 Days)</h2>
         <div className="flex items-end gap-1 h-40">
           {data.attendanceTrend.map(day => {
@@ -78,19 +78,19 @@ export default function AnalyticsPage() {
             const pct = total > 0 ? (day.present / total) * 100 : 0;
             return (
               <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full bg-gray-100 rounded-t relative" style={{ height: "100%" }}>
+                <div className="w-full bg-transparent rounded-t relative" style={{ height: "100%" }}>
                   <div className="absolute bottom-0 w-full bg-green-400 rounded-t" style={{ height: `${pct}%` }} />
                 </div>
-                <span className="text-[9px] text-gray-400 rotate-[-45deg]">{day.date.slice(5)}</span>
+                <span className="text-[9px] text-slate-500 rotate-[-45deg]">{day.date.slice(5)}</span>
               </div>
             );
           })}
         </div>
-        {data.attendanceTrend.length === 0 && <p className="text-gray-400 text-sm text-center">No attendance data yet</p>}
+        {data.attendanceTrend.length === 0 && <p className="text-slate-500 text-sm text-center">No attendance data yet</p>}
       </div>
 
       {/* Revenue Chart */}
-      <div className="bg-white rounded-xl p-6 border">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
         <h2 className="text-lg font-semibold mb-4">Monthly Revenue</h2>
         {data.monthlyRevenue.length > 0 ? (
           <div className="flex items-end gap-3 h-40">
@@ -100,33 +100,33 @@ export default function AnalyticsPage() {
               return (
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
                   <span className="text-xs font-medium">₹{(m.amount / 1000).toFixed(0)}k</span>
-                  <div className="w-full bg-indigo-500 rounded-t" style={{ height: `${pct}%` }} />
-                  <span className="text-[10px] text-gray-500">{m.month.slice(5)}</span>
+                  <div className="w-full bg-transparent0 rounded-t" style={{ height: `${pct}%` }} />
+                  <span className="text-[10px] text-slate-500">{m.month.slice(5)}</span>
                 </div>
               );
             })}
           </div>
         ) : (
-          <p className="text-gray-400 text-sm text-center">No revenue data yet</p>
+          <p className="text-slate-500 text-sm text-center">No revenue data yet</p>
         )}
       </div>
 
       {/* Weekly Report Summary */}
       {weeklyReport && (
-        <div className="bg-white rounded-xl p-6 border">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
           <h2 className="text-lg font-semibold mb-4">This Week&apos;s Summary</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div><p className="text-2xl font-bold text-indigo-600">{(weeklyReport as Record<string, number>).totalSubmissions || (weeklyReport as Record<string, number>).tasksCompleted || 0}</p><p className="text-xs text-gray-500">Tasks Submitted</p></div>
-            <div><p className="text-2xl font-bold text-green-600">{(weeklyReport as Record<string, number>).avgAttendance || (weeklyReport as Record<string, number>).attendanceDays || 0}</p><p className="text-xs text-gray-500">Attendance Days</p></div>
-            <div><p className="text-2xl font-bold text-purple-600">{(weeklyReport as Record<string, number>).newStudents || 0}</p><p className="text-xs text-gray-500">New Students</p></div>
-            <div><p className="text-2xl font-bold text-amber-600">{(weeklyReport as Record<string, number>).completions || 0}</p><p className="text-xs text-gray-500">Completions</p></div>
+            <div><p className="text-2xl font-bold text-[#22d3ee]">{(weeklyReport as Record<string, number>).totalSubmissions || (weeklyReport as Record<string, number>).tasksCompleted || 0}</p><p className="text-xs text-slate-500">Tasks Submitted</p></div>
+            <div><p className="text-2xl font-bold text-emerald-400">{(weeklyReport as Record<string, number>).avgAttendance || (weeklyReport as Record<string, number>).attendanceDays || 0}</p><p className="text-xs text-slate-500">Attendance Days</p></div>
+            <div><p className="text-2xl font-bold text-[#a78bfa]">{(weeklyReport as Record<string, number>).newStudents || 0}</p><p className="text-xs text-slate-500">New Students</p></div>
+            <div><p className="text-2xl font-bold text-amber-600">{(weeklyReport as Record<string, number>).completions || 0}</p><p className="text-xs text-slate-500">Completions</p></div>
           </div>
         </div>
       )}
 
       {/* Export */}
       <div className="flex gap-3">
-        <button onClick={() => { const csv = "Metric,Value\n" + Object.entries(data.overview).map(([k, v]) => `${k},${v}`).join("\n"); const blob = new Blob([csv], { type: "text/csv" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "analytics-export.csv"; a.click(); }} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Export CSV</button>
+        <button onClick={() => { const csv = "Metric,Value\n" + Object.entries(data.overview).map(([k, v]) => `${k},${v}`).join("\n"); const blob = new Blob([csv], { type: "text/csv" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "analytics-export.csv"; a.click(); }} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200">Export CSV</button>
       </div>
     </div>
   );

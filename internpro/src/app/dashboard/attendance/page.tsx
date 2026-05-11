@@ -107,8 +107,8 @@ export default function AttendancePage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-          <p className="text-gray-600 text-sm">
+          <h1 className="text-2xl font-bold text-white">Attendance</h1>
+          <p className="text-slate-400 text-sm">
             {isStudent ? "Your attendance is auto-tracked when you open this page" : "Track daily attendance for all students"}
           </p>
         </div>
@@ -117,12 +117,12 @@ export default function AttendancePage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm text-gray-900"
+            className="px-3 py-2 border rounded-lg text-sm text-white"
           />
           {!isStudent && (
             <>
-              <button onClick={() => { window.open(`/api/export?type=attendance&format=csv&date=${selectedDate}`, '_blank'); }} className="bg-green-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700">📥 Export</button>
-              <button onClick={() => setShowMark(!showMark)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+              <button onClick={() => { window.open(`/api/export?type=attendance&format=csv&date=${selectedDate}`, '_blank'); }} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700">📥 Export</button>
+              <button onClick={() => setShowMark(!showMark)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">
                 {showMark ? "View Records" : "Mark Attendance"}
               </button>
             </>
@@ -132,7 +132,7 @@ export default function AttendancePage() {
 
       {/* Auto Check-in Banner for Students */}
       {isStudent && (
-        <div className={`rounded-xl p-4 mb-6 text-sm border ${autoCheckedIn ? "bg-green-50 border-green-200 text-green-800" : "bg-blue-50 border-blue-200 text-blue-800"}`}>
+        <div className={`rounded-xl p-4 mb-6 text-sm border ${autoCheckedIn ? "bg-transparent border-green-200 text-green-800" : "bg-transparent border-blue-200 text-blue-800"}`}>
           {autoCheckedIn ? (
             <div className="flex items-center gap-2">
               <span className="text-lg">✓</span>
@@ -151,25 +151,25 @@ export default function AttendancePage() {
       )}
 
       {!isStudent && showMark ? (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="p-4 bg-gray-50 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Mark Attendance - {formatDate(selectedDate)}</h2>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] overflow-hidden">
+          <div className="p-4 bg-transparent flex items-center justify-between">
+            <h2 className="font-semibold text-white">Mark Attendance - {formatDate(selectedDate)}</h2>
             <div className="flex gap-2">
-              <button onClick={() => markAll("present")} className="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200">Mark All Present</button>
-              <button onClick={() => markAll("absent")} className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-200">Mark All Absent</button>
+              <button onClick={() => markAll("present")} className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg hover:bg-green-200">Mark All Present</button>
+              <button onClick={() => markAll("absent")} className="text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-200">Mark All Absent</button>
             </div>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-white/[0.06]">
             {enrollments.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">No active enrollments found</div>
+              <div className="p-8 text-center text-slate-500">No active enrollments found</div>
             ) : (
               enrollments.map((enrollment) => {
                 const existing = records.find((r) => r.enrollment.id === enrollment.id);
                 return (
                   <div key={enrollment.id} className="px-6 py-4 flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-sm text-gray-900">{enrollment.student.name}</div>
-                      <div className="text-xs text-gray-500">{enrollment.batch.program.title} - {enrollment.batch.name}</div>
+                      <div className="font-medium text-sm text-white">{enrollment.student.name}</div>
+                      <div className="text-xs text-slate-500">{enrollment.batch.program.title} - {enrollment.batch.name}</div>
                     </div>
                     <div className="flex gap-2 items-center">
                       {existing && (
@@ -181,7 +181,7 @@ export default function AttendancePage() {
                         <button
                           key={s}
                           onClick={() => markAttendance(enrollment.id, s)}
-                          className={`text-xs px-2 py-1 rounded transition capitalize ${existing?.status === s ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                          className={`text-xs px-2 py-1 rounded transition capitalize ${existing?.status === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-gray-200"}`}
                         >
                           {s}
                         </button>
@@ -194,42 +194,42 @@ export default function AttendancePage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-transparent">
                 <tr>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Date</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Login Time</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Last Active</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Work Hours</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Method</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Student</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Date</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Status</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Login Time</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Last Active</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Work Hours</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Method</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-white/[0.06]">
                 {records.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                       No attendance records for {formatDate(selectedDate)}
                     </td>
                   </tr>
                 ) : (
                   records.map((record) => (
-                    <tr key={record.id} className="hover:bg-gray-50">
+                    <tr key={record.id} className="hover:bg-transparent">
                       <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 text-sm">{record.user.name}</div>
-                        <div className="text-xs text-gray-500">{record.user.email}</div>
+                        <div className="font-medium text-white text-sm">{record.user.name}</div>
+                        <div className="text-xs text-slate-500">{record.user.email}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{formatDate(record.date)}</td>
+                      <td className="px-6 py-4 text-sm text-slate-400">{formatDate(record.date)}</td>
                       <td className="px-6 py-4">
                         <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(record.status)}`}>
                           {record.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{record.checkIn || "—"}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{record.checkOut || "—"}</td>
+                      <td className="px-6 py-4 text-sm text-slate-400">{record.checkIn || "—"}</td>
+                      <td className="px-6 py-4 text-sm text-slate-400">{record.checkOut || "—"}</td>
                       <td className="px-6 py-4">
                         {record.checkIn && record.checkOut ? (() => {
                           const [inH, inM] = record.checkIn.split(":").map(Number);
@@ -238,17 +238,17 @@ export default function AttendancePage() {
                           const hrs = Math.floor(mins / 60);
                           const m = mins % 60;
                           const label = mins < 240 ? "Half Day" : mins < 360 ? "Short Day" : "Full Day";
-                          const color = mins < 240 ? "text-orange-600" : mins < 360 ? "text-yellow-600" : "text-green-600";
+                          const color = mins < 240 ? "text-orange-600" : mins < 360 ? "text-amber-400" : "text-emerald-400";
                           return (
                             <div>
-                              <span className="text-sm text-gray-900">{hrs}h {m}m</span>
+                              <span className="text-sm text-white">{hrs}h {m}m</span>
                               <span className={`text-xs ml-1 font-medium ${color}`}>({label})</span>
                             </div>
                           );
-                        })() : <span className="text-xs text-gray-400">—</span>}
+                        })() : <span className="text-xs text-slate-500">—</span>}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`text-xs px-2 py-1 rounded-full ${record.method === "auto" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
+                        <span className={`text-xs px-2 py-1 rounded-full ${record.method === "auto" ? "bg-blue-500/10 text-[#60a5fa]" : "bg-transparent text-slate-400"}`}>
                           {record.method === "auto" ? "Auto" : "Manual"}
                         </span>
                       </td>

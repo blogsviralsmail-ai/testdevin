@@ -130,35 +130,35 @@ export default function ProfilePage() {
     setTimeout(() => setMsg(""), 3000);
   };
 
-  if (loading) return <div className="p-6 text-gray-700">Loading...</div>;
+  if (loading) return <div className="p-6 text-slate-300">Loading...</div>;
   if (!profile) return <div className="p-6 text-red-500">Failed to load profile</div>;
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+        <h1 className="text-2xl font-bold text-white">My Profile</h1>
         <div className="flex items-center gap-3">
           <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all" style={{ width: `${profileComplete}%`, background: profileComplete === 100 ? '#10b981' : profileComplete >= 60 ? '#f59e0b' : '#ef4444' }} />
           </div>
-          <span className={`text-sm font-bold ${profileComplete === 100 ? 'text-green-600' : profileComplete >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{profileComplete}%</span>
+          <span className={`text-sm font-bold ${profileComplete === 100 ? 'text-emerald-400' : profileComplete >= 60 ? 'text-amber-600' : 'text-red-400'}`}>{profileComplete}%</span>
         </div>
       </div>
 
       {msg && (
-        <div className="mb-4 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm">{msg}</div>
+        <div className="mb-4 px-4 py-2 bg-transparent text-emerald-400 rounded-lg text-sm">{msg}</div>
       )}
 
       {/* Photo Section */}
-      <div className="bg-white rounded-xl border p-6 mb-6 text-center">
-        <div className="w-28 h-28 rounded-full border-4 border-indigo-600 mx-auto mb-3 bg-gray-100 flex items-center justify-center text-5xl overflow-hidden">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-6 mb-6 text-center">
+        <div className="w-28 h-28 rounded-full border-4 border-indigo-600 mx-auto mb-3 bg-transparent flex items-center justify-center text-5xl overflow-hidden">
           {profile.avatar ? (
             <img src={profile.avatar} className="w-full h-full object-cover" alt="Photo" />
           ) : (
-            <span className="text-gray-400">👤</span>
+            <span className="text-slate-500">👤</span>
           )}
         </div>
-        <label className="inline-block cursor-pointer bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+        <label className="inline-block cursor-pointer bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
           {uploading ? "Uploading..." : "Upload Photo"}
           <input
             type="file"
@@ -168,122 +168,122 @@ export default function ProfilePage() {
             disabled={uploading}
           />
         </label>
-        <p className="text-xs text-gray-400 mt-2">JPG, PNG — max 5MB</p>
+        <p className="text-xs text-slate-500 mt-2">JPG, PNG — max 5MB</p>
       </div>
 
       {/* Profile Form */}
-      <form onSubmit={handleSave} className="bg-white rounded-xl border p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Personal Details</h2>
+      <form onSubmit={handleSave} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Personal Details</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Full Name</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
             <input value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" required />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Email</label>
             <input value={profile.email} disabled
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-gray-50" />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-slate-500 bg-transparent" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Phone</label>
             <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="+91 9876543210" />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="+91 9876543210" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Date of Birth</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Date of Birth</label>
             <input type="date" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">College / Institution</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">College / Institution</label>
             <input value={form.collegeName} onChange={e => setForm({...form, collegeName: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Degree</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Degree</label>
             <input value={form.degree} onChange={e => setForm({...form, degree: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="B.Tech, BCA, MBA..." />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="B.Tech, BCA, MBA..." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Year</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Year</label>
             <input value={form.year} onChange={e => setForm({...form, year: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="2024, 3rd Year..." />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="2024, 3rd Year..." />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Address</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Address</label>
             <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={2} />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" rows={2} />
           </div>
         </div>
 
-        <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-4">Professional Details</h2>
+        <h2 className="text-lg font-semibold text-white mt-6 mb-4">Professional Details</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Bio / About</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Bio / About</label>
             <textarea value={form.bio} onChange={e => setForm({...form, bio: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" rows={3} placeholder="Tell us about yourself..." />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" rows={3} placeholder="Tell us about yourself..." />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Skills (comma-separated)</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Skills (comma-separated)</label>
             <input value={form.skills} onChange={e => setForm({...form, skills: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="React, Node.js, Python, Design..." />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="React, Node.js, Python, Design..." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">LinkedIn URL</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">LinkedIn URL</label>
             <input value={form.linkedinUrl} onChange={e => setForm({...form, linkedinUrl: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://linkedin.com/in/..." />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="https://linkedin.com/in/..." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Portfolio URL</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">Portfolio URL</label>
             <input value={form.portfolioUrl} onChange={e => setForm({...form, portfolioUrl: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://your-portfolio.com" />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="https://your-portfolio.com" />
           </div>
         </div>
 
         <button type="submit" disabled={saving}
-          className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
+          className="mt-4 bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] disabled:opacity-50">
           {saving ? "Saving..." : "Save Changes"}
         </button>
       </form>
 
       {/* Joining Date — Read Only */}
-      <div className="bg-white rounded-xl border p-6 mt-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Internship Info</h2>
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-6 mt-6">
+        <h2 className="text-lg font-semibold text-white mb-3">Internship Info</h2>
         <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Joining Date:</span>
-          <span className="text-sm text-indigo-600 font-medium">{joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "Not assigned yet"}</span>
+          <span className="text-sm font-medium text-slate-300">Joining Date:</span>
+          <span className="text-sm text-[#22d3ee] font-medium">{joiningDate ? new Date(joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "Not assigned yet"}</span>
         </div>
       </div>
 
       {/* Login Hours — Day Wise */}
       {loginHours.length > 0 && (
-        <div className="bg-white rounded-xl border p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Login Hours</h2>
-          <p className="text-sm text-gray-600 mb-4">Your daily login time tracking</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-6 mt-6">
+          <h2 className="text-lg font-semibold text-white mb-3">Login Hours</h2>
+          <p className="text-sm text-slate-400 mb-4">Your daily login time tracking</p>
           <div className="overflow-hidden rounded-lg border">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-transparent border-b">
                 <tr>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Date</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Login</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Logout</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-2 uppercase">Hours</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Date</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Login</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Logout</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Hours</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {loginHours.slice(0, 30).map((session) => (
                   <tr key={session.date}>
-                    <td className="px-4 py-2 text-sm text-gray-900">{new Date(session.date + "T00:00:00").toLocaleDateString("en-IN")}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{session.loginTime}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{session.logoutTime || "Active"}</td>
-                    <td className="px-4 py-2 text-sm font-medium text-indigo-600">{Math.floor(session.totalMinutes / 60)}h {session.totalMinutes % 60}m</td>
+                    <td className="px-4 py-2 text-sm text-white">{new Date(session.date + "T00:00:00").toLocaleDateString("en-IN")}</td>
+                    <td className="px-4 py-2 text-sm text-slate-300">{session.loginTime}</td>
+                    <td className="px-4 py-2 text-sm text-slate-300">{session.logoutTime || "Active"}</td>
+                    <td className="px-4 py-2 text-sm font-medium text-[#22d3ee]">{Math.floor(session.totalMinutes / 60)}h {session.totalMinutes % 60}m</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-400 mt-2">Total: {Math.floor(loginHours.reduce((s, h) => s + h.totalMinutes, 0) / 60)}h {loginHours.reduce((s, h) => s + h.totalMinutes, 0) % 60}m</p>
+          <p className="text-xs text-slate-500 mt-2">Total: {Math.floor(loginHours.reduce((s, h) => s + h.totalMinutes, 0) / 60)}h {loginHours.reduce((s, h) => s + h.totalMinutes, 0) % 60}m</p>
         </div>
       )}
     </div>

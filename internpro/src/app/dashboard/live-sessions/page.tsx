@@ -61,24 +61,24 @@ export default function LiveSessionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Live Sessions</h1>
-          <p className="text-sm text-gray-500">Scheduled doubt-clearing sessions and webinars</p>
+          <h1 className="text-2xl font-bold text-white">Live Sessions</h1>
+          <p className="text-sm text-slate-500">Scheduled doubt-clearing sessions and webinars</p>
         </div>
-        {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ Schedule Session</button>}
+        {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Schedule Session</button>}
       </div>
 
       {/* Search + Filter */}
-      <div className="bg-white rounded-xl border p-4">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search sessions..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search sessions..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-white focus:ring-2 focus:ring-[#0EA5B8] focus:border-indigo-500" />
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400">✕</button>}
           </div>
           {programs.length > 1 && (
             <>
-              <label className="text-sm font-medium text-gray-700">Course:</label>
-              <select value={programFilter} onChange={e => setProgramFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]">
+              <label className="text-sm font-medium text-slate-300">Course:</label>
+              <select value={programFilter} onChange={e => setProgramFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-white min-w-[250px]">
                 <option value="all">All Courses</option>
                 {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
@@ -90,7 +90,7 @@ export default function LiveSessionsPage() {
       {/* Create Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
             <h2 className="text-lg font-bold mb-4">Schedule Live Session</h2>
             <div className="space-y-3">
               <input placeholder="Session Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
@@ -111,8 +111,8 @@ export default function LiveSessionsPage() {
               <input type="datetime-local" value={form.scheduledAt} onChange={e => setForm({ ...form, scheduledAt: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
             <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-gray-600 text-sm">Cancel</button>
-              <button onClick={handleCreate} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Schedule</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-slate-400 text-sm">Cancel</button>
+              <button onClick={handleCreate} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">Schedule</button>
             </div>
           </div>
         </div>
@@ -120,24 +120,24 @@ export default function LiveSessionsPage() {
 
       {/* Upcoming Sessions */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Upcoming Sessions</h2>
+        <h2 className="text-lg font-semibold text-white mb-3">Upcoming Sessions</h2>
         {upcoming.length === 0 ? (
           <>
             <PaymentBlockMessage feature="Live Sessions" />
-            <div className="bg-white rounded-xl p-8 border text-center text-gray-400">No upcoming sessions scheduled.</div>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-8 border text-center text-slate-500">No upcoming sessions scheduled.</div>
           </>
         ) : (
           <div className="space-y-3">
             {upcoming.map(s => (
-              <div key={s.id} className="bg-white rounded-xl p-5 border border-indigo-100">
+              <div key={s.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border border-indigo-100">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <span>{platformIcons[s.platform] || "🔗"}</span>
-                      <h3 className="font-semibold text-gray-900">{s.title}</h3>
+                      <h3 className="font-semibold text-white">{s.title}</h3>
                     </div>
-                    {s.description && <p className="text-sm text-gray-500 mt-1">{s.description}</p>}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                    {s.description && <p className="text-sm text-slate-500 mt-1">{s.description}</p>}
+                    <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
                       <span>Host: {s.hostName}</span>
                       {s.programTitle && <span>{s.programTitle}</span>}
                       <span>{new Date(s.scheduledAt).toLocaleString()}</span>
@@ -145,11 +145,11 @@ export default function LiveSessionsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
-                    {s.meetLink && <a href={s.meetLink} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs">Join</a>}
+                    {s.meetLink && <a href={s.meetLink} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs">Join</a>}
                     {isAdmin && (
                       <>
-                        <button onClick={() => updateStatus(s.id, "completed")} className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100">Mark Done</button>
-                        <button onClick={() => deleteSession(s.id, s.title)} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">Delete</button>
+                        <button onClick={() => updateStatus(s.id, "completed")} className="text-xs px-2 py-1 bg-transparent text-[#60a5fa] rounded hover:bg-blue-500/10">Mark Done</button>
+                        <button onClick={() => deleteSession(s.id, s.title)} className="text-xs px-2 py-1 bg-transparent text-red-400 rounded hover:bg-red-500/10">Delete</button>
                       </>
                     )}
                   </div>
@@ -163,14 +163,14 @@ export default function LiveSessionsPage() {
       {/* Past Sessions */}
       {past.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Past Sessions</h2>
+          <h2 className="text-lg font-semibold text-white mb-3">Past Sessions</h2>
           <div className="space-y-3">
             {past.map(s => (
-              <div key={s.id} className="bg-white rounded-xl p-5 border opacity-75">
+              <div key={s.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border opacity-75">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-700">{s.title}</h3>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                    <h3 className="font-semibold text-slate-300">{s.title}</h3>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-slate-500">
                       <span>{s.hostName}</span>
                       {s.programTitle && <span>{s.programTitle}</span>}
                       <span>{new Date(s.scheduledAt).toLocaleString()}</span>
@@ -178,8 +178,8 @@ export default function LiveSessionsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
-                    {s.recordingUrl && <a href={s.recordingUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline">Watch Recording</a>}
-                    {isAdmin && <button onClick={() => deleteSession(s.id, s.title)} className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100">Delete</button>}
+                    {s.recordingUrl && <a href={s.recordingUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#22d3ee] hover:underline">Watch Recording</a>}
+                    {isAdmin && <button onClick={() => deleteSession(s.id, s.title)} className="text-xs px-2 py-1 bg-transparent text-red-400 rounded hover:bg-red-500/10">Delete</button>}
                   </div>
                 </div>
               </div>

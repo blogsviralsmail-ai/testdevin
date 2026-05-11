@@ -211,25 +211,25 @@ export default function IDCardsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">ID Cards</h1>
-          <p className="text-gray-600 text-sm">{isStudent ? "Your employee ID card" : "Generate and manage employee ID cards"}</p>
+          <h1 className="text-2xl font-bold text-white">ID Cards</h1>
+          <p className="text-slate-400 text-sm">{isStudent ? "Your employee ID card" : "Generate and manage employee ID cards"}</p>
         </div>
         {isAdmin && (
           <button onClick={() => setShowGenerate(!showGenerate)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+            className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
             {showGenerate ? "Cancel" : "+ Generate ID Card"}
           </button>
         )}
       </div>
 
       {isAdmin && showGenerate && (
-        <form onSubmit={handleGenerate} className="bg-white rounded-xl p-6 border mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate New ID Card</h2>
+        <form onSubmit={handleGenerate} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Generate New ID Card</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Select Student</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Select Student</label>
               <select value={generateForm.userId} onChange={(e) => setGenerateForm({ ...generateForm, userId: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" required>
+                className="w-full px-3 py-2 border rounded-lg text-sm text-white" required>
                 <option value="">Choose student...</option>
                 {enrollments.map((e) => (
                   <option key={e.student.id} value={e.student.id}>{e.student.name} — {e.batch.program.title}</option>
@@ -237,23 +237,23 @@ export default function IDCardsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Designation</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Designation</label>
               <input value={generateForm.designation} onChange={(e) => setGenerateForm({ ...generateForm, designation: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Intern" required />
+                className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Intern" required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Department (optional)</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Department (optional)</label>
               <input value={generateForm.department} onChange={(e) => setGenerateForm({ ...generateForm, department: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Web Development" />
+                className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Web Development" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Photo</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Photo</label>
               <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])}
-                className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
-              {generateForm.photoUrl && <p className="text-xs text-green-600 mt-1">Photo uploaded!</p>}
+                className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
+              {generateForm.photoUrl && <p className="text-xs text-emerald-400 mt-1">Photo uploaded!</p>}
             </div>
           </div>
-          <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">
+          <button type="submit" className="mt-4 bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
             Generate ID Card
           </button>
         </form>
@@ -262,14 +262,14 @@ export default function IDCardsPage() {
       {/* Preview Modal — 2-sided ID Card */}
       {previewCard && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-auto">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">ID Card Preview (2-Sided)</h3>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+            <h3 className="text-lg font-semibold text-white mb-4 text-center">ID Card Preview (2-Sided)</h3>
             <div className="flex gap-6 justify-center flex-wrap">
               {/* FRONT SIDE */}
               <div>
-                <p className="text-xs text-gray-500 text-center mb-2 font-semibold uppercase">Front</p>
-                <div className="rounded-[10px] overflow-hidden shadow-lg flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
-                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-red-500 rounded-l-[10px] z-10"></div>
+                <p className="text-xs text-slate-500 text-center mb-2 font-semibold uppercase">Front</p>
+                <div className="rounded-[10px] overflow-hidden shadow-none flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
+                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-transparent0 rounded-l-[10px] z-10"></div>
                   <div className="absolute top-0 right-0 bottom-0 w-[6px] bg-blue-600 rounded-r-[10px] z-10"></div>
                   {/* Logo */}
                   <div className="text-center pt-3 pb-2 px-3 flex-shrink-0">
@@ -278,7 +278,7 @@ export default function IDCardsPage() {
                   </div>
                   {/* Photo */}
                   <div className="text-center py-1 flex-shrink-0">
-                    <div className="w-[80px] h-[80px] rounded-full border-[3px] border-blue-600 overflow-hidden bg-blue-50 inline-flex items-center justify-center">
+                    <div className="w-[80px] h-[80px] rounded-full border-[3px] border-blue-600 overflow-hidden bg-transparent inline-flex items-center justify-center">
                       {(previewCard.user.avatar || previewCard.photoUrl) ? (
                         <img src={previewCard.user.avatar || previewCard.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                       ) : (
@@ -288,29 +288,29 @@ export default function IDCardsPage() {
                   </div>
                   {/* Name + Designation */}
                   <div className="text-center px-3 py-1 flex-shrink-0">
-                    <div className="text-[12px] font-extrabold text-gray-900 leading-tight mb-1">{previewCard.user.name}</div>
+                    <div className="text-[12px] font-extrabold text-white leading-tight mb-1">{previewCard.user.name}</div>
                     <span className="inline-block bg-blue-600 text-white text-[7px] font-bold px-2.5 py-[2px] rounded-full uppercase tracking-wide">{previewCard.designation}</span>
                   </div>
                   {/* Info */}
                   <div className="flex-1 px-3.5 pt-1.5 pb-1">
-                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">ID No</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{previewCard.cardNumber}</span></div>
-                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">Email</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600 break-all">{previewCard.user.email}</span></div>
-                    {previewCard.user.phone && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">Phone</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{previewCard.user.phone}</span></div>}
-                    {previewCard.user.collegeName && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">College</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{previewCard.user.collegeName}</span></div>}
-                    {previewCard.user.dob && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-gray-900 w-[44px]">DOB</span><span className="mx-1 text-gray-500">:</span><span className="text-gray-600">{new Date(previewCard.user.dob).toLocaleDateString("en-IN")}</span></div>}
+                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">ID No</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{previewCard.cardNumber}</span></div>
+                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">Email</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400 break-all">{previewCard.user.email}</span></div>
+                    {previewCard.user.phone && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">Phone</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{previewCard.user.phone}</span></div>}
+                    {previewCard.user.collegeName && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">College</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{previewCard.user.collegeName}</span></div>}
+                    {previewCard.user.dob && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">DOB</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{new Date(previewCard.user.dob).toLocaleDateString("en-IN")}</span></div>}
                   </div>
                   {/* Barcode */}
                   <div className="text-center px-5 pb-2.5 flex-shrink-0">
                     <div className="h-[22px] mx-auto w-[80%]" style={{ background: "repeating-linear-gradient(90deg, #000 0px, #000 1px, transparent 1px, transparent 3px)" }}></div>
-                    <div className="text-[6px] text-gray-500 mt-0.5 tracking-wider">{previewCard.cardNumber}</div>
+                    <div className="text-[6px] text-slate-500 mt-0.5 tracking-wider">{previewCard.cardNumber}</div>
                   </div>
                 </div>
               </div>
               {/* BACK SIDE */}
               <div>
-                <p className="text-xs text-gray-500 text-center mb-2 font-semibold uppercase">Back</p>
-                <div className="rounded-[10px] overflow-hidden shadow-lg flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
-                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-red-500 rounded-l-[10px] z-10"></div>
+                <p className="text-xs text-slate-500 text-center mb-2 font-semibold uppercase">Back</p>
+                <div className="rounded-[10px] overflow-hidden shadow-none flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
+                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-transparent0 rounded-l-[10px] z-10"></div>
                   <div className="absolute top-0 right-0 bottom-0 w-[6px] bg-blue-600 rounded-r-[10px] z-10"></div>
                   {/* Logo */}
                   <div className="text-center pt-4 pb-2 px-3 flex-shrink-0">
@@ -319,16 +319,16 @@ export default function IDCardsPage() {
                   </div>
                   {/* Terms */}
                   <div className="flex-1 px-3.5">
-                    <div className="text-[10px] font-black text-gray-900 text-center uppercase mb-2 tracking-wide">Terms & Conditions</div>
-                    <p className="text-[7px] text-gray-600 leading-[1.5] mb-1.5"><strong className="text-gray-900">Identification:</strong> Employees are required to keep their ID badge visible or easily accessible during working hours to confirm identity when needed.</p>
-                    <p className="text-[7px] text-gray-600 leading-[1.5] mb-1.5"><strong className="text-gray-900">Proper Use:</strong> The ID badge is issued solely for company related activities. It may not be lent, duplicated, or used for any non-official purpose.</p>
-                    <p className="text-[7px] text-gray-600 leading-[1.5]"><strong className="text-gray-900">Security:</strong> If the badge is misplaced or suspected to be compromised, report it immediately so access can be disabled.</p>
+                    <div className="text-[10px] font-black text-white text-center uppercase mb-2 tracking-wide">Terms & Conditions</div>
+                    <p className="text-[7px] text-slate-400 leading-[1.5] mb-1.5"><strong className="text-white">Identification:</strong> Employees are required to keep their ID badge visible or easily accessible during working hours to confirm identity when needed.</p>
+                    <p className="text-[7px] text-slate-400 leading-[1.5] mb-1.5"><strong className="text-white">Proper Use:</strong> The ID badge is issued solely for company related activities. It may not be lent, duplicated, or used for any non-official purpose.</p>
+                    <p className="text-[7px] text-slate-400 leading-[1.5]"><strong className="text-white">Security:</strong> If the badge is misplaced or suspected to be compromised, report it immediately so access can be disabled.</p>
                   </div>
                   {/* Footer */}
                   <div className="text-center px-3 pb-3 flex-shrink-0">
                     <span className="inline-block bg-slate-800 text-white text-[8px] font-bold px-3.5 py-1 rounded-full">ID: {previewCard.cardNumber}</span>
-                    <div className="text-[7px] text-gray-500 mt-1.5">+91 7062010000 | {companyName}</div>
-                    <div className="text-[6px] text-gray-400 mt-0.5">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} - {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
+                    <div className="text-[7px] text-slate-500 mt-1.5">+91 7062010000 | {companyName}</div>
+                    <div className="text-[6px] text-slate-500 mt-0.5">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} - {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
                   </div>
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function IDCardsPage() {
             <div className="flex gap-3 mt-5 justify-center">
               <button onClick={() => handlePrint(previewCard)} className="bg-[#0000AA] text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-900 font-medium">Print (Both Sides)</button>
               <button onClick={() => handlePrint(previewCard)} className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-red-700 font-medium">Download PDF</button>
-              <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 font-medium">Close</button>
+              <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200 font-medium">Close</button>
             </div>
           </div>
         </div>
@@ -344,32 +344,32 @@ export default function IDCardsPage() {
 
       {/* Cards List */}
       {cards.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
           <p className="text-4xl mb-4">🪪</p>
-          <p className="text-gray-600">{isStudent ? "Your ID card has not been generated yet." : "No ID cards generated yet."}</p>
+          <p className="text-slate-400">{isStudent ? "Your ID card has not been generated yet." : "No ID cards generated yet."}</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
           {cards.map((card) => (
-            <div key={card.id} className="bg-white rounded-xl border hover:shadow-md transition overflow-hidden">
+            <div key={card.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border hover:shadow-none transition overflow-hidden">
               <div className="bg-[#0000AA] text-white py-2 px-3 flex items-center justify-center gap-2 relative">
                 <img src={companyLogo} alt={companyName} className="h-5" />
                 <span className="text-[8px] text-white/80 uppercase tracking-wide">{companyName}</span>
                 <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#d32f2f]"></div>
               </div>
               <div className="p-4 flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-full border-2 border-[#0000AA] flex-shrink-0 bg-blue-50 flex items-center justify-center text-2xl overflow-hidden mb-2">
+                <div className="w-14 h-14 rounded-full border-2 border-[#0000AA] flex-shrink-0 bg-transparent flex items-center justify-center text-2xl overflow-hidden mb-2">
                   {(card.user.avatar || card.photoUrl) ? (
                     <img src={card.user.avatar || card.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                   ) : "👤"}
                 </div>
                 <div className="font-bold text-[#0000AA] text-sm uppercase truncate w-full">{card.user.name}</div>
                 <div className="text-[10px] text-[#d32f2f] font-bold uppercase">{card.designation}</div>
-                <div className="text-[9px] text-gray-400 mt-1">{card.cardNumber}</div>
+                <div className="text-[9px] text-slate-500 mt-1">{card.cardNumber}</div>
               </div>
               <div className="px-4 pb-3 flex gap-2">
-                <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-blue-50 text-[#0000AA] px-3 py-1.5 rounded-lg hover:bg-blue-100 font-medium">View</button>
-                <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 font-medium">Print</button>
+                <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-transparent text-[#0000AA] px-3 py-1.5 rounded-lg hover:bg-blue-500/10 font-medium">View</button>
+                <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-transparent text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 font-medium">Print</button>
               </div>
             </div>
           ))}

@@ -147,24 +147,24 @@ export default function ResourcesPage() {
   });
 
   const ResourceRow = ({ resource }: { resource: Resource }) => (
-    <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+    <div className="px-6 py-4 flex items-center justify-between hover:bg-transparent transition">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <span className="text-2xl">{typeIcons[resource.type] || "📎"}</span>
         <div className="min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 truncate">{resource.title}</h3>
-          <p className="text-xs text-gray-500 capitalize">{resource.type}</p>
+          <h3 className="text-sm font-medium text-white truncate">{resource.title}</h3>
+          <p className="text-xs text-slate-500 capitalize">{resource.type}</p>
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#22d3ee] hover:text-[#0EA5B8] font-medium">
           Open →
         </a>
         {isAdmin && (
           <>
-            <button onClick={() => openEdit(resource)} className="text-xs px-2 py-1 bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100">
+            <button onClick={() => openEdit(resource)} className="text-xs px-2 py-1 bg-transparent text-amber-400 rounded hover:bg-amber-500/10">
               Edit
             </button>
-            <button onClick={() => handleDelete(resource.id, resource.title)} className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100">
+            <button onClick={() => handleDelete(resource.id, resource.title)} className="text-xs px-2 py-1 bg-transparent text-red-400 rounded hover:bg-red-500/10">
               Delete
             </button>
           </>
@@ -177,45 +177,45 @@ export default function ResourcesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-white">
             {isStudent ? "Study Material" : "Learning Resources"}
           </h1>
-          <p className="text-gray-600 text-sm">
+          <p className="text-slate-400 text-sm">
             {isStudent
               ? "Day-wise study materials — complete each day sequentially like office attendance"
               : "Manage day-based pre-recorded videos and study materials"}
           </p>
         </div>
         {isAdmin && (
-          <button onClick={() => setShowForm(!showForm)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+          <button onClick={() => setShowForm(!showForm)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">
             {showForm ? "Cancel" : "+ Add Resource"}
           </button>
         )}
       </div>
 
       {/* Search + Course Filter */}
-      <div className="bg-white rounded-xl border p-4 mb-6">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 mb-6">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search resources by title..."
-              className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-white focus:ring-2 focus:ring-[#0EA5B8] focus:border-indigo-500"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400">✕</button>
             )}
           </div>
           {batches.length > 1 && (
             <>
-              <label className="text-sm font-medium text-gray-700">Course:</label>
+              <label className="text-sm font-medium text-slate-300">Course:</label>
               <select
                 value={selectedBatchId}
                 onChange={(e) => setSelectedBatchId(e.target.value)}
-                className="px-3 py-2 border rounded-lg text-sm text-gray-900 min-w-[250px]"
+                className="px-3 py-2 border rounded-lg text-sm text-white min-w-[250px]"
               >
                 <option value="all">All Courses ({resources.length} resources)</option>
                 {batches.map((b) => {
@@ -226,7 +226,7 @@ export default function ResourcesPage() {
                 })}
               </select>
               {selectedBatchId !== "all" && (
-                <button onClick={() => setSelectedBatchId("all")} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                <button onClick={() => setSelectedBatchId("all")} className="text-xs text-[#22d3ee] hover:text-[#0EA5B8] font-medium">
                   Clear Filter
                 </button>
               )}
@@ -234,24 +234,24 @@ export default function ResourcesPage() {
           )}
         </div>
         {searchQuery && (
-          <p className="text-xs text-gray-500 mt-2">Found {filteredResources.length} result(s) for &quot;{searchQuery}&quot;</p>
+          <p className="text-xs text-slate-500 mt-2">Found {filteredResources.length} result(s) for &quot;{searchQuery}&quot;</p>
         )}
       </div>
 
       {/* Info Banner for Students */}
       {isStudent && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm text-blue-800">
+        <div className="bg-transparent border border-blue-200 rounded-xl p-4 mb-6 text-sm text-blue-800">
           <strong>Note:</strong> Materials are unlocked day by day based on your working days. You cannot skip ahead — just like coming to office daily. If you were on leave, you will see the missed materials but your task will be for your current working day.
         </div>
       )}
 
       {/* Add Resource Form (Admin/TeamLeader) */}
       {showForm && isAdmin && (
-        <form onSubmit={handleCreate} className="bg-white rounded-xl p-6 border mb-6">
+        <form onSubmit={handleCreate} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
           <h2 className="text-lg font-semibold mb-4">Add New Resource</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Batch</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Batch</label>
               <select value={form.batchId} onChange={(e) => setForm({ ...form, batchId: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" required>
                 <option value="">Select Batch</option>
                 {batches.map((b) => (
@@ -260,12 +260,12 @@ export default function ResourcesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Day Number</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Day Number</label>
               <input type="number" min="1" value={form.dayNumber} onChange={(e) => setForm({ ...form, dayNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 1, 2, 3..." />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+              <label className="block text-sm font-medium text-slate-300 mb-1">Type</label>
+              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white">
                 <option value="video">Video (Pre-recorded)</option>
                 <option value="pdf">PDF Document</option>
                 <option value="link">External Link</option>
@@ -278,14 +278,14 @@ export default function ResourcesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" required />
+              <label className="block text-sm font-medium text-slate-300 mb-1">Title</label>
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white" required />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">URL / File Link</label>
-              <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="YouTube/Drive/Dropbox link, or any file URL" required />
+              <label className="block text-sm font-medium text-slate-300 mb-1">URL / File Link</label>
+              <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="YouTube/Drive/Dropbox link, or any file URL" required />
               <div className="flex items-center gap-3 mt-2">
-                <label className="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium border border-indigo-200 rounded-lg px-3 py-1.5 inline-block">
+                <label className="text-xs text-[#22d3ee] hover:text-[#0EA5B8] cursor-pointer font-medium border border-[#0EA5B8]/20 rounded-lg px-3 py-1.5 inline-block">
                   {fileUploading ? "Uploading..." : "Or Upload File"}
                   <input type="file" className="hidden" onChange={async (e) => {
                     const file = e.target.files?.[0];
@@ -300,28 +300,28 @@ export default function ResourcesPage() {
                     setFileUploading(false);
                   }} />
                 </label>
-                {form.fileUrl && <span className="text-xs text-green-600">File uploaded: {form.fileUrl}</span>}
+                {form.fileUrl && <span className="text-xs text-emerald-400">File uploaded: {form.fileUrl}</span>}
               </div>
             </div>
           </div>
-          <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">Add Resource</button>
+          <button type="submit" className="mt-4 bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">Add Resource</button>
         </form>
       )}
 
       {/* Edit Resource Modal */}
       {editingResource && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Edit Resource</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold text-white mb-4">Edit Resource</h2>
             <div className="grid gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                <label className="block text-sm font-medium text-slate-300 mb-1">Title</label>
+                <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                  <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Type</label>
+                  <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white">
                     <option value="video">Video</option>
                     <option value="pdf">PDF</option>
                     <option value="link">Link</option>
@@ -334,17 +334,17 @@ export default function ResourcesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Day Number</label>
-                  <input type="number" min="1" value={editForm.dayNumber} onChange={(e) => setEditForm({ ...editForm, dayNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Day Number</label>
+                  <input type="number" min="1" value={editForm.dayNumber} onChange={(e) => setEditForm({ ...editForm, dayNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
-                <input value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                <label className="block text-sm font-medium text-slate-300 mb-1">URL</label>
+                <input value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Batch</label>
-                <select value={editForm.batchId} onChange={(e) => setEditForm({ ...editForm, batchId: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900">
+                <label className="block text-sm font-medium text-slate-300 mb-1">Batch</label>
+                <select value={editForm.batchId} onChange={(e) => setEditForm({ ...editForm, batchId: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white">
                   {batches.map((b) => (
                     <option key={b.id} value={b.id}>{b.program.title} — {b.name}</option>
                   ))}
@@ -352,8 +352,8 @@ export default function ResourcesPage() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleEdit} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Save Changes</button>
-              <button onClick={() => setEditingResource(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button onClick={handleEdit} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2] font-medium">Save Changes</button>
+              <button onClick={() => setEditingResource(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">Cancel</button>
             </div>
           </div>
         </div>
@@ -363,9 +363,9 @@ export default function ResourcesPage() {
         <>
           {isStudent && <PaymentBlockMessage feature="Study Material" />}
           {!isStudent && (
-            <div className="bg-white rounded-xl p-12 border text-center">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 border text-center">
               <p className="text-4xl mb-4">🎥</p>
-              <p className="text-gray-600">No resources yet. Add pre-recorded videos and study materials.</p>
+              <p className="text-slate-400">No resources yet. Add pre-recorded videos and study materials.</p>
             </div>
           )}
         </>
@@ -373,10 +373,10 @@ export default function ResourcesPage() {
         <div className="space-y-6">
           {/* Day-based Resources */}
           {sortedDays.map((dayLabel) => (
-            <div key={dayLabel} className="bg-white rounded-xl border overflow-hidden">
-              <div className="bg-indigo-50 px-6 py-3 border-b flex items-center justify-between">
+            <div key={dayLabel} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
+              <div className="bg-transparent px-6 py-3 border-b flex items-center justify-between">
                 <h2 className="text-base font-semibold text-indigo-900">{dayLabel}</h2>
-                <span className="text-xs text-indigo-600">{dayGroups[dayLabel].length} item(s)</span>
+                <span className="text-xs text-[#22d3ee]">{dayGroups[dayLabel].length} item(s)</span>
               </div>
               <div className="divide-y">
                 {dayGroups[dayLabel].map((resource) => (
@@ -388,9 +388,9 @@ export default function ResourcesPage() {
 
           {/* General Resources (no day number) */}
           {generalResources.length > 0 && (
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <div className="bg-gray-50 px-6 py-3 border-b">
-                <h2 className="text-base font-semibold text-gray-700">General Resources</h2>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
+              <div className="bg-transparent px-6 py-3 border-b">
+                <h2 className="text-base font-semibold text-slate-300">General Resources</h2>
               </div>
               <div className="divide-y">
                 {generalResources.map((resource) => (

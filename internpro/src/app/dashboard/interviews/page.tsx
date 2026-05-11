@@ -180,47 +180,47 @@ export default function InterviewsPage() {
     fetchInterviews();
   };
 
-  if (loading) return <div className="p-6 text-gray-700">Loading...</div>;
+  if (loading) return <div className="p-6 text-slate-300">Loading...</div>;
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{userRole === "student" ? "My Interviews" : "Interviews"}</h1>
-        <p className="text-gray-600">{userRole === "student" ? "View your scheduled interviews and meeting details" : "Manage scheduled interviews and select candidates"}</p>
+        <h1 className="text-2xl font-bold text-white">{userRole === "student" ? "My Interviews" : "Interviews"}</h1>
+        <p className="text-slate-400">{userRole === "student" ? "View your scheduled interviews and meeting details" : "Manage scheduled interviews and select candidates"}</p>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border p-4 mb-6">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4 mb-6">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by student name, program..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-          {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by student name, program..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-white focus:ring-2 focus:ring-[#0EA5B8] focus:border-indigo-500" />
+          {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400">✕</button>}
         </div>
       </div>
 
       {/* Selection Modal */}
       {selectingId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Select Candidate — Fill Details</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-white mb-4">Select Candidate — Fill Details</h2>
             <div className="space-y-3">
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                <label className="block text-sm font-bold text-indigo-800 mb-1">Program <span className="text-red-500">*</span></label>
+              <div className="bg-transparent border border-[#0EA5B8]/20 rounded-lg p-3">
+                <label className="block text-sm font-bold text-[#0EA5B8] mb-1">Program <span className="text-red-500">*</span></label>
                 <select value={selectionForm.programId} onChange={(e) => {
                   const pid = e.target.value;
                   setSelectionForm(prev => ({ ...prev, programId: pid, batchId: "" }));
-                }} className="w-full px-3 py-2 rounded-lg border text-gray-900 mb-2">
+                }} className="w-full px-3 py-2 rounded-lg border text-white mb-2">
                   <option value="">-- Select Program --</option>
                   {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                 </select>
-                <label className="block text-sm font-bold text-indigo-800 mb-1">Batch <span className="text-red-500">*</span></label>
-                <select value={selectionForm.batchId} onChange={(e) => setSelectionForm(prev => ({ ...prev, batchId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                <label className="block text-sm font-bold text-[#0EA5B8] mb-1">Batch <span className="text-red-500">*</span></label>
+                <select value={selectionForm.batchId} onChange={(e) => setSelectionForm(prev => ({ ...prev, batchId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-white">
                   <option value="">-- Select Batch --</option>
                   {programs.find(p => p.id === selectionForm.programId)?.batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
-                <p className="text-xs text-indigo-600 mt-1">Program and Batch must be selected before proceeding</p>
-                <label className="block text-sm font-bold text-indigo-800 mb-1 mt-2">Mode <span className="text-red-500">*</span></label>
-                <select value={selectionForm.mode || ""} onChange={(e) => setSelectionForm(prev => ({ ...prev, mode: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                <p className="text-xs text-[#22d3ee] mt-1">Program and Batch must be selected before proceeding</p>
+                <label className="block text-sm font-bold text-[#0EA5B8] mb-1 mt-2">Mode <span className="text-red-500">*</span></label>
+                <select value={selectionForm.mode || ""} onChange={(e) => setSelectionForm(prev => ({ ...prev, mode: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-white">
                   <option value="">-- Select Mode --</option>
                   <option value="online">Online (Work from Home)</option>
                   <option value="offline">Offline (Work from Office)</option>
@@ -229,36 +229,36 @@ export default function InterviewsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Offs (days)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Weekly Offs (days)</label>
                   <input type="number" value={selectionForm.weekoffs} onChange={(e) => setSelectionForm({...selectionForm, weekoffs: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Paid Leaves/month</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Paid Leaves/month</label>
                   <input type="number" value={selectionForm.paidLeaves} onChange={(e) => setSelectionForm({...selectionForm, paidLeaves: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Work Timing</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Work Timing</label>
                 <input type="text" value={selectionForm.workTiming} onChange={(e) => setSelectionForm({...selectionForm, workTiming: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                  className="w-full px-3 py-2 rounded-lg border text-white" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Joining Date <span className="text-red-500">*</span></label>
                 <input type="date" value={selectionForm.joiningDate} onChange={(e) => setSelectionForm({...selectionForm, joiningDate: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border text-gray-900" required />
-                <p className="text-xs text-gray-500 mt-1">Required — agar blank rahe toh next day auto-fill hoti hai</p>
+                  className="w-full px-3 py-2 rounded-lg border text-white" required />
+                <p className="text-xs text-slate-500 mt-1">Required — agar blank rahe toh next day auto-fill hoti hai</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fee Type</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Fee Type</label>
                 <select value={selectionForm.feeType} onChange={(e) => setSelectionForm({...selectionForm, feeType: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                  className="w-full px-3 py-2 rounded-lg border text-white">
                   <option value="free">Free — No charge, no stipend</option>
                   <option value="paid">Paid — Student pays fee to company</option>
                   <option value="stipend">Stipend — Company pays student monthly</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {selectionForm.feeType === "free" && "No payment required — completely free internship"}
                   {selectionForm.feeType === "paid" && "Student company ko fee dega — training ke liye payment"}
                   {selectionForm.feeType === "stipend" && "Company student ko monthly stipend/salary degi — as a salary/stipend"}
@@ -266,24 +266,24 @@ export default function InterviewsPage() {
               </div>
               {selectionForm.feeType === "paid" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fee Amount (₹) — Student will pay this</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Fee Amount (₹) — Student will pay this</label>
                   <input type="number" value={selectionForm.feeAmount} onChange={(e) => setSelectionForm({...selectionForm, feeAmount: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
               )}
               {selectionForm.feeType === "stipend" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stipend Amount (₹/month) — Company will pay student</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Stipend Amount (₹/month) — Company will pay student</label>
                   <input type="number" value={selectionForm.stipendAmount} onChange={(e) => setSelectionForm({...selectionForm, stipendAmount: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
               )}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleSelect} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+              <button onClick={handleSelect} className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-green-700 font-medium">
                 Select & Generate Offer Letter
               </button>
-              <button onClick={() => setSelectingId(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setSelectingId(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -294,42 +294,42 @@ export default function InterviewsPage() {
       {/* Edit Enrollment Modal */}
       {editEnrollment && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Edit Selection Details</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-white mb-4">Edit Selection Details</h2>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Salary/Stipend (₹)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Monthly Salary/Stipend (₹)</label>
                   <input type="number" value={editEnrollment.salary} onChange={(e) => setEditEnrollment({...editEnrollment, salary: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Offs (days)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Weekly Offs (days)</label>
                   <input type="number" value={editEnrollment.weekoffs} onChange={(e) => setEditEnrollment({...editEnrollment, weekoffs: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Paid Leaves/month</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Paid Leaves/month</label>
                   <input type="number" value={editEnrollment.paidLeaves} onChange={(e) => setEditEnrollment({...editEnrollment, paidLeaves: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Work Timing</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Work Timing</label>
                   <input type="text" value={editEnrollment.workTiming} onChange={(e) => setEditEnrollment({...editEnrollment, workTiming: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Joining Date</label>
                 <input type="date" value={editEnrollment.joiningDate} onChange={(e) => setEditEnrollment({...editEnrollment, joiningDate: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                  className="w-full px-3 py-2 rounded-lg border text-white" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fee Type</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Fee Type</label>
                 <select value={editEnrollment.feeType} onChange={(e) => setEditEnrollment({...editEnrollment, feeType: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border text-gray-900">
+                  className="w-full px-3 py-2 rounded-lg border text-white">
                   <option value="free">Free</option>
                   <option value="paid">Paid — Student pays</option>
                   <option value="stipend">Stipend — Company pays</option>
@@ -337,24 +337,24 @@ export default function InterviewsPage() {
               </div>
               {editEnrollment.feeType === "paid" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fee Amount (₹)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Fee Amount (₹)</label>
                   <input type="number" value={editEnrollment.feeAmount} onChange={(e) => setEditEnrollment({...editEnrollment, feeAmount: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
               )}
               {editEnrollment.feeType === "stipend" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stipend Amount (₹/month)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Stipend Amount (₹/month)</label>
                   <input type="number" value={editEnrollment.stipendAmount} onChange={(e) => setEditEnrollment({...editEnrollment, stipendAmount: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg border text-gray-900" />
+                    className="w-full px-3 py-2 rounded-lg border text-white" />
                 </div>
               )}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleEditEnrollment} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+              <button onClick={handleEditEnrollment} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2] font-medium">
                 Save Changes
               </button>
-              <button onClick={() => setEditEnrollment(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setEditEnrollment(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -365,21 +365,21 @@ export default function InterviewsPage() {
       {/* Meet Link Modal */}
       {editMeetLink && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Set Meeting Link</h2>
-            <p className="text-sm text-gray-600 mb-3">Student will see this link to join the interview.</p>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-white mb-4">Set Meeting Link</h2>
+            <p className="text-sm text-slate-400 mb-3">Student will see this link to join the interview.</p>
             <input
               type="url"
               value={editMeetLink.link}
               onChange={(e) => setEditMeetLink({ ...editMeetLink, link: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border text-gray-900 mb-4"
+              className="w-full px-3 py-2 rounded-lg border text-white mb-4"
               placeholder="https://meet.google.com/abc-xyz or Zoom link"
             />
             <div className="flex gap-3">
-              <button onClick={handleUpdateMeetLink} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+              <button onClick={handleUpdateMeetLink} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2]">
                 Save Link
               </button>
-              <button onClick={() => setEditMeetLink(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setEditMeetLink(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
                 Cancel
               </button>
             </div>
@@ -390,76 +390,76 @@ export default function InterviewsPage() {
       {/* View Details Modal */}
       {viewDetails && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setViewDetails(null); setStudentDocs(null); }}>
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-xl">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-[#0EA5B8] to-[#a78bfa] text-white p-6 rounded-t-xl">
               <h2 className="text-xl font-bold">{viewDetails.enrollment.student.name}</h2>
               <p className="text-indigo-100 text-sm">{viewDetails.enrollment.batch.program.title}</p>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">Email</p>
-                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.email}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">Email</p>
+                  <p className="text-sm text-white">{viewDetails.enrollment.student.email}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">Phone</p>
-                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.phone || "N/A"}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">Phone</p>
+                  <p className="text-sm text-white">{viewDetails.enrollment.student.phone || "N/A"}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">College</p>
-                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.collegeName || "N/A"}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">College</p>
+                  <p className="text-sm text-white">{viewDetails.enrollment.student.collegeName || "N/A"}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">Degree</p>
-                  <p className="text-sm text-gray-900">{viewDetails.enrollment.student.degree || "N/A"}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">Degree</p>
+                  <p className="text-sm text-white">{viewDetails.enrollment.student.degree || "N/A"}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">Program</p>
-                  <p className="text-sm text-gray-900">{viewDetails.enrollment.batch.program.title}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">Program</p>
+                  <p className="text-sm text-white">{viewDetails.enrollment.batch.program.title}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">Batch</p>
-                  <p className="text-sm text-gray-900">{viewDetails.enrollment.batch.name}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">Batch</p>
+                  <p className="text-sm text-white">{viewDetails.enrollment.batch.name}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">Interview Date</p>
-                  <p className="text-sm text-gray-900">{new Date(viewDetails.scheduledAt).toLocaleString("en-IN")}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">Interview Date</p>
+                  <p className="text-sm text-white">{new Date(viewDetails.scheduledAt).toLocaleString("en-IN")}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 font-medium">Mode</p>
-                  <p className="text-sm text-gray-900 capitalize">{viewDetails.mode}</p>
+                <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3">
+                  <p className="text-xs text-slate-500 font-medium">Mode</p>
+                  <p className="text-sm text-white capitalize">{viewDetails.mode}</p>
                 </div>
               </div>
               {viewDetails.feedback && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                  <p className="text-xs text-yellow-700 font-medium mb-1">Feedback</p>
-                  <p className="text-sm text-gray-900">{viewDetails.feedback}</p>
+                <div className="bg-transparent border border-yellow-200 rounded-lg p-3">
+                  <p className="text-xs text-amber-400 font-medium mb-1">Feedback</p>
+                  <p className="text-sm text-white">{viewDetails.feedback}</p>
                 </div>
               )}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Documents & Resume</h3>
+                <h3 className="font-semibold text-white mb-2">Documents & Resume</h3>
                 {studentDocs === null ? (
-                  <p className="text-sm text-gray-500">Loading documents...</p>
+                  <p className="text-sm text-slate-500">Loading documents...</p>
                 ) : studentDocs.documents.length === 0 ? (
-                  <p className="text-sm text-gray-400">No documents uploaded yet</p>
+                  <p className="text-sm text-slate-500">No documents uploaded yet</p>
                 ) : (
                   <div className="grid grid-cols-1 gap-2">
                     {studentDocs.documents.map((doc) => {
                       const docUrl = doc.fileUrl || doc.url || "#";
                       return (
-                        <div key={doc.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border border-blue-100">
                           <div className="flex items-center gap-3">
                             <span className="text-xl">{doc.type === 'resume' ? '📄' : doc.type === 'photo' ? '🖼️' : '📎'}</span>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{doc.title || doc.name || doc.type}</p>
-                              <p className="text-xs text-gray-500 capitalize">{doc.type}</p>
+                              <p className="text-sm font-medium text-white">{doc.title || doc.name || doc.type}</p>
+                              <p className="text-xs text-slate-500 capitalize">{doc.type}</p>
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <a href={docUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 font-medium flex items-center gap-1">
+                            <a href={docUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-[#0EA5B8] text-white text-xs rounded-lg hover:bg-[#0891b2] font-medium flex items-center gap-1">
                               👁 View
                             </a>
-                            <a href={docUrl} download className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 font-medium flex items-center gap-1">
+                            <a href={docUrl} download className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-green-700 font-medium flex items-center gap-1">
                               ⬇ Download
                             </a>
                           </div>
@@ -469,66 +469,66 @@ export default function InterviewsPage() {
                   </div>
                 )}
               </div>
-              <button onClick={() => { setViewDetails(null); setStudentDocs(null); }} className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">Close</button>
+              <button onClick={() => { setViewDetails(null); setStudentDocs(null); }} className="w-full py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200 font-medium">Close</button>
             </div>
           </div>
         </div>
       )}
 
       {interviews.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
-          <p className="text-gray-500">{userRole === "student" ? "No interviews scheduled for you yet" : "No interviews scheduled yet"}</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
+          <p className="text-slate-500">{userRole === "student" ? "No interviews scheduled for you yet" : "No interviews scheduled yet"}</p>
         </div>
       ) : userRole === "student" ? (
         /* Student View — prominent interview details with meeting link */
         <div className="grid gap-4">
           {interviews.filter(i => !searchQuery.trim() || i.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase())).map((i) => (
-            <div key={i.id} className={`bg-white rounded-xl border overflow-hidden ${i.status === "scheduled" ? "border-indigo-200" : ""}`}>
+            <div key={i.id} className={`rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden ${i.status === "scheduled" ? "border-[#0EA5B8]/20" : ""}`}>
               {i.status === "scheduled" && (
-                <div className="bg-indigo-600 text-white px-6 py-2 text-sm font-medium">Upcoming Interview</div>
+                <div className="bg-[#0EA5B8] text-white px-6 py-2 text-sm font-medium">Upcoming Interview</div>
               )}
               <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900">{i.enrollment.batch.program.title}</h3>
+                <h3 className="text-lg font-bold text-white">{i.enrollment.batch.program.title}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                  <div className="bg-blue-50 rounded-lg p-3 text-center">
-                    <p className="text-xs text-gray-500">Date</p>
-                    <p className="text-sm font-semibold text-gray-900">{new Date(i.scheduledAt).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</p>
+                  <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3 text-center">
+                    <p className="text-xs text-slate-500">Date</p>
+                    <p className="text-sm font-semibold text-white">{new Date(i.scheduledAt).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</p>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-3 text-center">
-                    <p className="text-xs text-gray-500">Time</p>
-                    <p className="text-sm font-semibold text-gray-900">{new Date(i.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
+                  <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3 text-center">
+                    <p className="text-xs text-slate-500">Time</p>
+                    <p className="text-sm font-semibold text-white">{new Date(i.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-3 text-center">
-                    <p className="text-xs text-gray-500">Duration</p>
-                    <p className="text-sm font-semibold text-gray-900">{i.duration} minutes</p>
+                  <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3 text-center">
+                    <p className="text-xs text-slate-500">Duration</p>
+                    <p className="text-sm font-semibold text-white">{i.duration} minutes</p>
                   </div>
-                  <div className="bg-orange-50 rounded-lg p-3 text-center">
-                    <p className="text-xs text-gray-500">Mode</p>
-                    <p className="text-sm font-semibold text-gray-900 capitalize">{i.mode}</p>
+                  <div className="rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-3 text-center">
+                    <p className="text-xs text-slate-500">Mode</p>
+                    <p className="text-sm font-semibold text-white capitalize">{i.mode}</p>
                   </div>
                 </div>
                 {i.meetLink && i.status === "scheduled" && (
                   <a href={i.meetLink} target="_blank" rel="noopener noreferrer"
-                    className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold text-sm transition">
+                    className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2] font-semibold text-sm transition">
                     🔗 Join Meeting
                   </a>
                 )}
                 {!i.meetLink && i.status === "scheduled" && (
-                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg text-center text-sm text-yellow-700">
+                  <div className="mt-4 p-3 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] text-center text-sm text-amber-400">
                     Meeting link will be shared before the interview
                   </div>
                 )}
                 <div className="flex items-center justify-between mt-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    i.status === "scheduled" ? "bg-blue-100 text-blue-800" :
-                    i.result === "selected" ? "bg-green-100 text-green-800" :
-                    i.result === "rejected" ? "bg-red-100 text-red-800" :
-                    i.result === "shortlisted" ? "bg-yellow-100 text-yellow-800" :
-                    "bg-gray-100 text-gray-800"
+                    i.status === "scheduled" ? "bg-blue-500/10 text-blue-800" :
+                    i.result === "selected" ? "bg-emerald-500/10 text-green-800" :
+                    i.result === "rejected" ? "bg-red-500/10 text-red-800" :
+                    i.result === "shortlisted" ? "bg-amber-500/10 text-yellow-800" :
+                    "bg-transparent text-white"
                   }`}>
                     {i.result === "selected" ? "Selected!" : i.result === "rejected" ? "Not Selected" : i.result === "shortlisted" ? "Shortlisted" : "Scheduled"}
                   </span>
-                  {i.interviewer && <p className="text-xs text-gray-500">Interviewer: {i.interviewer.name}</p>}
+                  {i.interviewer && <p className="text-xs text-slate-500">Interviewer: {i.interviewer.name}</p>}
                 </div>
               </div>
             </div>
@@ -538,14 +538,14 @@ export default function InterviewsPage() {
         /* Admin/TL View — existing cards with management actions */
         <div className="grid gap-4">
           {interviews.filter(i => i.result !== "selected" && i.result !== "rejected").filter(i => !searchQuery.trim() || i.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.student.email.toLowerCase().includes(searchQuery.toLowerCase())).map((i) => (
-            <div key={i.id} className="bg-white rounded-xl p-6 border">
+            <div key={i.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{i.enrollment.student.name}</h3>
-                  <p className="text-sm text-gray-600">{i.enrollment.student.email} | {i.enrollment.student.phone}</p>
-                  <p className="text-sm text-gray-500">{i.enrollment.student.collegeName} — {i.enrollment.student.degree}</p>
-                  <p className="text-sm text-indigo-600 font-medium mt-1">{i.enrollment.batch.program.title}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  <h3 className="text-lg font-semibold text-white">{i.enrollment.student.name}</h3>
+                  <p className="text-sm text-slate-400">{i.enrollment.student.email} | {i.enrollment.student.phone}</p>
+                  <p className="text-sm text-slate-500">{i.enrollment.student.collegeName} — {i.enrollment.student.degree}</p>
+                  <p className="text-sm text-[#22d3ee] font-medium mt-1">{i.enrollment.batch.program.title}</p>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
                     <span>📅 {new Date(i.scheduledAt).toLocaleString("en-IN")}</span>
                     <span>⏱ {i.duration} min</span>
                     <span>📍 {i.mode}</span>
@@ -553,12 +553,12 @@ export default function InterviewsPage() {
                   <div className="flex items-center gap-2 mt-2">
                     {i.meetLink ? (
                       <>
-                        <a href={i.meetLink} target="_blank" className="text-sm text-blue-600 hover:underline">
+                        <a href={i.meetLink} target="_blank" className="text-sm text-[#60a5fa] hover:underline">
                           Join Meeting →
                         </a>
                         {i.status === "scheduled" && (
                           <button onClick={() => setEditMeetLink({ id: i.id, link: i.meetLink || "" })}
-                            className="text-xs text-gray-500 hover:text-indigo-600">
+                            className="text-xs text-slate-500 hover:text-[#22d3ee]">
                             (Edit Link)
                           </button>
                         )}
@@ -566,7 +566,7 @@ export default function InterviewsPage() {
                     ) : (
                       i.status === "scheduled" && (
                         <button onClick={() => setEditMeetLink({ id: i.id, link: "" })}
-                          className="text-sm text-indigo-600 hover:underline">
+                          className="text-sm text-[#22d3ee] hover:underline">
                           + Add Meeting Link
                         </button>
                       )
@@ -575,25 +575,25 @@ export default function InterviewsPage() {
                 </div>
                 <div className="flex flex-col gap-2 items-end">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    i.status === "scheduled" ? "bg-blue-100 text-blue-800" :
-                    i.result === "selected" ? "bg-green-100 text-green-800" :
-                    i.result === "rejected" ? "bg-red-100 text-red-800" :
-                    "bg-yellow-100 text-yellow-800"
+                    i.status === "scheduled" ? "bg-blue-500/10 text-blue-800" :
+                    i.result === "selected" ? "bg-emerald-500/10 text-green-800" :
+                    i.result === "rejected" ? "bg-red-500/10 text-red-800" :
+                    "bg-amber-500/10 text-yellow-800"
                   }`}>
                     {i.result || i.status}
                   </span>
                   {i.status === "scheduled" && (
                     <div className="flex gap-2 mt-2">
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "selected")}
-                        className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700">
+                        className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-green-700">
                         Select
                       </button>
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "shortlisted")}
-                        className="px-3 py-1.5 bg-yellow-500 text-white text-xs rounded-lg hover:bg-yellow-600">
+                        className="px-3 py-1.5 bg-transparent0 text-white text-xs rounded-lg hover:bg-yellow-600">
                         Shortlist
                       </button>
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "rejected")}
-                        className="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600">
+                        className="px-3 py-1.5 bg-transparent0 text-white text-xs rounded-lg hover:bg-red-600">
                         Reject
                       </button>
                     </div>
@@ -601,16 +601,16 @@ export default function InterviewsPage() {
                   {i.result === "shortlisted" && (
                     <div className="flex gap-2 mt-2">
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "selected")}
-                        className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700">
+                        className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-green-700">
                         Select
                       </button>
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "rejected")}
-                        className="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600">
+                        className="px-3 py-1.5 bg-transparent0 text-white text-xs rounded-lg hover:bg-red-600">
                         Reject
                       </button>
                     </div>
                   )}
-                  <button onClick={() => { setViewDetails(i); fetch(`/api/documents?userId=${i.enrollment.studentId}`).then(r => r.ok ? r.json() : []).then(d => setStudentDocs({ documents: Array.isArray(d) ? d : [] })).catch(() => setStudentDocs({ documents: [] })); }} className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs rounded-lg hover:bg-indigo-200 font-medium mt-1">
+                  <button onClick={() => { setViewDetails(i); fetch(`/api/documents?userId=${i.enrollment.studentId}`).then(r => r.ok ? r.json() : []).then(d => setStudentDocs({ documents: Array.isArray(d) ? d : [] })).catch(() => setStudentDocs({ documents: [] })); }} className="px-3 py-1.5 bg-[#0EA5B8]/10 text-[#22d3ee] text-xs rounded-lg hover:bg-indigo-200 font-medium mt-1">
                     👁 View Details
                   </button>
                   {i.result === "selected" && (
@@ -620,7 +620,7 @@ export default function InterviewsPage() {
                       workTiming: "9:30 AM - 6:30 PM", joiningDate: getNextDay(),
                       feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
                     })}
-                      className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs rounded-lg hover:bg-indigo-200 mt-2">
+                      className="px-3 py-1.5 bg-[#0EA5B8]/10 text-[#22d3ee] text-xs rounded-lg hover:bg-indigo-200 mt-2">
                       Edit Details
                     </button>
                   )}

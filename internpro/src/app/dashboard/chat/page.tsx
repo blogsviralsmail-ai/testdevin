@@ -110,46 +110,46 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)]">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Chat / Support</h1>
+      <h1 className="text-2xl font-bold text-white mb-4">Chat / Support</h1>
 
-      <div className="flex flex-1 border rounded-xl bg-white overflow-hidden min-h-0">
+      <div className="flex flex-1 border rounded-xl bg-transparent overflow-hidden min-h-0">
         {/* Rooms List */}
         <div className={`${activeRoom ? "hidden sm:flex" : "flex"} flex-col w-full sm:w-72 border-r`}>
           <div className="p-3 border-b flex items-center justify-between">
             <span className="font-semibold text-sm">Conversations</span>
             {["admin", "organization"].includes(currentUserRole) && (
-              <button onClick={loadStudents} className="text-xs bg-indigo-600 text-white px-2 py-1 rounded">+ New</button>
+              <button onClick={loadStudents} className="text-xs bg-[#0EA5B8] text-white px-2 py-1 rounded">+ New</button>
             )}
           </div>
           {showNewChat && (
-            <div className="p-2 border-b bg-gray-50 max-h-40 overflow-y-auto">
+            <div className="p-2 border-b bg-transparent max-h-40 overflow-y-auto">
               {allStudents.map(s => (
                 <button key={s.id} onClick={() => startNewChat(s.id, s.name)}
-                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-indigo-50 rounded truncate">
-                  {s.name} <span className="text-gray-400">({s.email})</span>
+                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-transparent rounded truncate">
+                  {s.name} <span className="text-slate-500">({s.email})</span>
                 </button>
               ))}
-              {allStudents.length === 0 && <p className="text-xs text-gray-400 p-2">No students found</p>}
+              {allStudents.length === 0 && <p className="text-xs text-slate-500 p-2">No students found</p>}
             </div>
           )}
           <div className="flex-1 overflow-y-auto">
             {rooms.length === 0 ? (
-              <div className="p-4 text-center text-gray-400 text-sm">
+              <div className="p-4 text-center text-slate-500 text-sm">
                 {currentUserRole === "student" ? "Send a message to start a conversation with admin" : "No conversations yet"}
               </div>
             ) : rooms.map(room => (
               <button key={room.roomId} onClick={() => { setActiveRoom(room.roomId); setActiveUser(room.otherUser); }}
-                className={`w-full text-left p-3 border-b hover:bg-gray-50 ${activeRoom === room.roomId ? "bg-indigo-50" : ""}`}>
+                className={`w-full text-left p-3 border-b hover:bg-transparent ${activeRoom === room.roomId ? "bg-transparent" : ""}`}>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#0EA5B8] flex items-center justify-center text-white text-xs font-bold shrink-0">
                     {room.otherUser?.name?.charAt(0) || "?"}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium truncate">{room.otherUser?.name || "User"}</span>
-                      {room.unread > 0 && <span className="w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{room.unread}</span>}
+                      {room.unread > 0 && <span className="w-5 h-5 bg-transparent0 text-white text-[10px] rounded-full flex items-center justify-center">{room.unread}</span>}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{room.lastMessage}</p>
+                    <p className="text-xs text-slate-500 truncate">{room.lastMessage}</p>
                   </div>
                 </div>
               </button>
@@ -162,26 +162,26 @@ export default function ChatPage() {
           {activeRoom ? (
             <>
               <div className="p-3 border-b flex items-center gap-2">
-                <button onClick={() => setActiveRoom(null)} className="sm:hidden text-gray-500 mr-1">←</button>
-                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                <button onClick={() => setActiveRoom(null)} className="sm:hidden text-slate-500 mr-1">←</button>
+                <div className="w-8 h-8 rounded-full bg-[#0EA5B8] flex items-center justify-center text-white text-xs font-bold">
                   {activeUser?.name?.charAt(0) || "?"}
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{activeUser?.name || "User"}</p>
-                  <p className="text-xs text-gray-500 capitalize">{activeUser?.role || ""}</p>
+                  <p className="text-xs text-slate-500 capitalize">{activeUser?.role || ""}</p>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-transparent">
                 {messages.map(msg => (
                   <div key={msg.id} className={`flex ${msg.senderId === currentUserId ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] px-3 py-2 rounded-xl text-sm ${
                       msg.senderId === currentUserId
-                        ? "bg-indigo-600 text-white rounded-br-sm"
-                        : "bg-white border rounded-bl-sm"
+                        ? "bg-[#0EA5B8] text-white rounded-br-sm"
+                        : "bg-transparent border rounded-bl-sm"
                     }`}>
                       <p>{msg.message}</p>
-                      <p className={`text-[10px] mt-1 ${msg.senderId === currentUserId ? "text-indigo-200" : "text-gray-400"}`}>
+                      <p className={`text-[10px] mt-1 ${msg.senderId === currentUserId ? "text-indigo-200" : "text-slate-500"}`}>
                         {new Date(msg.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
@@ -195,13 +195,13 @@ export default function ChatPage() {
                   onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
                   placeholder="Type a message..." className="flex-1 px-3 py-2 border rounded-lg text-sm" />
                 <button onClick={sendMessage} disabled={sending || !text.trim()}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+                  className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
                   {sending ? "..." : "Send"}
                 </button>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="flex-1 flex items-center justify-center text-slate-500">
               <div className="text-center">
                 <p className="text-4xl mb-3">💬</p>
                 <p className="font-medium">Select a conversation</p>
@@ -218,7 +218,7 @@ export default function ChatPage() {
           <button onClick={() => {
             fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: "Hello! I need help." }) })
               .then(() => { fetchRooms(); setTimeout(() => fetchRooms(), 1000); });
-          }} className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
+          }} className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm font-medium">
             Start Chat with Admin
           </button>
         </div>

@@ -151,15 +151,15 @@ export default function LettersPage() {
   if (viewingLetter) {
     return (
       <div>
-        <button onClick={() => setViewingLetter(null)} className="mb-4 text-indigo-600 hover:underline text-sm">
+        <button onClick={() => setViewingLetter(null)} className="mb-4 text-[#22d3ee] hover:underline text-sm">
           &larr; Back to {pageTitle}
         </button>
-        <div className="bg-white rounded-xl shadow-sm border">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] shadow-none border">
           <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="font-bold text-gray-900">{viewingLetter.title}</h3>
+            <h3 className="font-bold text-white">{viewingLetter.title}</h3>
             <div className="flex gap-2 flex-wrap">
               <button onClick={handlePrint}
-                className="px-4 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">
+                className="px-4 py-1.5 bg-[#0EA5B8] text-white rounded text-sm hover:bg-[#0891b2]">
                 Print / PDF
               </button>
               {viewingLetter.email && (
@@ -183,7 +183,7 @@ export default function LettersPage() {
                     alert("Network error: " + msg);
                   }
                 }}
-                  className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                  className="px-4 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-green-700">
                   Email
                 </button>
               )}
@@ -199,12 +199,12 @@ export default function LettersPage() {
                 </button>
               )}
               <button onClick={() => setViewingLetter(null)}
-                className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">
+                className="px-4 py-1.5 bg-gray-200 text-slate-300 rounded text-sm hover:bg-gray-300">
                 Close
               </button>
             </div>
           </div>
-          <div className="p-4 bg-gray-100 overflow-auto max-h-[80vh]">
+          <div className="p-4 bg-transparent overflow-auto max-h-[80vh]">
             <div dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
           </div>
         </div>
@@ -217,20 +217,20 @@ export default function LettersPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
-        <p className="text-gray-600 text-sm">{pageDesc}</p>
+        <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
+        <p className="text-slate-400 text-sm">{pageDesc}</p>
       </div>
 
       {/* Search Section — hidden for students */}
       {!isStudent && (
-        <div className="bg-white rounded-xl p-5 border mb-6">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border mb-6">
           <div className="flex gap-3 items-end flex-wrap">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Search By</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Search By</label>
               <select
                 value={searchType}
                 onChange={(e) => setSearchType(e.target.value as "all" | "name" | "employee_id" | "phone")}
-                className="px-3 py-2 border rounded-lg text-sm bg-white min-w-[160px]"
+                className="px-3 py-2 border rounded-lg text-sm bg-transparent min-w-[160px]"
               >
                 <option value="all">All</option>
                 <option value="name">Name</option>
@@ -239,7 +239,7 @@ export default function LettersPage() {
               </select>
             </div>
             <div className="flex-1 min-w-[200px]">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1">
                 {searchType === "all" ? "Search anything..." : searchType === "name" ? "Student Name" : searchType === "employee_id" ? "Employee ID / Card Number" : "Phone Number"}
               </label>
               <input
@@ -252,14 +252,14 @@ export default function LettersPage() {
             </div>
             <button
               onClick={handleSearch}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+              className="px-6 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm font-medium hover:bg-[#0891b2] transition"
             >
               Search
             </button>
             {searchQuery && (
               <button
                 onClick={() => { setSearchQuery(""); fetchLetters(); }}
-                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition"
+                className="px-4 py-2 bg-transparent text-slate-400 rounded-lg text-sm hover:bg-gray-200 transition"
               >
                 Clear
               </button>
@@ -272,8 +272,8 @@ export default function LettersPage() {
       {results.length === 0 ? (
         <>
           <PaymentBlockMessage feature="Letters & Documents" />
-          <div className="bg-white rounded-xl p-12 text-center border">
-            <p className="text-gray-500">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
+            <p className="text-slate-500">
               {searchQuery ? "No results for your search. Try a different search term." : "No documents available yet."}
             </p>
           </div>
@@ -281,33 +281,33 @@ export default function LettersPage() {
       ) : (
         <div className="space-y-4">
           {results.map((r) => (
-            <div key={r.enrollmentId} className="bg-white rounded-xl p-5 border">
+            <div key={r.enrollmentId} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
                   {r.studentAvatar ? (
                     <img src={r.studentAvatar} alt={r.studentName} className="w-10 h-10 rounded-full object-cover border flex-shrink-0" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-[#0EA5B8]/10 flex items-center justify-center text-[#22d3ee] font-bold text-sm flex-shrink-0">
                       {r.studentName.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900">{r.studentName}</p>
-                    <p className="text-sm text-gray-600">{r.program} — {r.batch}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {r.employeeCardNumber && <span className="text-indigo-600 font-medium mr-2">ID: {r.employeeCardNumber}</span>}
+                    <p className="font-semibold text-white">{r.studentName}</p>
+                    <p className="text-sm text-slate-400">{r.program} — {r.batch}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {r.employeeCardNumber && <span className="text-[#22d3ee] font-medium mr-2">ID: {r.employeeCardNumber}</span>}
                       {r.studentEmail}
                       {r.studentPhone && <span className="ml-2">{r.studentPhone}</span>}
                     </p>
                   </div>
                 </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${r.status === "completed" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${r.status === "completed" ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-[#60a5fa]"}`}>
                   {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                 </span>
               </div>
 
               {/* Documents — inline buttons */}
-              <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-100">
+              <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-white/[0.06]">
                 {/* ID Card */}
                 {r.idCard ? (
                   <button
@@ -317,31 +317,31 @@ export default function LettersPage() {
                     ID Card
                   </button>
                 ) : (
-                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">ID Card — Not Generated</span>
+                  <span className="px-4 py-2 bg-transparent text-slate-500 rounded-lg text-sm border border-dashed border-white/[0.08]">ID Card — Not Generated</span>
                 )}
 
                 {/* Offer Letter */}
                 {r.offerLetter ? (
                   <button
                     onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}`, email: r.studentEmail, phone: r.studentPhone || "" })}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition"
+                    className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2] transition"
                   >
                     Offer Letter
                   </button>
                 ) : (
-                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">Offer Letter — Not Generated</span>
+                  <span className="px-4 py-2 bg-transparent text-slate-500 rounded-lg text-sm border border-dashed border-white/[0.08]">Offer Letter — Not Generated</span>
                 )}
 
                 {/* Experience Letter */}
                 {r.experienceLetter ? (
                   <button
                     onClick={() => setViewingLetter({ html: r.experienceLetter!.htmlContent || "", title: `Experience Letter — ${r.studentName}`, email: r.studentEmail, phone: r.studentPhone || "" })}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
                   >
                     Experience Letter
                   </button>
                 ) : (
-                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">
+                  <span className="px-4 py-2 bg-transparent text-slate-500 rounded-lg text-sm border border-dashed border-white/[0.08]">
                     {r.status === "completed" ? "Experience Letter — Pending" : "Experience Letter — After Completion"}
                   </span>
                 )}
@@ -359,12 +359,12 @@ export default function LettersPage() {
                   <button
                     onClick={() => viewCertificate(r.enrollmentId, r.studentName)}
                     disabled={generatingCert === r.enrollmentId}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm hover:bg-yellow-600 transition disabled:opacity-50"
+                    className="px-4 py-2 bg-transparent0 text-white rounded-lg text-sm hover:bg-yellow-600 transition disabled:opacity-50"
                   >
                     {generatingCert === r.enrollmentId ? "Generating..." : "Generate Certificate"}
                   </button>
                 ) : (
-                  <span className="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm border border-dashed border-gray-200">Certificate — After Experience Letter</span>
+                  <span className="px-4 py-2 bg-transparent text-slate-500 rounded-lg text-sm border border-dashed border-white/[0.08]">Certificate — After Experience Letter</span>
                 )}
               </div>
             </div>

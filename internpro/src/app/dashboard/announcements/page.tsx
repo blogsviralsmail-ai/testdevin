@@ -29,55 +29,55 @@ export default function AnnouncementsPage() {
   };
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
-  const categoryColors: Record<string, string> = { general: "bg-blue-100 text-blue-700", urgent: "bg-red-100 text-red-700", event: "bg-purple-100 text-purple-700" };
+  const categoryColors: Record<string, string> = { general: "bg-blue-500/10 text-[#60a5fa]", urgent: "bg-red-500/10 text-red-400", event: "bg-purple-500/10 text-[#a78bfa]" };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
-          <p className="text-sm text-gray-500">Important updates and notices</p>
+          <h1 className="text-2xl font-bold text-white">Announcements</h1>
+          <p className="text-sm text-slate-500">Important updates and notices</p>
         </div>
-        {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ New Announcement</button>}
+        {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ New Announcement</button>}
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border p-4">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search announcements..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-          {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search announcements..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-white focus:ring-2 focus:ring-[#0EA5B8] focus:border-indigo-500" />
+          {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400">✕</button>}
         </div>
       </div>
 
       <div className="space-y-4">
         {announcements.filter(a => !searchQuery.trim() || a.title.toLowerCase().includes(searchQuery.toLowerCase()) || a.content.toLowerCase().includes(searchQuery.toLowerCase())).map(a => (
-          <div key={a.id} className={`bg-white rounded-xl p-5 border ${a.isPinned ? "border-l-4 border-l-amber-400" : ""}`}>
+          <div key={a.id} className={`rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border ${a.isPinned ? "border-l-4 border-l-amber-400" : ""}`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 {a.isPinned && <span className="text-amber-500">📌</span>}
                 <div>
-                  <h3 className="font-semibold text-gray-900">{a.title}</h3>
+                  <h3 className="font-semibold text-white">{a.title}</h3>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColors[a.category] || "bg-gray-100 text-gray-600"}`}>{a.category}</span>
-                    <span className="text-xs text-gray-400">by {a.author.name}</span>
-                    <span className="text-xs text-gray-400">{new Date(a.createdAt).toLocaleDateString()}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColors[a.category] || "bg-transparent text-slate-400"}`}>{a.category}</span>
+                    <span className="text-xs text-slate-500">by {a.author.name}</span>
+                    <span className="text-xs text-slate-500">{new Date(a.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
               {isAdmin && (
-                <button onClick={() => deleteAnnouncement(a.id)} className="text-red-400 hover:text-red-600 text-sm">Delete</button>
+                <button onClick={() => deleteAnnouncement(a.id)} className="text-red-400 hover:text-red-400 text-sm">Delete</button>
               )}
             </div>
-            <p className="mt-3 text-sm text-gray-600 whitespace-pre-wrap">{a.content}</p>
+            <p className="mt-3 text-sm text-slate-400 whitespace-pre-wrap">{a.content}</p>
           </div>
         ))}
-        {announcements.length === 0 && <div className="text-center py-12 text-gray-400">No announcements yet.</div>}
+        {announcements.length === 0 && <div className="text-center py-12 text-slate-500">No announcements yet.</div>}
       </div>
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
             <h2 className="text-lg font-bold mb-4">New Announcement</h2>
             <div className="space-y-4">
               <input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
@@ -100,8 +100,8 @@ export default function AnnouncementsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-gray-600">Cancel</button>
-              <button onClick={createAnnouncement} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Post</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-slate-400">Cancel</button>
+              <button onClick={createAnnouncement} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg">Post</button>
             </div>
           </div>
         </div>

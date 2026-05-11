@@ -94,27 +94,32 @@ export default function ProgramsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{background: '#0a0e1a', color: '#f1f5f9'}}>
+      {/* Background blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px]" style={{borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', background: 'radial-gradient(ellipse, rgba(14,165,184,0.08), transparent 70%)', animation: 'morphBlob 15s ease-in-out infinite'}} />
+        <div className="absolute bottom-0 -left-40 w-[500px] h-[500px]" style={{borderRadius: '70% 30% 30% 70% / 70% 70% 30% 30%', background: 'radial-gradient(ellipse, rgba(167,139,250,0.06), transparent 70%)', animation: 'morphBlob 18s ease-in-out infinite reverse'}} />
+      </div>
       {/* Navbar */}
-      <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-gray-100 shadow-sm">
+      <nav className="fixed top-0 w-full z-50" style={{background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>
                 IP
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
                 InternPro
               </span>
             </Link>
             <div className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-gray-600 hover:text-indigo-600 transition font-medium">Home</Link>
-              <Link href="/programs" className="text-indigo-600 font-semibold">Our Programs</Link>
-              <Link href="/vacancies" className="text-gray-600 hover:text-indigo-600 transition font-medium">Openings</Link>
+              <Link href="/" className="text-slate-400 hover:text-white transition font-medium">Home</Link>
+              <Link href="/programs" className="text-white font-semibold">Our Programs</Link>
+              <Link href="/vacancies" className="text-slate-400 hover:text-white transition font-medium">Openings</Link>
             </div>
             <div className="flex items-center gap-3">
-              <Link href="/login" className="text-gray-600 hover:text-indigo-600 font-medium transition">Login</Link>
-              <Link href="/register" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-indigo-200 transition font-medium">
+              <Link href="/login" className="text-slate-300 hover:text-white font-medium transition">Login</Link>
+              <Link href="/register" className="text-white px-5 py-2.5 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
                 Apply Now
               </Link>
             </div>
@@ -125,31 +130,31 @@ export default function ProgramsPage() {
       {/* Hero */}
       <section className="pt-28 pb-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6" style={{background: 'rgba(14,165,184,0.1)', border: '1px solid rgba(14,165,184,0.2)', color: '#22d3ee'}}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 12 3 12 0v-5" /></svg>
             KKHS Media Private Limited
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-5 leading-tight">
-            Our <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Programs</span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 leading-tight">
+            Our <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Programs</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+          <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-8">
             Choose the program that fits your goals. From free internships to premium training — we have something for every student.
           </p>
-          <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+          <div className="flex flex-wrap justify-center gap-4 text-sm text-slate-400">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
               Industry Projects
             </div>
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
               Certificates & Letters
             </div>
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
               Expert Mentorship
             </div>
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
               Pre-placement Offers
             </div>
           </div>
@@ -161,10 +166,10 @@ export default function ProgramsPage() {
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="text-center py-20">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg mx-auto mb-4 animate-pulse">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg mx-auto mb-4 animate-pulse" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>
                 IP
               </div>
-              <p className="text-gray-500">Loading programs...</p>
+              <p className="text-slate-500">Loading programs...</p>
             </div>
           ) : (
             <div className="grid lg:grid-cols-2 gap-8">
@@ -174,8 +179,8 @@ export default function ProgramsPage() {
                 return (
                   <div
                     key={program.id}
-                    className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group"
-                    style={{ animationDelay: `${idx * 100}ms` }}
+                    className="rounded-2xl overflow-hidden transition-all duration-500 group hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+                    style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', animationDelay: `${idx * 100}ms`}}
                   >
                     {/* Image Header */}
                     <div className="relative h-56 overflow-hidden">
@@ -228,11 +233,11 @@ export default function ProgramsPage() {
                         <ul className="space-y-2.5">
                           {(isExpanded ? program.highlights : program.highlights.slice(0, 4)).map((h, i) => (
                             <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
-                              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke={program.color} strokeWidth="2">
+                              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2">
                                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                 <polyline points="22 4 12 14.01 9 11.01" />
                               </svg>
-                              {h}
+                              <span className="text-slate-300">{h}</span>
                             </li>
                           ))}
                         </ul>
@@ -248,9 +253,9 @@ export default function ProgramsPage() {
                       </div>
 
                       {/* Ideal For */}
-                      <div className="mt-5 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Ideal For</p>
-                        <p className="text-sm text-gray-700">{program.idealFor}</p>
+                      <div className="mt-5 p-3 rounded-xl" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Ideal For</p>
+                        <p className="text-sm text-slate-300">{program.idealFor}</p>
                       </div>
 
                       {/* CTA */}
@@ -271,46 +276,46 @@ export default function ProgramsPage() {
       </section>
 
       {/* Comparison Table */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4" style={{background: 'rgba(255,255,255,0.01)'}}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Compare Programs</h2>
-            <p className="text-gray-600">Side-by-side comparison to help you choose the right program</p>
+            <h2 className="text-3xl font-bold text-white mb-3">Compare Programs</h2>
+            <p className="text-slate-400">Side-by-side comparison to help you choose the right program</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-2xl" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 border-b">Feature</th>
+                <tr style={{background: 'rgba(255,255,255,0.03)'}}>
+                  <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400" style={{borderBottom: '1px solid rgba(255,255,255,0.06)'}}>Feature</th>
                   {programs.map((p) => (
-                    <th key={p.id} className="text-center py-4 px-4 text-sm font-semibold border-b min-w-[160px]" style={{ color: p.color }}>
+                    <th key={p.id} className="text-center py-4 px-4 text-sm font-semibold min-w-[160px]" style={{ color: p.color, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                       {p.title.split(" ").slice(0, 2).join(" ")}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-sm text-gray-700 font-medium">Fees / Stipend</td>
+                <tr style={{borderBottom: '1px solid rgba(255,255,255,0.04)'}}>
+                  <td className="py-3 px-4 text-sm text-slate-300 font-medium">Fees / Stipend</td>
                   {programs.map((p) => (
                     <td key={p.id} className="py-3 px-4 text-center text-sm font-bold" style={{ color: p.color }}>{p.fees}</td>
                   ))}
                 </tr>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <td className="py-3 px-4 text-sm text-gray-700 font-medium">Duration</td>
+                <tr style={{borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)'}}>
+                  <td className="py-3 px-4 text-sm text-slate-300 font-medium">Duration</td>
                   {programs.map((p) => (
-                    <td key={p.id} className="py-3 px-4 text-center text-sm text-gray-600">{p.duration}</td>
+                    <td key={p.id} className="py-3 px-4 text-center text-sm text-slate-400">{p.duration}</td>
                   ))}
                 </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-sm text-gray-700 font-medium">Mode</td>
+                <tr style={{borderBottom: '1px solid rgba(255,255,255,0.04)'}}>
+                  <td className="py-3 px-4 text-sm text-slate-300 font-medium">Mode</td>
                   {programs.map((p) => (
-                    <td key={p.id} className="py-3 px-4 text-center text-sm text-gray-600">{p.mode}</td>
+                    <td key={p.id} className="py-3 px-4 text-center text-sm text-slate-400">{p.mode}</td>
                   ))}
                 </tr>
                 {["Certificate", "Experience Letter", "Live Projects", "Mentorship", "Stipend"].map((feature) => (
-                  <tr key={feature} className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-sm text-gray-700 font-medium">{feature}</td>
+                  <tr key={feature} style={{borderBottom: '1px solid rgba(255,255,255,0.04)'}}>
+                    <td className="py-3 px-4 text-sm text-slate-300 font-medium">{feature}</td>
                     {programs.map((p) => {
                       const has = feature === "Stipend"
                         ? p.id === "stipend_office_internship"
@@ -340,24 +345,27 @@ export default function ProgramsPage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="py-16 px-4 bg-gradient-to-r from-indigo-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto p-12 rounded-3xl text-center relative overflow-hidden" style={{background: 'linear-gradient(135deg, rgba(14,165,184,0.15), rgba(167,139,250,0.1))', border: '1px solid rgba(14,165,184,0.2)'}}>
+          <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-20" style={{background: 'radial-gradient(ellipse, #0EA5B8, transparent)'}} />
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 relative z-10">
             Ready to Start Your Career Journey?
           </h2>
-          <p className="text-xl text-indigo-100 mb-8">
+          <p className="text-xl text-slate-400 mb-8 relative z-10">
             Join KKHS Media and get real industry experience, certificates, and career growth.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
             <Link
               href="/register"
-              className="bg-white text-indigo-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-indigo-50 transition shadow-xl"
+              className="text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all hover:shadow-[0_0_30px_rgba(14,165,184,0.4)]"
+              style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}
             >
               Apply Now — Free Registration
             </Link>
             <a
               href="tel:+919782005500"
-              className="border-2 border-white/50 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/10 transition"
+              className="text-white px-8 py-4 rounded-xl text-lg font-semibold transition hover:bg-white/10"
+              style={{border: '1px solid rgba(255,255,255,0.15)'}}
             >
               Call Us: +91 9782005500
             </a>
@@ -366,27 +374,27 @@ export default function ProgramsPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 bg-gray-900">
+      <footer className="py-12 px-4" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>
                 IP
               </div>
-              <span className="text-xl font-bold text-white">InternPro</span>
+              <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
             </div>
             <div className="text-center">
-              <p className="text-gray-400 text-sm">KKHS Media Private Limited</p>
-              <p className="text-gray-500 text-xs mt-1">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
+              <p className="text-slate-500 text-sm">KKHS Media Private Limited</p>
+              <p className="text-slate-600 text-xs mt-1">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
             </div>
             <div className="flex gap-6">
-              <Link href="/programs" className="text-gray-400 hover:text-white transition text-sm">Programs</Link>
-              <Link href="/vacancies" className="text-gray-400 hover:text-white transition text-sm">Openings</Link>
-              <Link href="/login" className="text-gray-400 hover:text-white transition text-sm">Login</Link>
+              <Link href="/programs" className="text-slate-500 hover:text-white transition text-sm">Programs</Link>
+              <Link href="/vacancies" className="text-slate-500 hover:text-white transition text-sm">Openings</Link>
+              <Link href="/login" className="text-slate-500 hover:text-white transition text-sm">Login</Link>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-6 text-center">
-            <p className="text-gray-500 text-sm">&copy; {new Date().getFullYear()} KKHS Media Private Limited. All rights reserved.</p>
+          <div className="mt-8 pt-6 text-center" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
+            <p className="text-slate-600 text-sm">&copy; {new Date().getFullYear()} KKHS Media Private Limited. All rights reserved.</p>
           </div>
         </div>
       </footer>

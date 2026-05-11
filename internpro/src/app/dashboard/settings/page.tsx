@@ -298,25 +298,25 @@ export default function SettingsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 text-sm">Manage platform and website settings</p>
+          <h1 className="text-2xl font-bold text-white">Settings</h1>
+          <p className="text-slate-400 text-sm">Manage platform and website settings</p>
         </div>
         {isAdmin && (
           <button onClick={handleSave} disabled={saving}
-            className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
+            className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] disabled:opacity-50">
             {saving ? "Saving..." : saved ? "Saved!" : "Save Settings"}
           </button>
         )}
       </div>
 
       {/* Sub-menu Tabs */}
-      <div className="flex flex-wrap gap-1 mb-6 bg-gray-100 p-1 rounded-xl">
+      <div className="flex flex-wrap gap-1 mb-6 bg-transparent p-1 rounded-xl">
         {visibleTabs.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
               activeTab === tab.key
-                ? "bg-white text-indigo-700 shadow-sm"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                ? "bg-transparent text-[#22d3ee] shadow-none"
+                : "text-slate-400 hover:text-white hover:bg-transparent"
             }`}>
             <span className="mr-1">{tab.icon}</span>{tab.label}
           </button>
@@ -327,24 +327,24 @@ export default function SettingsPage() {
 
         {/* ========== PROFILE ========== */}
         {activeTab === "profile" && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+            <h2 className="text-lg font-semibold text-white mb-4">Profile</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input value={user?.name || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
+                <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
+                <input value={user?.name || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent" readOnly />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input value={user?.email || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
+                <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                <input value={user?.email || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent" readOnly />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <input value={user?.role || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50 capitalize" readOnly />
+                <label className="block text-sm font-medium text-slate-300 mb-1">Role</label>
+                <input value={user?.role || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent capitalize" readOnly />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input value={user?.phone || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 bg-gray-50" readOnly />
+                <label className="block text-sm font-medium text-slate-300 mb-1">Phone</label>
+                <input value={user?.phone || ""} className="w-full px-4 py-2 border rounded-lg text-sm text-white bg-transparent" readOnly />
               </div>
             </div>
           </div>
@@ -352,59 +352,59 @@ export default function SettingsPage() {
 
         {/* ========== BRANDING ========== */}
         {activeTab === "branding" && isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Website Branding</h2>
-            <p className="text-sm text-gray-500 mb-4">Customize how your platform looks to students and visitors</p>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+            <h2 className="text-lg font-semibold text-white mb-4">Website Branding</h2>
+            <p className="text-sm text-slate-500 mb-4">Customize how your platform looks to students and visitors</p>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Company Name</label>
                 <input value={settings.company_name || ""} onChange={(e) => updateSetting("company_name", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Your Company Name" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Your Company Name" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Logo URL</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Company Logo URL</label>
                 <input value={settings.company_logo || ""} onChange={(e) => updateSetting("company_logo", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://..." />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Primary Color</label>
                 <div className="flex gap-2">
                   <input type="color" value={settings.primary_color || "#4f46e5"} onChange={(e) => updateSetting("primary_color", e.target.value)}
                     className="w-12 h-10 border rounded-lg cursor-pointer" />
                   <input value={settings.primary_color || "#4f46e5"} onChange={(e) => updateSetting("primary_color", e.target.value)}
-                    className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" />
+                    className="flex-1 px-4 py-2 border rounded-lg text-sm text-white" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Company Address</label>
                 <input value={settings.company_address || ""} onChange={(e) => updateSetting("company_address", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="123, Street, City, State - PIN" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="123, Street, City, State - PIN" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Support Email</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Support Email</label>
                 <input value={settings.support_email || ""} onChange={(e) => updateSetting("support_email", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="support@yourcompany.com" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="support@yourcompany.com" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Support Phone</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Support Phone</label>
                 <input value={settings.support_phone || ""} onChange={(e) => updateSetting("support_phone", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="+91 XXXXXXXXXX" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="+91 XXXXXXXXXX" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Website URL</label>
                 <input value={settings.website_url || ""} onChange={(e) => updateSetting("website_url", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://yourcompany.com" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://yourcompany.com" />
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Landing Page Tagline</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Landing Page Tagline</label>
               <input value={settings.tagline || ""} onChange={(e) => updateSetting("tagline", e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Your company tagline..." />
+                className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Your company tagline..." />
             </div>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">About Us</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">About Us</label>
               <textarea value={settings.about_us || ""} onChange={(e) => updateSetting("about_us", e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" rows={3} placeholder="About your company..." />
+                className="w-full px-4 py-2 border rounded-lg text-sm text-white" rows={3} placeholder="About your company..." />
             </div>
           </div>
         )}
@@ -413,22 +413,22 @@ export default function SettingsPage() {
         {activeTab === "letterhead" && isAdmin && (
           <div className="space-y-6">
             {/* Signature */}
-            <div className="bg-white rounded-xl p-6 border">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Authorized Signature</h2>
-              <p className="text-sm text-gray-500 mb-4">Upload your signature image — it will appear on offer letters and experience letters</p>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+              <h2 className="text-lg font-semibold text-white mb-4">Authorized Signature</h2>
+              <p className="text-sm text-slate-500 mb-4">Upload your signature image — it will appear on offer letters and experience letters</p>
               <div className="flex items-start gap-6">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Signature Image</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Signature Image</label>
                   <input type="file" accept="image/*"
                     onChange={(e) => e.target.files?.[0] && handleSignatureUpload(e.target.files[0])}
-                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
-                  <p className="text-xs text-gray-400 mt-1">PNG with transparent background recommended. Max 2MB.</p>
-                  {sigUploading && <p className="text-xs text-blue-600 mt-1">Uploading...</p>}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
+                  <p className="text-xs text-slate-500 mt-1">PNG with transparent background recommended. Max 2MB.</p>
+                  {sigUploading && <p className="text-xs text-[#60a5fa] mt-1">Uploading...</p>}
                 </div>
                 {settings.admin_signature && (
                   <div className="flex-shrink-0">
-                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                    <div className="border rounded-lg p-2 bg-gray-50">
+                    <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                    <div className="border rounded-lg p-2 bg-transparent">
                       <img src={settings.admin_signature} alt="Signature" className="h-16 max-w-[200px] object-contain" />
                     </div>
                     <button onClick={() => updateSetting("admin_signature", "")}
@@ -437,24 +437,24 @@ export default function SettingsPage() {
                 )}
               </div>
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Name</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Signatory Name</label>
                 <input value={settings.signatory_name || ""} onChange={(e) => updateSetting("signatory_name", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Hari Singh, Director" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="e.g. Hari Singh, Director" />
               </div>
               <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Signatory Designation</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Signatory Designation</label>
                 <input value={settings.signatory_designation || ""} onChange={(e) => updateSetting("signatory_designation", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="e.g. Managing Director" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="e.g. Managing Director" />
               </div>
             </div>
 
             {/* Letterhead */}
-            <div className="bg-white rounded-xl p-6 border">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Letterhead Settings</h2>
-              <p className="text-sm text-gray-500 mb-4">Customize your letterhead — these details appear on offer letters, experience letters, and ID cards</p>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+              <h2 className="text-lg font-semibold text-white mb-4">Letterhead Settings</h2>
+              <p className="text-sm text-slate-500 mb-4">Customize your letterhead — these details appear on offer letters, experience letters, and ID cards</p>
               <div className="flex items-start gap-6 mb-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Letterhead Logo</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Letterhead Logo</label>
                   <input type="file" accept="image/*"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
@@ -468,13 +468,13 @@ export default function SettingsPage() {
                         updateSetting("letterhead_logo", data.url);
                       }
                     }}
-                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
-                  <p className="text-xs text-gray-400 mt-1">Upload company logo for letterhead. PNG/JPG, max 5MB.</p>
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
+                  <p className="text-xs text-slate-500 mt-1">Upload company logo for letterhead. PNG/JPG, max 5MB.</p>
                 </div>
                 {settings.letterhead_logo && (
                   <div className="flex-shrink-0">
-                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                    <div className="border rounded-lg p-2 bg-gray-50">
+                    <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                    <div className="border rounded-lg p-2 bg-transparent">
                       <img src={settings.letterhead_logo} alt="Logo" className="h-16 max-w-[200px] object-contain" />
                     </div>
                     <button onClick={() => updateSetting("letterhead_logo", "")}
@@ -484,79 +484,79 @@ export default function SettingsPage() {
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Name (Letterhead)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Company Name (Letterhead)</label>
                   <input value={settings.letterhead_company_name || ""} onChange={(e) => updateSetting("letterhead_company_name", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media Private Limited" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="KKHS Media Private Limited" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Company Address</label>
                   <input value={settings.letterhead_address || ""} onChange={(e) => updateSetting("letterhead_address", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="190A Krishna Kunj, Kalwar Road, Jaipur" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="190A Krishna Kunj, Kalwar Road, Jaipur" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Phone Number</label>
                   <input value={settings.letterhead_phone || ""} onChange={(e) => updateSetting("letterhead_phone", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="9782005500" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="9782005500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
                   <input value={settings.letterhead_email || ""} onChange={(e) => updateSetting("letterhead_email", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="hari@kkhsmedia.com" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="hari@kkhsmedia.com" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">GST Number</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">GST Number</label>
                   <input value={settings.letterhead_gst || ""} onChange={(e) => updateSetting("letterhead_gst", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="08AAICK3853C1ZL" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="08AAICK3853C1ZL" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Website</label>
                   <input value={settings.letterhead_website || ""} onChange={(e) => updateSetting("letterhead_website", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="www.kkhsmedia.com" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="www.kkhsmedia.com" />
                 </div>
               </div>
             </div>
 
             {/* Letter Customization */}
-            <div className="bg-white rounded-xl p-6 border">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Letter Customization</h2>
-              <p className="text-sm text-gray-500 mb-4">Customize fonts, colors, and content of offer/experience letters. Changes apply to newly generated letters.</p>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+              <h2 className="text-lg font-semibold text-white mb-4">Letter Customization</h2>
+              <p className="text-sm text-slate-500 mb-4">Customize fonts, colors, and content of offer/experience letters. Changes apply to newly generated letters.</p>
               <div className="grid md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Body Font Size (px)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Body Font Size (px)</label>
                   <input type="number" min="7" max="14" step="0.5" value={settings.letter_font_size || "9"} onChange={(e) => updateSetting("letter_font_size", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
-                  <p className="text-xs text-gray-400 mt-1">Default: 9px. Smaller = fits more on page.</p>
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" />
+                  <p className="text-xs text-slate-500 mt-1">Default: 9px. Smaller = fits more on page.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Heading Font Size (px)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Heading Font Size (px)</label>
                   <input type="number" min="10" max="20" step="0.5" value={settings.letter_heading_size || "16"} onChange={(e) => updateSetting("letter_heading_size", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" />
-                  <p className="text-xs text-gray-400 mt-1">Default: 16px for main heading.</p>
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" />
+                  <p className="text-xs text-slate-500 mt-1">Default: 16px for main heading.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Primary Color</label>
                   <div className="flex gap-2">
                     <input type="color" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
                       className="w-12 h-10 border rounded-lg cursor-pointer" />
                     <input type="text" value={settings.letter_primary_color || "#0000AA"} onChange={(e) => updateSetting("letter_primary_color", e.target.value)}
-                      className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#0000AA" />
+                      className="flex-1 px-4 py-2 border rounded-lg text-sm text-white" placeholder="#0000AA" />
                   </div>
                 </div>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Accent Color</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Accent Color</label>
                   <div className="flex gap-2">
                     <input type="color" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
                       className="w-12 h-10 border rounded-lg cursor-pointer" />
                     <input type="text" value={settings.letter_accent_color || "#d32f2f"} onChange={(e) => updateSetting("letter_accent_color", e.target.value)}
-                      className="flex-1 px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="#d32f2f" />
+                      className="flex-1 px-4 py-2 border rounded-lg text-sm text-white" placeholder="#d32f2f" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Font Family</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Font Family</label>
                   <select value={settings.letter_font_family || "Calibri"} onChange={(e) => updateSetting("letter_font_family", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900">
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white">
                     <option value="Calibri">Calibri (Default)</option>
                     <option value="Arial">Arial</option>
                     <option value="Times New Roman">Times New Roman</option>
@@ -574,10 +574,10 @@ export default function SettingsPage() {
         {activeTab === "email" && isAdmin && (
           <div className="space-y-6">
             {/* When emails are sent */}
-            <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border border-blue-200">
               <h3 className="text-sm font-semibold text-blue-800 mb-3">When are emails sent?</h3>
-              <div className="text-xs text-blue-700">
-                <p className="font-semibold text-green-700 mb-2">EMAILS ARE SENT ON EVERY EVENT (SMTP must be configured):</p>
+              <div className="text-xs text-[#60a5fa]">
+                <p className="font-semibold text-emerald-400 mb-2">EMAILS ARE SENT ON EVERY EVENT (SMTP must be configured):</p>
                 <ul className="space-y-1 mb-3">
                   <li>Student <strong>registers</strong> — Welcome Email</li>
                   <li>Student <strong>logs in</strong> — Login Notification</li>
@@ -596,75 +596,75 @@ export default function SettingsPage() {
                   <li>Student <strong>uploads document</strong> — Admin notification email</li>
                   <li><strong>Password reset</strong> requested — Reset Link Email</li>
                 </ul>
-                <p className="text-red-600 font-semibold">Note: No emails will be sent if SMTP settings are not configured!</p>
+                <p className="text-red-400 font-semibold">Note: No emails will be sent if SMTP settings are not configured!</p>
               </div>
             </div>
 
             {/* SMTP Config */}
-            <div className="bg-white rounded-xl p-6 border">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">SMTP Configuration</h2>
-              <p className="text-sm text-gray-500 mb-4">Configure SMTP to send emails for login, signup, forgot password, and letter notifications.</p>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+              <h2 className="text-lg font-semibold text-white mb-4">SMTP Configuration</h2>
+              <p className="text-sm text-slate-500 mb-4">Configure SMTP to send emails for login, signup, forgot password, and letter notifications.</p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">SMTP Host</label>
                   <input value={settings.smtp_host || ""} onChange={(e) => updateSetting("smtp_host", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="smtp.gmail.com" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="smtp.gmail.com" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Port</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">SMTP Port</label>
                   <input value={settings.smtp_port || ""} onChange={(e) => updateSetting("smtp_port", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="587" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="587" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP User (Email)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">SMTP User (Email)</label>
                   <input value={settings.smtp_user || ""} onChange={(e) => updateSetting("smtp_user", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="noreply@company.com" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Password / App Password</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">SMTP Password / App Password</label>
                   <input type="password" value={settings.smtp_pass || ""} onChange={(e) => updateSetting("smtp_pass", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="App password" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="App password" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">From Email</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">From Email</label>
                   <input value={settings.smtp_from || ""} onChange={(e) => updateSetting("smtp_from", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="noreply@company.com" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="noreply@company.com" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">From Name</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">From Name</label>
                   <input value={settings.smtp_from_name || ""} onChange={(e) => updateSetting("smtp_from_name", e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="KKHS Media" />
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="KKHS Media" />
                 </div>
               </div>
               <div className="flex items-center gap-3 mt-4 pt-4 border-t">
                 <button onClick={handleSmtpTest} disabled={smtpTesting}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
                   {smtpTesting ? "Testing..." : "Send Test Email"}
                 </button>
                 {smtpTestResult && (
-                  <p className={`text-sm ${smtpTestResult.ok ? "text-green-600" : "text-red-600"}`}>
+                  <p className={`text-sm ${smtpTestResult.ok ? "text-emerald-400" : "text-red-400"}`}>
                     {smtpTestResult.msg}
                   </p>
                 )}
               </div>
-              <p className="text-xs text-gray-400 mt-3">For Gmail: use smtp.gmail.com, port 587, and an App Password (not your regular password).</p>
+              <p className="text-xs text-slate-500 mt-3">For Gmail: use smtp.gmail.com, port 587, and an App Password (not your regular password).</p>
             </div>
 
             {/* Email Templates */}
-            <div className="bg-white rounded-xl p-6 border">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Email Templates</h2>
-              <p className="text-sm text-gray-500 mb-2">A styled email is sent to the student on every event. Customize the subject and body.</p>
+            <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+              <h2 className="text-lg font-semibold text-white mb-2">Email Templates</h2>
+              <p className="text-sm text-slate-500 mb-2">A styled email is sent to the student on every event. Customize the subject and body.</p>
               <details className="mb-4">
-                <summary className="text-xs text-indigo-600 cursor-pointer font-medium">View available variables (click to expand)</summary>
-                <div className="mt-2 text-xs text-gray-500 space-y-1">
-                  <p><strong>Common:</strong> <code className="bg-gray-100 px-1 rounded">{"{{student_name}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_name}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_phone}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{company_email}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{dashboard_link}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{date}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{time}}"}</code></p>
-                  <p><strong>Letters:</strong> <code className="bg-gray-100 px-1 rounded">{"{{letter_type}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{letter_number}}"}</code></p>
-                  <p><strong>Attendance:</strong> <code className="bg-gray-100 px-1 rounded">{"{{attendance_status}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{attendance_date}}"}</code></p>
-                  <p><strong>Video:</strong> <code className="bg-gray-100 px-1 rounded">{"{{video_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{day_number}}"}</code></p>
-                  <p><strong>Quiz:</strong> <code className="bg-gray-100 px-1 rounded">{"{{quiz_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{quiz_score}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{quiz_result}}"}</code></p>
-                  <p><strong>Discussion:</strong> <code className="bg-gray-100 px-1 rounded">{"{{discussion_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{discussion_action}}"}</code></p>
-                  <p><strong>Live Session:</strong> <code className="bg-gray-100 px-1 rounded">{"{{session_title}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{session_time}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{meet_link}}"}</code></p>
-                  <p><strong>Leaderboard:</strong> <code className="bg-gray-100 px-1 rounded">{"{{points_earned}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{current_rank}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{points_reason}}"}</code></p>
+                <summary className="text-xs text-[#22d3ee] cursor-pointer font-medium">View available variables (click to expand)</summary>
+                <div className="mt-2 text-xs text-slate-500 space-y-1">
+                  <p><strong>Common:</strong> <code className="bg-transparent px-1 rounded">{"{{student_name}}"}</code> <code className="bg-transparent px-1 rounded">{"{{company_name}}"}</code> <code className="bg-transparent px-1 rounded">{"{{company_phone}}"}</code> <code className="bg-transparent px-1 rounded">{"{{company_email}}"}</code> <code className="bg-transparent px-1 rounded">{"{{dashboard_link}}"}</code> <code className="bg-transparent px-1 rounded">{"{{date}}"}</code> <code className="bg-transparent px-1 rounded">{"{{time}}"}</code></p>
+                  <p><strong>Letters:</strong> <code className="bg-transparent px-1 rounded">{"{{letter_type}}"}</code> <code className="bg-transparent px-1 rounded">{"{{letter_number}}"}</code></p>
+                  <p><strong>Attendance:</strong> <code className="bg-transparent px-1 rounded">{"{{attendance_status}}"}</code> <code className="bg-transparent px-1 rounded">{"{{attendance_date}}"}</code></p>
+                  <p><strong>Video:</strong> <code className="bg-transparent px-1 rounded">{"{{video_title}}"}</code> <code className="bg-transparent px-1 rounded">{"{{day_number}}"}</code></p>
+                  <p><strong>Quiz:</strong> <code className="bg-transparent px-1 rounded">{"{{quiz_title}}"}</code> <code className="bg-transparent px-1 rounded">{"{{quiz_score}}"}</code> <code className="bg-transparent px-1 rounded">{"{{quiz_result}}"}</code></p>
+                  <p><strong>Discussion:</strong> <code className="bg-transparent px-1 rounded">{"{{discussion_title}}"}</code> <code className="bg-transparent px-1 rounded">{"{{discussion_action}}"}</code></p>
+                  <p><strong>Live Session:</strong> <code className="bg-transparent px-1 rounded">{"{{session_title}}"}</code> <code className="bg-transparent px-1 rounded">{"{{session_time}}"}</code> <code className="bg-transparent px-1 rounded">{"{{meet_link}}"}</code></p>
+                  <p><strong>Leaderboard:</strong> <code className="bg-transparent px-1 rounded">{"{{points_earned}}"}</code> <code className="bg-transparent px-1 rounded">{"{{current_rank}}"}</code> <code className="bg-transparent px-1 rounded">{"{{points_reason}}"}</code></p>
                 </div>
               </details>
               <div className="space-y-3">
@@ -672,46 +672,46 @@ export default function SettingsPage() {
                   <div key={tpl.key} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-800">{tpl.label}</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">{tpl.desc}</p>
+                        <h3 className="text-sm font-semibold text-white">{tpl.label}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{tpl.desc}</p>
                       </div>
                       <button onClick={() => { setEditingTemplate(editingTemplate === tpl.key ? null : tpl.key); setTemplatePreview(false); }}
-                        className="text-xs text-indigo-600 hover:underline font-medium">
+                        className="text-xs text-[#22d3ee] hover:underline font-medium">
                         {editingTemplate === tpl.key ? "Close" : "Edit Template"}
                       </button>
                     </div>
 
-                    <p className="text-xs text-gray-400 mt-2">
-                      Subject: <span className="text-gray-600">{getTemplateSubject(tpl.key).substring(0, 80)}{getTemplateSubject(tpl.key).length > 80 ? "..." : ""}</span>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Subject: <span className="text-slate-400">{getTemplateSubject(tpl.key).substring(0, 80)}{getTemplateSubject(tpl.key).length > 80 ? "..." : ""}</span>
                     </p>
 
                     {editingTemplate === tpl.key && (
                       <div className="mt-4 space-y-3 border-t pt-4">
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Email Subject</label>
+                          <label className="block text-xs font-medium text-slate-400 mb-1">Email Subject</label>
                           <input
                             value={getTemplateSubject(tpl.key)}
                             onChange={(e) => updateSetting(`email_template_${tpl.key}_subject`, e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900"
+                            className="w-full px-3 py-2 border rounded-lg text-sm text-white"
                             placeholder="Email subject line..."
                           />
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-medium text-gray-600">Email Body (HTML)</label>
+                            <label className="text-xs font-medium text-slate-400">Email Body (HTML)</label>
                             <button onClick={() => setTemplatePreview(!templatePreview)}
-                              className="text-xs text-indigo-600 hover:underline">
+                              className="text-xs text-[#22d3ee] hover:underline">
                               {templatePreview ? "Edit" : "Preview"}
                             </button>
                           </div>
                           {templatePreview ? (
-                            <div className="border rounded-lg p-4 bg-white min-h-[200px] text-sm"
+                            <div className="border rounded-lg p-4 bg-transparent min-h-[200px] text-sm"
                               dangerouslySetInnerHTML={{ __html: renderPreview(getTemplateBody(tpl.key)) }} />
                           ) : (
                             <textarea
                               value={getTemplateBody(tpl.key)}
                               onChange={(e) => updateSetting(`email_template_${tpl.key}_body`, e.target.value)}
-                              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 font-mono h-48"
+                              className="w-full px-3 py-2 border rounded-lg text-sm text-white font-mono h-48"
                               placeholder="Email body in HTML..."
                             />
                           )}
@@ -735,13 +735,13 @@ export default function SettingsPage() {
 
         {/* ========== NOTIFICATIONS ========== */}
         {activeTab === "notifications" && isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+            <h2 className="text-lg font-semibold text-white mb-4">Notification Settings</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Email Notifications</p>
-                  <p className="text-xs text-gray-500">Send email when student applies, interview scheduled, etc.</p>
+                  <p className="text-sm font-medium text-slate-300">Email Notifications</p>
+                  <p className="text-xs text-slate-500">Send email when student applies, interview scheduled, etc.</p>
                 </div>
                 <input type="checkbox" checked={settings.email_notifications === "true"}
                   onChange={(e) => updateSetting("email_notifications", e.target.checked ? "true" : "false")}
@@ -749,8 +749,8 @@ export default function SettingsPage() {
               </div>
               <div className="flex items-center justify-between py-2">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">WhatsApp Notifications</p>
-                  <p className="text-xs text-gray-500">Send WhatsApp messages for important updates</p>
+                  <p className="text-sm font-medium text-slate-300">WhatsApp Notifications</p>
+                  <p className="text-xs text-slate-500">Send WhatsApp messages for important updates</p>
                 </div>
                 <input type="checkbox" checked={settings.whatsapp_notifications === "true"}
                   onChange={(e) => updateSetting("whatsapp_notifications", e.target.checked ? "true" : "false")}
@@ -758,23 +758,23 @@ export default function SettingsPage() {
               </div>
               {settings.whatsapp_notifications === "true" && (
                 <div className="ml-4 pl-4 border-l-2 border-green-200 space-y-3 py-2">
-                  <p className="text-xs text-gray-500">Configure WhatsApp Business API (Meta Cloud API)</p>
+                  <p className="text-xs text-slate-500">Configure WhatsApp Business API (Meta Cloud API)</p>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Phone Number ID</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Phone Number ID</label>
                     <input value={settings.whatsapp_phone_id || ""} onChange={(e) => updateSetting("whatsapp_phone_id", e.target.value)}
-                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="From Meta Business Suite" />
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-white" placeholder="From Meta Business Suite" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Access Token</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Access Token</label>
                     <input type="password" value={settings.whatsapp_token || ""} onChange={(e) => updateSetting("whatsapp_token", e.target.value)}
-                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-gray-900" placeholder="Permanent access token" />
+                      className="w-full px-3 py-1.5 border rounded-lg text-sm text-white" placeholder="Permanent access token" />
                   </div>
                 </div>
               )}
               <div className="flex items-center justify-between py-2">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Auto Attendance</p>
-                  <p className="text-xs text-gray-500">Automatically mark student present when they open dashboard</p>
+                  <p className="text-sm font-medium text-slate-300">Auto Attendance</p>
+                  <p className="text-xs text-slate-500">Automatically mark student present when they open dashboard</p>
                 </div>
                 <input type="checkbox" checked={settings.auto_attendance !== "false"}
                   onChange={(e) => updateSetting("auto_attendance", e.target.checked ? "true" : "false")}
@@ -786,30 +786,30 @@ export default function SettingsPage() {
 
         {/* ========== PAYMENTS ========== */}
         {activeTab === "payments" && isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Gateway (Razorpay)</h2>
-            <p className="text-sm text-gray-500 mb-4">Configure Razorpay for paid program enrollments.</p>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+            <h2 className="text-lg font-semibold text-white mb-4">Payment Gateway (Razorpay)</h2>
+            <p className="text-sm text-slate-500 mb-4">Configure Razorpay for paid program enrollments.</p>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key ID</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Razorpay Key ID</label>
                 <input value={settings.razorpay_key_id || ""} onChange={(e) => updateSetting("razorpay_key_id", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="rzp_live_xxxx" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="rzp_live_xxxx" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Razorpay Key Secret</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Razorpay Key Secret</label>
                 <input type="password" value={settings.razorpay_key_secret || ""} onChange={(e) => updateSetting("razorpay_key_secret", e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg text-sm text-gray-900" placeholder="Secret key" />
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Secret key" />
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-3">Get keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Razorpay Dashboard</a>. Use test keys for testing.</p>
+            <p className="text-xs text-slate-500 mt-3">Get keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Razorpay Dashboard</a>. Use test keys for testing.</p>
           </div>
         )}
 
         {/* ========== PROGRAM TYPES ========== */}
         {activeTab === "program_types" && isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Program Types (Public Page)</h2>
-            <p className="text-sm text-gray-500 mb-6">Manage the 4 program types shown on the public <a href="/programs" target="_blank" className="text-indigo-600 underline">Programs</a> page. Changes apply after saving.</p>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+            <h2 className="text-lg font-semibold text-white mb-4">Program Types (Public Page)</h2>
+            <p className="text-sm text-slate-500 mb-6">Manage the 4 program types shown on the public <a href="/programs" target="_blank" className="text-[#22d3ee] underline">Programs</a> page. Changes apply after saving.</p>
 
             {[
               { id: "premium_paid_training", label: "1. Premium Paid Training Program", color: "#4f46e5",
@@ -837,70 +837,70 @@ export default function SettingsPage() {
                       checked={settings[`program_type_${prog.id}_enabled`] !== "false"}
                       onChange={(e) => updateSetting(`program_type_${prog.id}_enabled`, e.target.checked ? "true" : "false")}
                       className="w-4 h-4 rounded" />
-                    <span className="text-gray-600">Enabled</span>
+                    <span className="text-slate-400">Enabled</span>
                   </label>
                 </div>
                 <div className="grid md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Title</label>
                     <input value={settings[`program_type_${prog.id}_title`] || prog.defaults.title}
                       onChange={(e) => updateSetting(`program_type_${prog.id}_title`, e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Image URL (optional)</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Image URL (optional)</label>
                     <input value={settings[`program_type_${prog.id}_image`] || ""}
                       onChange={(e) => updateSetting(`program_type_${prog.id}_image`, e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="https://... (leave empty for default)" />
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="https://... (leave empty for default)" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Fees / Stipend</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Fees / Stipend</label>
                     <input value={settings[`program_type_${prog.id}_fees`] || prog.defaults.fees}
                       onChange={(e) => updateSetting(`program_type_${prog.id}_fees`, e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Fees Note</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Fees Note</label>
                     <input value={settings[`program_type_${prog.id}_fees_note`] || prog.defaults.fees_note}
                       onChange={(e) => updateSetting(`program_type_${prog.id}_fees_note`, e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Duration</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Duration</label>
                     <input value={settings[`program_type_${prog.id}_duration`] || prog.defaults.duration}
                       onChange={(e) => updateSetting(`program_type_${prog.id}_duration`, e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Mode</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Mode</label>
                     <input value={settings[`program_type_${prog.id}_mode`] || prog.defaults.mode}
                       onChange={(e) => updateSetting(`program_type_${prog.id}_mode`, e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                      className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Theme Color</label>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Theme Color</label>
                     <div className="flex gap-2">
                       <input type="color" value={settings[`program_type_${prog.id}_color`] || prog.color}
                         onChange={(e) => updateSetting(`program_type_${prog.id}_color`, e.target.value)}
                         className="w-10 h-9 border rounded-lg cursor-pointer" />
                       <input value={settings[`program_type_${prog.id}_color`] || prog.color}
                         onChange={(e) => updateSetting(`program_type_${prog.id}_color`, e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm text-white" />
                     </div>
                   </div>
                 </div>
                 <div className="mt-3">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Ideal For</label>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Ideal For</label>
                   <input value={settings[`program_type_${prog.id}_ideal_for`] || prog.defaults.ideal_for}
                     onChange={(e) => updateSetting(`program_type_${prog.id}_ideal_for`, e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                 </div>
                 <div className="mt-3">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Highlights (one per line)</label>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Highlights (one per line)</label>
                   <textarea
                     value={settings[`program_type_${prog.id}_highlights`] || prog.defaults.highlights}
                     onChange={(e) => updateSetting(`program_type_${prog.id}_highlights`, e.target.value)}
-                    rows={4} className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+                    rows={4} className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                 </div>
               </div>
             ))}
@@ -909,9 +909,9 @@ export default function SettingsPage() {
 
         {/* ========== LETTER DESIGN ========== */}
         {activeTab === "letter_design" && isAdmin && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Letter Templates (Design)</h2>
-            <p className="text-sm text-gray-500 mb-4">Change the letter design from here. Email templates are in the &quot;SMTP &amp; Email&quot; tab.</p>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+            <h2 className="text-lg font-semibold text-white mb-2">Letter Templates (Design)</h2>
+            <p className="text-sm text-slate-500 mb-4">Change the letter design from here. Email templates are in the &quot;SMTP &amp; Email&quot; tab.</p>
             <div className="space-y-3">
               {["offer_letter", "experience_letter", "internship_certificate", "id_card"].map((type) => {
                 const labels: Record<string, string> = {
@@ -923,12 +923,12 @@ export default function SettingsPage() {
                 return (
                   <div key={type} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-gray-800">{labels[type]}</h3>
-                      <a href={`/dashboard/letter-templates?tab=${type}`} className="text-xs text-indigo-600 hover:underline">
+                      <h3 className="text-sm font-semibold text-white">{labels[type]}</h3>
+                      <a href={`/dashboard/letter-templates?tab=${type}`} className="text-xs text-[#22d3ee] hover:underline">
                         Edit in Designer
                       </a>
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-slate-500">
                       {type === "offer_letter" && "2-page A4 letter with company terms, position details, and acceptance block."}
                       {type === "experience_letter" && "1-page A4 certificate with performance summary and recommendation."}
                       {type === "internship_certificate" && "Certificate with KKHS letterhead, dates, and program details."}
@@ -943,20 +943,20 @@ export default function SettingsPage() {
 
         {/* ========== PLATFORM INFO ========== */}
         {activeTab === "info" && (
-          <div className="bg-white rounded-xl p-6 border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Platform Info</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
+            <h2 className="text-lg font-semibold text-white mb-4">Platform Info</h2>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">Platform</span>
-                <span className="font-medium text-gray-900">InternPro v1.0</span>
+              <div className="flex justify-between py-2 border-b border-white/[0.06]">
+                <span className="text-slate-400">Platform</span>
+                <span className="font-medium text-white">InternPro v1.0</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">Framework</span>
-                <span className="font-medium text-gray-900">Next.js + Prisma + SQLite</span>
+              <div className="flex justify-between py-2 border-b border-white/[0.06]">
+                <span className="text-slate-400">Framework</span>
+                <span className="font-medium text-white">Next.js + Prisma + SQLite</span>
               </div>
               <div className="flex justify-between py-2">
-                <span className="text-gray-600">Support</span>
-                <span className="font-medium text-gray-900">{settings.support_email || "support@internpro.com"}</span>
+                <span className="text-slate-400">Support</span>
+                <span className="font-medium text-white">{settings.support_email || "support@internpro.com"}</span>
               </div>
             </div>
           </div>

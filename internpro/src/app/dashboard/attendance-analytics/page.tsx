@@ -22,75 +22,75 @@ export default function AttendanceAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Attendance Analytics</h1>
-        <p className="text-sm text-gray-500">Program-wise and batch-wise attendance trends</p>
+        <h1 className="text-2xl font-bold text-white">Attendance Analytics</h1>
+        <p className="text-sm text-slate-500">Program-wise and batch-wise attendance trends</p>
       </div>
 
       {/* Overall Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl p-4 border text-center">
-          <p className="text-2xl font-bold text-indigo-600">{overall.totalPrograms}</p>
-          <p className="text-xs text-gray-500 mt-1">Programs</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border text-center">
+          <p className="text-2xl font-bold text-[#22d3ee]">{overall.totalPrograms}</p>
+          <p className="text-xs text-slate-500 mt-1">Programs</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border text-center">
-          <p className="text-2xl font-bold text-blue-600">{overall.totalStudents}</p>
-          <p className="text-xs text-gray-500 mt-1">Total Students</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border text-center">
+          <p className="text-2xl font-bold text-[#60a5fa]">{overall.totalStudents}</p>
+          <p className="text-xs text-slate-500 mt-1">Total Students</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border text-center">
-          <p className="text-2xl font-bold text-green-600">{overall.activeStudents}</p>
-          <p className="text-xs text-gray-500 mt-1">Active</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border text-center">
+          <p className="text-2xl font-bold text-emerald-400">{overall.activeStudents}</p>
+          <p className="text-xs text-slate-500 mt-1">Active</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border text-center">
-          <p className="text-2xl font-bold text-purple-600">{overall.completedStudents}</p>
-          <p className="text-xs text-gray-500 mt-1">Completed</p>
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border text-center">
+          <p className="text-2xl font-bold text-[#a78bfa]">{overall.completedStudents}</p>
+          <p className="text-xs text-slate-500 mt-1">Completed</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border text-center">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border text-center">
           <p className="text-2xl font-bold text-orange-600">{overall.avgAttendanceRate}%</p>
-          <p className="text-xs text-gray-500 mt-1">Avg Attendance</p>
+          <p className="text-xs text-slate-500 mt-1">Avg Attendance</p>
         </div>
       </div>
 
       {/* Program-wise Breakdown */}
       <div className="space-y-4">
         {programs.map(p => (
-          <div key={p.programId} className="bg-white rounded-xl border overflow-hidden">
+          <div key={p.programId} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
             <div
-              className="p-5 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="p-5 cursor-pointer hover:bg-transparent transition-colors"
               onClick={() => setExpandedProgram(expandedProgram === p.programId ? null : p.programId)}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{p.programTitle}</h3>
-                  <p className="text-xs text-gray-400">{p.duration} days &middot; {p.batches.length} batch(es)</p>
+                  <h3 className="font-semibold text-white">{p.programTitle}</h3>
+                  <p className="text-xs text-slate-500">{p.duration} days &middot; {p.batches.length} batch(es)</p>
                 </div>
                 <div className="flex items-center gap-6 text-sm">
                   <div className="text-center">
-                    <p className="font-bold text-gray-900">{p.totalStudents}</p>
-                    <p className="text-xs text-gray-400">Students</p>
+                    <p className="font-bold text-white">{p.totalStudents}</p>
+                    <p className="text-xs text-slate-500">Students</p>
                   </div>
                   <div className="text-center">
-                    <p className="font-bold text-green-600">{p.attendanceRate}%</p>
-                    <p className="text-xs text-gray-400">Attendance</p>
+                    <p className="font-bold text-emerald-400">{p.attendanceRate}%</p>
+                    <p className="text-xs text-slate-500">Attendance</p>
                   </div>
                   <div className="text-center">
-                    <p className="font-bold text-red-600">{p.dropOffRate}%</p>
-                    <p className="text-xs text-gray-400">Drop-off</p>
+                    <p className="font-bold text-red-400">{p.dropOffRate}%</p>
+                    <p className="text-xs text-slate-500">Drop-off</p>
                   </div>
-                  <span className="text-gray-400">{expandedProgram === p.programId ? "▲" : "▼"}</span>
+                  <span className="text-slate-500">{expandedProgram === p.programId ? "▲" : "▼"}</span>
                 </div>
               </div>
 
               {/* Attendance bar */}
               <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-                <div className={`h-2 rounded-full ${p.attendanceRate >= 80 ? "bg-green-500" : p.attendanceRate >= 50 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${p.attendanceRate}%` }} />
+                <div className={`h-2 rounded-full ${p.attendanceRate >= 80 ? "bg-transparent0" : p.attendanceRate >= 50 ? "bg-transparent0" : "bg-transparent0"}`} style={{ width: `${p.attendanceRate}%` }} />
               </div>
             </div>
 
             {expandedProgram === p.programId && p.batches.length > 0 && (
-              <div className="border-t px-5 py-4 bg-gray-50">
+              <div className="border-t px-5 py-4 bg-transparent">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-gray-500 border-b">
+                    <tr className="text-xs text-slate-500 border-b">
                       <th className="text-left py-2">Batch</th>
                       <th className="text-center py-2">Total</th>
                       <th className="text-center py-2">Active</th>
@@ -103,10 +103,10 @@ export default function AttendanceAnalyticsPage() {
                       <tr key={b.batchId} className="border-b last:border-0">
                         <td className="py-2 font-medium">{b.batchName}</td>
                         <td className="py-2 text-center">{b.totalStudents}</td>
-                        <td className="py-2 text-center text-green-600">{b.activeStudents}</td>
-                        <td className="py-2 text-center text-purple-600">{b.completedStudents}</td>
+                        <td className="py-2 text-center text-emerald-400">{b.activeStudents}</td>
+                        <td className="py-2 text-center text-[#a78bfa]">{b.completedStudents}</td>
                         <td className="py-2 text-center">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${b.attendanceRate >= 80 ? "bg-green-100 text-green-700" : b.attendanceRate >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${b.attendanceRate >= 80 ? "bg-emerald-500/10 text-emerald-400" : b.attendanceRate >= 50 ? "bg-amber-500/10 text-amber-400" : "bg-red-500/10 text-red-400"}`}>
                             {b.attendanceRate}%
                           </span>
                         </td>

@@ -123,11 +123,11 @@ export default function LetterTemplatesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Letter Template Designer</h1>
-          <p className="text-gray-600 text-sm">Design offer letters and experience letters — details auto-fill ho jayenge</p>
+          <h1 className="text-2xl font-bold text-white">Letter Template Designer</h1>
+          <p className="text-slate-400 text-sm">Design offer letters and experience letters — details auto-fill ho jayenge</p>
         </div>
         <button onClick={() => { setShowAdd(!showAdd); if (!showAdd) setForm({ name: "", type: activeTab, htmlContent: activeTab === "experience" ? defaultExperienceTemplate : defaultOfferTemplate, isDefault: false }); }}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+          className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
           {showAdd ? "Cancel" : `+ New ${activeTab === "experience" ? "Experience" : "Offer"} Template`}
         </button>
       </div>
@@ -135,46 +135,46 @@ export default function LetterTemplatesPage() {
       {/* Type Tabs */}
       <div className="flex gap-3 mb-6">
         <button onClick={() => { setActiveTab("offer"); setShowAdd(false); setEditing(null); }}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "offer" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "offer" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-gray-200"}`}>
           Offer Letter Templates
         </button>
         <button onClick={() => { setActiveTab("experience"); setShowAdd(false); setEditing(null); }}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "experience" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "experience" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-gray-200"}`}>
           Experience Letter Templates
         </button>
       </div>
 
       {/* Available Placeholders */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+      <div className="bg-transparent border border-blue-200 rounded-xl p-4 mb-6">
         <p className="text-sm font-medium text-blue-800 mb-2">Available Placeholders (auto-replace honge):</p>
         <div className="flex gap-2 flex-wrap">
           {availablePlaceholders.map((p) => (
-            <code key={p} className="text-xs bg-white text-blue-700 px-2 py-1 rounded border border-blue-200">{p}</code>
+            <code key={p} className="text-xs bg-transparent text-[#60a5fa] px-2 py-1 rounded border border-blue-200">{p}</code>
           ))}
         </div>
       </div>
 
       {/* Add Template Form */}
       {showAdd && (
-        <form onSubmit={handleCreate} className="bg-white rounded-xl p-6 border mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Create New Template</h2>
+        <form onSubmit={handleCreate} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Create New Template</h2>
           <div className="space-y-4">
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Template Name" required />
-            <p className="text-xs text-gray-500">Type: <strong>{form.type === "experience" ? "Experience Letter" : "Offer Letter"}</strong></p>
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Template Name" required />
+            <p className="text-xs text-slate-500">Type: <strong>{form.type === "experience" ? "Experience Letter" : "Offer Letter"}</strong></p>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm({ ...form, isDefault: e.target.checked })} />
-              <label className="text-sm text-gray-700">Set as default template</label>
+              <label className="text-sm text-slate-300">Set as default template</label>
             </div>
             <textarea value={form.htmlContent} onChange={(e) => setForm({ ...form, htmlContent: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 font-mono" rows={15}
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white font-mono" rows={15}
               placeholder="HTML content with placeholders..." required />
           </div>
           <div className="flex gap-3 mt-4">
-            <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">
+            <button type="submit" className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
               Save Template
             </button>
-            <button type="button" onClick={() => setPreview(!preview)} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">
+            <button type="button" onClick={() => setPreview(!preview)} className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">
               {preview ? "Hide Preview" : "Preview"}
             </button>
           </div>
@@ -188,26 +188,26 @@ export default function LetterTemplatesPage() {
 
       {/* Edit Template */}
       {editing && (
-        <div className="bg-white rounded-xl p-6 border mb-6">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Editing: {editing.name}</h2>
-            <button onClick={() => setEditing(null)} className="text-gray-500 hover:text-gray-700">Cancel</button>
+            <h2 className="text-lg font-semibold text-white">Editing: {editing.name}</h2>
+            <button onClick={() => setEditing(null)} className="text-slate-500 hover:text-slate-300">Cancel</button>
           </div>
           <div className="space-y-4">
             <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={editing.isDefault} onChange={(e) => setEditing({ ...editing, isDefault: e.target.checked })} />
-              <label className="text-sm text-gray-700">Default template</label>
+              <label className="text-sm text-slate-300">Default template</label>
             </div>
             <textarea value={editing.htmlContent} onChange={(e) => setEditing({ ...editing, htmlContent: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 font-mono" rows={15} />
+              className="w-full px-3 py-2 border rounded-lg text-sm text-white font-mono" rows={15} />
           </div>
           <div className="flex gap-3 mt-4">
-            <button onClick={handleUpdate} className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">
+            <button onClick={handleUpdate} className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
               Save Changes
             </button>
-            <button onClick={() => setPreview(!preview)} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">
+            <button onClick={() => setPreview(!preview)} className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">
               {preview ? "Hide Preview" : "Preview"}
             </button>
           </div>
@@ -221,10 +221,10 @@ export default function LetterTemplatesPage() {
 
       {/* Templates List */}
       {filteredTemplates.length === 0 && !showAdd ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
           <p className="text-4xl mb-4">🎨</p>
-          <p className="text-gray-600">No {activeTab === "experience" ? "experience letter" : "offer letter"} templates yet.</p>
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-slate-400">No {activeTab === "experience" ? "experience letter" : "offer letter"} templates yet.</p>
+          <p className="text-sm text-slate-500 mt-2">
             Templates HTML mein hote hain placeholders ke saath — jab letter generate hota hai toh details auto-fill ho jaate hain.
           </p>
         </div>
@@ -232,24 +232,24 @@ export default function LetterTemplatesPage() {
         !editing && (
           <div className="grid gap-4">
             {filteredTemplates.map((tmpl) => (
-              <div key={tmpl.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
+              <div key={tmpl.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold text-gray-900">{tmpl.name}</h3>
+                      <h3 className="text-base font-semibold text-white">{tmpl.name}</h3>
                       {tmpl.isDefault && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Default</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Default</span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Created: {new Date(tmpl.createdAt).toLocaleDateString("en-IN")}</p>
+                    <p className="text-xs text-slate-500 mt-1">Created: {new Date(tmpl.createdAt).toLocaleDateString("en-IN")}</p>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => { setEditing(tmpl); setPreview(false); }}
-                      className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100">
+                      className="text-xs bg-transparent text-[#22d3ee] px-3 py-1.5 rounded-lg hover:bg-[#0EA5B8]/10">
                       Edit Design
                     </button>
                     <button onClick={() => handleDelete(tmpl.id)}
-                      className="text-xs bg-red-50 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-100">
+                      className="text-xs bg-transparent text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10">
                       Delete
                     </button>
                   </div>

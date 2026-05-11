@@ -30,52 +30,52 @@ export default function CampaignsPage() {
     fetchCampaigns();
   };
 
-  const statusColors: Record<string, string> = { draft: "bg-gray-100 text-gray-600", scheduled: "bg-blue-100 text-blue-700", sent: "bg-green-100 text-green-700" };
+  const statusColors: Record<string, string> = { draft: "bg-transparent text-slate-400", scheduled: "bg-blue-500/10 text-[#60a5fa]", sent: "bg-emerald-500/10 text-emerald-400" };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Email Campaigns</h1>
-          <p className="text-sm text-gray-500">Create and send bulk email campaigns</p>
+          <h1 className="text-2xl font-bold text-white">Email Campaigns</h1>
+          <p className="text-sm text-slate-500">Create and send bulk email campaigns</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">+ New Campaign</button>
+        <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ New Campaign</button>
       </div>
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-transparent">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Campaign</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Target</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Status</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Sent</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Campaign</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Target</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-slate-500">Status</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-slate-500">Sent</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-slate-500">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {campaigns.map(c => (
               <tr key={c.id}>
-                <td className="px-4 py-3"><p className="text-sm font-medium">{c.title}</p><p className="text-xs text-gray-500">{c.subject}</p></td>
+                <td className="px-4 py-3"><p className="text-sm font-medium">{c.title}</p><p className="text-xs text-slate-500">{c.subject}</p></td>
                 <td className="px-4 py-3 text-sm capitalize">{c.targetRole}</td>
                 <td className="px-4 py-3 text-center"><span className={`text-xs px-2 py-1 rounded-full ${statusColors[c.status] || ""}`}>{c.status}</span></td>
                 <td className="px-4 py-3 text-center text-sm">{c.sentCount > 0 ? c.sentCount : "—"}</td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex gap-2 justify-center">
-                    {c.status === "draft" && <button onClick={() => sendCampaign(c.id)} className="text-xs text-green-600 hover:underline">Send</button>}
-                    <button onClick={() => deleteCampaign(c.id)} className="text-xs text-red-600 hover:underline">Delete</button>
+                    {c.status === "draft" && <button onClick={() => sendCampaign(c.id)} className="text-xs text-emerald-400 hover:underline">Send</button>}
+                    <button onClick={() => deleteCampaign(c.id)} className="text-xs text-red-400 hover:underline">Delete</button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {campaigns.length === 0 && <div className="text-center py-12 text-gray-400">No campaigns yet.</div>}
+        {campaigns.length === 0 && <div className="text-center py-12 text-slate-500">No campaigns yet.</div>}
       </div>
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-2xl">
             <h2 className="text-lg font-bold mb-4">New Email Campaign</h2>
             <div className="space-y-3">
               <input placeholder="Campaign Name" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
@@ -92,8 +92,8 @@ export default function CampaignsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-gray-600">Cancel</button>
-              <button onClick={createCampaign} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Create</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-slate-400">Cancel</button>
+              <button onClick={createCampaign} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg">Create</button>
             </div>
           </div>
         </div>

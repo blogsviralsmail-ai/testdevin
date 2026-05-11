@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function RegisterPage() {
-  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}><RegisterForm /></Suspense>;
+  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{background: '#0a0e1a', color: '#f1f5f9'}}>Loading...</div>}><RegisterForm /></Suspense>;
 }
 
 function RegisterForm() {
@@ -76,100 +76,106 @@ function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 gradient-bg items-center justify-center p-12">
-        <div className="text-white max-w-lg">
+    <div className="min-h-screen flex" style={{background: '#0a0e1a'}}>
+      {/* Background blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px]" style={{borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', background: 'radial-gradient(ellipse, rgba(14,165,184,0.08), transparent 70%)', animation: 'morphBlob 15s ease-in-out infinite'}} />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px]" style={{borderRadius: '70% 30% 30% 70% / 70% 70% 30% 30%', background: 'radial-gradient(ellipse, rgba(167,139,250,0.06), transparent 70%)', animation: 'morphBlob 18s ease-in-out infinite reverse'}} />
+      </div>
+
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center p-12" style={{background: 'linear-gradient(135deg, rgba(14,165,184,0.1), rgba(167,139,250,0.08))'}}>
+        <div className="text-white max-w-lg relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-bold">IP</div>
-            <span className="text-3xl font-bold">InternPro</span>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
+            <span className="text-3xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
           </div>
-          <h2 className="text-4xl font-bold mb-4">Start Your Internship Journey</h2>
-          <p className="text-lg text-indigo-100">
+          <h2 className="text-4xl font-bold mb-4 text-white">Start Your Internship Journey</h2>
+          <p className="text-lg text-slate-400">
             Register, upload your documents, and get selected for exciting internship opportunities.
           </p>
-          <div className="mt-8 space-y-3 text-indigo-100">
+          <div className="mt-8 space-y-3 text-slate-400">
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">1</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white" style={{background: 'rgba(14,165,184,0.3)', border: '1px solid rgba(14,165,184,0.4)'}}>1</span>
               <span>Register with your details</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">2</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white" style={{background: 'rgba(14,165,184,0.3)', border: '1px solid rgba(14,165,184,0.4)'}}>2</span>
               <span>Upload documents & results</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">3</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white" style={{background: 'rgba(14,165,184,0.3)', border: '1px solid rgba(14,165,184,0.4)'}}>3</span>
               <span>Interview & get selected</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">4</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white" style={{background: 'rgba(14,165,184,0.3)', border: '1px solid rgba(14,165,184,0.4)'}}>4</span>
               <span>Receive Offer Letter & start learning!</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white font-bold text-sm">IP</div>
-            <span className="text-xl font-bold gradient-text">InternPro</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
+            <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Student Registration</h1>
-          <p className="text-gray-600 mb-6">Fill your details to apply for internship</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Student Registration</h1>
+          <p className="text-slate-400 mb-6">Fill your details to apply for internship</p>
 
           {error && (
-            <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">{error}</div>
+            <div className="px-4 py-3 rounded-lg mb-6 text-sm" style={{background: 'rgba(255,107,107,0.1)', color: '#fca5a5', border: '1px solid rgba(255,107,107,0.2)'}}>{error}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Full Name *</label>
                 <input type="text" value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
                   placeholder="Your full name" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Phone *</label>
                 <input type="tel" value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
                   placeholder="9876543210" required />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Email *</label>
               <input type="email" value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
                 placeholder="you@example.com" required />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">College Name</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">College Name</label>
                 <input type="text" value={form.collegeName}
                   onChange={(e) => setForm({ ...form, collegeName: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
                   placeholder="e.g. IIT Delhi" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Degree</label>
                 <input type="text" value={form.degree}
                   onChange={(e) => setForm({ ...form, degree: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
                   placeholder="e.g. B.Tech" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Year</label>
                 <select value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none">
+                  className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}>
                   <option value="">Select year</option>
                   <option value="1st">1st Year</option>
                   <option value="2nd">2nd Year</option>
@@ -179,18 +185,18 @@ function RegisterForm() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Address</label>
                 <input type="text" value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
                   placeholder="City, Area" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">State</label>
               <select value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none">
+                className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}>
                 <option value="">Select State</option>
                 <option value="Andhra Pradesh">Andhra Pradesh</option>
                 <option value="Arunachal Pradesh">Arunachal Pradesh</option>
@@ -232,18 +238,18 @@ function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Program *</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Program *</label>
               <select value={form.programId} onChange={(e) => setForm({ ...form, programId: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" required>
+                className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}} required>
                 <option value="">-- Select Program --</option>
                 {programsList.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Mode *</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Preferred Mode *</label>
               <select value={form.preferredMode} onChange={(e) => setForm({ ...form, preferredMode: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" required>
+                className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}} required>
                 <option value="">-- Select Mode --</option>
                 <option value="online">Online (Work from Home)</option>
                 <option value="offline">Offline (Work from Office)</option>
@@ -252,36 +258,36 @@ function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Resume (PDF) *</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Resume (PDF) *</label>
               <input type="file" accept=".pdf,.doc,.docx"
                 onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-gray-700" />
-              <p className="text-xs text-gray-400 mt-1">Upload your resume (PDF/DOC, shown to admin)</p>
+                className="w-full px-4 py-2 rounded-xl text-white outline-none text-sm" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}} />
+              <p className="text-xs text-slate-600 mt-1">Upload your resume (PDF/DOC, shown to admin)</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Password *</label>
               <input type="password" value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none transition-all" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}
                 placeholder="Min 6 characters" required minLength={6} />
             </div>
 
             {referralCode && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+              <div className="rounded-xl p-3 text-sm" style={{background: 'rgba(52,211,153,0.1)', color: '#6ee7b7', border: '1px solid rgba(52,211,153,0.2)'}}>
                 Referred by agent: <span className="font-semibold">{referralCode}</span>
               </div>
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-lg gradient-bg text-white font-medium hover:opacity-90 transition disabled:opacity-50">
+              className="w-full py-3 rounded-xl text-white font-medium transition-all disabled:opacity-50 hover:shadow-[0_0_30px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
               {loading ? (resumeUploading ? "Uploading Resume..." : "Registering...") : "Register & Apply"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-600 mt-6">
+          <p className="text-center text-sm text-slate-500 mt-6">
             Already have an account?{" "}
-            <Link href="/login" className="text-indigo-600 font-medium hover:underline">Login</Link>
+            <Link href="/login" className="font-medium hover:underline" style={{color: '#22d3ee'}}>Login</Link>
           </p>
         </div>
       </div>

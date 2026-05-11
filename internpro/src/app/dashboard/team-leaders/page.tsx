@@ -107,29 +107,29 @@ export default function TeamLeadersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team Leaders</h1>
-          <p className="text-gray-600 text-sm">Manage team leaders and assign them to batches</p>
+          <h1 className="text-2xl font-bold text-white">Team Leaders</h1>
+          <p className="text-slate-400 text-sm">Manage team leaders and assign them to batches</p>
         </div>
-        <button onClick={() => setShowAdd(!showAdd)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+        <button onClick={() => setShowAdd(!showAdd)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
           {showAdd ? "Cancel" : "+ Add Team Leader"}
         </button>
       </div>
 
       {/* Add Form */}
       {showAdd && (
-        <form onSubmit={handleAdd} className="bg-white rounded-xl p-6 border mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Team Leader</h2>
+        <form onSubmit={handleAdd} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Add New Team Leader</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Full Name" required />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Full Name" required />
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" required />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Email" required />
             <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone Number" />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Phone Number" />
             <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Password" required />
+              className="px-3 py-2 border rounded-lg text-sm text-white" placeholder="Password" required />
           </div>
-          <button type="submit" className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">
+          <button type="submit" className="mt-4 bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
             Create Team Leader
           </button>
         </form>
@@ -138,33 +138,33 @@ export default function TeamLeadersPage() {
       {/* Edit Modal */}
       {editUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Edit Team Leader</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-white mb-4">Edit Team Leader</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Name</label>
                 <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Name" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Name" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Email</label>
                 <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Email" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Email" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Phone</label>
                 <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Phone" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Phone" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">New Password (blank = no change)</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">New Password (blank = no change)</label>
                 <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-gray-900" placeholder="Leave blank to keep current" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Leave blank to keep current" />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleEdit} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Save</button>
-              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button onClick={handleEdit} className="flex-1 bg-[#0EA5B8] text-white px-4 py-2 rounded-lg hover:bg-[#0891b2]">Save</button>
+              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">Cancel</button>
             </div>
           </div>
         </div>
@@ -173,25 +173,25 @@ export default function TeamLeadersPage() {
       {/* Assign Batch Modal */}
       {assignModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Assign Batches to {assignModal.name}</h2>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-md">
+            <h2 className="text-lg font-bold text-white mb-4">Assign Batches to {assignModal.name}</h2>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {batches.map((batch) => (
-                <div key={batch.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                <div key={batch.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06]">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{batch.program.title} — {batch.name}</div>
-                    <div className="text-xs text-gray-500">{batch._count.enrollments} students</div>
+                    <div className="text-sm font-medium text-white">{batch.program.title} — {batch.name}</div>
+                    <div className="text-xs text-slate-500">{batch._count.enrollments} students</div>
                   </div>
                   <button
                     onClick={() => handleAssignBatch(batch.id, batch.leaderId === assignModal.id ? "" : assignModal.id)}
-                    className={`text-xs px-3 py-1 rounded ${batch.leaderId === assignModal.id ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}
+                    className={`text-xs px-3 py-1 rounded ${batch.leaderId === assignModal.id ? "bg-emerald-500/10 text-emerald-400" : "bg-gray-200 text-slate-400"}`}
                   >
                     {batch.leaderId === assignModal.id ? "Assigned" : "Assign"}
                   </button>
                 </div>
               ))}
             </div>
-            <button onClick={() => setAssignModal(null)} className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            <button onClick={() => setAssignModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
               Done
             </button>
           </div>
@@ -201,26 +201,26 @@ export default function TeamLeadersPage() {
       {/* Assign Students Modal */}
       {assignStudentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Assign Students to {assignStudentModal.name}</h2>
-            <p className="text-xs text-gray-500 mb-4">Transfer students to {assignStudentModal.name}&apos;s assigned batches</p>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold text-white mb-2">Assign Students to {assignStudentModal.name}</h2>
+            <p className="text-xs text-slate-500 mb-4">Transfer students to {assignStudentModal.name}&apos;s assigned batches</p>
             {(() => {
               const tlBatches = getAssignedBatches(assignStudentModal.id);
-              if (tlBatches.length === 0) return <p className="text-sm text-red-600">No batches assigned to this TL. Assign a batch first.</p>;
+              if (tlBatches.length === 0) return <p className="text-sm text-red-400">No batches assigned to this TL. Assign a batch first.</p>;
               const otherStudents = enrollments.filter((e) => (e.status === "active" || e.status === "selected") && !tlBatches.some((b) => b.id === e.batch.id));
               return (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {otherStudents.length === 0 ? (
-                    <p className="text-sm text-gray-500">No students from other batches to transfer.</p>
+                    <p className="text-sm text-slate-500">No students from other batches to transfer.</p>
                   ) : (
                     otherStudents.map((e) => (
-                      <div key={e.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                      <div key={e.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06]">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{e.student.name}</div>
-                          <div className="text-xs text-gray-500">{e.batch.program.title} — {e.batch.name}</div>
+                          <div className="text-sm font-medium text-white">{e.student.name}</div>
+                          <div className="text-xs text-slate-500">{e.batch.program.title} — {e.batch.name}</div>
                         </div>
                         <select onChange={(sel) => { if (sel.target.value) handleTransferStudent(e.id, sel.target.value); }}
-                          className="text-xs px-2 py-1 border rounded text-gray-900" defaultValue="">
+                          className="text-xs px-2 py-1 border rounded text-white" defaultValue="">
                           <option value="" disabled>Move to batch...</option>
                           {tlBatches.map((b) => (
                             <option key={b.id} value={b.id}>{b.program.title} — {b.name}</option>
@@ -232,7 +232,7 @@ export default function TeamLeadersPage() {
                 </div>
               );
             })()}
-            <button onClick={() => setAssignStudentModal(null)} className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            <button onClick={() => setAssignStudentModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
               Done
             </button>
           </div>
@@ -241,47 +241,47 @@ export default function TeamLeadersPage() {
 
       {/* Team Leaders List */}
       {users.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border">
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
           <p className="text-4xl mb-4">👔</p>
-          <p className="text-gray-600">No team leaders yet. Add one to get started.</p>
+          <p className="text-slate-400">No team leaders yet. Add one to get started.</p>
         </div>
       ) : (
         <div className="grid gap-4">
           {users.map((user) => {
             const assigned = getAssignedBatches(user.id);
             return (
-              <div key={user.id} className="bg-white rounded-xl p-6 border hover:shadow-md transition">
+              <div key={user.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">{user.name}</h3>
-                    <p className="text-sm text-gray-600">{user.email} {user.phone && `| ${user.phone}`}</p>
+                    <h3 className="text-base font-semibold text-white">{user.name}</h3>
+                    <p className="text-sm text-slate-400">{user.email} {user.phone && `| ${user.phone}`}</p>
                     <div className="flex gap-2 mt-2 flex-wrap">
                       {assigned.length > 0 ? (
                         assigned.map((b) => (
-                          <span key={b.id} className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                          <span key={b.id} className="text-xs px-2 py-1 rounded-full bg-[#0EA5B8]/10 text-[#22d3ee]">
                             {b.program.title} — {b.name} ({b._count.enrollments} students)
                           </span>
                         ))
                       ) : (
-                        <span className="text-xs text-gray-400">No batches assigned</span>
+                        <span className="text-xs text-slate-500">No batches assigned</span>
                       )}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setAssignModal(user)}
-                      className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100">
+                      className="text-xs bg-transparent text-[#22d3ee] px-3 py-1.5 rounded-lg hover:bg-[#0EA5B8]/10">
                       Assign Batch
                     </button>
                     <button onClick={() => setAssignStudentModal(user)}
-                      className="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-100">
+                      className="text-xs bg-transparent text-[#a78bfa] px-3 py-1.5 rounded-lg hover:bg-purple-500/10">
                       Assign Students
                     </button>
                     <button onClick={() => { setEditUser(user); setEditForm({ name: user.name, email: user.email, phone: user.phone || "", password: "" }); }}
-                      className="text-xs bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 border">
+                      className="text-xs bg-transparent text-slate-300 px-3 py-1.5 rounded-lg hover:bg-transparent border">
                       Edit
                     </button>
                     <button onClick={() => handleDelete(user.id)}
-                      className="text-xs bg-red-50 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-100">
+                      className="text-xs bg-transparent text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10">
                       Delete
                     </button>
                   </div>
