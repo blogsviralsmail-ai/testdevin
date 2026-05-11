@@ -19,6 +19,8 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
   const [resumeUploading, setResumeUploading] = useState(false);
   const searchParams = useSearchParams();
   const [referralCode, setReferralCode] = useState("");
@@ -30,9 +32,25 @@ function RegisterForm() {
 
   useEffect(() => {
     fetch("/api/programs").then(r => r.ok ? r.json() : []).then(data => {
-      setProgramsList(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setProgramsList(list);
+      const programParam = searchParams.get("program");
+      if (programParam) {
+        const match = list.find((p: {id: string; title: string}) => p.title === programParam || p.id === programParam);
+        if (match) setForm(f => ({ ...f, programId: match.id }));
+      }
     }).catch(() => {});
-  }, []);
+  }, [searchParams]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onload = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +67,22 @@ function RegisterForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      // Upload photo if provided
+      if (photoFile) {
+        try {
+          const fd = new FormData();
+          fd.append("file", photoFile);
+          const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            await fetch("/api/auth/me", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ avatar: uploadData.url }),
+            });
+          }
+        } catch { /* photo upload failed */ }
+      }
       // Upload resume if provided
       if (resumeFile) {
         setResumeUploading(true);
@@ -86,8 +120,8 @@ function RegisterForm() {
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center p-12" style={{background: 'linear-gradient(135deg, rgba(14,165,184,0.1), rgba(167,139,250,0.08))'}}>
         <div className="text-white max-w-lg relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
-            <span className="text-3xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>KM</div>
+            <span className="text-3xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>KKHS Media</span>
           </div>
           <h2 className="text-4xl font-bold mb-4 text-white">Start Your Internship Journey</h2>
           <p className="text-lg text-slate-400">
@@ -258,6 +292,16 @@ function RegisterForm() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Profile Photo</label>
+              <div className="flex items-center gap-4">
+                {photoPreview && <img src={photoPreview} alt="Preview" className="w-12 h-12 rounded-full object-cover" style={{border: '2px solid rgba(14,165,184,0.3)'}} />}
+                <input type="file" accept="image/*" onChange={handlePhotoChange}
+                  className="w-full px-4 py-2 rounded-xl text-white outline-none text-sm" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}} />
+              </div>
+              <p className="text-xs text-slate-600 mt-1">Upload your photo (used for ID card & profile)</p>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">Resume (PDF) *</label>
               <input type="file" accept=".pdf,.doc,.docx"
                 onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
@@ -280,7 +324,7 @@ function RegisterForm() {
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-xl text-white font-medium transition-all disabled:opacity-50 hover:shadow-[0_0_30px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
+              className="w-full py-3 rounded-xl text-white font-medium transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 4px 0 #0a7c8a, 0 6px 15px rgba(14,165,184,0.3)'}}>
               {loading ? (resumeUploading ? "Uploading Resume..." : "Registering...") : "Register & Apply"}
             </button>
           </form>

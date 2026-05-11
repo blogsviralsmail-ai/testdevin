@@ -344,10 +344,6 @@ export default function ProgramsPage() {
                     {programs.map((p) => {
                       const has = feature === "Stipend"
                         ? p.id === "stipend_office_internship"
-                        : feature === "Live Projects"
-                        ? p.id !== "basic_certification"
-                        : feature === "Experience Letter"
-                        ? p.id === "premium_paid_training" || p.id === "stipend_office_internship"
                         : feature === "Mentorship"
                         ? p.id !== "basic_certification"
                         : true;

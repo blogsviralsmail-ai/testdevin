@@ -15,7 +15,7 @@ interface SettingItem {
   value: string;
 }
 
-type TabKey = "profile" | "admins" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "info";
+type TabKey = "profile" | "admins" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "website" | "info";
 
 const TABS: { key: TabKey; label: string; icon: string; adminOnly?: boolean }[] = [
   { key: "profile", label: "Profile", icon: "👤" },
@@ -27,6 +27,7 @@ const TABS: { key: TabKey; label: string; icon: string; adminOnly?: boolean }[] 
   { key: "payments", label: "Payments", icon: "💰", adminOnly: true },
   { key: "program_types", label: "Program Types", icon: "📋", adminOnly: true },
   { key: "letter_design", label: "Letter Design", icon: "🖨️", adminOnly: true },
+  { key: "website", label: "Website Settings", icon: "🌐", adminOnly: true },
   { key: "info", label: "Platform Info", icon: "ℹ️" },
 ];
 
@@ -1069,6 +1070,71 @@ export default function SettingsPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* ========== WEBSITE SETTINGS ========== */}
+        {activeTab === "website" && isAdmin && (
+          <div className="space-y-6">
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-4">Company Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Company Name</label>
+                  <input value={settings.company_name || ""} onChange={(e) => updateSetting("company_name", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="KKHS Media Private Limited" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Company Logo URL</label>
+                  <input value={settings.company_logo || ""} onChange={(e) => updateSetting("company_logo", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="/uploads/logo.png" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Company Phone</label>
+                  <input value={settings.company_phone || ""} onChange={(e) => updateSetting("company_phone", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="9782005500" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Company Email</label>
+                  <input value={settings.company_email || ""} onChange={(e) => updateSetting("company_email", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="info@kkhsmedia.com" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Company Address</label>
+                  <input value={settings.company_address || ""} onChange={(e) => updateSetting("company_address", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="190A Krishna Kunj, Kalwar Road, Jaipur" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-4">WhatsApp Chat Widget</h2>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">WhatsApp Number (with country code)</label>
+                <input value={settings.whatsapp_number || ""} onChange={(e) => updateSetting("whatsapp_number", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="919782005500" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                <p className="text-xs text-slate-500 mt-1">Leave empty to hide WhatsApp button. Format: 91XXXXXXXXXX (no +, no spaces)</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-4">Homepage Video</h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-slate-300">Enable Video on Homepage</label>
+                  <button onClick={() => updateSetting("homepage_video_enabled", settings.homepage_video_enabled === "true" ? "false" : "true")}
+                    className="px-4 py-1.5 rounded-lg text-sm font-medium text-white"
+                    style={{background: settings.homepage_video_enabled === "true" ? 'linear-gradient(135deg, #059669, #047857)' : 'rgba(255,255,255,0.1)'}}>
+                    {settings.homepage_video_enabled === "true" ? "ON" : "OFF"}
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">YouTube Video URL</label>
+                  <input value={settings.homepage_video_url || ""} onChange={(e) => updateSetting("homepage_video_url", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://www.youtube.com/watch?v=..." style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+              </div>
             </div>
           </div>
         )}
