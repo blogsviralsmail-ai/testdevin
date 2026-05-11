@@ -19,6 +19,8 @@ interface LeaveInfo {
 }
 
 export default function LeavesManagementPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [leaves, setLeaves] = useState<LeaveInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,26 @@ export default function LeavesManagementPage() {
     exportToPDF("Leave Requests", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === leaves.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(leaves.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} leave requests?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_leaves", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchLeaves();
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-bold text-white">Leave Management</h1>
@@ -79,6 +101,15 @@ export default function LeavesManagementPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -107,6 +138,7 @@ export default function LeavesManagementPage() {
           <table className="w-full text-sm">
             <thead className="bg-white/[0.03]">
               <tr className="text-left text-slate-400">
+                <th className="p-3 w-10"><input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === leaves.length} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
                 <th className="p-3">Employee</th>
                 <th className="p-3">Type</th>
                 <th className="p-3">Dates</th>
@@ -119,6 +151,7 @@ export default function LeavesManagementPage() {
             <tbody>
               {filtered.map(leave => (
                 <tr key={leave.id} className="border-t border-white/[0.04] hover:bg-white/[0.02]">
+                  <td className="p-3 w-10"><input type="checkbox" checked={selectedIds.has(leave.id)} onChange={() => toggleSelect(leave.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                   <td className="p-3">
                     <div className="font-medium text-white">{leave.user?.name || "—"}</div>
                     <div className="text-xs text-slate-500">{leave.user?.email}</div>

@@ -51,6 +51,8 @@ interface UserSession {
 }
 
 export default function TasksPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -189,6 +191,26 @@ export default function TasksPage() {
     ? (submissions.filter((s) => s.percentage !== null).reduce((sum, s) => sum + (s.percentage || 0), 0) / reviewedTasks).toFixed(1)
     : "0";
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === tasks.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(tasks.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} tasks?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_tasks", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -196,6 +218,15 @@ export default function TasksPage() {
           <h1 className="text-2xl font-bold text-white">
             {isStudent ? "My Tasks & Assignments" : "Tasks & Assignments"}
           </h1>
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-slate-400 text-sm">
             {isStudent ? "Complete daily tasks and track your progress" : "Create and manage day-based tasks for students"}
           </p>
@@ -358,7 +389,8 @@ export default function TasksPage() {
             {batches.map((b) => {
               const count = tasks.filter((t) => `${t.batch.program.title} - ${t.batch.name}` === `${b.program.title} - ${b.name}`).length;
               return (
-                <div key={b.id} className="flex items-center gap-2 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] px-3 py-2 text-xs">
+                <div key={b.id} className="flex items-center gap-2 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] px-3 py-2 text-xs relative">
+            <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(b.id)} onChange={() => toggleSelect(b.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
                   <span className="text-slate-300">{b.program.title} - {b.name}</span>
                   <span className="text-slate-500">({count} tasks)</span>
                   {count > 0 && (

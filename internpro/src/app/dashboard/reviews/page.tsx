@@ -32,6 +32,8 @@ interface QuizAttemptInfo {
 }
 
 export default function ReviewsPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"tasks" | "quizzes">("tasks");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -106,6 +108,26 @@ export default function ReviewsPage() {
     exportToPDF("Reviews", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === submissions.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(submissions.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} submissions?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_submissions", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchSubmissions();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -119,6 +141,15 @@ export default function ReviewsPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-slate-400 text-sm">Review student tasks and quiz results</p>
         </div>
         <div className="flex items-center gap-2">
@@ -156,7 +187,8 @@ export default function ReviewsPage() {
             </div>
           ) : (
             quizAttempts.map((attempt) => (
-              <div key={attempt.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border hover:shadow-none transition">
+              <div key={attempt.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border hover:shadow-none transition relative">
+            <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(attempt.id)} onChange={() => toggleSelect(attempt.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">

@@ -13,6 +13,8 @@ interface HolidayInfo {
 }
 
 export default function HolidaysManagementPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [holidays, setHolidays] = useState<HolidayInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,26 @@ export default function HolidaysManagementPage() {
     exportToPDF("Holidays", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === holidays.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(holidays.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} holidays?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_holidays", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchHolidays();
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -87,6 +109,15 @@ export default function HolidaysManagementPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-sm text-slate-400 mt-1">{holidays.length} total, {upcomingCount} upcoming</p>
         </div>
         <button onClick={() => { setShowForm(true); setEditing(null); setForm({ title: "", date: "", type: "public", description: "" }); }}
@@ -109,6 +140,7 @@ export default function HolidaysManagementPage() {
             <table className="w-full text-sm">
               <thead className="bg-white/[0.03]">
                 <tr className="text-left text-slate-400">
+                  <th className="p-3 w-10"><input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === holidays.length} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
                   <th className="p-3">Date</th>
                   <th className="p-3">Holiday</th>
                   <th className="p-3">Type</th>
@@ -122,6 +154,7 @@ export default function HolidaysManagementPage() {
                   const isPast = d < new Date();
                   return (
                     <tr key={h.id} className={`border-t border-white/[0.04] hover:bg-white/[0.02] ${isPast ? "opacity-60" : ""}`}>
+                      <td className="p-3 w-10"><input type="checkbox" checked={selectedIds.has(h.id)} onChange={() => toggleSelect(h.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <div className="w-10 h-10 rounded-lg bg-[#0EA5B8]/20 flex flex-col items-center justify-center border border-[#0EA5B8]/30">

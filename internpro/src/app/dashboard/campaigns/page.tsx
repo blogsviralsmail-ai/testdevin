@@ -6,6 +6,8 @@ import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Campaign { id: string; title: string; subject: string; htmlContent: string; targetRole: string; status: string; scheduledAt?: string; sentAt?: string; sentCount: number; openCount: number; clickCount: number; createdAt: string; }
 
 export default function CampaignsPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -52,6 +54,26 @@ export default function CampaignsPage() {
     exportToPDF("Campaigns", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === campaigns.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(campaigns.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} campaigns?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_campaigns", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchCampaigns();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -65,6 +87,15 @@ export default function CampaignsPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-sm text-slate-500">Create and send bulk email campaigns</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ New Campaign</button>
@@ -74,6 +105,7 @@ export default function CampaignsPage() {
         <table className="w-full">
           <thead className="bg-transparent">
             <tr>
+              <th className="px-3 py-3 w-10"><input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === campaigns.length} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Campaign</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Target</th>
               <th className="px-4 py-3 text-center text-xs font-medium text-slate-500">Status</th>
@@ -84,6 +116,7 @@ export default function CampaignsPage() {
           <tbody className="divide-y">
             {campaigns.map(c => (
               <tr key={c.id}>
+                <td className="px-3 py-3 w-10"><input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                 <td className="px-4 py-3"><p className="text-sm font-medium">{c.title}</p><p className="text-xs text-slate-500">{c.subject}</p></td>
                 <td className="px-4 py-3 text-sm capitalize">{c.targetRole}</td>
                 <td className="px-4 py-3 text-center"><span className={`text-xs px-2 py-1 rounded-full ${statusColors[c.status] || ""}`}>{c.status}</span></td>

@@ -22,6 +22,8 @@ interface SalaryRecord {
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 export default function SalaryManagementPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,26 @@ export default function SalaryManagementPage() {
     exportToPDF("Salary Management", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === salaries.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(salaries.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} salary records?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_salaries", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchSalaries();
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -98,6 +120,15 @@ export default function SalaryManagementPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
         <div className="flex items-center gap-3">
           <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}
             className="px-3 py-2 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white text-sm" />
@@ -134,6 +165,7 @@ export default function SalaryManagementPage() {
           <table className="w-full text-sm">
             <thead className="bg-white/[0.03]">
               <tr className="text-left text-slate-400">
+                <th className="p-3 w-10"><input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === salaries.length} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
                 <th className="p-3">Employee</th>
                 <th className="p-3">Program</th>
                 <th className="p-3">Stipend</th>
@@ -146,6 +178,7 @@ export default function SalaryManagementPage() {
             <tbody>
               {salaries.map(sal => (
                 <tr key={sal.id} className="border-t border-white/[0.04] hover:bg-white/[0.02]">
+                  <td className="p-3 w-10"><input type="checkbox" checked={selectedIds.has(sal.id)} onChange={() => toggleSelect(sal.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                   <td className="p-3">
                     <div className="font-medium text-white">{sal.enrollment?.student?.name || "—"}</div>
                     <div className="text-xs text-slate-500">{sal.enrollment?.student?.employeeId || sal.enrollment?.student?.email}</div>

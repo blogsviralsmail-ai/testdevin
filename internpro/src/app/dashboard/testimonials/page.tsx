@@ -6,6 +6,8 @@ import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Testimonial { id: string; name: string; role?: string; content: string; rating: number; avatar?: string; videoUrl?: string; isPublished: boolean; createdAt: string; }
 
 export default function TestimonialsPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -59,6 +61,26 @@ export default function TestimonialsPage() {
     exportToPDF("Testimonials", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === testimonials.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(testimonials.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} testimonials?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_testimonials", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchTestimonials();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -72,6 +94,15 @@ export default function TestimonialsPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-sm text-slate-500">Student reviews and success stories</p>
         </div>
         {isAdmin && <button onClick={() => { setEditing(null); setForm({ name: "", role: "", content: "", rating: 5, videoUrl: "", isPublished: true }); setShowForm(true); }} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Add Testimonial</button>}
@@ -79,7 +110,8 @@ export default function TestimonialsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {testimonials.map(t => (
-          <div key={t.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border">
+          <div key={t.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border relative">
+            <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(t.id)} onChange={() => toggleSelect(t.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full bg-[#0EA5B8]/10 flex items-center justify-center text-[#22d3ee] font-bold">{t.name[0]}</div>
               <div>

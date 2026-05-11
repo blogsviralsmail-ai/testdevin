@@ -6,6 +6,8 @@ import { exportToCSV, exportToPDF, buildTableHTML } from "@/lib/export-utils";
 interface Announcement { id: string; title: string; content: string; category: string; isPinned: boolean; targetRole: string; author: { name: string; avatar?: string }; createdAt: string; }
 
 export default function AnnouncementsPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [user, setUser] = useState<{ role: string } | null>(null);
@@ -50,6 +52,26 @@ export default function AnnouncementsPage() {
     exportToPDF("Announcements", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === announcements.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(announcements.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} announcements?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_announcements", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchAnnouncements();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -63,6 +85,15 @@ export default function AnnouncementsPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-sm text-slate-500">Important updates and notices</p>
         </div>
         {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ New Announcement</button>}
@@ -79,8 +110,9 @@ export default function AnnouncementsPage() {
 
       <div className="space-y-4">
         {announcements.filter(a => !searchQuery.trim() || a.title.toLowerCase().includes(searchQuery.toLowerCase()) || a.content.toLowerCase().includes(searchQuery.toLowerCase())).map(a => (
-          <div key={a.id} className={`rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border ${a.isPinned ? "border-l-4 border-l-amber-400" : ""}`}>
-            <div className="flex items-start justify-between">
+          <div key={a.id} className={`rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border relative ${a.isPinned ? "border-l-4 border-l-amber-400" : ""}`}>
+            <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(a.id)} onChange={() => toggleSelect(a.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
+            <div className="flex items-start justify-between pl-6">
               <div className="flex items-center gap-3">
                 {a.isPinned && <span className="text-amber-500">📌</span>}
                 <div>

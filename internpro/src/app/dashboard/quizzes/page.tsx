@@ -7,6 +7,8 @@ interface Program { id: string; title: string; }
 interface Question { id?: string; question: string; options: string[]; correctAnswer: number; points: number; }
 
 export default function QuizzesPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<string | null>(null);
@@ -59,6 +61,26 @@ export default function QuizzesPage() {
   const isAdmin = user?.role === "admin" || user?.role === "organization" || user?.role === "teamleader";
 
   // Quiz taking view
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === quizzes.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(quizzes.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} quizzes?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_quizzes", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchQuizzes();
+  };
+
   if (activeQuiz && quizDetail) {
     if (result) {
       return (
@@ -108,6 +130,14 @@ export default function QuizzesPage() {
         {isAdmin && <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm">+ Create Quiz</button>}
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
+
       {/* Search + Program Filter */}
       <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border p-4">
         <div className="flex items-center gap-3 flex-wrap">
@@ -137,7 +167,8 @@ export default function QuizzesPage() {
       {/* Quiz List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(selectedProgramId === "all" ? quizzes : quizzes.filter(q => q.programId === selectedProgramId)).filter(q => !searchQuery.trim() || q.title.toLowerCase().includes(searchQuery.toLowerCase()) || (q.description && q.description.toLowerCase().includes(searchQuery.toLowerCase()))).map(quiz => (
-          <div key={quiz.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border hover:shadow-none transition-shadow">
+          <div key={quiz.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border hover:shadow-none transition-shadow relative">
+            <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(quiz.id)} onChange={() => toggleSelect(quiz.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold">{quiz.title}</h3>

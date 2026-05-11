@@ -15,6 +15,8 @@ interface User {
 }
 
 export default function UsersPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [filter, setFilter] = useState("");
@@ -89,6 +91,26 @@ export default function UsersPage() {
     exportToPDF("Users", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === users.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(users.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} users?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_users", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchUsers();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -102,6 +124,15 @@ export default function UsersPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-slate-400 text-sm">Manage all platform users — create, edit, delete</p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
@@ -195,6 +226,7 @@ export default function UsersPage() {
         <table className="w-full">
           <thead className="bg-transparent">
             <tr>
+              <th className="px-3 py-3 w-10"><input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === users.length} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
               <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Name</th>
               <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Email</th>
               <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Role</th>
@@ -205,6 +237,7 @@ export default function UsersPage() {
           <tbody className="divide-y divide-white/[0.06]">
             {users.map((u) => (
               <tr key={u.id} className="hover:bg-transparent">
+                <td className="px-3 py-3 w-10"><input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleSelect(u.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                 <td className="px-6 py-4">
                   <div className="font-medium text-white text-sm">{u.name}</div>
                   {u.phone && <div className="text-xs text-slate-500">{u.phone}</div>}

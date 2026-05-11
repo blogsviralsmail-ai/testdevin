@@ -24,6 +24,8 @@ interface Program {
 interface UserSession { id: string; role: string; }
 
 export default function ProgramsPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [programs, setPrograms] = useState<Program[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -112,6 +114,26 @@ export default function ProgramsPage() {
     exportToPDF("Programs", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === programs.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(programs.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} programs?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_programs", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchPrograms();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -125,6 +147,15 @@ export default function ProgramsPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-slate-400 text-sm">Manage your internship programs</p>
         </div>
         {isAdmin && (
@@ -216,8 +247,9 @@ export default function ProgramsPage() {
           programs.map((program) => {
             const totalStudents = program.batches.reduce((sum, b) => sum + b._count.enrollments, 0);
             return (
-              <div key={program.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border border-white/[0.06] card-hover">
-                <div className="flex items-start justify-between">
+              <div key={program.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border border-white/[0.06] card-hover relative">
+                <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(program.id)} onChange={() => toggleSelect(program.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
+                <div className="flex items-start justify-between pl-6">
                   {program.thumbnail && (
                     <img src={program.thumbnail} alt={program.title} className="w-16 h-16 object-cover rounded-lg mr-4 flex-shrink-0" />
                   )}

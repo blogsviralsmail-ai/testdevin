@@ -38,6 +38,8 @@ const typeIcons: Record<string, string> = {
 };
 
 export default function ResourcesPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [resources, setResources] = useState<Resource[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [user, setUser] = useState<UserSession | null>(null);
@@ -148,6 +150,7 @@ export default function ResourcesPage() {
 
   const ResourceRow = ({ resource }: { resource: Resource }) => (
     <div className="px-6 py-4 flex items-center justify-between hover:bg-transparent transition">
+      <label className="cursor-pointer mr-2"><input type="checkbox" checked={selectedIds.has(resource.id)} onChange={() => toggleSelect(resource.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <span className="text-2xl">{typeIcons[resource.type] || "📎"}</span>
         <div className="min-w-0">
@@ -173,6 +176,26 @@ export default function ResourcesPage() {
     </div>
   );
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === resources.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(resources.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} resources?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_resources", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -180,6 +203,15 @@ export default function ResourcesPage() {
           <h1 className="text-2xl font-bold text-white">
             {isStudent ? "Study Material" : "Learning Resources"}
           </h1>
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-slate-400 text-sm">
             {isStudent
               ? "Day-wise study materials — complete each day sequentially like office attendance"

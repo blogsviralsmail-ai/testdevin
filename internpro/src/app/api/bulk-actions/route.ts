@@ -71,6 +71,159 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    case "bulk_delete_enrollments": {
+      for (const id of ids) {
+        await prisma.enrollment.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "enrollment", undefined, `Deleted ${count} enrollments`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_users": {
+      for (const id of ids) {
+        await prisma.user.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "user", undefined, `Deleted ${count} users`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_programs": {
+      for (const id of ids) {
+        await prisma.program.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "program", undefined, `Deleted ${count} programs`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_holidays": {
+      for (const id of ids) {
+        await prisma.holiday.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "holiday", undefined, `Deleted ${count} holidays`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_announcements": {
+      for (const id of ids) {
+        await prisma.announcement.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "announcement", undefined, `Deleted ${count} announcements`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_discussions": {
+      for (const id of ids) {
+        await prisma.discussion.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "discussion", undefined, `Deleted ${count} discussions`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_jobs": {
+      for (const id of ids) {
+        await prisma.jobPosting.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "job", undefined, `Deleted ${count} jobs`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_testimonials": {
+      for (const id of ids) {
+        await prisma.testimonial.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "testimonial", undefined, `Deleted ${count} testimonials`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_campaigns": {
+      for (const id of ids) {
+        await prisma.emailCampaign.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "campaign", undefined, `Deleted ${count} campaigns`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_sessions": {
+      for (const id of ids) {
+        await prisma.liveSession.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "liveSession", undefined, `Deleted ${count} live sessions`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_leaves": {
+      for (const id of ids) {
+        await prisma.leaveRequest.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "leaveRequest", undefined, `Deleted ${count} leave requests`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_tasks": {
+      for (const id of ids) {
+        await prisma.task.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "task", undefined, `Deleted ${count} tasks`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_resources": {
+      for (const id of ids) {
+        await prisma.resource.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "resource", undefined, `Deleted ${count} resources`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_quizzes": {
+      for (const id of ids) {
+        await prisma.quiz.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "quiz", undefined, `Deleted ${count} quizzes`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_salaries": {
+      for (const id of ids) {
+        await prisma.salary.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "salary", undefined, `Deleted ${count} salary records`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_submissions": {
+      for (const id of ids) {
+        await prisma.submission.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "submission", undefined, `Deleted ${count} submissions`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_templates": {
+      for (const id of ids) {
+        await prisma.offerLetterTemplate.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "template", undefined, `Deleted ${count} templates`, session.id, session.name);
+      break;
+    }
+
     default:
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }

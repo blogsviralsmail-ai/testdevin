@@ -7,6 +7,8 @@ interface Discussion { id: string; title: string; content: string; category: str
 interface Program { id: string; title: string; }
 
 export default function DiscussionsPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [user, setUser] = useState<{ id: string; role: string } | null>(null);
@@ -78,6 +80,26 @@ export default function DiscussionsPage() {
     fetchData();
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === discussions.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(discussions.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} discussions?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_discussions", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
+
   if (viewingId && detail) {
     return (
       <div className="space-y-4">
@@ -87,7 +109,7 @@ export default function DiscussionsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold">{detail.title}</h1>
-{detail.isResolved && <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">Resolved</span>}
+                {detail.isResolved && <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">Resolved</span>}
               </div>
               <p className="text-xs text-slate-500 mt-1">by {detail.author.name} ({detail.author.role}) &middot; {new Date(detail.createdAt).toLocaleDateString()}</p>
             </div>
@@ -131,7 +153,6 @@ export default function DiscussionsPage() {
     );
   }
 
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -163,6 +184,16 @@ export default function DiscussionsPage() {
           <button onClick={() => { const data = discussions as unknown as Record<string, unknown>[]; if (!data.length) return; exportToPDF("Discussions", buildTableHTML(data, [{ key: "title", label: "Title" }, { key: "category", label: "Category" }, { key: "replyCount", label: "Replies" }, { key: "createdAt", label: "Created" }])); }} className="px-3 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-medium hover:bg-red-500/30 flex items-center gap-1">PDF</button>
         </div>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
 
       {/* Create Form */}
       {showForm && (
@@ -214,7 +245,8 @@ export default function DiscussionsPage() {
       ) : (
         <div className="space-y-3">
           {discussions.filter(d => !searchQuery.trim() || d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.content.toLowerCase().includes(searchQuery.toLowerCase())).map(d => (
-            <div key={d.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border hover:shadow-none transition-shadow">
+            <div key={d.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border hover:shadow-none transition-shadow relative">
+            <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(d.id)} onChange={() => toggleSelect(d.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
               <div className="flex items-start justify-between">
                 <div className="flex-1 cursor-pointer" onClick={() => viewDiscussion(d.id)}>
                   <div className="flex items-center gap-2">

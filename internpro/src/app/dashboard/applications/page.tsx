@@ -44,6 +44,8 @@ interface Enrollment {
 
 export default function ApplicationsPage() {
   const router = useRouter();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [filter, setFilter] = useState("applied");
@@ -195,6 +197,26 @@ export default function ApplicationsPage() {
     exportToPDF("Applications", buildTableHTML(data as Record<string, unknown>[], cols));
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === enrollments.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(enrollments.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} applications?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_enrollments", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchApplications();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -208,6 +230,15 @@ export default function ApplicationsPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
           <p className="text-slate-400">Review student applications, documents, and schedule interviews</p>
         </div>
       </div>
@@ -517,8 +548,9 @@ export default function ApplicationsPage() {
       ) : (
         <div className="grid gap-4">
           {enrollments.filter(e => { if (!searchQuery.trim()) return true; const q = searchQuery.toLowerCase(); return e.student.name.toLowerCase().includes(q) || e.student.email.toLowerCase().includes(q) || (e.student.phone && e.student.phone.includes(q)) || e.batch.program.title.toLowerCase().includes(q); }).map((e) => (
-            <div key={e.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition">
-              <div className="flex items-start justify-between">
+            <div key={e.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition relative">
+              <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(e.id)} onChange={() => toggleSelect(e.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
+              <div className="flex items-start justify-between pl-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-[#0EA5B8]/10 flex items-center justify-center text-sm font-bold text-[#22d3ee] shrink-0 overflow-hidden">
                     {e.student.avatar ? (
