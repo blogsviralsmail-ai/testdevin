@@ -14,9 +14,9 @@ export async function getRolePermissions(roleName: string): Promise<string[]> {
   });
 
   if (!role) {
-    // Fallback: admin/organization get all, others get basic
+    // No Role record yet — return empty so layout falls back to role-based filtering only
     if (roleName === "admin" || roleName === "organization") return ["*"];
-    return ["dashboard.view"];
+    return [];
   }
 
   const perms = role.permissions.map(p => p.permission);
