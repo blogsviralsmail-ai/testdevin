@@ -188,7 +188,7 @@ export default function OfferLetterPage() {
                       View
                     </button>
                     <button onClick={() => handlePrint(letter.htmlContent || "", letter.letterNumber)}
-                      className="px-4 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200">
+                      className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm hover:bg-white/20 font-medium">
                       Print
                     </button>
                   </div>
@@ -231,7 +231,7 @@ export default function OfferLetterPage() {
                       View
                     </button>
                     <button onClick={() => handlePrint(letter.htmlContent || "", letter.letterNumber)}
-                      className="px-4 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200">
+                      className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm hover:bg-white/20 font-medium">
                       Print
                     </button>
                   </div>

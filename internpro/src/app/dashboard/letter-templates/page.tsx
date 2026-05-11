@@ -135,11 +135,11 @@ export default function LetterTemplatesPage() {
       {/* Type Tabs */}
       <div className="flex gap-3 mb-6">
         <button onClick={() => { setActiveTab("offer"); setShowAdd(false); setEditing(null); }}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "offer" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-gray-200"}`}>
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "offer" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-white/10"}`}>
           Offer Letter Templates
         </button>
         <button onClick={() => { setActiveTab("experience"); setShowAdd(false); setEditing(null); }}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "experience" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-gray-200"}`}>
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "experience" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-white/10"}`}>
           Experience Letter Templates
         </button>
       </div>
@@ -174,7 +174,7 @@ export default function LetterTemplatesPage() {
             <button type="submit" className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
               Save Template
             </button>
-            <button type="button" onClick={() => setPreview(!preview)} className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">
+            <button type="button" onClick={() => setPreview(!preview)} className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-white/10">
               {preview ? "Hide Preview" : "Preview"}
             </button>
           </div>
@@ -207,7 +207,7 @@ export default function LetterTemplatesPage() {
             <button onClick={handleUpdate} className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
               Save Changes
             </button>
-            <button onClick={() => setPreview(!preview)} className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">
+            <button onClick={() => setPreview(!preview)} className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-white/10">
               {preview ? "Hide Preview" : "Preview"}
             </button>
           </div>

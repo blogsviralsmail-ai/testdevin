@@ -193,7 +193,7 @@ export default function StudentsPage() {
             <button
               key={s}
               onClick={() => setFilter(s)}
-              className={`text-xs px-3 py-1.5 rounded-lg transition ${filter === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-gray-200"}`}
+              className={`text-xs px-3 py-1.5 rounded-lg transition ${filter === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-white/10"}`}
             >
               {s === "" ? "All" : s.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
             </button>
@@ -340,7 +340,7 @@ export default function StudentsPage() {
               <button onClick={handleEditSave} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2]">
                 Save Changes
               </button>
-              <button onClick={() => { setEditModal(null); setEditError(""); }} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+              <button onClick={() => { setEditModal(null); setEditError(""); }} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -368,7 +368,7 @@ export default function StudentsPage() {
                 </button>
               ))}
             </div>
-            <button onClick={() => setTransferModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+            <button onClick={() => setTransferModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
               Cancel
             </button>
           </div>
@@ -426,7 +426,7 @@ export default function StudentsPage() {
                 <div><span className="text-slate-500 text-xs">Work Timing</span><p className="font-medium text-white">{viewProfile.workTiming || "—"}</p></div>
               </div>
             </div>
-            <button onClick={() => setViewProfile(null)} className="mt-5 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+            <button onClick={() => setViewProfile(null)} className="mt-5 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
               Close
             </button>
           </div>

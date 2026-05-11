@@ -199,8 +199,8 @@ export default function LettersPage() {
                 </button>
               )}
               <button onClick={() => setViewingLetter(null)}
-                className="px-4 py-1.5 bg-gray-200 text-slate-300 rounded text-sm hover:bg-gray-300">
-                Close
+                className="px-4 py-1.5 bg-red-500/20 border border-red-500/40 text-red-400 rounded text-sm hover:bg-red-500/30 font-medium">
+                ✕ Close
               </button>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function LettersPage() {
             {searchQuery && (
               <button
                 onClick={() => { setSearchQuery(""); fetchLetters(); }}
-                className="px-4 py-2 bg-transparent text-slate-400 rounded-lg text-sm hover:bg-gray-200 transition"
+                className="px-4 py-2 bg-white/10 border border-white/20 text-slate-300 rounded-lg text-sm hover:bg-white/20 transition"
               >
                 Clear
               </button>
@@ -359,7 +359,7 @@ export default function LettersPage() {
                   <button
                     onClick={() => viewCertificate(r.enrollmentId, r.studentName)}
                     disabled={generatingCert === r.enrollmentId}
-                    className="px-4 py-2 bg-transparent0 text-white rounded-lg text-sm hover:bg-yellow-600 transition disabled:opacity-50"
+                    className="px-4 py-2 bg-yellow-600/80 text-white rounded-lg text-sm hover:bg-yellow-600 transition disabled:opacity-50"
                   >
                     {generatingCert === r.enrollmentId ? "Generating..." : "Generate Certificate"}
                   </button>

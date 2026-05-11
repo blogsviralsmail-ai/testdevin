@@ -440,7 +440,7 @@ export default function TasksPage() {
                           isUrgent: task.isUrgent,
                         });
                       }}
-                        className="text-xs px-3 py-1 rounded bg-transparent text-slate-300 hover:bg-gray-200">
+                        className="text-xs px-3 py-1 rounded bg-transparent text-slate-300 hover:bg-white/10">
                         Edit
                       </button>
                       <button onClick={() => handleDeleteTask(task.id)}
@@ -507,7 +507,7 @@ export default function TasksPage() {
                 <p>Submissions: {viewTaskModal._count.submissions}</p>
               </div>
             </div>
-            <button onClick={() => setViewTaskModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">Close</button>
+            <button onClick={() => setViewTaskModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">Close</button>
           </div>
         </div>
       )}
@@ -547,7 +547,7 @@ export default function TasksPage() {
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={handleEditTask} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2]">Save</button>
-              <button onClick={() => setEditTaskModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button onClick={() => setEditTaskModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">Cancel</button>
             </div>
           </div>
         </div>

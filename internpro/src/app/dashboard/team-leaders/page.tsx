@@ -164,7 +164,7 @@ export default function TeamLeadersPage() {
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={handleEdit} className="flex-1 bg-[#0EA5B8] text-white px-4 py-2 rounded-lg hover:bg-[#0891b2]">Save</button>
-              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">Cancel</button>
             </div>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function TeamLeadersPage() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setAssignModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+            <button onClick={() => setAssignModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
               Done
             </button>
           </div>
@@ -232,7 +232,7 @@ export default function TeamLeadersPage() {
                 </div>
               );
             })()}
-            <button onClick={() => setAssignStudentModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+            <button onClick={() => setAssignStudentModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
               Done
             </button>
           </div>

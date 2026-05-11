@@ -283,7 +283,7 @@ export default function InterviewsPage() {
               <button onClick={handleSelect} className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-green-700 font-medium">
                 Select & Generate Offer Letter
               </button>
-              <button onClick={() => setSelectingId(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setSelectingId(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -354,7 +354,7 @@ export default function InterviewsPage() {
               <button onClick={handleEditEnrollment} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2] font-medium">
                 Save Changes
               </button>
-              <button onClick={() => setEditEnrollment(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setEditEnrollment(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -379,7 +379,7 @@ export default function InterviewsPage() {
               <button onClick={handleUpdateMeetLink} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2]">
                 Save Link
               </button>
-              <button onClick={() => setEditMeetLink(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setEditMeetLink(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -469,7 +469,7 @@ export default function InterviewsPage() {
                   </div>
                 )}
               </div>
-              <button onClick={() => { setViewDetails(null); setStudentDocs(null); }} className="w-full py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200 font-medium">Close</button>
+              <button onClick={() => { setViewDetails(null); setStudentDocs(null); }} className="w-full py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10 font-medium">Close</button>
             </div>
           </div>
         </div>
@@ -589,11 +589,11 @@ export default function InterviewsPage() {
                         Select
                       </button>
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "shortlisted")}
-                        className="px-3 py-1.5 bg-transparent0 text-white text-xs rounded-lg hover:bg-yellow-600">
+                        className="px-3 py-1.5 bg-yellow-500 text-white text-xs rounded-lg hover:bg-yellow-600">
                         Shortlist
                       </button>
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "rejected")}
-                        className="px-3 py-1.5 bg-transparent0 text-white text-xs rounded-lg hover:bg-red-600">
+                        className="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600">
                         Reject
                       </button>
                     </div>
@@ -605,12 +605,12 @@ export default function InterviewsPage() {
                         Select
                       </button>
                       <button onClick={() => handleResult(i.id, i.enrollment.id, "rejected")}
-                        className="px-3 py-1.5 bg-transparent0 text-white text-xs rounded-lg hover:bg-red-600">
+                        className="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600">
                         Reject
                       </button>
                     </div>
                   )}
-                  <button onClick={() => { setViewDetails(i); fetch(`/api/documents?userId=${i.enrollment.studentId}`).then(r => r.ok ? r.json() : []).then(d => setStudentDocs({ documents: Array.isArray(d) ? d : [] })).catch(() => setStudentDocs({ documents: [] })); }} className="px-3 py-1.5 bg-[#0EA5B8]/10 text-[#22d3ee] text-xs rounded-lg hover:bg-indigo-200 font-medium mt-1">
+                  <button onClick={() => { setViewDetails(i); fetch(`/api/documents?userId=${i.enrollment.studentId}`).then(r => r.ok ? r.json() : []).then(d => setStudentDocs({ documents: Array.isArray(d) ? d : [] })).catch(() => setStudentDocs({ documents: [] })); }} className="px-3 py-1.5 bg-[#0EA5B8]/10 text-[#22d3ee] text-xs rounded-lg hover:bg-[#0EA5B8]/20 font-medium mt-1">
                     👁 View Details
                   </button>
                   {i.result === "selected" && (
@@ -620,7 +620,7 @@ export default function InterviewsPage() {
                       workTiming: "9:30 AM - 6:30 PM", joiningDate: getNextDay(),
                       feeType: "stipend", feeAmount: "0", stipendAmount: "5000",
                     })}
-                      className="px-3 py-1.5 bg-[#0EA5B8]/10 text-[#22d3ee] text-xs rounded-lg hover:bg-indigo-200 mt-2">
+                      className="px-3 py-1.5 bg-[#0EA5B8]/10 text-[#22d3ee] text-xs rounded-lg hover:bg-[#0EA5B8]/20 mt-2">
                       Edit Details
                     </button>
                   )}

@@ -267,7 +267,7 @@ export default function CourseContentPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 ml-3">
-                {res.url && <a href={res.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs bg-transparent text-slate-400 rounded-lg hover:bg-gray-200">Open</a>}
+                {res.url && <a href={res.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs bg-transparent text-slate-400 rounded-lg hover:bg-white/10">Open</a>}
                 <button onClick={() => { setEditRes(res); setEditResForm({ title: res.title, type: res.type, url: res.url, fileUrl: res.fileUrl || "", dayNumber: res.dayNumber?.toString() || "", order: res.order.toString(), batchId: res.batchId }); }}
                   className="px-3 py-1.5 text-xs bg-transparent text-[#60a5fa] rounded-lg hover:bg-blue-500/10">Edit</button>
                 <button onClick={() => deleteResource(res.id)} className="px-3 py-1.5 text-xs bg-transparent text-red-400 rounded-lg hover:bg-red-500/10">Delete</button>

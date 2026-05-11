@@ -81,8 +81,8 @@ export default function AttendanceAnalyticsPage() {
               </div>
 
               {/* Attendance bar */}
-              <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-                <div className={`h-2 rounded-full ${p.attendanceRate >= 80 ? "bg-transparent0" : p.attendanceRate >= 50 ? "bg-transparent0" : "bg-transparent0"}`} style={{ width: `${p.attendanceRate}%` }} />
+              <div className="mt-3 w-full bg-white/10 rounded-full h-2">
+                <div className={`h-2 rounded-full ${p.attendanceRate >= 80 ? "bg-emerald-500" : p.attendanceRate >= 50 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${p.attendanceRate}%` }} />
               </div>
             </div>
 

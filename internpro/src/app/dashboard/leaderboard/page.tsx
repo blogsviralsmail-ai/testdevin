@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
         <div className="flex gap-2">
           {["all", "monthly", "weekly"].map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${period === p ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-gray-200"}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${period === p ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-white/10"}`}>
               {p === "all" ? "All Time" : p === "monthly" ? "This Month" : "This Week"}
             </button>
           ))}

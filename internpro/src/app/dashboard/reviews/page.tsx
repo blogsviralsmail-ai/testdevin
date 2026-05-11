@@ -272,7 +272,7 @@ export default function ReviewsPage() {
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => setViewWork(sub)}
-                        className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition"
+                        className="bg-transparent text-slate-300 px-4 py-2 rounded-lg text-sm hover:bg-white/10 transition"
                       >
                         View Work
                       </button>

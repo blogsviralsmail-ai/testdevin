@@ -181,7 +181,7 @@ export default function AttendancePage() {
                         <button
                           key={s}
                           onClick={() => markAttendance(enrollment.id, s)}
-                          className={`text-xs px-2 py-1 rounded transition capitalize ${existing?.status === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-gray-200"}`}
+                          className={`text-xs px-2 py-1 rounded transition capitalize ${existing?.status === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-white/10"}`}
                         >
                           {s}
                         </button>

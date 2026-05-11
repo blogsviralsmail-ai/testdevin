@@ -36,7 +36,7 @@ export default function PublicQuizzesPage() {
             <h2 className="text-2xl font-bold mt-4">{result.passed ? "Congratulations! You Passed!" : "Better Luck Next Time"}</h2>
             <p className="text-4xl font-bold mt-4 text-indigo-600">{Math.round(result.score)}%</p>
             <p className="text-sm text-gray-500 mt-2">Passing Score: {quizDetail.passingScore}%</p>
-            <button onClick={() => { setActiveQuiz(null); setQuizDetail(null); setResult(null); }} className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg">Back to Quizzes</button>
+            <button onClick={() => { setActiveQuiz(null); setQuizDetail(null); setResult(null); }} className="mt-6 px-6 py-2 bg-[#0EA5B8] text-white rounded-lg">Back to Quizzes</button>
           </div>
         </div>
       );
@@ -62,7 +62,7 @@ export default function PublicQuizzesPage() {
               </div>
             </div>
           ))}
-          <button onClick={submitQuiz} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">Submit Quiz</button>
+          <button onClick={submitQuiz} className="w-full py-3 bg-[#0EA5B8] text-white rounded-lg font-medium hover:bg-[#0891b2]">Submit Quiz</button>
         </div>
       </div>
     );
@@ -85,7 +85,7 @@ export default function PublicQuizzesPage() {
                 {quiz.timeLimit && <span>⏱ {quiz.timeLimit} min</span>}
                 <span>🎯 Pass: {quiz.passingScore}%</span>
               </div>
-              <button onClick={() => startQuiz(quiz.id)} className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 w-full">Start Quiz</button>
+              <button onClick={() => startQuiz(quiz.id)} className="mt-4 px-4 py-2 bg-[#0EA5B8] text-white text-sm rounded-lg hover:bg-[#0891b2] w-full">Start Quiz</button>
             </div>
           ))}
         </div>

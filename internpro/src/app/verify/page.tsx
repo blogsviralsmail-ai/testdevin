@@ -81,7 +81,7 @@ export default function VerifySearchPage() {
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-[#0EA5B8] text-white rounded-lg text-sm font-medium hover:bg-[#0891b2] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Searching..." : "Verify"}
             </button>

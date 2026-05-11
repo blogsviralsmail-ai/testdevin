@@ -68,7 +68,7 @@ export default function AgentsPage() {
           <h2 className="font-semibold mb-2">Your Referral Link</h2>
           <div className="flex gap-2">
             <input readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${agent.referralCode}`} className="flex-1 px-3 py-2 bg-transparent border rounded-lg text-sm" />
-            <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/register?ref=${agent.referralCode}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${copied ? 'bg-transparent0 text-white scale-105 shadow-none' : 'bg-[#0EA5B8] text-white hover:bg-[#0891b2]'}`}>
+            <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/register?ref=${agent.referralCode}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${copied ? 'bg-emerald-500 text-white scale-105 shadow-none' : 'bg-[#0EA5B8] text-white hover:bg-[#0891b2]'}`}>
               {copied ? (<span className="flex items-center gap-1"><svg className="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Copied!</span>) : 'Copy Link'}
             </button>
           </div>

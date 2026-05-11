@@ -389,7 +389,7 @@ export default function ApplicationsPage() {
                 </button>
               )}
               <button onClick={() => setViewModal(null)}
-                className="px-4 py-2.5 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200 text-sm">
+                className="px-4 py-2.5 bg-transparent text-slate-300 rounded-lg hover:bg-white/10 text-sm">
                 Close
               </button>
             </div>
@@ -475,7 +475,7 @@ export default function ApplicationsPage() {
                 Schedule Interview
               </button>
               <button onClick={() => setScheduleModal(null)}
-                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -529,7 +529,7 @@ export default function ApplicationsPage() {
                 <div className="flex gap-2 shrink-0 flex-wrap justify-end">
                   <button
                     onClick={() => openViewModal(e)}
-                    className="px-4 py-2 bg-transparent text-slate-300 text-sm rounded-lg hover:bg-gray-200 font-medium"
+                    className="px-4 py-2 bg-transparent text-slate-300 text-sm rounded-lg hover:bg-white/10 font-medium"
                   >
                     View Details
                   </button>
@@ -600,7 +600,7 @@ export default function ApplicationsPage() {
                 Save Link
               </button>
               <button onClick={() => setEditLinkModal(null)}
-                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -634,7 +634,7 @@ export default function ApplicationsPage() {
                 Reject & Send Email
               </button>
               <button onClick={() => setRejectModal(null)}
-                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -677,7 +677,7 @@ export default function ApplicationsPage() {
                 Change Program
               </button>
               <button onClick={() => setChangeBatchModal(null)}
-                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+                className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>

@@ -117,9 +117,9 @@ export default function ProgressPage() {
                   <span>Day {p.currentWorkDay} of {p.totalDays}</span>
                   <span>{p.completionPercent}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-white/10 rounded-full h-3">
                   <div
-                    className={`h-3 rounded-full transition-all ${p.completionPercent >= 100 ? "bg-transparent0" : p.completionPercent >= 50 ? "bg-transparent0" : "bg-transparent0"}`}
+                    className={`h-3 rounded-full transition-all ${p.completionPercent >= 100 ? "bg-emerald-500" : p.completionPercent >= 50 ? "bg-amber-500" : "bg-red-500"}`}
                     style={{ width: `${Math.min(100, p.completionPercent)}%` }}
                   />
                 </div>

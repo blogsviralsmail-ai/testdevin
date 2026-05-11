@@ -141,7 +141,7 @@ export default function SupportPage() {
               <button onClick={handleReply} className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                 Reply & Resolve
               </button>
-              <button onClick={() => setReplyModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setReplyModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>

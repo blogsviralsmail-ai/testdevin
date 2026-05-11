@@ -288,9 +288,9 @@ export default function MyWorkPage() {
                   >
                     <span className="flex items-center gap-2">
                       {allDone && dTasks.length > 0 ? (
-                        <span className="w-5 h-5 rounded-full bg-transparent0 text-white text-xs flex items-center justify-center">&#10003;</span>
+                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-white text-xs flex items-center justify-center">&#10003;</span>
                       ) : isToday ? (
-                        <span className="w-5 h-5 rounded-full bg-transparent0 text-white text-xs flex items-center justify-center">&#9679;</span>
+                        <span className="w-5 h-5 rounded-full bg-[#0EA5B8] text-white text-xs flex items-center justify-center">&#9679;</span>
                       ) : (
                         <span className={`w-5 h-5 rounded-full border-2 text-xs flex items-center justify-center ${selectedDay === d ? "border-white" : "border-white/10"}`}>{d}</span>
                       )}
@@ -370,7 +370,7 @@ export default function MyWorkPage() {
           {/* STEP 2: Read Task */}
           <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
             <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-transparent0 text-white flex items-center justify-center text-sm font-bold">2</span>
+              <span className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold">2</span>
               <div>
                 <h3 className="font-semibold text-white">Today's Task</h3>
                 <p className="text-xs text-slate-500">Complete this task after watching the video</p>
@@ -469,7 +469,7 @@ export default function MyWorkPage() {
                               <button onClick={handleSubmitTask} disabled={submitting || !submitTask.content.trim()} className="flex-1 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm">
                                 {submitting ? "Submitting..." : "Submit &#10003;"}
                               </button>
-                              <button onClick={() => setSubmitTask(null)} className="px-4 py-2.5 bg-transparent text-slate-400 rounded-lg hover:bg-gray-200 text-sm">
+                              <button onClick={() => setSubmitTask(null)} className="px-4 py-2.5 bg-transparent text-slate-400 rounded-lg hover:bg-white/10 text-sm">
                                 Cancel
                               </button>
                             </div>
@@ -558,7 +558,7 @@ export default function MyWorkPage() {
                         <button onClick={submitQuiz} disabled={quizSubmitting || Object.keys(quizAnswers).length < quizQuestions.length} className="flex-1 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium">
                           {quizSubmitting ? "Submitting..." : "Submit Quiz"}
                         </button>
-                        <button onClick={() => setTakingQuiz(null)} className="px-6 py-3 bg-transparent text-slate-400 rounded-lg hover:bg-gray-200">
+                        <button onClick={() => setTakingQuiz(null)} className="px-6 py-3 bg-transparent text-slate-400 rounded-lg hover:bg-white/10">
                           Cancel
                         </button>
                       </div>

@@ -86,7 +86,7 @@ export default function UsersPage() {
           <button
             key={r}
             onClick={() => setFilter(r)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition ${filter === r ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-gray-200"}`}
+            className={`text-xs px-3 py-1.5 rounded-lg transition ${filter === r ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-white/10"}`}
           >
             {r === "" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
           </button>
@@ -157,7 +157,7 @@ export default function UsersPage() {
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={handleEdit} className="flex-1 bg-[#0EA5B8] text-white px-4 py-2 rounded-lg hover:bg-[#0891b2]">Save</button>
-              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button onClick={() => setEditUser(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">Cancel</button>
             </div>
           </div>
         </div>

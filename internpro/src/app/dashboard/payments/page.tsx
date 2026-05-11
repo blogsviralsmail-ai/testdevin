@@ -132,7 +132,7 @@ export default function PaymentsPage() {
           <button onClick={() => setActiveTab("pending")} className={`px-4 py-2 rounded-lg text-sm font-medium transition relative ${activeTab === "pending" ? "bg-amber-500 text-white" : "bg-transparent text-slate-400"}`}>
             Pending Approvals
             {pendingPayments.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-transparent0 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-pulse">{pendingPayments.length}</span>
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-pulse">{pendingPayments.length}</span>
             )}
           </button>
           <button onClick={() => setActiveTab("salaries")} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "salaries" ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400"}`}>

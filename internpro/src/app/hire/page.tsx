@@ -17,7 +17,7 @@ export default function HirePage() {
           <div className="flex gap-4">
             <Link href="/programs" className="text-sm text-gray-600 hover:text-indigo-600">Programs</Link>
             <Link href="/hire" className="text-sm text-indigo-600 font-medium">Hire Our Interns</Link>
-            <Link href="/login" className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg">Login</Link>
+            <Link href="/login" className="text-sm bg-[#0EA5B8] text-white px-4 py-2 rounded-lg">Login</Link>
           </div>
         </div>
       </nav>
@@ -40,7 +40,7 @@ export default function HirePage() {
                 <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">{job.type}</span>
               </div>
               {job.skills && <div className="flex flex-wrap gap-1">{job.skills.split(",").map((s, i) => <span key={i} className="text-[11px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded">{s.trim()}</span>)}</div>}
-              <Link href="/login" className="mt-4 block text-center w-full py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Apply Now</Link>
+              <Link href="/login" className="mt-4 block text-center w-full py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2]">Apply Now</Link>
             </div>
           ))}
         </div>

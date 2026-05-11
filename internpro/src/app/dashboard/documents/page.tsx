@@ -170,7 +170,7 @@ export default function DocumentsPage() {
           <div className="flex gap-2 flex-wrap">
             {["pending", "approved", "rejected", "all"].map(s => (
               <button key={s} onClick={() => setFilterStatus(s)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium ${filterStatus === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-gray-200"}`}>
+                className={`px-4 py-1.5 rounded-full text-sm font-medium ${filterStatus === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-300 hover:bg-white/10"}`}>
                 {s === "all" ? `All (${documents.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${documents.filter(d => d.status === s).length})`}
               </button>
             ))}

@@ -147,7 +147,7 @@ export default function ChatPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium truncate">{room.otherUser?.name || "User"}</span>
-                      {room.unread > 0 && <span className="w-5 h-5 bg-transparent0 text-white text-[10px] rounded-full flex items-center justify-center">{room.unread}</span>}
+                      {room.unread > 0 && <span className="w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{room.unread}</span>}
                     </div>
                     <p className="text-xs text-slate-500 truncate">{room.lastMessage}</p>
                   </div>

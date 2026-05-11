@@ -269,16 +269,16 @@ export default function IDCardsPage() {
               <div>
                 <p className="text-xs text-slate-500 text-center mb-2 font-semibold uppercase">Front</p>
                 <div className="rounded-[10px] overflow-hidden shadow-none flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
-                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-transparent0 rounded-l-[10px] z-10"></div>
+                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-red-600 rounded-l-[10px] z-10"></div>
                   <div className="absolute top-0 right-0 bottom-0 w-[6px] bg-blue-600 rounded-r-[10px] z-10"></div>
                   {/* Logo */}
                   <div className="text-center pt-3 pb-2 px-3 flex-shrink-0">
                     <img src={companyLogo} alt={companyName} className="h-7 mx-auto" />
-                    <div className="text-[7px] text-slate-700 font-bold mt-1 tracking-wide">{companyName}</div>
+                    <div className="text-[7px] text-[#1a365d] font-bold mt-1 tracking-wide">{companyName}</div>
                   </div>
                   {/* Photo */}
                   <div className="text-center py-1 flex-shrink-0">
-                    <div className="w-[80px] h-[80px] rounded-full border-[3px] border-blue-600 overflow-hidden bg-transparent inline-flex items-center justify-center">
+                    <div className="w-[80px] h-[80px] rounded-full border-[3px] border-blue-600 overflow-hidden bg-blue-50 inline-flex items-center justify-center">
                       {(previewCard.user.avatar || previewCard.photoUrl) ? (
                         <img src={previewCard.user.avatar || previewCard.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                       ) : (
@@ -288,16 +288,16 @@ export default function IDCardsPage() {
                   </div>
                   {/* Name + Designation */}
                   <div className="text-center px-3 py-1 flex-shrink-0">
-                    <div className="text-[12px] font-extrabold text-white leading-tight mb-1">{previewCard.user.name}</div>
+                    <div className="text-[12px] font-extrabold text-[#1a202c] leading-tight mb-1">{previewCard.user.name}</div>
                     <span className="inline-block bg-blue-600 text-white text-[7px] font-bold px-2.5 py-[2px] rounded-full uppercase tracking-wide">{previewCard.designation}</span>
                   </div>
                   {/* Info */}
                   <div className="flex-1 px-3.5 pt-1.5 pb-1">
-                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">ID No</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{previewCard.cardNumber}</span></div>
-                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">Email</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400 break-all">{previewCard.user.email}</span></div>
-                    {previewCard.user.phone && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">Phone</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{previewCard.user.phone}</span></div>}
-                    {previewCard.user.collegeName && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">College</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{previewCard.user.collegeName}</span></div>}
-                    {previewCard.user.dob && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-white w-[44px]">DOB</span><span className="mx-1 text-slate-500">:</span><span className="text-slate-400">{new Date(previewCard.user.dob).toLocaleDateString("en-IN")}</span></div>}
+                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-[#1a202c] w-[44px]">ID No</span><span className="mx-1 text-[#4a5568]">:</span><span className="text-[#4a5568]">{previewCard.cardNumber}</span></div>
+                    <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-[#1a202c] w-[44px]">Email</span><span className="mx-1 text-[#4a5568]">:</span><span className="text-[#4a5568] break-all">{previewCard.user.email}</span></div>
+                    {previewCard.user.phone && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-[#1a202c] w-[44px]">Phone</span><span className="mx-1 text-[#4a5568]">:</span><span className="text-[#4a5568]">{previewCard.user.phone}</span></div>}
+                    {previewCard.user.collegeName && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-[#1a202c] w-[44px]">College</span><span className="mx-1 text-[#4a5568]">:</span><span className="text-[#4a5568]">{previewCard.user.collegeName}</span></div>}
+                    {previewCard.user.dob && <div className="flex items-baseline mb-1 text-[8px]"><span className="font-extrabold text-[#1a202c] w-[44px]">DOB</span><span className="mx-1 text-[#4a5568]">:</span><span className="text-[#4a5568]">{new Date(previewCard.user.dob).toLocaleDateString("en-IN")}</span></div>}
                   </div>
                   {/* Barcode */}
                   <div className="text-center px-5 pb-2.5 flex-shrink-0">
@@ -310,33 +310,34 @@ export default function IDCardsPage() {
               <div>
                 <p className="text-xs text-slate-500 text-center mb-2 font-semibold uppercase">Back</p>
                 <div className="rounded-[10px] overflow-hidden shadow-none flex flex-col relative" style={{ width: "204px", height: "325px", background: "white" }}>
-                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-transparent0 rounded-l-[10px] z-10"></div>
+                  <div className="absolute top-0 left-0 bottom-0 w-[6px] bg-red-600 rounded-l-[10px] z-10"></div>
                   <div className="absolute top-0 right-0 bottom-0 w-[6px] bg-blue-600 rounded-r-[10px] z-10"></div>
                   {/* Logo */}
                   <div className="text-center pt-4 pb-2 px-3 flex-shrink-0">
                     <img src={companyLogo} alt={companyName} className="h-6 mx-auto" />
-                    <div className="text-[7px] text-slate-700 font-bold mt-1 tracking-wide">{companyName}</div>
+                    <div className="text-[7px] text-[#1a365d] font-bold mt-1 tracking-wide">{companyName}</div>
                   </div>
                   {/* Terms */}
                   <div className="flex-1 px-3.5">
-                    <div className="text-[10px] font-black text-white text-center uppercase mb-2 tracking-wide">Terms & Conditions</div>
-                    <p className="text-[7px] text-slate-400 leading-[1.5] mb-1.5"><strong className="text-white">Identification:</strong> Employees are required to keep their ID badge visible or easily accessible during working hours to confirm identity when needed.</p>
-                    <p className="text-[7px] text-slate-400 leading-[1.5] mb-1.5"><strong className="text-white">Proper Use:</strong> The ID badge is issued solely for company related activities. It may not be lent, duplicated, or used for any non-official purpose.</p>
-                    <p className="text-[7px] text-slate-400 leading-[1.5]"><strong className="text-white">Security:</strong> If the badge is misplaced or suspected to be compromised, report it immediately so access can be disabled.</p>
+                    <div className="text-[10px] font-black text-[#1a202c] text-center uppercase mb-2 tracking-wide">Terms & Conditions</div>
+                    <p className="text-[7px] text-[#4a5568] leading-[1.5] mb-1.5"><strong className="text-[#1a202c]">Identification:</strong> Employees are required to keep their ID badge visible or easily accessible during working hours to confirm identity when needed.</p>
+                    <p className="text-[7px] text-[#4a5568] leading-[1.5] mb-1.5"><strong className="text-[#1a202c]">Proper Use:</strong> The ID badge is issued solely for company related activities. It may not be lent, duplicated, or used for any non-official purpose.</p>
+                    <p className="text-[7px] text-[#4a5568] leading-[1.5]"><strong className="text-[#1a202c]">Security:</strong> If the badge is misplaced or suspected to be compromised, report it immediately so access can be disabled.</p>
                   </div>
                   {/* Footer */}
                   <div className="text-center px-3 pb-3 flex-shrink-0">
-                    <span className="inline-block bg-slate-800 text-white text-[8px] font-bold px-3.5 py-1 rounded-full">ID: {previewCard.cardNumber}</span>
-                    <div className="text-[7px] text-slate-500 mt-1.5">+91 7062010000 | {companyName}</div>
-                    <div className="text-[6px] text-slate-500 mt-0.5">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} - {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
+                    <span className="inline-block bg-[#1a365d] text-white text-[8px] font-bold px-3.5 py-1 rounded-full">ID: {previewCard.cardNumber}</span>
+                    <div className="text-[7px] text-[#4a5568] mt-1.5">+91 7062010000 | {companyName}</div>
+                    <div className="text-[6px] text-[#4a5568] mt-0.5">Valid: {new Date(previewCard.validFrom).toLocaleDateString("en-IN")} - {new Date(previewCard.validUntil).toLocaleDateString("en-IN")}</div>
                   </div>
                 </div>
               </div>
             </div>
             <div className="flex gap-3 mt-5 justify-center">
-              <button onClick={() => handlePrint(previewCard)} className="bg-[#0000AA] text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-900 font-medium">Print (Both Sides)</button>
+              <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm hover:bg-white/20 font-medium">← Back</button>
+              <button onClick={() => handlePrint(previewCard)} className="bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] font-medium">Print (Both Sides)</button>
               <button onClick={() => handlePrint(previewCard)} className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-red-700 font-medium">Download PDF</button>
-              <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200 font-medium">Close</button>
+              <button onClick={() => setPreviewCard(null)} className="px-5 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg text-sm hover:bg-red-500/30 font-medium">✕ Close</button>
             </div>
           </div>
         </div>
@@ -352,24 +353,24 @@ export default function IDCardsPage() {
         <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
           {cards.map((card) => (
             <div key={card.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border hover:shadow-none transition overflow-hidden">
-              <div className="bg-[#0000AA] text-white py-2 px-3 flex items-center justify-center gap-2 relative">
+              <div className="bg-[#0EA5B8] text-white py-2 px-3 flex items-center justify-center gap-2 relative">
                 <img src={companyLogo} alt={companyName} className="h-5" />
                 <span className="text-[8px] text-white/80 uppercase tracking-wide">{companyName}</span>
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#d32f2f]"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF6B6B]"></div>
               </div>
               <div className="p-4 flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-full border-2 border-[#0000AA] flex-shrink-0 bg-transparent flex items-center justify-center text-2xl overflow-hidden mb-2">
+                <div className="w-14 h-14 rounded-full border-2 border-[#0EA5B8] flex-shrink-0 bg-[#0EA5B8]/10 flex items-center justify-center text-2xl overflow-hidden mb-2">
                   {(card.user.avatar || card.photoUrl) ? (
                     <img src={card.user.avatar || card.photoUrl || ""} className="w-full h-full object-cover" alt="" />
                   ) : "👤"}
                 </div>
-                <div className="font-bold text-[#0000AA] text-sm uppercase truncate w-full">{card.user.name}</div>
-                <div className="text-[10px] text-[#d32f2f] font-bold uppercase">{card.designation}</div>
-                <div className="text-[9px] text-slate-500 mt-1">{card.cardNumber}</div>
+                <div className="font-bold text-white text-sm uppercase truncate w-full">{card.user.name}</div>
+                <div className="text-[10px] text-[#FF6B6B] font-bold uppercase">{card.designation}</div>
+                <div className="text-[9px] text-slate-400 mt-1">{card.cardNumber}</div>
               </div>
               <div className="px-4 pb-3 flex gap-2">
-                <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-transparent text-[#0000AA] px-3 py-1.5 rounded-lg hover:bg-blue-500/10 font-medium">View</button>
-                <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-transparent text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 font-medium">Print</button>
+                <button onClick={() => setPreviewCard(card)} className="flex-1 text-xs bg-[#0EA5B8]/10 text-[#22d3ee] border border-[#0EA5B8]/30 px-3 py-1.5 rounded-lg hover:bg-[#0EA5B8]/20 font-medium">View</button>
+                <button onClick={() => handlePrint(card)} className="flex-1 text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/20 font-medium">Print</button>
               </div>
             </div>
           ))}

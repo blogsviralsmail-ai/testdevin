@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md bg-white rounded-xl p-8 shadow-lg border">
         <div className="flex items-center gap-2 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">IP</div>
+          <div className="w-8 h-8 rounded-lg bg-[#0EA5B8] flex items-center justify-center text-white font-bold text-sm">IP</div>
           <span className="text-xl font-bold text-gray-900">InternPro</span>
         </div>
 
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
                   placeholder="you@example.com" required />
               </div>
               <button type="submit" disabled={loading}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50">
+                className="w-full bg-[#0EA5B8] text-white py-3 rounded-lg font-semibold hover:bg-[#0891b2] disabled:opacity-50">
                 {loading ? "Sending..." : "Send Reset Link"}
               </button>
             </form>

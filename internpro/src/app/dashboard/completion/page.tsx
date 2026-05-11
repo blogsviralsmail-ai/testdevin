@@ -260,7 +260,7 @@ export default function CompletionPage() {
               <button onClick={handleCategorize} className="flex-1 bg-[#0EA5B8] text-white px-4 py-2 rounded-lg hover:bg-[#0891b2]">
                 Save Category
               </button>
-              <button onClick={() => setCategorizeModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setCategorizeModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -293,7 +293,7 @@ export default function CompletionPage() {
               <button onClick={handleApprove} className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                 Approve & Generate Experience Letter
               </button>
-              <button onClick={() => setApproveModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-gray-200">
+              <button onClick={() => setApproveModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">
                 Cancel
               </button>
             </div>
@@ -384,7 +384,7 @@ export default function CompletionPage() {
                     w.document.close();
                   }
                 }} className="px-3 py-1.5 bg-[#0000AA] text-white rounded-lg text-xs hover:bg-blue-900">Print / PDF</button>
-                <button onClick={() => setViewingLetter(null)} className="px-3 py-1.5 bg-transparent text-slate-300 rounded-lg text-xs hover:bg-gray-200">Close</button>
+                <button onClick={() => setViewingLetter(null)} className="px-3 py-1.5 bg-transparent text-slate-300 rounded-lg text-xs hover:bg-white/10">Close</button>
               </div>
             </div>
             <div className="p-6">

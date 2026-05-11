@@ -100,7 +100,7 @@ export default function AnalyticsPage() {
               return (
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
                   <span className="text-xs font-medium">₹{(m.amount / 1000).toFixed(0)}k</span>
-                  <div className="w-full bg-transparent0 rounded-t" style={{ height: `${pct}%` }} />
+                  <div className="w-full bg-[#0EA5B8] rounded-t" style={{ height: `${pct}%` }} />
                   <span className="text-[10px] text-slate-500">{m.month.slice(5)}</span>
                 </div>
               );
@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
 
       {/* Export */}
       <div className="flex gap-3">
-        <button onClick={() => { const csv = "Metric,Value\n" + Object.entries(data.overview).map(([k, v]) => `${k},${v}`).join("\n"); const blob = new Blob([csv], { type: "text/csv" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "analytics-export.csv"; a.click(); }} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-gray-200">Export CSV</button>
+        <button onClick={() => { const csv = "Metric,Value\n" + Object.entries(data.overview).map(([k, v]) => `${k},${v}`).join("\n"); const blob = new Blob([csv], { type: "text/csv" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "analytics-export.csv"; a.click(); }} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg text-sm hover:bg-white/10">Export CSV</button>
       </div>
     </div>
   );
