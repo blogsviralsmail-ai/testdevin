@@ -48,18 +48,19 @@ export async function GET(request: NextRequest) {
       if (!isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       const enrollments = await prisma.enrollment.findMany({
         include: {
-          student: true,
+          student: { include: { referredBy: { include: { agent: { include: { user: { select: { name: true, email: true } } } } } } } },
           batch: { include: { program: { select: { title: true, domain: true, mode: true, duration: true, feeType: true, feeAmount: true } }, leader: { select: { name: true } } } },
           offerLetter: { select: { isAccepted: true, acceptedAt: true, letterNumber: true } },
         },
         orderBy: { createdAt: "desc" },
       });
 
-      headers = ["Employee ID", "Name", "Email", "Phone", "College", "Degree", "Year", "State", "Address", "DOB", "Program", "Domain", "Program Mode", "Program Duration (days)", "Program Fee Type", "Batch", "Batch Leader", "Status", "Fee Type", "Fee Amount", "Stipend Amount", "Salary", "Weekoffs", "Paid Leaves", "Work Timing", "Joining Date", "Preferred Mode", "Payment Status", "Current Work Day", "Admin Approved", "Admin Remarks", "TL Category", "TL Remarks", "Offer Letter #", "Offer Accepted", "Offer Accepted At", "Enrolled At", "Completed At", "Created At"];
+      headers = ["Employee ID", "Name", "Email", "Phone", "College", "Degree", "Year", "State", "Address", "DOB", "Program", "Domain", "Program Mode", "Program Duration (days)", "Program Fee Type", "Batch", "Batch Leader", "Referred By", "Referrer Email", "Referral Code", "Referral Status", "Status", "Fee Type", "Fee Amount", "Stipend Amount", "Salary", "Weekoffs", "Paid Leaves", "Work Timing", "Joining Date", "Preferred Mode", "Payment Status", "Current Work Day", "Admin Approved", "Admin Remarks", "TL Category", "TL Remarks", "Offer Letter #", "Offer Accepted", "Offer Accepted At", "Enrolled At", "Completed At", "Created At"];
       rows = enrollments.map(e => [
         e.student.employeeId || "", e.student.name, e.student.email, e.student.phone || "", e.student.collegeName || "", e.student.degree || "", e.student.year || "", e.student.state || "", e.student.address || "", formatDate(e.student.dob),
         e.batch.program.title, e.batch.program.domain, e.batch.program.mode, String(e.batch.program.duration), e.batch.program.feeType,
         e.batch.name, e.batch.leader?.name || "",
+        e.student.referredBy?.[0]?.agent?.user?.name || "", e.student.referredBy?.[0]?.agent?.user?.email || "", e.student.referredBy?.[0]?.agent?.referralCode || "", e.student.referredBy?.[0]?.status || "",
         e.status, e.feeType || "", String(e.feeAmount || ""), String(e.stipendAmount || ""), String(e.salary || ""), String(e.weekoffs || ""), String(e.paidLeaves || ""), e.workTiming || "", formatDate(e.joiningDate), e.preferredMode || "", e.paymentStatus, String(e.currentWorkDay),
         e.adminApproved ? "Yes" : "No", e.adminRemarks || "", e.teamLeaderCategory || "", e.teamLeaderRemarks || "",
         e.offerLetter?.letterNumber || "", e.offerLetter?.isAccepted ? "Yes" : "No", formatDateTime(e.offerLetter?.acceptedAt),
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
         employeeId: e.student.employeeId || "", name: e.student.name, email: e.student.email, phone: e.student.phone || "", college: e.student.collegeName || "", degree: e.student.degree || "", year: e.student.year || "", state: e.student.state || "", address: e.student.address || "", dob: formatDate(e.student.dob),
         program: e.batch.program.title, domain: e.batch.program.domain, programMode: e.batch.program.mode, programDuration: e.batch.program.duration, programFeeType: e.batch.program.feeType,
         batch: e.batch.name, batchLeader: e.batch.leader?.name || "",
+        referredBy: e.student.referredBy?.[0]?.agent?.user?.name || "", referrerEmail: e.student.referredBy?.[0]?.agent?.user?.email || "", referralCode: e.student.referredBy?.[0]?.agent?.referralCode || "", referralStatus: e.student.referredBy?.[0]?.status || "",
         status: e.status, feeType: e.feeType || "", feeAmount: e.feeAmount || 0, stipendAmount: e.stipendAmount || 0, salary: e.salary || 0, weekoffs: e.weekoffs || 0, paidLeaves: e.paidLeaves || 0, workTiming: e.workTiming || "", joiningDate: formatDate(e.joiningDate), preferredMode: e.preferredMode || "", paymentStatus: e.paymentStatus, currentWorkDay: e.currentWorkDay,
         adminApproved: e.adminApproved ? "Yes" : "No", adminRemarks: e.adminRemarks || "", tlCategory: e.teamLeaderCategory || "", tlRemarks: e.teamLeaderRemarks || "",
         offerLetterNumber: e.offerLetter?.letterNumber || "", offerAccepted: e.offerLetter?.isAccepted ? "Yes" : "No", offerAcceptedAt: formatDateTime(e.offerLetter?.acceptedAt),
