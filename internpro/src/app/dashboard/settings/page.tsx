@@ -1252,6 +1252,12 @@ export default function SettingsPage() {
                   className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="919782005500" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
                 <p className="text-xs text-slate-500 mt-1">Leave empty to hide WhatsApp button. Format: 91XXXXXXXXXX (no +, no spaces)</p>
               </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-slate-300 mb-1">Default WhatsApp Message</label>
+                <textarea value={settings.whatsapp_message || "Hi Sir,\nI am interested in internship in your company."} onChange={(e) => updateSetting("whatsapp_message", e.target.value)}
+                  rows={3} className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Hi Sir, I am interested in internship in your company." style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                <p className="text-xs text-slate-500 mt-1">This message will be pre-filled when visitor clicks WhatsApp button</p>
+              </div>
             </div>
 
             <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>

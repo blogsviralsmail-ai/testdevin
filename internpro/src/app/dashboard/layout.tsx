@@ -66,7 +66,6 @@ const navItems = [
   { href: "/dashboard/role-management", label: "Role Management", icon: "🛡️", roles: ["admin"] },
   { href: "/dashboard/team-members", label: "Team Members", icon: "👥", roles: ["admin"] },
   { href: "/dashboard/inquiries", label: "Contact Inquiries", icon: "📩", roles: ["admin"] },
-  { href: "/dashboard/site-content", label: "Site Content", icon: "🌐", roles: ["admin"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
 

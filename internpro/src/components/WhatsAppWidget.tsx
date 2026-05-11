@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from "react";
 
+const DEFAULT_MSG = "Hi Sir,\nI am interested in internship in your company.";
+
 export default function WhatsAppWidget() {
   const [number, setNumber] = useState("");
+  const [message, setMessage] = useState(DEFAULT_MSG);
 
   useEffect(() => {
     fetch("/api/settings/public").then(r => r.ok ? r.json() : {}).then((d: Record<string, string>) => {
       if (d.whatsapp_number) setNumber(d.whatsapp_number);
+      if (d.whatsapp_message) setMessage(d.whatsapp_message);
     }).catch(() => {});
   }, []);
 
@@ -15,7 +19,7 @@ export default function WhatsAppWidget() {
 
   return (
     <a
-      href={`https://wa.me/${number}`}
+      href={`https://wa.me/${number}?text=${encodeURIComponent(message)}`}
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-1"
