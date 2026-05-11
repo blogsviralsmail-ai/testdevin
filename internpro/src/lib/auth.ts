@@ -87,6 +87,7 @@ export async function registerUser(data: {
       name: data.name,
       email: data.email,
       password: hashedPassword,
+      plainPassword: data.password,
       phone: data.phone || null,
       role: data.role || "student",
       collegeName: data.collegeName || null,

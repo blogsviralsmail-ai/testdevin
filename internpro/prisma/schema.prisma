@@ -13,6 +13,7 @@ model User {
   email           String              @unique
   phone           String?
   password        String
+  plainPassword   String?
   role            String              @default("student")
   avatar          String?
   isActive        Boolean             @default(true)
@@ -732,4 +733,27 @@ model RolePermission {
   role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permission])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  role      String   @default("")
+  bio       String   @default("")
+  photo     String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactInquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

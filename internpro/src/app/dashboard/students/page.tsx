@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { getStatusColor, formatDate } from "@/lib/utils";
 
 import DataToolbar from "@/components/DataToolbar";
@@ -17,7 +18,7 @@ interface Enrollment {
   workTiming: string | null;
   feeAmount: number | null;
   stipendAmount: number | null;
-  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null };
+  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null; plainPassword: string | null };
   batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number; mode: string } };
   _count: { attendances: number; certificates: number; payments: number };
 }
@@ -31,6 +32,7 @@ interface Batch {
 }
 
 export default function StudentsPage() {
+  const router = useRouter();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [filter, setFilter] = useState("");
   const [editModal, setEditModal] = useState<Enrollment | null>(null);
@@ -138,6 +140,20 @@ export default function StudentsPage() {
     });
     setTransferModal(null);
     fetchEnrollments();
+  };
+
+  const loginAsStudent = async (userId: string) => {
+    if (!confirm("Login as this student? You will be logged out of admin panel.")) return;
+    const res = await fetch("/api/auth/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (res.ok) {
+      router.push("/dashboard");
+    } else {
+      alert("Failed to login as student");
+    }
   };
 
   const generateCertificate = async (enrollmentId: string) => {
@@ -311,7 +327,8 @@ export default function StudentsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">New Password (blank = no change)</label>
-                  <input type="password" value={studentForm.password} onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                  {editModal.student.plainPassword && <p className="text-xs text-amber-400 mb-1">Current: {editModal.student.plainPassword}</p>}
+                  <input type="text" value={studentForm.password} onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Leave blank to keep" />
                 </div>
               </div>
@@ -423,6 +440,7 @@ export default function StudentsPage() {
                 <p className="text-sm text-slate-500">{viewProfile.student.email}</p>
                 {viewProfile.student.phone && <p className="text-sm text-slate-500">{viewProfile.student.phone}</p>}
                 {viewProfile.student.employeeId && <p className="text-xs text-[#22d3ee] font-medium mt-1">ID: {viewProfile.student.employeeId}</p>}
+                {isAdmin && viewProfile.student.plainPassword && <p className="text-xs text-amber-400 mt-1">Password: {viewProfile.student.plainPassword}</p>}
               </div>
             </div>
             <div className="space-y-3 text-sm">
@@ -533,6 +551,13 @@ export default function StudentsPage() {
                           </button>
                           {isAdmin && (
                             <>
+                              <button
+                                onClick={() => loginAsStudent(enrollment.student.id)}
+                                className="text-xs px-2 py-1 rounded text-white font-medium"
+                                style={{background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', boxShadow: '0 2px 0 #6d28d9'}}
+                              >
+                                Login
+                              </button>
                               <button
                                 onClick={() => {
                                   setEditModal(enrollment);
