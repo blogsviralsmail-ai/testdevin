@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Program {
   id: string;
@@ -19,249 +19,419 @@ interface Program {
   _count: { batches: number };
 }
 
+const benefits = [
+  { icon: "🎯", title: "Industry-Ready Skills", desc: "Work on real projects used by companies. Build a portfolio that gets you hired, not just a certificate." },
+  { icon: "📜", title: "UGC-Compliant Certificate", desc: "Get a verified certificate with QR code. Recognized by universities and employers across India." },
+  { icon: "💼", title: "Offer Letter on Day 1", desc: "Receive a professional offer letter as soon as you join. Perfect for college credit and placement records." },
+  { icon: "🎥", title: "Learn at Your Own Pace", desc: "Pre-recorded video lessons + daily tasks. No fixed timing — study when it suits you best." },
+  { icon: "👨‍🏫", title: "Expert Mentorship", desc: "Get guidance from industry professionals. Ask questions, get feedback, and grow faster." },
+  { icon: "🏆", title: "Experience Letter + LOR", desc: "Complete your internship and receive an experience letter and letter of recommendation." },
+];
+
 const features = [
-  { icon: "📚", title: "Program Management", desc: "Create online/offline/hybrid internship programs with flexible pricing - Free, Paid, or Stipend." },
-  { icon: "📅", title: "Smart Attendance", desc: "QR code scan for offline, login tracking for online. Auto reports & reminders." },
-  { icon: "🎥", title: "Pre-recorded LMS", desc: "Upload video lessons & materials. Students learn at their own pace and complete tasks." },
-  { icon: "📝", title: "Task Management", desc: "Assign regular & urgent tasks. Students submit work reports. Auto grading system." },
-  { icon: "🏆", title: "Auto Certificates", desc: "Generate certificates with QR verification. Offer letters, NOC, experience letters - all auto." },
-  { icon: "💰", title: "Payment & Stipend", desc: "Collect fees via payment gateway. Auto-calculate stipends based on attendance." },
-  { icon: "👥", title: "Team Management", desc: "Assign team leaders. Track progress per batch. Review student work." },
-  { icon: "📊", title: "Analytics Dashboard", desc: "Real-time stats for admin, team leaders, and students. Revenue, attendance, performance tracking." },
+  { icon: "📚", title: "Program Management", desc: "Create online/offline/hybrid programs with flexible pricing — Free, Paid, or Stipend models." },
+  { icon: "📅", title: "Smart Attendance", desc: "QR code scan for offline, auto login tracking for online. Real-time reports & reminders." },
+  { icon: "🎥", title: "Video LMS", desc: "Upload video lessons & materials. Students learn at their own pace and complete daily tasks." },
+  { icon: "📝", title: "Task & Grading", desc: "Assign daily tasks, auto-grade submissions. Students submit work reports directly in the platform." },
+  { icon: "🏆", title: "Auto Certificates", desc: "Generate certificates with QR verification. Offer letters, NOC, experience letters — all automated." },
+  { icon: "💰", title: "Payment Tracking", desc: "Collect fees via gateway. Auto-calculate stipends based on attendance. Complete financial control." },
+  { icon: "👥", title: "Team Management", desc: "Assign team leaders, track progress per batch. Review student work with built-in tools." },
+  { icon: "📊", title: "Analytics Dashboard", desc: "Real-time stats — revenue, attendance, performance tracking for admin, leaders, and students." },
+];
+
+const testimonials = [
+  { name: "Priya Sharma", role: "Digital Marketing Intern", text: "This platform made my internship experience seamless. The daily video lessons and task system helped me learn faster than any classroom.", rating: 5 },
+  { name: "Arjun Mehta", role: "Web Development Intern", text: "Got my offer letter on day 1 and certificate with QR verification. My college accepted it instantly for placement credit.", rating: 5 },
+  { name: "Sneha Patel", role: "Graphic Design Intern", text: "The mentorship was amazing. I built a real portfolio during the internship that helped me land my first freelance client.", rating: 5 },
 ];
 
 const stats = [
-  { number: "10,000+", label: "Students Certified" },
-  { number: "500+", label: "Programs Created" },
-  { number: "100+", label: "Institutes" },
-  { number: "95%", label: "Satisfaction Rate" },
+  { number: "10,000+", label: "Students Certified", icon: "🎓" },
+  { number: "500+", label: "Programs Created", icon: "📚" },
+  { number: "100+", label: "Institutes Trust Us", icon: "🏛️" },
+  { number: "95%", label: "Satisfaction Rate", icon: "⭐" },
 ];
 
-const pricing = [
-  { name: "Free", price: "₹0", period: "/month", features: ["1 Program", "20 Students", "Basic Attendance", "Certificates", "Email Support"], highlighted: false },
-  { name: "Starter", price: "₹999", period: "/month", features: ["5 Programs", "100 Students", "QR Attendance", "Payment Gateway", "Priority Support", "Custom Certificates"], highlighted: false },
-  { name: "Professional", price: "₹2,999", period: "/month", features: ["Unlimited Programs", "500 Students", "Full LMS", "Salary Management", "WhatsApp Notifications", "Analytics Dashboard", "API Access"], highlighted: true },
-  { name: "Enterprise", price: "₹9,999", period: "/month", features: ["Everything in Pro", "Unlimited Students", "White-label Branding", "Custom Domain", "Dedicated Support", "Custom Integrations", "SLA Guarantee"], highlighted: false },
+const steps = [
+  { step: "01", title: "Choose Your Program", desc: "Browse 13+ internship domains — Marketing, Tech, Design, HR and more. Pick what excites you." },
+  { step: "02", title: "Get Your Offer Letter", desc: "Register, get instant offer letter. Start your internship journey with professional documentation." },
+  { step: "03", title: "Learn & Build Daily", desc: "Watch video lessons, complete daily tasks, submit work. Track your progress on the dashboard." },
+  { step: "04", title: "Get Certified", desc: "Complete the program and receive your QR-verified certificate, experience letter, and LOR." },
 ];
 
 export default function Home() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    setIsVisible(true);
     fetch("/api/programs?published=true").then(r => r.ok ? r.json() : []).then(data => {
       setPrograms(data);
     }).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (programs.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % programs.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [programs.length]);
+    const interval = setInterval(() => {
+      setActiveTestimonial(prev => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (programs.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentSlide(prev => (prev + 1) % Math.min(programs.length, 6));
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [programs]);
+
+  const domainColors: Record<string, string> = {
+    Technology: "#0EA5B8", Marketing: "#a78bfa", Design: "#FF6B6B", Business: "#f59e0b",
+    Finance: "#34d399", Science: "#60a5fa", Arts: "#f472b6", default: "#94a3b8",
+  };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white font-bold text-sm">IP</div>
-              <span className="text-xl font-bold gradient-text">InternPro</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-gray-600 hover:text-indigo-600 transition">Features</a>
-              <Link href="/programs" className="text-gray-600 hover:text-indigo-600 transition">Our Programs</Link>
-              <a href="#openings" className="text-gray-600 hover:text-indigo-600 transition">Openings</a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition">How it Works</a>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="text-gray-600 hover:text-indigo-600 font-medium transition">Login</Link>
-              <Link href="/register" className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition font-medium">Get Started Free</Link>
-            </div>
+    <div className="min-h-screen" style={{background: '#0a0e1a', color: '#f1f5f9'}}>
+      {/* Organic Background Blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-[700px] h-[700px]" style={{borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', background: 'radial-gradient(ellipse, rgba(14,165,184,0.08), transparent 70%)', animation: 'morphBlob 15s ease-in-out infinite'}} />
+        <div className="absolute top-1/3 -left-40 w-[600px] h-[600px]" style={{borderRadius: '70% 30% 30% 70% / 70% 70% 30% 30%', background: 'radial-gradient(ellipse, rgba(167,139,250,0.06), transparent 70%)', animation: 'morphBlob 18s ease-in-out infinite reverse'}} />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px]" style={{borderRadius: '50% 50% 33% 67% / 55% 27% 73% 45%', background: 'radial-gradient(ellipse, rgba(255,107,107,0.04), transparent 70%)', animation: 'morphBlob 20s ease-in-out infinite'}} />
+      </div>
+
+      {/* ===== NAVBAR ===== */}
+      <nav className="fixed top-0 w-full z-50" style={{background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)'}}>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
+            <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
+          </Link>
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/" className="text-sm text-white font-semibold transition">Home</Link>
+            <Link href="/programs" className="text-sm text-slate-400 hover:text-white transition">Programs</Link>
+            <Link href="/vacancies" className="text-sm text-slate-400 hover:text-white transition">Openings</Link>
+            <Link href="/about" className="text-sm text-slate-400 hover:text-white transition">About Us</Link>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="text-sm text-slate-300 hover:text-white transition px-4 py-2">Login</Link>
+            <Link href="/register" className="text-sm text-white px-5 py-2.5 rounded-xl transition-all hover:shadow-[0_0_30px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>Get Started Free</Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-block px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium mb-6">
-            UGC Compliant Internship Management
+      {/* ===== HERO SECTION ===== */}
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-20 pb-16 overflow-hidden">
+        {/* Animated grid lines */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
+        
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+          {/* Badge */}
+          <div className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{background: 'rgba(14,165,184,0.1)', border: '1px solid rgba(14,165,184,0.2)', color: '#22d3ee'}}>
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{background: '#22d3ee'}} />
+            Trusted by 10,000+ Students & 100+ Institutes
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Internship Management <br />
-            <span className="gradient-text">on Auto-Pilot</span>
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
-            Everything you need to run internship programs — student onboarding, pre-recorded video lessons,
-            task management, QR attendance, auto certificates, and payment tracking. All in one platform.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register" className="bg-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
-              Start Free — No Credit Card
-            </Link>
-            <Link href="/login" className="border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:border-indigo-300 transition">
-              View Demo Dashboard
-            </Link>
-          </div>
-          <p className="text-sm text-gray-500 mt-4">Free plan includes 20 students • No setup fees • Cancel anytime</p>
-        </div>
-      </section>
 
-      {/* Stats */}
-      <section className="py-16 gradient-bg">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-4xl font-bold text-white mb-2">{stat.number}</div>
-                <div className="text-indigo-100">{stat.label}</div>
+          {/* Main Headline */}
+          <h1 className={`text-5xl sm:text-6xl md:text-7xl font-black leading-tight mb-6 tracking-tight transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            Land Your Dream{" "}
+            <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa, #FF6B6B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+              Online Internship
+            </span>
+          </h1>
+
+          {/* Subheadline */}
+          <p className={`text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            Real Experience, Real Growth. Get industry-ready with video lessons, daily tasks,
+            expert mentorship, and verified certificates — all from home.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className={`flex flex-col sm:flex-row gap-4 justify-center mb-12 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <Link href="/register" className="text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:shadow-[0_0_40px_rgba(14,165,184,0.4)] hover:-translate-y-1 hover:brightness-110" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
+              Start Your Internship — Free
+            </Link>
+            <Link href="/programs" className="px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:bg-white/10 hover:-translate-y-1" style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1'}}>
+              Explore Programs →
+            </Link>
+          </div>
+
+          {/* Trust Metrics */}
+          <div className={`flex flex-wrap justify-center gap-8 transition-all duration-700 delay-400 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            {["No Credit Card Required", "Instant Offer Letter", "UGC Compliant", "100% Online"].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-sm text-slate-500">
+                <svg className="w-4 h-4" style={{color: '#22d3ee'}} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                {item}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-20 px-4 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
+      {/* ===== STATS BAR ===== */}
+      <section className="relative py-16" style={{background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)'}}>
+        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
+          {stats.map((s) => (
+            <div key={s.label} className="text-center group">
+              <div className="text-3xl mb-2">{s.icon}</div>
+              <div className="text-3xl md:text-4xl font-black text-white mb-1">{s.number}</div>
+              <div className="text-sm text-slate-500">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== WHY INTERN WITH US (BENEFITS) ===== */}
+      <section id="benefits" className="relative py-24">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Everything You Need</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <span className="text-sm font-semibold tracking-wider uppercase mb-4 inline-block" style={{color: '#22d3ee'}}>Why Choose Us</span>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+              Your Internship,{" "}
+              <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Your Advantage</span>
+            </h2>
+            <p className="text-slate-400 max-w-xl mx-auto text-lg">
+              More than just an internship — we give you the skills, proof, and connections to launch your career.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {benefits.map((b, i) => (
+              <div key={b.title} className="group p-7 rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)]" style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                animationDelay: `${i * 0.1}s`,
+              }}>
+                <div className="text-4xl mb-4 transition-transform group-hover:scale-110">{b.icon}</div>
+                <h3 className="text-xl font-bold text-white mb-2">{b.title}</h3>
+                <p className="text-slate-400 leading-relaxed">{b.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== HOW IT WORKS ===== */}
+      <section id="how-it-works" className="relative py-24" style={{background: 'rgba(255,255,255,0.01)'}}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-sm font-semibold tracking-wider uppercase mb-4 inline-block" style={{color: '#a78bfa'}}>Process</span>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+              Start in{" "}
+              <span style={{background: 'linear-gradient(135deg, #a78bfa, #FF6B6B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>4 Simple Steps</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {steps.map((s, i) => (
+              <div key={s.step} className="relative p-7 rounded-3xl group transition-all duration-500 hover:-translate-y-2" style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div className="text-5xl font-black mb-4 transition-transform group-hover:scale-110" style={{
+                  background: `linear-gradient(135deg, ${['#0EA5B8','#a78bfa','#FF6B6B','#f59e0b'][i]}, transparent)`,
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', opacity: 0.3
+                }}>{s.step}</div>
+                <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{s.desc}</p>
+                {i < 3 && <div className="hidden lg:block absolute top-1/2 -right-3 text-slate-700 text-xl">→</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FEATURES (For Institutes) ===== */}
+      <section id="features" className="relative py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-sm font-semibold tracking-wider uppercase mb-4 inline-block" style={{color: '#FF6B6B'}}>Platform Features</span>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+              Everything to{" "}
+              <span style={{background: 'linear-gradient(135deg, #FF6B6B, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Run Your Program</span>
+            </h2>
+            <p className="text-slate-400 max-w-xl mx-auto text-lg">
               Complete internship lifecycle management — from enrollment to certification.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div key={feature.title} className="bg-white rounded-xl p-6 card-hover border border-gray-100">
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{feature.desc}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {features.map((f, i) => (
+              <div key={f.title} className="p-6 rounded-2xl group transition-all duration-500 hover:-translate-y-1" style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div className="text-3xl mb-3 transition-transform group-hover:scale-110">{f.icon}</div>
+                <h3 className="text-base font-bold text-white mb-1.5">{f.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it Works */}
-      <section id="how-it-works" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
+      {/* ===== TESTIMONIALS ===== */}
+      <section className="relative py-24" style={{background: 'rgba(255,255,255,0.01)'}}>
+        <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-xl text-gray-600">4 simple steps to manage your internship program</p>
+            <span className="text-sm font-semibold tracking-wider uppercase mb-4 inline-block" style={{color: '#f59e0b'}}>Student Stories</span>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+              What Our{" "}
+              <span style={{background: 'linear-gradient(135deg, #f59e0b, #FF6B6B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Students Say</span>
+            </h2>
           </div>
-          <div className="grid md:grid-cols-4 gap-8">
-            {[
-              { step: "1", title: "Create Program", desc: "Set up your internship with details, pricing, and materials. Upload pre-recorded videos." },
-              { step: "2", title: "Students Enroll", desc: "Students register online. Auto offer letter generated. Bulk import via CSV." },
-              { step: "3", title: "Learn & Track", desc: "Students watch videos, complete tasks. QR attendance. Progress auto-tracked." },
-              { step: "4", title: "Certify & Pay", desc: "Auto certificates on completion. Stipend calculated by attendance. All automated." },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="w-16 h-16 rounded-full gradient-bg text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4">
-                  {item.step}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-600 text-sm">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Current Internship Openings */}
-      <section id="openings" className="py-20 px-4 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Current Internship Openings</h2>
-            <p className="text-xl text-gray-600">Apply now for ongoing internship programs</p>
-          </div>
-          {programs.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-lg">No openings available right now. Check back soon!</p>
-            </div>
-          ) : (
-            <>
-              <div className="relative overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-lg mb-8">
-                <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-                  {programs.map((program) => (
-                    <div key={program.id} className="w-full flex-shrink-0 p-8 md:p-12">
-                      <div className="flex flex-col md:flex-row items-center gap-8">
-                        {program.thumbnail && (
-                          <img src={program.thumbnail} alt={program.title} className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-xl shadow flex-shrink-0" />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-4">
-                            <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">{program.domain}</span>
-                            <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">{program.mode}</span>
-                            <span className={`text-xs px-3 py-1 rounded-full font-medium ${program.feeType === "free" ? "bg-emerald-100 text-emerald-700" : program.feeType === "stipend" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>
-                              {program.feeType === "free" ? "Free" : program.feeType === "stipend" ? `Stipend: ₹${program.feeAmount}/mo` : `Fee: ₹${program.feeAmount}`}
-                            </span>
-                          </div>
-                          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">{program.title}</h3>
-                          {program.description && <p className="text-gray-600 mb-4">{program.description}</p>}
-                          <div className="flex items-center gap-6 text-sm text-gray-500">
-                            <span>⏱ {program.duration} days</span>
-                            <span>👥 {program.maxSeats - program.batches.reduce((sum, b) => sum + b._count.enrollments, 0)} seats left</span>
-                            <span>📦 {program._count.batches} batch(es)</span>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <Link href="/register" className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-lg font-semibold hover:bg-indigo-700 transition shadow-lg">
-                            Apply Now
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {programs.length > 1 && (
-                  <div className="flex justify-center gap-2 pb-6">
-                    {programs.map((_, i) => (
-                      <button key={i} onClick={() => setCurrentSlide(i)}
-                        className={`w-3 h-3 rounded-full transition ${i === currentSlide ? "bg-indigo-600" : "bg-gray-300"}`} />
+          <div className="relative">
+            {testimonials.map((t, i) => (
+              <div key={t.name} className="transition-all duration-500" style={{
+                display: i === activeTestimonial ? 'block' : 'none',
+              }}>
+                <div className="p-10 rounded-3xl text-center" style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}>
+                  <div className="flex justify-center gap-1 mb-6">
+                    {[...Array(t.rating)].map((_, j) => (
+                      <span key={j} className="text-xl" style={{color: '#f59e0b'}}>★</span>
                     ))}
                   </div>
-                )}
+                  <p className="text-xl text-slate-300 leading-relaxed mb-8 max-w-2xl mx-auto">&ldquo;{t.text}&rdquo;</p>
+                  <div>
+                    <p className="font-bold text-white text-lg">{t.name}</p>
+                    <p className="text-slate-500 text-sm">{t.role}</p>
+                  </div>
+                </div>
               </div>
-              <div className="text-center">
-                <Link href="/vacancies" className="text-indigo-600 font-semibold hover:text-indigo-700 transition text-lg">
-                  View All Openings →
-                </Link>
-              </div>
-            </>
+            ))}
+            <div className="flex justify-center gap-3 mt-6">
+              {testimonials.map((_, i) => (
+                <button key={i} onClick={() => setActiveTestimonial(i)} className="w-2.5 h-2.5 rounded-full transition-all" style={{background: i === activeTestimonial ? '#0EA5B8' : 'rgba(255,255,255,0.15)'}} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== PROGRAMS CAROUSEL ===== */}
+      <section id="programs" className="relative py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-sm font-semibold tracking-wider uppercase mb-4 inline-block" style={{color: '#22d3ee'}}>Opportunities</span>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+              Current{" "}
+              <span style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Internship Openings</span>
+            </h2>
+            <p className="text-slate-400 max-w-xl mx-auto">Apply now for ongoing internship programs across 13+ domains</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {programs.slice(0, 6).map((p) => {
+              const enrolled = p.batches?.reduce((sum, b) => sum + (b._count?.enrollments || 0), 0) || 0;
+              const seatsLeft = Math.max(0, p.maxSeats - enrolled);
+              const color = domainColors[p.domain] || domainColors.default;
+              return (
+                <div key={p.id} className="group rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)]" style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: `${color}15`, color, border: `1px solid ${color}30`}}>{p.domain}</span>
+                      <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)'}}>{p.mode}</span>
+                      <span className="ml-auto text-xs px-3 py-1 rounded-full font-bold" style={{
+                        background: p.feeType === 'free' ? 'rgba(52,211,153,0.1)' : 'rgba(255,107,107,0.1)',
+                        color: p.feeType === 'free' ? '#6ee7b7' : '#fca5a5',
+                        border: `1px solid ${p.feeType === 'free' ? 'rgba(52,211,153,0.2)' : 'rgba(255,107,107,0.2)'}`,
+                      }}>
+                        {p.feeType === 'free' ? 'Free' : `₹${p.feeAmount?.toLocaleString()}`}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#22d3ee] transition-colors">{p.title}</h3>
+                    <p className="text-slate-500 text-sm mb-4">{p.description || `${p.title} — ${p.duration} day program`}</p>
+                    <div className="flex items-center gap-4 text-sm text-slate-500 mb-5">
+                      <span className="flex items-center gap-1">⏲ {p.duration} days</span>
+                      <span className="flex items-center gap-1">👥 {seatsLeft} seats left</span>
+                    </div>
+                    <Link href="/register" className="block w-full text-center py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-[0_0_20px_rgba(14,165,184,0.3)]" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
+                      Apply Now
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {programs.length > 6 && (
+            <div className="text-center mt-10">
+              <Link href="/vacancies" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:-translate-y-0.5" style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1'}}>
+                View All {programs.length} Programs →
+              </Link>
+            </div>
           )}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-4 gradient-bg">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">Ready to Automate Your Internship Programs?</h2>
-          <p className="text-xl text-indigo-100 mb-8">Join 100+ institutes already using InternPro. Start free today.</p>
-          <Link href="/register" className="inline-block bg-white text-indigo-600 px-10 py-4 rounded-xl text-lg font-semibold hover:bg-indigo-50 transition shadow-xl">
-            Get Started for Free
-          </Link>
+      {/* ===== CTA SECTION ===== */}
+      <section className="relative py-24">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="p-12 md:p-16 rounded-3xl text-center relative overflow-hidden" style={{
+            background: 'linear-gradient(135deg, rgba(14,165,184,0.15), rgba(167,139,250,0.1))',
+            border: '1px solid rgba(14,165,184,0.2)',
+          }}>
+            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-20" style={{background: 'radial-gradient(ellipse, #0EA5B8, transparent)'}} />
+            <div className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full opacity-20" style={{background: 'radial-gradient(ellipse, #a78bfa, transparent)'}} />
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Ready to Start Your Career?</h2>
+              <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
+                Join 10,000+ students who launched their careers with our internship programs. Free to start, no credit card needed.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/register" className="text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:shadow-[0_0_40px_rgba(14,165,184,0.4)] hover:-translate-y-1" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)'}}>
+                  Start Free Internship
+                </Link>
+                <Link href="/login" className="px-8 py-4 rounded-2xl text-lg font-semibold transition-all hover:bg-white/10" style={{border: '1px solid rgba(255,255,255,0.15)', color: '#cbd5e1'}}>
+                  Login to Dashboard
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 bg-gray-900">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white font-bold text-sm">IP</div>
-              <span className="text-xl font-bold text-white">InternPro</span>
+      {/* ===== FOOTER ===== */}
+      <footer className="relative py-12" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
+                <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>InternPro</span>
+              </div>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
+                Complete internship management platform — student onboarding, video LMS, task management, auto certificates, and payment tracking. Trusted by 100+ institutes.
+              </p>
             </div>
-            <p className="text-gray-400 text-sm">© {new Date().getFullYear()} InternPro. All rights reserved. Built with Next.js</p>
-            <div className="flex gap-6">
-              <a href="#" className="text-gray-400 hover:text-white transition text-sm">Privacy</a>
-              <a href="#" className="text-gray-400 hover:text-white transition text-sm">Terms</a>
-              <a href="#" className="text-gray-400 hover:text-white transition text-sm">Support</a>
+            <div>
+              <h4 className="text-sm font-bold text-white mb-4">Platform</h4>
+              <div className="space-y-2">
+                <Link href="/programs" className="block text-sm text-slate-500 hover:text-white transition">Programs</Link>
+                <Link href="/vacancies" className="block text-sm text-slate-500 hover:text-white transition">Openings</Link>
+                <Link href="/register" className="block text-sm text-slate-500 hover:text-white transition">Register</Link>
+                <Link href="/login" className="block text-sm text-slate-500 hover:text-white transition">Login</Link>
+              </div>
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white mb-4">Company</h4>
+              <div className="space-y-2">
+                <Link href="/about" className="block text-sm text-slate-500 hover:text-white transition">About Us</Link>
+                <Link href="/privacy-policy" className="block text-sm text-slate-500 hover:text-white transition">Privacy Policy</Link>
+                <Link href="/terms" className="block text-sm text-slate-500 hover:text-white transition">Terms & Conditions</Link>
+              </div>
+            </div>
+          </div>
+          <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
+            <p className="text-slate-600 text-sm">&copy; {new Date().getFullYear()} KKHS Media Private Limited. All rights reserved.</p>
+            <div className="flex items-center gap-6 text-sm text-slate-600">
+              <Link href="/about" className="hover:text-white transition">About</Link>
+              <Link href="/privacy-policy" className="hover:text-white transition">Privacy</Link>
+              <Link href="/terms" className="hover:text-white transition">Terms</Link>
             </div>
           </div>
         </div>

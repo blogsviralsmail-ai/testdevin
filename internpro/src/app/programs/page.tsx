@@ -388,9 +388,9 @@ export default function ProgramsPage() {
               <p className="text-slate-600 text-xs mt-1">190A Krishna Kunj, Kalwar Road, Jaipur, Rajasthan 302012</p>
             </div>
             <div className="flex gap-6">
-              <Link href="/programs" className="text-slate-500 hover:text-white transition text-sm">Programs</Link>
-              <Link href="/vacancies" className="text-slate-500 hover:text-white transition text-sm">Openings</Link>
-              <Link href="/login" className="text-slate-500 hover:text-white transition text-sm">Login</Link>
+              <Link href="/about" className="text-slate-500 hover:text-white transition text-sm">About Us</Link>
+              <Link href="/privacy-policy" className="text-slate-500 hover:text-white transition text-sm">Privacy</Link>
+              <Link href="/terms" className="text-slate-500 hover:text-white transition text-sm">Terms</Link>
             </div>
           </div>
           <div className="mt-8 pt-6 text-center" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>

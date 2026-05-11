@@ -58,6 +58,7 @@ const navItems = [
   { href: "/dashboard/testimonials", label: "Testimonials", icon: "⭐", roles: ["admin", "organization"] },
   { href: "/dashboard/activity-log", label: "Activity Log", icon: "🕐", roles: ["admin", "organization"] },
   { href: "/dashboard/users", label: "Users", icon: "🔑", roles: ["admin"] },
+  { href: "/dashboard/site-content", label: "Site Content", icon: "🌐", roles: ["admin"] },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️", roles: ["admin", "organization"] },
 ];
 
@@ -93,6 +94,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Scroll to top on page navigation
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const mainEl = document.querySelector('main');
+    if (mainEl) mainEl.scrollTop = 0;
+  }, [pathname]);
 
   // Responsive: detect mobile and auto-close sidebar
   useEffect(() => {
@@ -233,11 +241,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     : "text-slate-400 hover:text-white"
                 )}
                 style={isActive ? {
-                  background: 'rgba(14,165,184,0.15)',
-                  border: '1px solid rgba(14,165,184,0.2)',
-                  boxShadow: '0 0 20px rgba(14,165,184,0.1)',
+                  background: 'linear-gradient(135deg, rgba(14,165,184,0.2), rgba(167,139,250,0.1))',
+                  border: '1px solid rgba(14,165,184,0.3)',
+                  boxShadow: '0 4px 15px rgba(14,165,184,0.15), 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)',
+                  transform: 'translateX(4px)',
                 } : {
                   border: '1px solid transparent',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 }}
               >
                 <span className="text-lg shrink-0">{item.icon}</span>

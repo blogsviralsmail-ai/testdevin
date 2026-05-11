@@ -650,3 +650,13 @@ model ChatMessage {
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
 }
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String
+  isPublished Boolean @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}

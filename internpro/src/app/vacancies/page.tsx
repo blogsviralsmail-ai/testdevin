@@ -126,6 +126,22 @@ export default function VacanciesPage() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="py-12 px-4 mt-16" style={{borderTop: '1px solid rgba(255,255,255,0.04)'}}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>IP</div>
+            <span className="text-sm text-slate-500">InternPro by KKHS Media</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-slate-500">
+            <Link href="/about" className="hover:text-white transition">About Us</Link>
+            <Link href="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition">Terms & Conditions</Link>
+          </div>
+          <p className="text-sm text-slate-600">&copy; {new Date().getFullYear()} InternPro. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }
