@@ -41,7 +41,12 @@ const navItems = [
   { href: "/dashboard/documents", label: "Documents", icon: "📎", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/completion", label: "Completion", icon: "🎓", roles: ["admin", "organization", "teamleader"] },
 
-  // Finance
+  // HR & Finance
+  { href: "/dashboard/salary", label: "Salary Management", icon: "💵", roles: ["admin", "organization"] },
+  { href: "/dashboard/my-payslips", label: "My Payslips", icon: "💵", roles: ["student"] },
+  { href: "/dashboard/leaves", label: "Leave Management", icon: "🏖️", roles: ["admin", "organization"] },
+  { href: "/dashboard/my-leaves", label: "Leaves & Holidays", icon: "🏖️", roles: ["student"] },
+  { href: "/dashboard/holidays", label: "Holiday Calendar", icon: "📅", roles: ["admin", "organization"] },
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
   { href: "/dashboard/agents", label: "Agents", icon: "🤝", roles: ["admin", "organization", "agent"] },
 

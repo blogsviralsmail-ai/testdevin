@@ -660,3 +660,56 @@ model SiteContent {
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }
+
+model LeaveRequest {
+  id           String     @id @default(cuid())
+  userId       String
+  enrollmentId String?
+  leaveType    String     @default("casual")
+  startDate    DateTime
+  endDate      DateTime
+  totalDays    Float      @default(1)
+  reason       String
+  status       String     @default("pending")
+  approvedBy   String?
+  adminRemarks String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Holiday {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  type        String   @default("public")
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payslip {
+  id             String   @id @default(cuid())
+  salaryId       String
+  enrollmentId   String
+  userId         String
+  month          String
+  year           Int
+  basicPay       Float    @default(0)
+  allowances     Float    @default(0)
+  deductions     Float    @default(0)
+  bonus          Float    @default(0)
+  netPay         Float    @default(0)
+  workingDays    Int      @default(0)
+  presentDays    Int      @default(0)
+  leaveDays      Int      @default(0)
+  paymentMethod  String?
+  paymentRef     String?
+  paidAt         DateTime?
+  status         String   @default("generated")
+  htmlContent    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([enrollmentId, month, year])
+}
