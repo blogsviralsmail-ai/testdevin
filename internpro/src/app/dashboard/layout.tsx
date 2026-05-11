@@ -48,6 +48,7 @@ const navItems = [
   { href: "/dashboard/my-leaves", label: "Leaves & Holidays", icon: "🏖️", roles: ["student"] },
   { href: "/dashboard/holidays", label: "Holiday Calendar", icon: "📅", roles: ["admin", "organization"] },
   { href: "/dashboard/payments", label: "Payments", icon: "💰", roles: ["admin", "organization"] },
+  { href: "/dashboard/agents", label: "Refer & Earn", icon: "🎁", roles: ["student"] },
   { href: "/dashboard/agents", label: "Agents", icon: "🤝", roles: ["admin", "organization", "agent"] },
   { href: "/dashboard/withdrawals", label: "Withdrawals", icon: "💸", roles: ["admin", "organization", "agent", "student"] },
 

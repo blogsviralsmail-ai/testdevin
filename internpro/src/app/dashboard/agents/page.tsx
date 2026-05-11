@@ -18,6 +18,9 @@ export default function AgentsPage() {
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", commissionRate: "30", bankName: "", accountNumber: "", ifscCode: "", upiId: "" });
   const [payoutAmount, setPayoutAmount] = useState("");
+  const [refData, setRefData] = useState<{ referralCode: string | null; walletBalance: number; totalEarnings: number; commissionRate: number; referrals: Referral[] } | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [refCopied, setRefCopied] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
@@ -41,10 +44,124 @@ export default function AgentsPage() {
 
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const isAgent = user?.role === "agent";
+  const isStudent = user?.role === "student";
 
   const handleExportCSV = () => serverExportCSV("agents");
 
   const handleExportPDF = () => serverExportPDF("agents", "Agents");
+
+  // Fetch student referral data
+  useEffect(() => {
+    if (user?.role === "student") {
+      fetch("/api/referral").then(r => r.json()).then(d => setRefData(d)).catch(() => {});
+    }
+  }, [user]);
+
+  // Student Refer & Earn View
+  if (isStudent) {
+    const generateCode = async () => {
+      setGenerating(true);
+      const r = await fetch("/api/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      if (r.ok) {
+        const d = await r.json();
+        setRefData(prev => prev ? { ...prev, referralCode: d.referralCode } : { referralCode: d.referralCode, walletBalance: 0, totalEarnings: 0, commissionRate: 30, referrals: [] });
+      }
+      setGenerating(false);
+    };
+
+    const refLink = refData?.referralCode ? `${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${refData.referralCode}` : "";
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">🎁 Refer & Earn</h1>
+          <p className="text-slate-400 text-sm mt-1">Share your referral link and earn {refData?.commissionRate || 30}% commission on every successful referral!</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-xl p-5 text-white" style={{background: 'linear-gradient(135deg, #0EA5B8, #06b6d4)'}}>
+            <p className="text-sm opacity-80">Wallet Balance</p>
+            <p className="text-2xl font-bold">₹{(refData?.walletBalance || 0).toLocaleString()}</p>
+          </div>
+          <div className="rounded-xl p-5 text-white" style={{background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)'}}>
+            <p className="text-sm opacity-80">Total Earnings</p>
+            <p className="text-2xl font-bold">₹{(refData?.totalEarnings || 0).toLocaleString()}</p>
+          </div>
+          <div className="rounded-xl p-5 text-white" style={{background: 'linear-gradient(135deg, #f59e0b, #fbbf24)'}}>
+            <p className="text-sm opacity-80">Total Referrals</p>
+            <p className="text-2xl font-bold">{refData?.referrals?.length || 0}</p>
+          </div>
+        </div>
+
+        {!refData?.referralCode ? (
+          <div className="rounded-xl p-8 text-center" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
+            <div className="text-5xl mb-4">🔗</div>
+            <h2 className="text-lg font-bold text-white mb-2">Generate Your Referral Code</h2>
+            <p className="text-slate-400 text-sm mb-4">Get your unique referral link to share with friends and earn {refData?.commissionRate || 30}% commission!</p>
+            <button onClick={generateCode} disabled={generating} className="px-6 py-3 bg-[#0EA5B8] text-white rounded-xl font-medium hover:bg-[#0891b2] disabled:opacity-50">
+              {generating ? "Generating..." : "Generate Referral Code"}
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-xl p-5" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
+            <h2 className="font-semibold mb-3 text-white">📎 Your Referral Link</h2>
+            <div className="flex gap-2">
+              <input readOnly value={refLink} className="flex-1 px-3 py-2 bg-transparent border border-white/10 rounded-lg text-sm text-white" />
+              <button onClick={() => { navigator.clipboard.writeText(refLink); setRefCopied(true); setTimeout(() => setRefCopied(false), 2000); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${refCopied ? 'bg-emerald-500 text-white' : 'bg-[#0EA5B8] text-white hover:bg-[#0891b2]'}`}>
+                {refCopied ? "Copied!" : "Copy Link"}
+              </button>
+            </div>
+            <p className="text-slate-500 text-xs mt-2">Share this link — when someone registers and pays, you earn {refData?.commissionRate || 30}% commission!</p>
+          </div>
+        )}
+
+        {(refData?.referrals?.length || 0) > 0 && (
+          <div className="rounded-xl overflow-hidden" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
+            <div className="p-4 border-b border-white/[0.06]">
+              <h2 className="font-semibold text-white">My Referrals ({refData?.referrals?.length || 0})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-white/[0.06]">
+                  <th className="px-4 py-3 text-left text-xs text-slate-400">#</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-400">Name</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-400">Email</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-400">Program</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-400">Status</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-400">Commission</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-400">Date</th>
+                </tr></thead>
+                <tbody>
+                  {(refData?.referrals || []).map((r, idx) => (
+                    <tr key={r.id} className="border-b border-white/[0.04]">
+                      <td className="px-4 py-3 text-slate-400">{idx + 1}</td>
+                      <td className="px-4 py-3 text-white">{r.student?.name || "—"}</td>
+                      <td className="px-4 py-3 text-slate-400">{r.student?.email || "—"}</td>
+                      <td className="px-4 py-3 text-slate-400">{r.student?.enrollments?.[0]?.batch?.program?.title || "—"}</td>
+                      <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs ${r.status === "converted" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>{r.status}</span></td>
+                      <td className="px-4 py-3 text-emerald-400">₹{r.commission.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{new Date(r.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-xl p-5" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
+          <h3 className="font-semibold text-white mb-3">💡 How it works</h3>
+          <div className="space-y-2 text-sm text-slate-400">
+            <p>1. Generate your unique referral link above</p>
+            <p>2. Share it with friends who want to join an internship</p>
+            <p>3. When they register using your link and their payment is confirmed</p>
+            <p>4. You earn <span className="text-emerald-400 font-medium">{refData?.commissionRate || 30}%</span> commission automatically</p>
+            <p>5. Withdraw your earnings anytime from the <a href="/dashboard/withdrawals" className="text-[#0EA5B8] hover:underline">Withdrawals</a> page</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Agent Panel View
   if (isAgent && agents.length === 1) {
