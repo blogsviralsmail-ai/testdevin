@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyLeaveApplied, notifyLeaveAction } from "@/lib/notifications";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -18,7 +19,6 @@ export async function GET(request: NextRequest) {
 
   const leaves = await prisma.leaveRequest.findMany({ where, orderBy: { createdAt: "desc" } });
 
-  // Enrich with user info
   const userIds = [...new Set(leaves.map(l => l.userId))];
   const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true, avatar: true } });
   const userMap = Object.fromEntries(users.map(u => [u.id, u]));
@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
   const diffMs = end.getTime() - start.getTime();
   const totalDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
 
-  // Get enrollment
   const enrollment = await prisma.enrollment.findFirst({
     where: { studentId: session.id, status: { in: ["selected", "active", "completed"] } },
     orderBy: { createdAt: "desc" },
@@ -61,6 +60,9 @@ export async function POST(request: NextRequest) {
       status: "pending",
     },
   });
+
+  // Notify admins about new leave request
+  notifyLeaveApplied(session.name, session.email, leaveType || "casual", startDate, endDate, totalDays, reason).catch(() => {});
 
   return NextResponse.json(leave, { status: 201 });
 }
@@ -86,6 +88,12 @@ export async function PATCH(request: NextRequest) {
       adminRemarks: adminRemarks || null,
     },
   });
+
+  // Notify student about leave approval/rejection
+  const student = await prisma.user.findUnique({ where: { id: leave.userId }, select: { id: true, email: true, name: true } });
+  if (student) {
+    notifyLeaveAction(student.id, student.email, student.name, action === "approve" ? "approved" : "rejected", leave.leaveType, leave.startDate.toISOString(), leave.endDate.toISOString(), adminRemarks || null).catch(() => {});
+  }
 
   return NextResponse.json(leave);
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyHolidayAdded } from "@/lib/notifications";
 
 export async function GET() {
   const session = await getSession();
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
   const holiday = await prisma.holiday.create({
     data: { title, date: new Date(date), type: type || "public", description: description || null },
   });
+
+  // Notify all students about new holiday
+  notifyHolidayAdded(title, date, type || "public").catch(() => {});
 
   return NextResponse.json(holiday, { status: 201 });
 }

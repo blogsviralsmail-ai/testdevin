@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { notifyTaskSubmitted } from "@/lib/notifications";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -65,6 +66,12 @@ export async function POST(request: NextRequest) {
         fileUrl: fileUrl || null,
       },
     });
+
+    // Notify admins about task submission
+    const task = await prisma.task.findUnique({ where: { id: taskId }, select: { title: true, batch: { select: { program: { select: { title: true } } } } } });
+    if (task) {
+      notifyTaskSubmitted(session.name, task.title, task.batch.program.title).catch(() => {});
+    }
 
     return NextResponse.json(submission, { status: 201 });
   } catch (error: unknown) {

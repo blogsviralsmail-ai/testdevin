@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { generateOfferLetterForEnrollment } from "@/lib/generate-offer-letter";
+import { notifyPaymentReceived } from "@/lib/notifications";
 import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
@@ -98,6 +99,9 @@ export async function POST(request: NextRequest) {
     }
 
     logActivity("payment_received", "payment", payment.id, `₹${amount} Razorpay payment from ${enrollment.student.name} for ${enrollment.batch.program.title} (${razorpay_payment_id})`, session.id, session.name).catch(() => {});
+
+    // Notify admins about payment
+    notifyPaymentReceived(enrollment.student.name, enrollment.student.email, parseFloat(amount), enrollment.batch.program.title, "razorpay").catch(() => {});
 
     return NextResponse.json({ success: true, payment });
   } catch (error: unknown) {

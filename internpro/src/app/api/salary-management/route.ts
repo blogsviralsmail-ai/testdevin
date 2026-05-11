@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifySalaryGenerated, notifySalaryPaid } from "@/lib/notifications";
 
 // GET: List all salaries with enrollment info
 export async function GET(request: NextRequest) {
@@ -133,6 +134,13 @@ async function generateSalaries(month: string) {
       },
     });
 
+    // Notify student about salary generation
+    const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const studentUser = await prisma.user.findUnique({ where: { id: enrollment.studentId }, select: { id: true, email: true, name: true } });
+    if (studentUser) {
+      notifySalaryGenerated(studentUser.id, studentUser.email, studentUser.name, `${MONTHS[monthNum - 1]} ${year}`, amount).catch(() => {});
+    }
+
     results.push({ id: salary.id, student: enrollment.student.name, amount, status: "generated" });
   }
 
@@ -154,6 +162,7 @@ export async function POST(request: NextRequest) {
   const salary = await prisma.salary.update({
     where: { id: salaryId },
     data: { status: "paid", paidAt: new Date() },
+    include: { enrollment: { include: { student: { select: { id: true, email: true, name: true } } } } },
   });
 
   // Update payslip
@@ -161,6 +170,12 @@ export async function POST(request: NextRequest) {
     where: { salaryId },
     data: { status: "paid", paymentMethod: paymentMethod || "manual", paymentRef: paymentRef || null, paidAt: new Date() },
   });
+
+  // Notify student about salary payment
+  if (salary.enrollment?.student) {
+    const s = salary.enrollment.student;
+    notifySalaryPaid(s.id, s.email, s.name, salary.month, salary.amount, paymentMethod || "manual").catch(() => {});
+  }
 
   return NextResponse.json(salary);
 }

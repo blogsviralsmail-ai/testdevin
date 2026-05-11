@@ -159,6 +159,110 @@ async function notifyAllChannels(email: string, phone: string | null, emailSubje
 
 export { notifyAllChannels };
 
+// --- Leave Notifications ---
+
+export async function notifyLeaveApplied(studentName: string, studentEmail: string, leaveType: string, startDate: string, endDate: string, totalDays: number, reason: string) {
+  // Notify all admins
+  const admins = await prisma.user.findMany({ where: { role: { in: ["admin", "organization"] }, isActive: true }, select: { id: true, email: true, name: true } });
+  for (const admin of admins) {
+    await Promise.all([
+      sendEmailSafe(admin.email, `Leave Request from ${studentName}`,
+        wrapEmailTemplate(`<b>${studentName}</b> (${studentEmail}) has applied for <b>${leaveType} leave</b>.<br><br>
+          <b>Duration:</b> ${new Date(startDate).toLocaleDateString()} — ${new Date(endDate).toLocaleDateString()} (${totalDays} day${totalDays > 1 ? "s" : ""})<br>
+          <b>Reason:</b> ${reason}<br><br>
+          Please review and approve/reject from your dashboard.`)),
+      prisma.notification.create({
+        data: { userId: admin.id, title: "New Leave Request", message: `${studentName} applied for ${totalDays} day${totalDays > 1 ? "s" : ""} ${leaveType} leave`, type: "info", link: "/dashboard/leaves" },
+      }).catch(() => {}),
+    ]);
+  }
+}
+
+export async function notifyLeaveAction(studentId: string, studentEmail: string, studentName: string, action: "approved" | "rejected", leaveType: string, startDate: string, endDate: string, adminRemarks: string | null) {
+  const statusEmoji = action === "approved" ? "approved" : "rejected";
+  const body = `Hi ${studentName}, your <b>${leaveType} leave</b> request (${new Date(startDate).toLocaleDateString()} — ${new Date(endDate).toLocaleDateString()}) has been <b>${statusEmoji}</b>.${adminRemarks ? `<br><br><b>Remarks:</b> ${adminRemarks}` : ""}`;
+  await Promise.all([
+    sendEmailSafe(studentEmail, `Leave ${action === "approved" ? "Approved" : "Rejected"}`, wrapEmailTemplate(body)),
+    prisma.notification.create({
+      data: { userId: studentId, title: `Leave ${action === "approved" ? "Approved" : "Rejected"}`, message: `Your ${leaveType} leave has been ${statusEmoji}`, type: action === "approved" ? "success" : "error", link: "/dashboard/my-leaves" },
+    }).catch(() => {}),
+  ]);
+}
+
+// --- Salary Notifications ---
+
+export async function notifySalaryGenerated(studentId: string, studentEmail: string, studentName: string, month: string, amount: number) {
+  const body = `Hi ${studentName}, your salary for <b>${month}</b> has been generated. Amount: <b>₹${amount.toLocaleString()}</b>. Check your payslips for details.`;
+  await Promise.all([
+    sendEmailSafe(studentEmail, `Salary Generated — ${month}`, wrapEmailTemplate(body)),
+    prisma.notification.create({
+      data: { userId: studentId, title: "Salary Generated", message: `₹${amount.toLocaleString()} for ${month}`, type: "info", link: "/dashboard/my-payslips" },
+    }).catch(() => {}),
+  ]);
+}
+
+export async function notifySalaryPaid(studentId: string, studentEmail: string, studentName: string, month: string, amount: number, paymentMethod: string) {
+  const body = `Hi ${studentName}, your salary of <b>₹${amount.toLocaleString()}</b> for <b>${month}</b> has been paid via <b>${paymentMethod}</b>. Check your payslips for the receipt.`;
+  await Promise.all([
+    sendEmailSafe(studentEmail, `Salary Paid — ₹${amount.toLocaleString()}`, wrapEmailTemplate(body)),
+    prisma.notification.create({
+      data: { userId: studentId, title: "Salary Paid", message: `₹${amount.toLocaleString()} for ${month} — paid via ${paymentMethod}`, type: "success", link: "/dashboard/my-payslips" },
+    }).catch(() => {}),
+  ]);
+}
+
+// --- Holiday Notifications ---
+
+export async function notifyHolidayAdded(title: string, date: string, type: string) {
+  // Notify all active students
+  const students = await prisma.user.findMany({
+    where: { role: "student", isActive: true },
+    select: { id: true, email: true, name: true },
+  });
+  for (const s of students) {
+    await Promise.all([
+      prisma.notification.create({
+        data: { userId: s.id, title: "Holiday Announced", message: `${title} on ${new Date(date).toLocaleDateString()} (${type})`, type: "info", link: "/dashboard/my-leaves" },
+      }).catch(() => {}),
+    ]);
+  }
+  // Email to all students (batched)
+  if (students.length > 0) {
+    for (const s of students) {
+      sendEmailSafe(s.email, `Holiday Announced: ${title}`,
+        wrapEmailTemplate(`Hi ${s.name}, a holiday has been announced: <b>${title}</b> on <b>${new Date(date).toLocaleDateString()}</b> (${type}). Enjoy your day off!`)
+      ).catch(() => {});
+    }
+  }
+}
+
+// --- Payment Notifications ---
+
+export async function notifyPaymentReceived(studentName: string, studentEmail: string, amount: number, programTitle: string, method: string) {
+  // Notify admins
+  const admins = await prisma.user.findMany({ where: { role: { in: ["admin", "organization"] }, isActive: true }, select: { id: true, email: true } });
+  for (const admin of admins) {
+    await Promise.all([
+      sendEmailSafe(admin.email, `Payment Received — ₹${amount.toLocaleString()}`,
+        wrapEmailTemplate(`Payment of <b>₹${amount.toLocaleString()}</b> received from <b>${studentName}</b> (${studentEmail}) for <b>${programTitle}</b> via ${method}.`)),
+      prisma.notification.create({
+        data: { userId: admin.id, title: "Payment Received", message: `₹${amount.toLocaleString()} from ${studentName} for ${programTitle}`, type: "success", link: "/dashboard/payments" },
+      }).catch(() => {}),
+    ]);
+  }
+}
+
+// --- Task Submission Notification ---
+
+export async function notifyTaskSubmitted(studentName: string, taskTitle: string, programTitle: string) {
+  const admins = await prisma.user.findMany({ where: { role: { in: ["admin", "organization"] }, isActive: true }, select: { id: true } });
+  for (const admin of admins) {
+    await prisma.notification.create({
+      data: { userId: admin.id, title: "Task Submitted", message: `${studentName} submitted: ${taskTitle} (${programTitle})`, type: "info", link: "/dashboard/reviews" },
+    }).catch(() => {});
+  }
+}
+
 function wrapEmailTemplate(body: string): string {
   return `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
