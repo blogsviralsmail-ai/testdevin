@@ -39,6 +39,7 @@ const navItems = [
   // Documents & Letters
   { href: "/dashboard/letters", label: "Letters", icon: "📄", roles: ["admin", "organization", "teamleader", "student"] },
   { href: "/dashboard/documents", label: "Documents", icon: "📎", roles: ["admin", "organization", "teamleader", "student"] },
+  { href: "/dashboard/id-cards", label: "ID Card", icon: "🪪", roles: ["admin", "organization", "student"] },
   { href: "/dashboard/completion", label: "Completion", icon: "🎓", roles: ["admin", "organization", "teamleader"] },
 
   // HR & Finance
@@ -282,9 +283,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const hasPerm = (perm: string) => userPermissions.includes("*") || userPermissions.includes(perm);
 
   const filteredNav = navItems.filter((item) => {
-    // Always show by role first (backward compatible)
     if (!item.roles.includes(user.role)) return false;
-    // If permissions loaded, also check permission
+    // Students and agents use role-based access only (no granular permissions)
+    if (user.role === "student" || user.role === "agent") return true;
+    // Admin/org/teamleader: also check granular permissions
     if (userPermissions.length > 0) {
       const requiredPerm = navPermMap[item.href];
       if (requiredPerm && !hasPerm(requiredPerm)) return false;

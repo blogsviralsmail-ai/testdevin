@@ -443,7 +443,7 @@ export default function IDCardsPage() {
                 className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg text-sm hover:bg-white/20">
                 Cancel
               </button>
-              <button onClick={() => { setShowPhotoAlert(false); window.location.href = "/dashboard/students"; }}
+              <button onClick={() => { setShowPhotoAlert(false); window.location.href = user?.role === "student" ? "/dashboard/profile" : "/dashboard/students"; }}
                 className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2] font-medium">
                 Upload Photo
               </button>

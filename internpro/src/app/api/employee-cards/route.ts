@@ -47,6 +47,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Card already exists for this user. Delete existing card first." }, { status: 400 });
     }
 
+    // Photo gate: require photo before generating ID card
+    if (!photoUrl && !user.avatar) {
+      return NextResponse.json({ error: "Please upload the student's profile photo first before generating an ID card." }, { status: 400 });
+    }
+
     const cardNumber = generateUniqueId("ID");
 
     const settings = await prisma.setting.findMany();
