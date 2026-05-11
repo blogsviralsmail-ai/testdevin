@@ -21,9 +21,9 @@ sshpass -p 'oB(]V9674mHYts' rsync -avz \
   -e "ssh -o StrictHostKeyChecking=no" \
   ./ ${VPS_USER}@${VPS_HOST}:${VPS_PATH}/
 
-echo "Running prisma generate on VPS..."
+echo "Running prisma db push + generate on VPS..."
 sshpass -p 'oB(]V9674mHYts' ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
-  "cd ${VPS_PATH} && npx prisma generate"
+  "cd ${VPS_PATH} && npx prisma db push --accept-data-loss && npx prisma generate"
 
 echo "Restarting PM2..."
 sshpass -p 'oB(]V9674mHYts' ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
