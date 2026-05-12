@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface Blog {
   id: string;
@@ -25,6 +25,61 @@ export default function BlogsPage() {
   const [form, setForm] = useState({ title: "", content: "", excerpt: "", coverImage: "", category: "General", tags: "", isPublished: false });
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleUpload = async (file: File): Promise<string | null> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    setUploading(true);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        return data.url;
+      }
+      alert("Upload failed");
+      return null;
+    } catch {
+      alert("Upload error");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await handleUpload(file);
+    if (url) setForm({ ...form, coverImage: url });
+  };
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await handleUpload(file);
+    if (url) {
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+      let html = "";
+      if (isImage) html = `<img src="${url}" alt="${file.name}" style="max-width:100%;border-radius:8px;margin:1em 0" />\n`;
+      else if (isVideo) html = `<video src="${url}" controls style="max-width:100%;border-radius:8px;margin:1em 0"></video>\n`;
+      else html = `<a href="${url}" target="_blank">${file.name}</a>\n`;
+
+      const ta = contentRef.current;
+      if (ta) {
+        const start = ta.selectionStart;
+        const before = form.content.substring(0, start);
+        const after = form.content.substring(start);
+        setForm({ ...form, content: before + html + after });
+      } else {
+        setForm({ ...form, content: form.content + html });
+      }
+    }
+  };
 
   const fetchBlogs = () => {
     fetch("/api/blogs")
@@ -135,9 +190,18 @@ export default function BlogsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Cover Image URL</label>
-                <input value={form.coverImage} onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
-                  className={inputCls} style={inputStyle} placeholder="https://example.com/image.jpg" />
+                <label className="block text-sm font-medium text-slate-300 mb-1">Cover Image</label>
+                <div className="flex gap-2 items-center">
+                  <input value={form.coverImage} onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
+                    className={inputCls + " flex-1"} style={inputStyle} placeholder="URL or upload image" />
+                  <input type="file" ref={coverInputRef} accept="image/*" className="hidden" onChange={handleCoverUpload} />
+                  <button type="button" onClick={() => coverInputRef.current?.click()} disabled={uploading}
+                    className="px-3 py-2 rounded-lg text-sm font-medium text-white whitespace-nowrap"
+                    style={{ background: "linear-gradient(135deg, #8b5cf6, #7c3aed)" }}>
+                    {uploading ? "..." : "📷 Upload"}
+                  </button>
+                </div>
+                {form.coverImage && <img src={form.coverImage} alt="Cover preview" className="mt-2 rounded-lg max-h-32 object-cover" />}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Excerpt (short description)</label>
@@ -146,9 +210,30 @@ export default function BlogsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Content * (HTML supported)</label>
-                <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <input type="file" ref={mediaInputRef} accept="image/*,video/*,.pdf,.doc,.docx" className="hidden" onChange={handleMediaUpload} />
+                  <button type="button" onClick={() => mediaInputRef.current?.click()} disabled={uploading}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+                    style={{ background: "linear-gradient(135deg, #8b5cf6, #7c3aed)" }}>
+                    {uploading ? "Uploading..." : "🖼️ Insert Image/Video"}
+                  </button>
+                  <button type="button" onClick={() => setForm({ ...form, content: form.content + "\n<h2></h2>\n" })}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-300 border border-slate-600 hover:bg-white/5">H2 Heading</button>
+                  <button type="button" onClick={() => setForm({ ...form, content: form.content + "\n<h3></h3>\n" })}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-300 border border-slate-600 hover:bg-white/5">H3 Heading</button>
+                  <button type="button" onClick={() => setForm({ ...form, content: form.content + "\n<p></p>\n" })}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-300 border border-slate-600 hover:bg-white/5">Paragraph</button>
+                  <button type="button" onClick={() => setForm({ ...form, content: form.content + "\n<ul>\n<li></li>\n</ul>\n" })}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-300 border border-slate-600 hover:bg-white/5">List</button>
+                  <button type="button" onClick={() => setForm({ ...form, content: form.content + '\n<blockquote></blockquote>\n' })}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-300 border border-slate-600 hover:bg-white/5">Quote</button>
+                  <button type="button" onClick={() => setForm({ ...form, content: form.content + '\n<strong></strong>' })}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-300 border border-slate-600 hover:bg-white/5">Bold</button>
+                </div>
+                <textarea ref={contentRef} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
                   className={inputCls} style={{ ...inputStyle, minHeight: "300px", fontFamily: "monospace" }}
                   placeholder="<h2>Introduction</h2><p>Write your blog content here...</p>" />
+                <p className="text-xs text-slate-500 mt-1">Upload image/video → auto-inserts HTML at cursor position. Supports: JPG, PNG, GIF, MP4, PDF, DOC</p>
               </div>
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-slate-300">Publish immediately</label>
