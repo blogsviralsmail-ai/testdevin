@@ -237,8 +237,13 @@ export default function LettersPage() {
               </button>
             </div>
           </div>
-          <div className="p-4 bg-transparent overflow-auto">
-            <div dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
+          <div className="p-4 bg-white overflow-auto rounded-b-xl">
+            <style dangerouslySetInnerHTML={{ __html: `
+              .letter-container > div { transform: none !important; }
+              .letter-container > div > div { width: 100% !important; max-width: 210mm; margin: 0 auto !important; height: auto !important; min-height: auto !important; overflow: visible !important; }
+              .letter-container > div > div > div { overflow: visible !important; }
+            `}} />
+            <div className="letter-container" dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
             <div className="h-4" />
           </div>
           {/* Accept Offer Letter Section */}
