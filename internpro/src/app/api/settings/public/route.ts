@@ -7,6 +7,8 @@ export async function GET() {
     "company_name", "company_logo", "company_phone", "company_email",
     "company_address", "google_maps_lat", "google_maps_lng",
     "site_url", "letterhead_company_name",
+    "social_facebook", "social_instagram", "social_twitter", "social_linkedin",
+    "social_youtube", "social_telegram", "social_pinterest", "social_whatsapp_channel",
   ];
   const settings = await prisma.setting.findMany({
     where: { key: { in: publicKeys } },

@@ -1312,6 +1312,53 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">Social Media Links</h2>
+              <p className="text-xs text-slate-500 mb-4">Add your social media links — they will appear on the website footer</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Facebook</label>
+                  <input value={settings.social_facebook || ""} onChange={(e) => updateSetting("social_facebook", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://facebook.com/kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Instagram</label>
+                  <input value={settings.social_instagram || ""} onChange={(e) => updateSetting("social_instagram", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://instagram.com/kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Twitter / X</label>
+                  <input value={settings.social_twitter || ""} onChange={(e) => updateSetting("social_twitter", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://x.com/kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">LinkedIn</label>
+                  <input value={settings.social_linkedin || ""} onChange={(e) => updateSetting("social_linkedin", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://linkedin.com/company/kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">YouTube</label>
+                  <input value={settings.social_youtube || ""} onChange={(e) => updateSetting("social_youtube", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://youtube.com/@kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Telegram</label>
+                  <input value={settings.social_telegram || ""} onChange={(e) => updateSetting("social_telegram", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://t.me/kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Pinterest</label>
+                  <input value={settings.social_pinterest || ""} onChange={(e) => updateSetting("social_pinterest", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://pinterest.com/kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">WhatsApp Channel</label>
+                  <input value={settings.social_whatsapp_channel || ""} onChange={(e) => updateSetting("social_whatsapp_channel", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://whatsapp.com/channel/kkhsmedia" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

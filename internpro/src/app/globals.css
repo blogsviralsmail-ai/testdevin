@@ -257,6 +257,16 @@ main > div > div[class*="rounded"]:not([class*="max-w"]):not([class*="max-h"]):n
   transform: none !important;
 }
 
+/* Social media icon hover colors */
+.social-icon-link {
+  color: #94a3b8;
+}
+.social-icon-link:hover {
+  color: var(--hover-color, #ffffff);
+  background: rgba(255,255,255,0.15) !important;
+  border-color: var(--hover-color, rgba(255,255,255,0.2)) !important;
+}
+
 /* 3D table rows */
 table tbody tr {
   transition: all 0.2s ease;
