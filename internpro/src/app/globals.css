@@ -226,12 +226,23 @@ aside nav a:hover {
 }
 
 /* 3D stat/metric cards — only small stat cards, not large content containers */
-main > div > div[class*="rounded"]:not([class*="max-w"]):not([class*="max-h"]):not([class*="prose"]):not([class*="overflow"]):not([class*="space-y"]) {
+main > div > div[class*="rounded"]:not([class*="max-w"]):not([class*="max-h"]):not([class*="prose"]):not([class*="overflow"]):not([class*="space-y"]):not(.letter-viewer) {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-main > div > div[class*="rounded"]:not([class*="max-w"]):not([class*="max-h"]):not([class*="prose"]):not([class*="overflow"]):not([class*="space-y"]):hover {
+main > div > div[class*="rounded"]:not([class*="max-w"]):not([class*="max-h"]):not([class*="prose"]):not([class*="overflow"]):not([class*="space-y"]):not(.letter-viewer):hover {
   transform: perspective(1000px) rotateX(-2deg) rotateY(2deg) translateY(-4px);
   box-shadow: 0 15px 40px rgba(0,0,0,0.25), 0 0 20px rgba(14,165,184,0.08);
+}
+
+/* Disable all 3D transforms on letter viewer and its content (not buttons) */
+.letter-viewer {
+  transform: none !important;
+  transition: none !important;
+}
+.letter-viewer .letter-container,
+.letter-viewer .letter-container *,
+.letter-viewer .letter-container table tbody tr:hover {
+  transform: none !important;
 }
 
 /* 3D table rows */

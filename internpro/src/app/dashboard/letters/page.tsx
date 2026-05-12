@@ -187,7 +187,7 @@ export default function LettersPage() {
         <button onClick={() => setViewingLetter(null)} className="mb-4 text-[#22d3ee] hover:underline text-sm">
           &larr; Back to {pageTitle}
         </button>
-        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] shadow-none border">
+        <div className="letter-viewer rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] shadow-none border">
           <div className="flex items-center justify-between p-4 border-b">
             <h3 className="font-bold text-white">{viewingLetter.title}</h3>
             <div className="flex gap-2 flex-wrap">
