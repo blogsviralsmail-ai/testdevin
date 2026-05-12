@@ -150,6 +150,11 @@ export async function GET(request: NextRequest) {
         `<img src="${currentSignature}" alt="Signature" style="height: 50px; display: block; margin-bottom: 4px; object-fit: contain;" />`
       );
     }
+    // Fix intern acceptance section padding for existing letters
+    result = result.replace(
+      /margin-top:6px;padding-top:4px;border-top:1px dashed #ccc/g,
+      "margin-top:6px;padding-top:4px;padding-bottom:10px;border-top:1px dashed #ccc"
+    );
     return result;
   }
 

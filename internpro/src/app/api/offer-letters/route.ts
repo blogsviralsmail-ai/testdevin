@@ -64,6 +64,11 @@ export async function GET(request: NextRequest) {
         `<img src="${curSig}" alt="Signature" style="height: 50px; display: block; margin-bottom: 4px; object-fit: contain;" />`
       );
     }
+    // Fix intern acceptance section padding for existing letters
+    html = html.replace(
+      /margin-top:6px;padding-top:4px;border-top:1px dashed #ccc/g,
+      "margin-top:6px;padding-top:4px;padding-bottom:10px;border-top:1px dashed #ccc"
+    );
     return { ...l, htmlContent: html };
   });
 
@@ -206,7 +211,7 @@ ${signatoryName ? `<p style="margin:0;font-weight:700;color:#0000AA;font-size:16
 </td><td style="width:90px;text-align:right;vertical-align:bottom;">
 <img src="${qrImg}" alt="Verify QR" style="width:70px;height:70px;display:inline-block;" /><br/><span style="font-size:9px;color:#888;">Scan to verify</span>
 </td></tr></table>
-<div style="margin-top:6px;padding-top:4px;border-top:1px dashed #ccc;">
+<div style="margin-top:6px;padding-top:4px;padding-bottom:10px;border-top:1px dashed #ccc;">
 <p style="font-size:14px;font-weight:700;color:#0000AA;margin:0 0 3px;">Intern&rsquo;s Acceptance</p>
 <p style="font-size:13px;color:#333;line-height:1.45;margin:0 0 3px;">I, <strong>{{student_name}}</strong>, hereby accept the above-mentioned terms and conditions and agree to abide by all policies, rules, and regulations of ${escapeHtml(lhCompany)} during the course of my internship.</p>
 <table style="width:100%;font-size:13px;color:#555;"><tr><td style="width:50%;padding:4px 0;">Signature: ________________________</td><td style="width:50%;padding:4px 0;">Date: ________________________</td></tr><tr><td style="padding:4px 0;">Name: {{student_name}}</td><td></td></tr></table>

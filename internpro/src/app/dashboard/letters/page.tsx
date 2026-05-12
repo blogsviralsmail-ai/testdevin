@@ -237,8 +237,9 @@ export default function LettersPage() {
               </button>
             </div>
           </div>
-          <div className="p-4 bg-transparent overflow-auto max-h-[80vh]">
+          <div className="p-4 bg-transparent overflow-auto">
             <div dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
+            <div className="h-4" />
           </div>
           {/* Accept Offer Letter Section */}
           {viewingLetter.offerId && (
