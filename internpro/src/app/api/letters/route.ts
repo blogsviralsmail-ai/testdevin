@@ -12,9 +12,10 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get("search")?.trim() || "";
   const searchType = searchParams.get("type") || "name"; // name | employee_id | phone
 
-  // Build enrollment filter based on role
+  // Build enrollment filter based on role (exclude soft-deleted students)
   const enrollmentWhere: Record<string, unknown> = {
     status: { in: ["selected", "completed"] },
+    student: { deletedAt: null },
   };
 
   if (session.role === "student") {

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const studentId = searchParams.get("studentId");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { user: { deletedAt: null } };
   if (session.role === "student") {
     where.userId = session.id;
   } else if (studentId) {

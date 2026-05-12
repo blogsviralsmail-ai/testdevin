@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { user: { deletedAt: null } };
   if (!["admin", "organization"].includes(session.role)) {
     where.userId = session.id;
   }

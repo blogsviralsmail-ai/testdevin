@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return generateSalaries(month);
   }
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { enrollment: { student: { deletedAt: null } } };
   if (month) where.month = month;
 
   if (!["admin", "organization"].includes(session.role)) {

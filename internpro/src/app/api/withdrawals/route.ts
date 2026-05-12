@@ -11,7 +11,10 @@ export async function GET() {
 
     const isAdmin = session.role === "admin" || session.role === "organization";
 
-    const where: Record<string, unknown> = {};
+    // Exclude soft-deleted users
+    const deletedUsers = await prisma.user.findMany({ where: { deletedAt: { not: null } }, select: { id: true } });
+    const deletedIds = deletedUsers.map(u => u.id);
+    const where: Record<string, unknown> = deletedIds.length ? { userId: { notIn: deletedIds } } : {};
     if (!isAdmin) {
       where.userId = session.id;
     }

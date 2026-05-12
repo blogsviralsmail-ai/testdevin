@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const userId = searchParams.get("userId");
   const status = searchParams.get("status");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { user: { deletedAt: null } };
   if (session.role === "student") {
     where.userId = session.id;
   } else if (session.role === "teamleader") {

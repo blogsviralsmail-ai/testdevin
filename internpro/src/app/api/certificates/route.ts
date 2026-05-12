@@ -51,7 +51,7 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { enrollment: { student: { deletedAt: null } } };
   if (session.role === "student") {
     const enrollments = await prisma.enrollment.findMany({ where: { studentId: session.id }, select: { id: true } });
     where.enrollmentId = { in: enrollments.map(e => e.id) };

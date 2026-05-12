@@ -31,11 +31,12 @@ export async function GET(request: NextRequest) {
 
   const userIds = allPoints.map(p => p.userId);
   const users = await prisma.user.findMany({
-    where: { id: { in: userIds } },
+    where: { id: { in: userIds }, deletedAt: null },
     select: { id: true, name: true, avatar: true, employeeId: true },
   });
+  const activeUserIds = new Set(users.map(u => u.id));
 
-  const leaderboard = allPoints.map((p, idx) => {
+  const leaderboard = allPoints.filter(p => activeUserIds.has(p.userId)).map((p, idx) => {
     const user = users.find(u => u.id === p.userId);
     return { rank: idx + 1, userId: p.userId, name: user?.name || "Unknown", avatar: user?.avatar, employeeId: user?.employeeId, points: p._sum.points || 0 };
   });

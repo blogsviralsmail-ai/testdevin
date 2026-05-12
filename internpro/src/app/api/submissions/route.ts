@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const taskId = searchParams.get("taskId");
   const studentId = searchParams.get("studentId");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { student: { deletedAt: null } };
   if (taskId) where.taskId = taskId;
   if (session.role === "student") {
     where.studentId = session.id;

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get("status");
   const enrollmentId = searchParams.get("enrollmentId");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { enrollment: { student: { deletedAt: null } } };
   if (status) where.status = status;
   if (enrollmentId) where.enrollmentId = enrollmentId;
 

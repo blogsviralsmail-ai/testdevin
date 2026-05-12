@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("userId");
 
-  const where: Record<string, unknown> = {};
+  // Exclude soft-deleted users
+  const deletedUsers = await prisma.user.findMany({ where: { deletedAt: { not: null } }, select: { id: true } });
+  const deletedIds = deletedUsers.map(u => u.id);
+  const where: Record<string, unknown> = deletedIds.length ? { userId: { notIn: deletedIds } } : {};
   if (["admin", "organization"].includes(session.role)) {
     if (userId) where.userId = userId;
   } else {

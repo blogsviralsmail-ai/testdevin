@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { user: { deletedAt: null } };
   if (session.role === "student") where.userId = session.id;
 
   const cards = await prisma.employeeCard.findMany({

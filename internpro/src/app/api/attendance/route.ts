@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const batchId = searchParams.get("batchId");
   const date = searchParams.get("date");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { user: { deletedAt: null } };
   if (enrollmentId) where.enrollmentId = enrollmentId;
   if (date) {
     const d = new Date(date);

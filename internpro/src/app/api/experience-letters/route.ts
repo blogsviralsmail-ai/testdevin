@@ -16,9 +16,11 @@ export async function GET(request: NextRequest) {
 
   const where: Record<string, unknown> = {};
   if (enrollmentId) where.enrollmentId = enrollmentId;
-  // Students only see their own experience letters
+  // Students only see their own experience letters; exclude soft-deleted students
   if (session.role === "student") {
-    where.enrollment = { studentId: session.id };
+    where.enrollment = { studentId: session.id, student: { deletedAt: null } };
+  } else {
+    where.enrollment = { student: { deletedAt: null } };
   }
 
   const letters = await prisma.experienceLetter.findMany({

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const enrollmentId = searchParams.get("enrollmentId");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { enrollment: { student: { deletedAt: null } } };
   if (enrollmentId) where.enrollmentId = enrollmentId;
 
   const payments = await prisma.payment.findMany({

@@ -26,8 +26,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ...payslip, user, enrollment });
   }
 
-  // List payslips
-  const where: Record<string, unknown> = {};
+  // List payslips (exclude soft-deleted users)
+  const deletedUsers = await prisma.user.findMany({ where: { deletedAt: { not: null } }, select: { id: true } });
+  const deletedIds = deletedUsers.map(u => u.id);
+  const where: Record<string, unknown> = deletedIds.length ? { userId: { notIn: deletedIds } } : {};
   if (!["admin", "organization"].includes(session.role)) {
     where.userId = session.id;
   }
