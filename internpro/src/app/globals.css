@@ -593,7 +593,51 @@ main > div {
 .blog-content ul, .blog-content ol { margin-bottom: 1em; padding-left: 1.5em; }
 .blog-content li { margin-bottom: 0.5em; }
 .blog-content a { color: #22d3ee; text-decoration: underline; }
-.blog-content img { max-width: 100%; border-radius: 0.75rem; margin: 1.5em 0; }
+.blog-content img { max-width: 100%; border-radius: 0.75rem; margin: 1.5em 0; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.blog-content img:hover { transform: scale(1.02); box-shadow: 0 8px 30px rgba(0, 210, 200, 0.2); }
 .blog-content blockquote { border-left: 4px solid #22d3ee; padding-left: 1em; margin: 1.5em 0; color: #94a3b8; font-style: italic; }
 .blog-content code { background: rgba(255,255,255,0.05); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
 .blog-content pre { background: rgba(255,255,255,0.05); padding: 1em; border-radius: 0.75rem; overflow-x: auto; margin: 1.5em 0; }
+.blog-content table { width: 100%; border-collapse: collapse; margin: 1.5em 0; }
+.blog-content table th, .blog-content table td { border: 1px solid rgba(255,255,255,0.1); padding: 0.75em 1em; text-align: left; }
+.blog-content table th { background: rgba(255,255,255,0.05); font-weight: 600; color: #f1f5f9; }
+.blog-content table td { color: #cbd5e1; }
+
+/* 3D Apply Now Button */
+.apply-now-3d {
+  display: inline-block;
+  padding: 18px 48px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fff;
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 0 #4c1d95, 0 15px 30px rgba(139, 92, 246, 0.4);
+  transform: translateY(0);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  text-decoration: none !important;
+  position: relative;
+  overflow: hidden;
+}
+.apply-now-3d:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 0 #4c1d95, 0 20px 40px rgba(139, 92, 246, 0.5);
+}
+.apply-now-3d:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 #4c1d95, 0 8px 15px rgba(139, 92, 246, 0.3);
+}
+.apply-now-3d::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+.apply-now-3d:hover::before { left: 100%; }
+.apply-now-cta { text-align: center; margin: 2.5em 0; }

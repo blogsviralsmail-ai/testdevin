@@ -66,14 +66,14 @@ export default function BlogPostClient({ blog, adBefore, adAfter, relatedArticle
         </nav>
 
         {blog.coverImage && (
-          <div className="rounded-2xl overflow-hidden mb-8 aspect-video">
+          <Link href="/register" className="block rounded-2xl overflow-hidden mb-8 aspect-video group cursor-pointer">
             <img
               src={blog.coverImage}
               alt={`${blog.title} - KKHS Media Internship`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
-          </div>
+          </Link>
         )}
 
         {/* Ad Before Content */}
@@ -117,10 +117,19 @@ export default function BlogPostClient({ blog, adBefore, adAfter, relatedArticle
         {/* Table of Contents */}
         <TableOfContents content={blog.content} />
 
-        {/* Article Content */}
-        <div className="prose prose-invert prose-lg max-w-none blog-content"
+        {/* Article Content - images are clickable to register */}
+        <div
+          className="prose prose-invert prose-lg max-w-none blog-content"
           style={{ color: "#cbd5e1" }}
-          dangerouslySetInnerHTML={{ __html: blog.content }} />
+          dangerouslySetInnerHTML={{ __html: blog.content }}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'IMG') {
+              e.preventDefault();
+              window.location.href = '/register';
+            }
+          }}
+        />
 
         {/* Ad After Content */}
         {adAfter && (
