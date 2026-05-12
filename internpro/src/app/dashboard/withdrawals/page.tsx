@@ -37,11 +37,24 @@ export default function WithdrawalsPage() {
   const [processModal, setProcessModal] = useState<WithdrawalRequest | null>(null);
   const [adminRemarks, setAdminRemarks] = useState("");
   const [filter, setFilter] = useState("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || d));
     fetchData();
   }, []);
+
+  const toggleSelect = (id: string) => { const next = new Set(selectedIds); if (next.has(id)) next.delete(id); else next.add(id); setSelectedIds(next); };
+  const toggleSelectAll = () => { if (selectedIds.size === filtered.length) setSelectedIds(new Set()); else setSelectedIds(new Set(filtered.map((w) => w.id))); };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} withdrawals?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_withdrawals", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
 
   const fetchData = async () => {
     const [wRes, walletRes] = await Promise.all([
@@ -136,6 +149,15 @@ export default function WithdrawalsPage() {
         ))}
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
+
       {/* Withdrawal Requests List */}
       {filtered.length === 0 ? (
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center">
@@ -145,10 +167,13 @@ export default function WithdrawalsPage() {
         </div>
       ) : (
         <div className="space-y-3">
+          {isAdmin && <div className="flex items-center gap-2 mb-2"><input type="checkbox" checked={filtered.length > 0 && selectedIds.size === filtered.length} onChange={toggleSelectAll} /><span className="text-xs text-slate-500">Select All</span></div>}
           {filtered.map(w => (
             <div key={w.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex items-center gap-3">
+                  {isAdmin && <input type="checkbox" checked={selectedIds.has(w.id)} onChange={() => toggleSelect(w.id)} />}
+                  <div>
                   {isAdmin && w.user && <p className="text-white font-semibold">{w.user.name} <span className="text-xs text-slate-500">({w.user.email})</span></p>}
                   <p className="text-2xl font-bold text-white">₹{w.amount.toLocaleString()}</p>
                   <div className="flex gap-3 mt-1 text-xs text-slate-500">
@@ -159,6 +184,7 @@ export default function WithdrawalsPage() {
                   </div>
                   {w.remarks && <p className="text-xs text-slate-400 mt-1">Note: {w.remarks}</p>}
                   {w.adminRemarks && <p className="text-xs text-amber-400 mt-1">Admin: {w.adminRemarks}</p>}
+                </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${

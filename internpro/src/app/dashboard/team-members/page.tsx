@@ -19,6 +19,8 @@ export default function TeamMembersPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", role: "", bio: "", photo: "", order: 0 });
   const [msg, setMsg] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchMembers = useCallback(async () => {
     const res = await fetch("/api/team");
@@ -27,6 +29,17 @@ export default function TeamMembersPage() {
   }, []);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+  const toggleSelect = (id: string) => { const next = new Set(selectedIds); if (next.has(id)) next.delete(id); else next.add(id); setSelectedIds(next); };
+  const toggleSelectAll = () => { if (selectedIds.size === members.length) setSelectedIds(new Set()); else setSelectedIds(new Set(members.map((m) => m.id))); };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} team members?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_team_members", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchMembers();
+  };
 
   const startEdit = (m: TeamMember) => {
     setEditing(m);
@@ -95,12 +108,24 @@ export default function TeamMembersPage() {
         </div>
       )}
 
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-3">
-          <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">All Members ({members.length})</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">All Members ({members.length})</h3>
+            <div className="flex items-center gap-2"><input type="checkbox" checked={members.length > 0 && selectedIds.size === members.length} onChange={toggleSelectAll} /><span className="text-xs text-slate-500">Select All</span></div>
+          </div>
           {members.map(m => (
             <div key={m.id} onClick={() => startEdit(m)} className={`p-4 rounded-xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 ${editing?.id === m.id ? 'ring-1 ring-[#0EA5B8]' : ''}`} style={{ background: editing?.id === m.id ? 'rgba(14,165,184,0.1)' : 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-3">
+                <input type="checkbox" checked={selectedIds.has(m.id)} onChange={(e) => { e.stopPropagation(); toggleSelect(m.id); }} onClick={(e) => e.stopPropagation()} />
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{background: 'linear-gradient(135deg, rgba(14,165,184,0.3), rgba(167,139,250,0.3))'}}>
                   {m.photo ? <img src={m.photo} alt={m.name} className="w-10 h-10 rounded-full object-cover" /> : m.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                 </div>

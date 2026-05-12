@@ -16,6 +16,8 @@ export default function AgentsPage() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [user, setUser] = useState<{ role: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", commissionRate: "30", bankName: "", accountNumber: "", ifscCode: "", upiId: "" });
   const [payoutAmount, setPayoutAmount] = useState("");
   const [refData, setRefData] = useState<{ referralCode: string | null; walletBalance: number; totalEarnings: number; commissionRate: number; referrals: Referral[] } | null>(null);
@@ -28,6 +30,17 @@ export default function AgentsPage() {
   }, []);
 
   const fetchAgents = async () => { const r = await fetch("/api/agents"); if (r.ok) { const data = await r.json(); setAgents(Array.isArray(data) ? data : [data]); } };
+
+  const toggleSelect = (id: string) => { const next = new Set(selectedIds); if (next.has(id)) next.delete(id); else next.add(id); setSelectedIds(next); };
+  const toggleSelectAll = () => { if (selectedIds.size === agents.length) setSelectedIds(new Set()); else setSelectedIds(new Set(agents.map((a) => a.id))); };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} agents?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_agents", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchAgents();
+  };
 
   const createAgent = async () => {
     const r = await fetch("/api/agents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, commissionRate: parseFloat(form.commissionRate) }) });
@@ -294,11 +307,21 @@ export default function AgentsPage() {
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border"><p className="text-sm text-slate-500">Pending Payouts</p><p className="text-2xl font-bold">₹{agents.reduce((s, a) => s + a.walletBalance, 0).toLocaleString()}</p></div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
+
       {/* Agent List */}
       <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
         <table className="w-full">
           <thead className="bg-transparent">
             <tr>
+              <th className="px-4 py-3 text-center"><input type="checkbox" checked={agents.length > 0 && selectedIds.size === agents.length} onChange={toggleSelectAll} /></th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Agent</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Code</th>
               <th className="px-4 py-3 text-center text-xs font-medium text-slate-500">Referrals</th>
@@ -310,6 +333,7 @@ export default function AgentsPage() {
           <tbody className="divide-y">
             {agents.map(agent => (
               <tr key={agent.id}>
+                <td className="px-4 py-3 text-center"><input type="checkbox" checked={selectedIds.has(agent.id)} onChange={() => toggleSelect(agent.id)} /></td>
                 <td className="px-4 py-3"><div><p className="text-sm font-medium">{agent.user.name}</p><p className="text-xs text-slate-500">{agent.user.email}</p></div></td>
                 <td className="px-4 py-3 text-sm font-mono text-[#22d3ee]">{agent.referralCode}</td>
                 <td className="px-4 py-3 text-center text-sm">{agent.referrals?.length || 0}</td>

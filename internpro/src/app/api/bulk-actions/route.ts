@@ -328,6 +328,45 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    case "bulk_delete_agents": {
+      for (const id of ids) {
+        // Delete agent's referrals and payouts first, then agent
+        await prisma.referral.deleteMany({ where: { agentId: id } }).catch(() => {});
+        await prisma.agentPayout.deleteMany({ where: { agentId: id } }).catch(() => {});
+        await prisma.agent.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "agent", undefined, `Deleted ${count} agents`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_inquiries": {
+      for (const id of ids) {
+        await prisma.contactInquiry.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "inquiry", undefined, `Deleted ${count} inquiries`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_team_members": {
+      for (const id of ids) {
+        await prisma.teamMember.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "team_member", undefined, `Deleted ${count} team members`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_withdrawals": {
+      for (const id of ids) {
+        await prisma.withdrawalRequest.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "withdrawal", undefined, `Deleted ${count} withdrawals`, session.id, session.name);
+      break;
+    }
+
     default:
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }

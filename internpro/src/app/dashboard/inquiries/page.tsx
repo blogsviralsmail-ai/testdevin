@@ -18,6 +18,8 @@ export default function InquiriesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Inquiry | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     const res = await fetch("/api/contact");
@@ -26,6 +28,17 @@ export default function InquiriesPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const toggleSelect = (id: string) => { const next = new Set(selectedIds); if (next.has(id)) next.delete(id); else next.add(id); setSelectedIds(next); };
+  const toggleSelectAll = () => { if (selectedIds.size === filtered.length) setSelectedIds(new Set()); else setSelectedIds(new Set(filtered.map((i) => i.id))); };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} inquiries?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_inquiries", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
 
   const deleteInquiry = async (id: string) => {
     if (!confirm("Delete this inquiry?")) return;
@@ -74,14 +87,26 @@ export default function InquiriesPage() {
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search inquiries..." className="w-full md:w-96 px-4 py-2.5 rounded-xl text-white placeholder-slate-500 outline-none" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}} />
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-3 max-h-[70vh] overflow-y-auto">
+          <div className="flex items-center gap-2 mb-2"><input type="checkbox" checked={filtered.length > 0 && selectedIds.size === filtered.length} onChange={toggleSelectAll} /><span className="text-xs text-slate-500">Select All</span></div>
           {filtered.map(i => (
             <div key={i.id} onClick={() => setSelected(i)} className={`p-4 rounded-xl cursor-pointer transition-all ${selected?.id === i.id ? 'ring-1 ring-[#0EA5B8]' : ''}`} style={{ background: selected?.id === i.id ? 'rgba(14,165,184,0.1)' : 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-white text-sm">{i.name}</h4>
-                  <p className="text-xs text-slate-500">{i.email}</p>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={selectedIds.has(i.id)} onChange={(e) => { e.stopPropagation(); toggleSelect(i.id); }} onClick={(e) => e.stopPropagation()} />
+                  <div>
+                    <h4 className="font-medium text-white text-sm">{i.name}</h4>
+                    <p className="text-xs text-slate-500">{i.email}</p>
+                  </div>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); deleteInquiry(i.id); }} className="text-slate-600 hover:text-red-400 transition text-sm">🗑</button>
               </div>
