@@ -234,14 +234,26 @@ main > div > div[class*="rounded"]:not([class*="max-w"]):not([class*="max-h"]):n
   box-shadow: 0 15px 40px rgba(0,0,0,0.25), 0 0 20px rgba(14,165,184,0.08);
 }
 
-/* Disable all 3D transforms on letter viewer and its content (not buttons) */
-.letter-viewer {
+/* Disable all 3D transforms on letter viewer and letters page */
+.letter-viewer,
+.letter-viewer:hover,
+.letter-viewer:active {
   transform: none !important;
   transition: none !important;
+  box-shadow: none !important;
 }
 .letter-viewer .letter-container,
 .letter-viewer .letter-container *,
+.letter-viewer .letter-container *:hover,
+.letter-viewer .letter-container table tbody tr,
 .letter-viewer .letter-container table tbody tr:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+/* No 3D hover effects on entire letters page */
+.no-3d-hover div:hover,
+.no-3d-hover div:active,
+.no-3d-hover table tbody tr:hover {
   transform: none !important;
 }
 

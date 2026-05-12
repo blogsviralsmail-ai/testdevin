@@ -335,7 +335,7 @@ export default function LettersPage() {
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div>
+    <div className="no-3d-hover">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
         <p className="text-slate-400 text-sm">{pageDesc}</p>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ScrollToTop from "@/components/ScrollToTop";
+import SEOHead from "@/components/SEOHead";
 
 export const metadata: Metadata = {
   title: "InternPro - Complete Internship Management Platform",
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <SEOHead />
         <ScrollToTop />
         {children}
       </body>

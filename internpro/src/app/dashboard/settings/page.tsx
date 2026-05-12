@@ -15,7 +15,7 @@ interface SettingItem {
   value: string;
 }
 
-type TabKey = "profile" | "admins" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "website" | "site_content" | "info";
+type TabKey = "profile" | "admins" | "branding" | "letterhead" | "email" | "notifications" | "payments" | "program_types" | "letter_design" | "website" | "seo" | "site_content" | "info";
 
 interface SitePage {
   id: string;
@@ -38,6 +38,7 @@ const TABS: { key: TabKey; label: string; icon: string; adminOnly?: boolean }[] 
   { key: "program_types", label: "Program Types", icon: "📋", adminOnly: true },
   { key: "letter_design", label: "Letter Design", icon: "🖨️", adminOnly: true },
   { key: "website", label: "Website Settings", icon: "🌐", adminOnly: true },
+  { key: "seo", label: "SEO & Analytics", icon: "📊", adminOnly: true },
   { key: "site_content", label: "Site Content", icon: "📝", adminOnly: true },
   { key: "info", label: "Platform Info", icon: "ℹ️" },
 ];
@@ -1311,6 +1312,158 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ========== SEO & ANALYTICS ========== */}
+        {activeTab === "seo" && isAdmin && (
+          <div className="space-y-6">
+            {/* Google Analytics */}
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">Google Analytics</h2>
+              <p className="text-xs text-slate-500 mb-4">Track website visitors, page views, and user behavior</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Google Analytics Measurement ID</label>
+                  <input value={settings.ga_measurement_id || ""} onChange={(e) => updateSetting("ga_measurement_id", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="G-XXXXXXXXXX" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">Get from: Google Analytics → Admin → Data Streams → Measurement ID</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Google Tag Manager ID (optional)</label>
+                  <input value={settings.gtm_id || ""} onChange={(e) => updateSetting("gtm_id", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="GTM-XXXXXXX" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+              </div>
+            </div>
+
+            {/* Google AdSense */}
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">Google AdSense</h2>
+              <p className="text-xs text-slate-500 mb-4">Monetize your website with Google ads</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">AdSense Publisher ID</label>
+                  <input value={settings.adsense_publisher_id || ""} onChange={(e) => updateSetting("adsense_publisher_id", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="ca-pub-XXXXXXXXXXXXXXXX" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">Get from: Google AdSense → Account → Account Information → Publisher ID</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">AdSense Auto Ads</label>
+                  <button onClick={() => updateSetting("adsense_auto_ads", settings.adsense_auto_ads === "true" ? "false" : "true")}
+                    className="px-4 py-1.5 rounded-lg text-sm font-medium text-white"
+                    style={{background: settings.adsense_auto_ads === "true" ? 'linear-gradient(135deg, #059669, #047857)' : 'rgba(255,255,255,0.1)'}}>
+                    {settings.adsense_auto_ads === "true" ? "ON" : "OFF"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Google Search Console */}
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">Google Search Console</h2>
+              <p className="text-xs text-slate-500 mb-4">Verify ownership and monitor search performance</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Verification Meta Tag Content</label>
+                  <input value={settings.google_site_verification || ""} onChange={(e) => updateSetting("google_site_verification", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="paste content value from meta tag" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">Google Search Console → Settings → Ownership Verification → HTML tag → copy content value</p>
+                </div>
+              </div>
+            </div>
+
+            {/* SEO Meta Tags */}
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">SEO Meta Tags</h2>
+              <p className="text-xs text-slate-500 mb-4">Optimize your site for search engines</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Site Title</label>
+                  <input value={settings.seo_title || ""} onChange={(e) => updateSetting("seo_title", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="KKHS Media - Internship Programs" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Meta Description</label>
+                  <textarea value={settings.seo_description || ""} onChange={(e) => updateSetting("seo_description", e.target.value)}
+                    rows={3} className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Best internship programs in Jaipur - Video Editing, Digital Marketing, Web Development..." style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">150-160 characters recommended for Google search results</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Meta Keywords</label>
+                  <textarea value={settings.seo_keywords || ""} onChange={(e) => updateSetting("seo_keywords", e.target.value)}
+                    rows={3} className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="internship jaipur, video editing internship, digital marketing course, KKHS Media..." style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">Comma-separated keywords</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Canonical URL</label>
+                  <input value={settings.seo_canonical_url || ""} onChange={(e) => updateSetting("seo_canonical_url", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://internship.kkhsmedia.com" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+              </div>
+            </div>
+
+            {/* Open Graph / Social */}
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">Social Media / Open Graph</h2>
+              <p className="text-xs text-slate-500 mb-4">Control how your site appears when shared on social media</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">OG Title</label>
+                  <input value={settings.og_title || ""} onChange={(e) => updateSetting("og_title", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="KKHS Media Internship Programs" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">OG Description</label>
+                  <textarea value={settings.og_description || ""} onChange={(e) => updateSetting("og_description", e.target.value)}
+                    rows={2} className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="Join the best internship programs..." style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">OG Image URL</label>
+                  <input value={settings.og_image || ""} onChange={(e) => updateSetting("og_image", e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg text-sm text-white" placeholder="https://internship.kkhsmedia.com/og-image.jpg" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">Recommended: 1200x630px image</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sitemap & Robots */}
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">Sitemap & Robots.txt</h2>
+              <p className="text-xs text-slate-500 mb-4">Help search engines crawl and index your site</p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-slate-300">Auto-generate Sitemap</label>
+                  <button onClick={() => updateSetting("sitemap_enabled", settings.sitemap_enabled === "true" ? "false" : "true")}
+                    className="px-4 py-1.5 rounded-lg text-sm font-medium text-white"
+                    style={{background: settings.sitemap_enabled === "true" ? 'linear-gradient(135deg, #059669, #047857)' : 'rgba(255,255,255,0.1)'}}>
+                    {settings.sitemap_enabled === "true" ? "ON" : "OFF"}
+                  </button>
+                  <a href="/sitemap.xml" target="_blank" className="text-xs text-teal-400 hover:underline">View Sitemap →</a>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Custom Robots.txt Content</label>
+                  <textarea value={settings.robots_txt || "User-agent: *\nAllow: /\nSitemap: https://internship.kkhsmedia.com/sitemap.xml"} onChange={(e) => updateSetting("robots_txt", e.target.value)}
+                    rows={5} className="w-full px-4 py-2 border rounded-lg text-sm text-white font-mono" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <a href="/robots.txt" target="_blank" className="text-xs text-teal-400 hover:underline mt-1 inline-block">View robots.txt →</a>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Head Scripts */}
+            <div className="rounded-xl p-6" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+              <h2 className="text-lg font-semibold text-white mb-1">Custom Head Code</h2>
+              <p className="text-xs text-slate-500 mb-4">Add custom scripts, meta tags, or tracking codes to the &lt;head&gt; section</p>
+              <div>
+                <textarea value={settings.custom_head_code || ""} onChange={(e) => updateSetting("custom_head_code", e.target.value)}
+                  rows={6} className="w-full px-4 py-2 border rounded-lg text-sm text-white font-mono" placeholder="<!-- Paste any custom head code here -->" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                <p className="text-xs text-slate-500 mt-1">This code will be injected into the &lt;head&gt; of every page. Use for Facebook Pixel, custom meta tags, etc.</p>
+              </div>
+            </div>
+
+            <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{background: 'linear-gradient(135deg, #0EA5B8, #0891b2)', boxShadow: '0 3px 0 #0a7c8a'}}>
+              {saving ? "Saving..." : saved ? "Saved!" : "Save SEO Settings"}
+            </button>
           </div>
         )}
 
