@@ -35,6 +35,8 @@ export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [showMark, setShowMark] = useState(false);
   const [autoCheckedIn, setAutoCheckedIn] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [attRes, enrollRes, meRes] = await Promise.all([
@@ -109,6 +111,24 @@ export default function AttendancePage() {
   const handleExportCSV = () => serverExportCSV("attendance");
 
   const handleExportPDF = () => serverExportPDF("attendance", "Attendance");
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === records.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(records.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} attendance records?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_attendance", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
 
   return (
     <div>
@@ -209,11 +229,20 @@ export default function AttendancePage() {
           </div>
         </div>
       ) : (
+        <>
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+            <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+            <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+          </div>
+        )}
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-transparent">
                 <tr>
+                  <th className="p-3 w-10"><input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === records.length} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Student</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Date</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Status</th>
@@ -226,13 +255,14 @@ export default function AttendancePage() {
               <tbody className="divide-y divide-white/[0.06]">
                 {records.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                       No attendance records for {formatDate(selectedDate)}
                     </td>
                   </tr>
                 ) : (
                   records.map((record) => (
                     <tr key={record.id} className="hover:bg-transparent">
+                      <td className="p-3 w-10"><input type="checkbox" checked={selectedIds.has(record.id)} onChange={() => toggleSelect(record.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-white text-sm">{record.user.name}</div>
                         <div className="text-xs text-slate-500">{record.user.email}</div>
@@ -274,6 +304,7 @@ export default function AttendancePage() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

@@ -109,6 +109,7 @@ export async function loginUser(email: string, password: string) {
   if (!isValid) throw new Error("Invalid email or password");
 
   if (!user.isActive) throw new Error("Account is deactivated");
+  if (user.deletedAt) throw new Error("Account has been deleted");
 
   const sessionUser: SessionUser = {
     id: user.id,

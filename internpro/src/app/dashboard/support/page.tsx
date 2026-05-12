@@ -25,6 +25,8 @@ export default function SupportPage() {
   const [replyModal, setReplyModal] = useState<Ticket | null>(null);
   const [replyText, setReplyText] = useState("");
   const [form, setForm] = useState({ subject: "", message: "", priority: "normal" });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [ticketRes, meRes] = await Promise.all([
@@ -86,6 +88,24 @@ export default function SupportPage() {
       urgent: "bg-red-500/10 text-red-400",
     };
     return colors[priority] || "bg-transparent text-slate-300";
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === tickets.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(tickets.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} support tickets?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_support", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
   };
 
   return (
@@ -159,10 +179,20 @@ export default function SupportPage() {
           </p>
         </div>
       ) : (
+        <>
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+            <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+            <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+          </div>
+        )}
         <div className="space-y-4">
           {tickets.map((ticket) => (
             <div key={ticket.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border hover:shadow-none transition">
               <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3 flex-1">
+                  <input type="checkbox" checked={selectedIds.has(ticket.id)} onChange={() => toggleSelect(ticket.id)} className="mt-1 rounded border-white/20 bg-white/5 accent-[#0EA5B8]" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <h3 className="text-base font-semibold text-white">{ticket.subject}</h3>
@@ -187,6 +217,7 @@ export default function SupportPage() {
                   )}
                   <p className="text-xs text-slate-500 mt-2">{new Date(ticket.createdAt).toLocaleString("en-IN")}</p>
                 </div>
+                </div>
                 {isAdmin && ticket.status === "open" && (
                   <button onClick={() => { setReplyModal(ticket); setReplyText(""); }}
                     className="ml-4 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-xs hover:bg-[#0891b2]">
@@ -197,6 +228,7 @@ export default function SupportPage() {
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   );

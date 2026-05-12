@@ -44,6 +44,8 @@ export default function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [payRes, salRes] = await Promise.all([
@@ -94,6 +96,24 @@ export default function PaymentsPage() {
   const handleExportCSV = () => serverExportCSV("payments");
 
   const handleExportPDF = () => serverExportPDF("payments", "Payments");
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === payments.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(payments.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} payments?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_payments", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
 
   return (
     <div>
@@ -219,6 +239,13 @@ export default function PaymentsPage() {
         </div>
       ) : activeTab === "payments" ? (
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] overflow-hidden">
+          {selectedIds.size > 0 && (
+            <div className="m-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+              <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+              <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+            </div>
+          )}
           {filteredPayments.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-4xl mb-4">💰</p>
@@ -228,6 +255,7 @@ export default function PaymentsPage() {
             <table className="w-full">
               <thead className="bg-transparent">
                 <tr>
+                  <th className="p-3 w-10"><input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.size > 0 && selectedIds.size === filteredPayments.length} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Student</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Program</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Amount</th>
@@ -239,6 +267,7 @@ export default function PaymentsPage() {
               <tbody className="divide-y divide-white/[0.06]">
                 {filteredPayments.map((p) => (
                   <tr key={p.id} className="hover:bg-transparent">
+                    <td className="p-3 w-10"><input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-medium text-white">{p.enrollment.student.name}</p>
                       <p className="text-xs text-slate-500">{p.enrollment.student.email}</p>

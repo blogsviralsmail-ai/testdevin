@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const role = searchParams.get("role");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { deletedAt: null };
   if (role) where.role = role;
 
   const users = await prisma.user.findMany({

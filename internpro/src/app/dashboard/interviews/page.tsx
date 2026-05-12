@@ -63,6 +63,8 @@ export default function InterviewsPage() {
 
   const [userRole, setUserRole] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(data => {
@@ -187,6 +189,24 @@ export default function InterviewsPage() {
   const handleExportCSV = () => serverExportCSV("interviews");
 
   const handleExportPDF = () => serverExportPDF("interviews", "Interviews");
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === interviews.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(interviews.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} interviews?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_interviews", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchInterviews();
+  };
 
   return (
     <div>
@@ -557,10 +577,20 @@ export default function InterviewsPage() {
         </div>
       ) : (
         /* Admin/TL View — existing cards with management actions */
+        <>
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+            <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+            <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+          </div>
+        )}
         <div className="grid gap-4">
           {interviews.filter(i => i.result !== "selected" && i.result !== "rejected").filter(i => !searchQuery.trim() || i.enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.batch.program.title.toLowerCase().includes(searchQuery.toLowerCase()) || i.enrollment.student.email.toLowerCase().includes(searchQuery.toLowerCase())).map((i) => (
             <div key={i.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">
               <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" checked={selectedIds.has(i.id)} onChange={() => toggleSelect(i.id)} className="mt-1 rounded border-white/20 bg-white/5 accent-[#0EA5B8]" />
                 <div>
                   <h3 className="text-lg font-semibold text-white">{i.enrollment.student.name}</h3>
                   <p className="text-sm text-slate-400">{i.enrollment.student.email} | {i.enrollment.student.phone}</p>
@@ -596,6 +626,7 @@ export default function InterviewsPage() {
                       )
                     )}
                   </div>
+                </div>
                 </div>
                 <div className="flex flex-col gap-2 items-end">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -653,6 +684,7 @@ export default function InterviewsPage() {
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   );

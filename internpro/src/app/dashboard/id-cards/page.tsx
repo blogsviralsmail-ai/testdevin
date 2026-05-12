@@ -35,6 +35,8 @@ export default function IDCardsPage() {
   const [companyLogo, setCompanyLogo] = useState("/uploads/kkhs-logo.png");
   const [companyName, setCompanyName] = useState("KKHS Media Private Limited");
   const [showPhotoAlert, setShowPhotoAlert] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [cardsRes, enrollRes, meRes, settingsRes] = await Promise.all([
@@ -259,6 +261,24 @@ export default function IDCardsPage() {
   const isAdmin = user?.role === "admin" || user?.role === "organization";
   const isStudent = user?.role === "student";
 
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === cards.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(cards.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} ID cards?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_id_cards", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -403,9 +423,20 @@ export default function IDCardsPage() {
           <p className="text-slate-400">{isStudent ? "Your ID card has not been generated yet." : "No ID cards generated yet."}</p>
         </div>
       ) : (
+        <>
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+            <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+            <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+          </div>
+        )}
         <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
           {cards.map((card) => (
-            <div key={card.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border hover:shadow-none transition overflow-hidden">
+            <div key={card.id} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border hover:shadow-none transition overflow-hidden relative">
+              <div className="absolute top-2 left-2 z-10">
+                <input type="checkbox" checked={selectedIds.has(card.id)} onChange={() => toggleSelect(card.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" />
+              </div>
               <div className="bg-[#0EA5B8] text-white py-2 px-3 flex items-center justify-center gap-2 relative">
                 <img src={companyLogo} alt={companyName} className="h-5" />
                 <span className="text-[8px] text-white/80 uppercase tracking-wide">{companyName}</span>
@@ -435,6 +466,7 @@ export default function IDCardsPage() {
             </div>
           ))}
         </div>
+        </>
       )}
 
       {/* Photo Required Alert */}

@@ -89,6 +89,38 @@ export async function POST(request: NextRequest) {
       break;
     }
 
+    case "bulk_trash_students": {
+      // Soft delete: move students to trash by setting deletedAt
+      // ids here are enrollment IDs, we need to get the student user IDs
+      const enrollmentsToTrash = await prisma.enrollment.findMany({
+        where: { id: { in: ids } },
+        select: { studentId: true },
+      });
+      const userIds = [...new Set(enrollmentsToTrash.map((e: { studentId: string }) => e.studentId))];
+      for (const userId of userIds) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { deletedAt: new Date() },
+        }).catch(() => {});
+        count++;
+      }
+      await logActivity("trash", "user", undefined, `Moved ${count} students to trash`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_trash_users": {
+      // Soft delete users directly by user IDs
+      for (const id of ids) {
+        await prisma.user.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+        }).catch(() => {});
+        count++;
+      }
+      await logActivity("trash", "user", undefined, `Moved ${count} users to trash`, session.id, session.name);
+      break;
+    }
+
     case "bulk_delete_programs": {
       for (const id of ids) {
         await prisma.program.delete({ where: { id } }).catch(() => {});
@@ -221,6 +253,78 @@ export async function POST(request: NextRequest) {
         count++;
       }
       await logActivity("bulk_delete", "template", undefined, `Deleted ${count} templates`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_interviews": {
+      for (const id of ids) {
+        await prisma.interview.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "interview", undefined, `Deleted ${count} interviews`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_attendance": {
+      for (const id of ids) {
+        await prisma.attendance.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "attendance", undefined, `Deleted ${count} attendance records`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_documents": {
+      for (const id of ids) {
+        await prisma.document.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "document", undefined, `Deleted ${count} documents`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_certificates": {
+      for (const id of ids) {
+        await prisma.certificate.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "certificate", undefined, `Deleted ${count} certificates`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_payments": {
+      for (const id of ids) {
+        await prisma.payment.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "payment", undefined, `Deleted ${count} payments`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_support": {
+      for (const id of ids) {
+        await prisma.supportTicket.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "support", undefined, `Deleted ${count} support tickets`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_id_cards": {
+      for (const id of ids) {
+        await prisma.employeeCard.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "employeeCard", undefined, `Deleted ${count} ID cards`, session.id, session.name);
+      break;
+    }
+
+    case "bulk_delete_payslips": {
+      for (const id of ids) {
+        await prisma.payslip.delete({ where: { id } }).catch(() => {});
+        count++;
+      }
+      await logActivity("bulk_delete", "payslip", undefined, `Deleted ${count} payslips`, session.id, session.name);
       break;
     }
 

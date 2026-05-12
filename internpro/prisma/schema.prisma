@@ -13,7 +13,6 @@ model User {
   email           String              @unique
   phone           String?
   password        String
-  plainPassword   String?
   role            String              @default("student")
   avatar          String?
   isActive        Boolean             @default(true)
@@ -29,9 +28,11 @@ model User {
   dob             DateTime?
   state           String?
   bio             String?
-  skills          String?
   linkedinUrl     String?
   portfolioUrl    String?
+  skills          String?
+  plainPassword   String?
+  deletedAt       DateTime?
   agentProfile    Agent?              @relation("AgentProfile")
   announcements   Announcement[]      @relation("Announcements")
   attendances     Attendance[]
@@ -168,8 +169,8 @@ model Enrollment {
   currentWorkDay     Int               @default(0)
   attendances        Attendance[]
   certificates       Certificate[]
-  batch              Batch             @relation(fields: [batchId], references: [id])
   student            User              @relation(fields: [studentId], references: [id])
+  batch              Batch             @relation(fields: [batchId], references: [id])
   experienceLetter   ExperienceLetter?
   interviews         Interview[]
   offerLetter        OfferLetter?
@@ -429,13 +430,13 @@ model Quiz {
   description  String?
   batchId      String?
   programId    String?
-  dayNumber    Int?
   timeLimit    Int?
   passingScore Int            @default(60)
   isPublished  Boolean        @default(false)
   createdBy    String
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  dayNumber    Int?
   attempts     QuizAttempt[]
   questions    QuizQuestion[]
 }
@@ -572,21 +573,21 @@ model WalletTransaction {
 }
 
 model WithdrawalRequest {
-  id          String    @id @default(cuid())
-  userId      String
-  amount      Float
-  status      String    @default("pending")
-  method      String?
-  bankName    String?
+  id            String    @id @default(cuid())
+  userId        String
+  amount        Float
+  status        String    @default("pending")
+  method        String?
+  bankName      String?
   accountNumber String?
-  ifscCode    String?
-  upiId       String?
-  remarks     String?
-  adminRemarks String?
-  processedAt DateTime?
-  processedBy String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  ifscCode      String?
+  upiId         String?
+  remarks       String?
+  adminRemarks  String?
+  processedAt   DateTime?
+  processedBy   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Testimonial {
@@ -685,29 +686,29 @@ model ChatMessage {
 }
 
 model SiteContent {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
-  content   String
-  isPublished Boolean @default(true)
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String
+  isPublished Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
 }
 
 model LeaveRequest {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   userId       String
   enrollmentId String?
-  leaveType    String     @default("casual")
+  leaveType    String   @default("casual")
   startDate    DateTime
   endDate      DateTime
-  totalDays    Float      @default(1)
+  totalDays    Float    @default(1)
   reason       String
-  status       String     @default("pending")
+  status       String   @default("pending")
   approvedBy   String?
   adminRemarks String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Holiday {
@@ -722,27 +723,27 @@ model Holiday {
 }
 
 model Payslip {
-  id             String   @id @default(cuid())
-  salaryId       String
-  enrollmentId   String
-  userId         String
-  month          String
-  year           Int
-  basicPay       Float    @default(0)
-  allowances     Float    @default(0)
-  deductions     Float    @default(0)
-  bonus          Float    @default(0)
-  netPay         Float    @default(0)
-  workingDays    Int      @default(0)
-  presentDays    Int      @default(0)
-  leaveDays      Int      @default(0)
-  paymentMethod  String?
-  paymentRef     String?
-  paidAt         DateTime?
-  status         String   @default("generated")
-  htmlContent    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String    @id @default(cuid())
+  salaryId      String
+  enrollmentId  String
+  userId        String
+  month         String
+  year          Int
+  basicPay      Float     @default(0)
+  allowances    Float     @default(0)
+  deductions    Float     @default(0)
+  bonus         Float     @default(0)
+  netPay        Float     @default(0)
+  workingDays   Int       @default(0)
+  presentDays   Int       @default(0)
+  leaveDays     Int       @default(0)
+  paymentMethod String?
+  paymentRef    String?
+  paidAt        DateTime?
+  status        String    @default("generated")
+  htmlContent   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@unique([enrollmentId, month, year])
 }
@@ -753,9 +754,9 @@ model Role {
   displayName String
   description String?
   isSystem    Boolean          @default(false)
-  permissions RolePermission[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
 }
 
 model RolePermission {

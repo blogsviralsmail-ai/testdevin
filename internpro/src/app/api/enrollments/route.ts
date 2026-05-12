@@ -30,6 +30,9 @@ export async function GET(request: NextRequest) {
   }
   if (status) where.status = status;
 
+  // Exclude soft-deleted students
+  where.student = { deletedAt: null };
+
   const enrollments = await prisma.enrollment.findMany({
     where,
     include: {

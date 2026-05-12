@@ -26,6 +26,8 @@ export default function DocumentsPage() {
   const [reviewForm, setReviewForm] = useState({ status: "approved", remarks: "" });
   const [filterStatus, setFilterStatus] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [docRes, meRes] = await Promise.all([
@@ -106,6 +108,24 @@ export default function DocumentsPage() {
   });
 
   if (loading) return <div className="p-6">Loading...</div>;
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === documents.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(documents.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} documents?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_documents", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
 
   return (
     <div>
@@ -220,6 +240,14 @@ export default function DocumentsPage() {
           </table>
         </div>
       ) : (
+        <>
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+            <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Selected"}</button>
+            <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+          </div>
+        )}
         <div className="space-y-3">
           {(() => {
             const grouped: Record<string, Document[]> = {};
@@ -252,6 +280,7 @@ export default function DocumentsPage() {
                     <table className="w-full">
                       <thead className="bg-transparent">
                         <tr>
+                          <th className="p-2 w-10"><input type="checkbox" onChange={() => { const docIds = docs.map(d => d.id); const allSelected = docIds.every(id => selectedIds.has(id)); const next = new Set(selectedIds); if (allSelected) docIds.forEach(id => next.delete(id)); else docIds.forEach(id => next.add(id)); setSelectedIds(next); }} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></th>
                           <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Document</th>
                           <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Type</th>
                           <th className="px-6 py-2 text-left text-xs font-medium text-slate-500">Status</th>
@@ -262,6 +291,7 @@ export default function DocumentsPage() {
                       <tbody className="divide-y">
                         {docs.map(doc => (
                           <tr key={doc.id}>
+                            <td className="p-2 w-10"><input type="checkbox" checked={selectedIds.has(doc.id)} onChange={() => toggleSelect(doc.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8]" /></td>
                             <td className="px-6 py-3"><a href={doc.fileUrl} target="_blank" className="text-[#22d3ee] hover:underline text-sm">{doc.title}</a></td>
                             <td className="px-6 py-3 text-xs text-slate-400 capitalize">{doc.type.replace("_", " ")}</td>
                             <td className="px-6 py-3"><span className={`px-2 py-0.5 rounded-full text-xs ${statusBadge(doc.status)}`}>{doc.status}</span></td>
@@ -280,6 +310,7 @@ export default function DocumentsPage() {
             });
           })()}
         </div>
+        </>
       )}
 
       {/* Review Modal */}

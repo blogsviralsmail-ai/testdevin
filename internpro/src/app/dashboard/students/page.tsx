@@ -240,9 +240,13 @@ export default function StudentsPage() {
             <option value="bulk_select">Select All</option>
             <option value="bulk_reject">Reject All</option>
             <option value="bulk_attendance">Mark Attendance</option>
+            <option value="bulk_trash_students">🗑️ Move to Trash</option>
           </select>
           <button disabled={!bulkAction || bulkLoading} onClick={async () => {
             if (!bulkAction) return;
+            if (bulkAction === "bulk_trash_students") {
+              if (!confirm(`Move ${selectedIds.length} student(s) to trash? You can recover them later from the Trash page.`)) return;
+            }
             setBulkLoading(true);
             const data: Record<string, string> = {};
             if (bulkAction === "bulk_attendance") { data.date = new Date().toISOString().split("T")[0]; data.status = "present"; }
