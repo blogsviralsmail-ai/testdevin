@@ -239,9 +239,31 @@ export default function LettersPage() {
           </div>
           <div className="p-4 bg-white overflow-auto rounded-b-xl">
             <style dangerouslySetInnerHTML={{ __html: `
-              .letter-container > div { transform: none !important; }
-              .letter-container > div > div { width: 100% !important; max-width: 210mm; margin: 0 auto !important; height: auto !important; min-height: auto !important; overflow: visible !important; }
-              .letter-container > div > div > div { overflow: visible !important; }
+              .letter-container * { transform: none !important; }
+              .letter-container > div > div {
+                width: 100% !important; max-width: 793px !important; margin: 0 auto !important;
+                height: auto !important; min-height: auto !important; overflow: visible !important;
+                display: block !important; position: static !important;
+              }
+              .letter-container > div > div > div {
+                overflow: visible !important; display: block !important;
+                flex: none !important; min-height: auto !important;
+                justify-content: flex-start !important;
+              }
+              .letter-container div[style*="justify-content"] {
+                justify-content: flex-start !important;
+              }
+              .letter-container div[style*="overflow:hidden"],
+              .letter-container div[style*="overflow: hidden"] {
+                overflow: visible !important;
+              }
+              .letter-container div[style*="flex:1"],
+              .letter-container div[style*="flex: 1"] {
+                flex: none !important;
+              }
+              .letter-container div[style*="page-break"] {
+                page-break-after: auto !important;
+              }
             `}} />
             <div className="letter-container" dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
             <div className="h-4" />
