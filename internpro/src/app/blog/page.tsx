@@ -3,8 +3,30 @@ import Link from "next/link";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import BlogListClient from "./BlogListClient";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Blog | Internship Tips, Career Guides & University Resources",
+  description: "Read 1000+ articles on internships, career development, university guides, and skill-building tips. State-wise and city-wise internship resources for students across India.",
+  keywords: "internship blog, career tips, university internship guide, internship in India 2026, student career resources, KKHS Media blog, state wise internship, paid internship tips",
+  openGraph: {
+    title: "Blog | Internship Tips & Career Guides | KKHS Media",
+    description: "1000+ articles on internships, career development, and university resources for students across India.",
+    url: "https://internship.kkhsmedia.com/blog",
+    siteName: "KKHS Media",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog | Internship Tips & Career Guides | KKHS Media",
+    description: "1000+ articles on internships, career development, and university resources for students across India.",
+  },
+  alternates: {
+    canonical: "/blog",
+  },
+};
 
 export default async function BlogPage() {
   const blogs = await prisma.blogPost.findMany({

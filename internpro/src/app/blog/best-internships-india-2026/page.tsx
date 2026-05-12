@@ -20,6 +20,11 @@ export const metadata: Metadata = {
     siteName: "KKHS Media",
     type: "article",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Best Internships in India 2026 — State-wise Guide",
+    description: "Find paid internship programs near your university across 33 states and 1000+ universities.",
+  },
   alternates: {
     canonical: "https://internship.kkhsmedia.com/blog/best-internships-india-2026",
   },

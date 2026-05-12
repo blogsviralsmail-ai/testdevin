@@ -42,6 +42,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: "KKHS Media",
       type: "website",
     },
+    twitter: {
+      card: "summary_large_image",
+      title: `Best Internships in ${cityName} 2026`,
+      description: `Paid internship programs for students in ${cityName}. Apply now at KKHS Media.`,
+    },
     alternates: {
       canonical: `https://internship.kkhsmedia.com/blog/city/${citySlug}`,
     },

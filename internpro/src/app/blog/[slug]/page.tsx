@@ -33,6 +33,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: "article",
       images: blog.coverImage ? [{ url: `https://internship.kkhsmedia.com${blog.coverImage}` }] : undefined,
     },
+    twitter: {
+      card: "summary_large_image",
+      title: blog.title,
+      description: blog.excerpt || `Read ${blog.title} on KKHS Media Blog`,
+      images: blog.coverImage ? [`https://internship.kkhsmedia.com${blog.coverImage}`] : undefined,
+    },
     alternates: {
       canonical: `https://internship.kkhsmedia.com/blog/${slug}`,
     },
