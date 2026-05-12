@@ -1,122 +1,240 @@
-"use client";
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import BlogPostClient from "./BlogPostClient";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import PublicNavbar from "@/components/PublicNavbar";
-import PublicFooter from "@/components/PublicFooter";
-
-interface Blog {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  coverImage: string | null;
-  author: string;
-  category: string;
-  tags: string | null;
-  createdAt: string;
-  views: number;
+interface PageProps {
+  params: Promise<{ slug: string }>;
 }
 
-export default function BlogPostPage() {
-  const params = useParams();
-  const [blog, setBlog] = useState<Blog | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [adSettings, setAdSettings] = useState<Record<string, string>>({});
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const blog = await prisma.blogPost.findFirst({
+    where: { slug, isPublished: true },
+    select: { title: true, excerpt: true, tags: true, coverImage: true, author: true, state: true, city: true, updatedAt: true },
+  });
 
-  useEffect(() => {
-    fetch("/api/settings/public")
-      .then((r) => r.json())
-      .then((data) => setAdSettings(data))
-      .catch(() => {});
-  }, []);
+  if (!blog) {
+    return { title: "Blog Post Not Found | KKHS Media" };
+  }
 
-  useEffect(() => {
-    if (!params.slug) return;
-    fetch(`/api/blogs?published=true`)
-      .then((r) => r.json())
-      .then((data) => {
-        const found = data.find((b: Blog) => b.slug === params.slug);
-        setBlog(found || null);
-        setLoading(false);
-        if (found) {
-          fetch(`/api/blogs`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: found.id, views: (found.views || 0) + 1 }) }).catch(() => {});
+  const keywords = [blog.tags, blog.state, blog.city, "KKHS Media", "internship 2026"].filter(Boolean).join(", ");
+
+  return {
+    title: `${blog.title} | KKHS Media`,
+    description: blog.excerpt || `Read ${blog.title} on KKHS Media Blog`,
+    keywords,
+    authors: [{ name: blog.author }],
+    openGraph: {
+      title: blog.title,
+      description: blog.excerpt || `Read ${blog.title} on KKHS Media Blog`,
+      url: `https://internship.kkhsmedia.com/blog/${slug}`,
+      siteName: "KKHS Media",
+      type: "article",
+      images: blog.coverImage ? [{ url: `https://internship.kkhsmedia.com${blog.coverImage}` }] : undefined,
+    },
+    alternates: {
+      canonical: `https://internship.kkhsmedia.com/blog/${slug}`,
+    },
+  };
+}
+
+function extractFAQs(content: string): { question: string; answer: string }[] {
+  const faqs: { question: string; answer: string }[] = [];
+  const faqPattern = /<h[23][^>]*>(.*?)<\/h[23]>\s*<p>(.*?)<\/p>/gi;
+  let match;
+  let inFaqSection = false;
+
+  const lines = content.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/FAQ|Frequently Asked/i.test(line)) {
+      inFaqSection = true;
+      continue;
+    }
+    if (inFaqSection) {
+      const questionMatch = line.match(/<h[23][^>]*>(.*?)<\/h[23]>/i);
+      if (questionMatch) {
+        let answer = "";
+        for (let j = i + 1; j < lines.length; j++) {
+          if (/<h[23]/.test(lines[j])) break;
+          const pMatch = lines[j].match(/<p[^>]*>(.*?)<\/p>/i);
+          if (pMatch) {
+            answer = pMatch[1].replace(/<[^>]*>/g, "").trim();
+            break;
+          }
         }
-      })
-      .catch(() => setLoading(false));
-  }, [params.slug]);
+        if (answer) {
+          faqs.push({
+            question: questionMatch[1].replace(/<[^>]*>/g, "").trim(),
+            answer,
+          });
+        }
+      }
+    }
+  }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0e1a" }}>
-      <p className="text-slate-400">Loading...</p>
-    </div>
-  );
+  if (faqs.length === 0) {
+    while ((match = faqPattern.exec(content)) !== null) {
+      const q = match[1].replace(/<[^>]*>/g, "").trim();
+      const a = match[2].replace(/<[^>]*>/g, "").trim();
+      if (q.includes("?") && a.length > 20) {
+        faqs.push({ question: q, answer: a });
+      }
+    }
+  }
 
-  if (!blog) return (
-    <div className="min-h-screen" style={{ background: "#0a0e1a" }}>
-      <PublicNavbar />
-      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-        <h1 className="text-3xl font-bold text-white mb-4">Blog Post Not Found</h1>
-        <Link href="/blog" className="text-cyan-400 hover:underline">← Back to Blog</Link>
-      </div>
-      <PublicFooter />
-    </div>
-  );
+  return faqs.slice(0, 10);
+}
 
-  const adBeforeContent = adSettings.adsense_ad_before || "";
-  const adAfterContent = adSettings.adsense_ad_after || "";
+export default async function BlogPostPage({ params }: PageProps) {
+  const { slug } = await params;
+  const blog = await prisma.blogPost.findFirst({
+    where: { slug, isPublished: true },
+  });
+
+  if (!blog) {
+    notFound();
+  }
+
+  // Increment views
+  try {
+    await prisma.blogPost.update({
+      where: { id: blog.id },
+      data: { views: (blog.views || 0) + 1 },
+    });
+  } catch {
+    // ignore view count errors
+  }
+
+  // Get ad settings
+  let adBefore = "";
+  let adAfter = "";
+  try {
+    const adBeforeSetting = await prisma.setting.findUnique({ where: { key: "adsense_ad_before" } });
+    const adAfterSetting = await prisma.setting.findUnique({ where: { key: "adsense_ad_after" } });
+    adBefore = adBeforeSetting?.value || "";
+    adAfter = adAfterSetting?.value || "";
+  } catch {
+    // ignore
+  }
+
+  // Get related articles (same state or city)
+  let relatedArticles: { title: string; slug: string; state: string | null; city: string | null }[] = [];
+  try {
+    const related = await prisma.blogPost.findMany({
+      where: {
+        isPublished: true,
+        id: { not: blog.id },
+        OR: [
+          ...(blog.state ? [{ state: blog.state }] : []),
+          ...(blog.city ? [{ city: blog.city }] : []),
+          { category: blog.category },
+        ],
+      },
+      select: { title: true, slug: true, state: true, city: true },
+      take: 4,
+    });
+    relatedArticles = related;
+  } catch {
+    // ignore
+  }
+
+  const faqs = extractFAQs(blog.content);
+
+  // Article Schema
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: blog.title,
+    description: blog.excerpt || blog.title,
+    image: blog.coverImage ? `https://internship.kkhsmedia.com${blog.coverImage}` : undefined,
+    author: {
+      "@type": "Organization",
+      name: "KKHS Media",
+      url: "https://internship.kkhsmedia.com",
+      logo: "https://internship.kkhsmedia.com/logo-kkhs.png",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "KKHS Media",
+      url: "https://internship.kkhsmedia.com",
+      logo: { "@type": "ImageObject", url: "https://internship.kkhsmedia.com/logo-kkhs.png" },
+    },
+    datePublished: blog.createdAt.toISOString(),
+    dateModified: blog.updatedAt.toISOString(),
+    mainEntityOfPage: `https://internship.kkhsmedia.com/blog/${blog.slug}`,
+    keywords: blog.tags || undefined,
+    inLanguage: "en-IN",
+  };
+
+  // BreadcrumbList Schema
+  const breadcrumbItems = [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://internship.kkhsmedia.com" },
+    { "@type": "ListItem", position: 2, name: "Blog", item: "https://internship.kkhsmedia.com/blog" },
+  ];
+  let pos = 3;
+  if (blog.state) {
+    breadcrumbItems.push({ "@type": "ListItem", position: pos++, name: blog.state, item: `https://internship.kkhsmedia.com/blog?state=${encodeURIComponent(blog.state)}` });
+  }
+  if (blog.city) {
+    breadcrumbItems.push({ "@type": "ListItem", position: pos++, name: blog.city, item: `https://internship.kkhsmedia.com/blog?city=${encodeURIComponent(blog.city)}` });
+  }
+  breadcrumbItems.push({ "@type": "ListItem", position: pos, name: blog.title, item: `https://internship.kkhsmedia.com/blog/${blog.slug}` });
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems,
+  };
+
+  // FAQPage Schema
+  const faqJsonLd = faqs.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: { "@type": "Answer", text: faq.answer },
+    })),
+  } : null;
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #0a0e1a 0%, #1a1040 50%, #0a0e1a 100%)" }}>
-      <PublicNavbar />
-      <article className="max-w-4xl mx-auto px-6 py-20">
-        <Link href="/blog" className="text-cyan-400 hover:underline text-sm mb-6 inline-block">← Back to Blog</Link>
-
-        {blog.coverImage && (
-          <div className="rounded-2xl overflow-hidden mb-8 aspect-video">
-            <img src={blog.coverImage} alt={blog.title} className="w-full h-full object-cover" />
-          </div>
-        )}
-
-        {/* Ad Before Content */}
-        {adBeforeContent && (
-          <div className="my-6 text-center" dangerouslySetInnerHTML={{ __html: adBeforeContent }} />
-        )}
-
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300">{blog.category}</span>
-          <span className="text-sm text-slate-500">{new Date(blog.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
-          <span className="text-sm text-slate-500">•</span>
-          <span className="text-sm text-slate-500">By {blog.author}</span>
-          <span className="text-sm text-slate-500">•</span>
-          <span className="text-sm text-slate-500">{blog.views} views</span>
-        </div>
-
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">{blog.title}</h1>
-
-        {blog.tags && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {blog.tags.split(",").map((tag) => (
-              <span key={tag.trim()} className="px-2 py-0.5 text-xs rounded bg-white/5 text-slate-400">#{tag.trim()}</span>
-            ))}
-          </div>
-        )}
-
-        <div className="prose prose-invert prose-lg max-w-none blog-content"
-          style={{ color: "#cbd5e1" }}
-          dangerouslySetInnerHTML={{ __html: blog.content }} />
-
-        {/* Ad After Content */}
-        {adAfterContent && (
-          <div className="my-6 text-center" dangerouslySetInnerHTML={{ __html: adAfterContent }} />
-        )}
-
-        <div className="mt-12 pt-8" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <Link href="/blog" className="text-cyan-400 hover:underline">← Back to All Posts</Link>
-        </div>
-      </article>
-      <PublicFooter />
-    </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
+      <BlogPostClient
+        blog={{
+          id: blog.id,
+          title: blog.title,
+          slug: blog.slug,
+          content: blog.content,
+          coverImage: blog.coverImage,
+          author: blog.author,
+          category: blog.category,
+          tags: blog.tags,
+          state: blog.state,
+          city: blog.city,
+          createdAt: blog.createdAt.toISOString(),
+          updatedAt: blog.updatedAt.toISOString(),
+          views: blog.views || 0,
+        }}
+        adBefore={adBefore}
+        adAfter={adAfter}
+        relatedArticles={relatedArticles}
+      />
+    </>
   );
 }
