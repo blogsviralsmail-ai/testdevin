@@ -183,7 +183,7 @@ export default function LettersPage() {
 
   if (viewingLetter) {
     return (
-      <div>
+      <div className="no-3d-hover">
         <button onClick={() => setViewingLetter(null)} className="mb-4 text-[#22d3ee] hover:underline text-sm">
           &larr; Back to {pageTitle}
         </button>
