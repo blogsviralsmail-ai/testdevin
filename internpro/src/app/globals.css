@@ -583,3 +583,17 @@ main > div {
   animation: morphBlob 15s ease-in-out infinite reverse;
   pointer-events: none;
 }
+
+/* Blog content styles */
+.blog-content h1, .blog-content h2, .blog-content h3 { color: #f1f5f9; margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; }
+.blog-content h1 { font-size: 2em; }
+.blog-content h2 { font-size: 1.5em; }
+.blog-content h3 { font-size: 1.25em; }
+.blog-content p { margin-bottom: 1em; line-height: 1.8; }
+.blog-content ul, .blog-content ol { margin-bottom: 1em; padding-left: 1.5em; }
+.blog-content li { margin-bottom: 0.5em; }
+.blog-content a { color: #22d3ee; text-decoration: underline; }
+.blog-content img { max-width: 100%; border-radius: 0.75rem; margin: 1.5em 0; }
+.blog-content blockquote { border-left: 4px solid #22d3ee; padding-left: 1em; margin: 1.5em 0; color: #94a3b8; font-style: italic; }
+.blog-content code { background: rgba(255,255,255,0.05); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+.blog-content pre { background: rgba(255,255,255,0.05); padding: 1em; border-radius: 0.75rem; overflow-x: auto; margin: 1.5em 0; }

@@ -28,6 +28,9 @@ interface SiteSettings {
   homepage_video_enabled?: string;
   company_name?: string;
   company_logo?: string;
+  adsense_ad_before?: string;
+  adsense_ad_after?: string;
+  [key: string]: string | undefined;
 }
 
 interface HomeContent {
@@ -210,6 +213,11 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Ad Before Content */}
+      {settings.adsense_ad_before && (
+        <div className="max-w-4xl mx-auto px-6 py-4 text-center" dangerouslySetInnerHTML={{ __html: settings.adsense_ad_before }} />
+      )}
 
       {/* ===== WHY CHOOSE US (BENEFITS) ===== */}
       <section id="benefits" className="relative py-24">
@@ -448,6 +456,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Ad After Content */}
+      {settings.adsense_ad_after && (
+        <div className="max-w-4xl mx-auto px-6 py-4 text-center" dangerouslySetInnerHTML={{ __html: settings.adsense_ad_after }} />
+      )}
 
       {/* ===== FOOTER ===== */}
       <PublicFooter />

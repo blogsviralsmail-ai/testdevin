@@ -1403,6 +1403,24 @@ export default function SettingsPage() {
                     {settings.adsense_auto_ads === "true" ? "ON" : "OFF"}
                   </button>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Ad Code — Head (loads in &lt;head&gt;)</label>
+                  <textarea value={settings.adsense_ad_head || ""} onChange={(e) => updateSetting("adsense_ad_head", e.target.value)}
+                    rows={4} className="w-full px-4 py-2 border rounded-lg text-sm text-white font-mono" placeholder='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXX" crossorigin="anonymous"></script>' style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">AdSense script tag that loads in head of every page</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Ad Code — Before Content (shows before blog image)</label>
+                  <textarea value={settings.adsense_ad_before || ""} onChange={(e) => updateSetting("adsense_ad_before", e.target.value)}
+                    rows={4} className="w-full px-4 py-2 border rounded-lg text-sm text-white font-mono" placeholder='<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXX" data-ad-slot="123456" data-ad-format="auto"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">This ad shows before the cover image on blog posts</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Ad Code — After Content (shows after blog image/content)</label>
+                  <textarea value={settings.adsense_ad_after || ""} onChange={(e) => updateSetting("adsense_ad_after", e.target.value)}
+                    rows={4} className="w-full px-4 py-2 border rounded-lg text-sm text-white font-mono" placeholder='<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXX" data-ad-slot="789012" data-ad-format="auto"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+                  <p className="text-xs text-slate-500 mt-1">This ad shows after the content on blog posts</p>
+                </div>
               </div>
             </div>
 

@@ -63,6 +63,7 @@ const navItems = [
   { href: "/dashboard/team-leaders", label: "Team Leaders", icon: "👔", roles: ["admin", "organization"] },
   { href: "/dashboard/campaigns", label: "Campaigns", icon: "📧", roles: ["admin", "organization"] },
   { href: "/dashboard/jobs", label: "Job Board", icon: "💼", roles: ["admin", "organization", "student"] },
+  { href: "/dashboard/blogs", label: "Blog Posts", icon: "✍️", roles: ["admin", "organization"] },
   { href: "/dashboard/testimonials", label: "Testimonials", icon: "⭐", roles: ["admin", "organization"] },
   { href: "/dashboard/activity-log", label: "Activity Log", icon: "🕐", roles: ["admin", "organization"] },
   { href: "/dashboard/users", label: "Users", icon: "🔑", roles: ["admin"] },

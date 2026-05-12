@@ -8,6 +8,7 @@ interface SEOSettings {
   gtm_id?: string;
   adsense_publisher_id?: string;
   adsense_auto_ads?: string;
+  adsense_ad_head?: string;
   google_site_verification?: string;
   seo_title?: string;
   seo_description?: string;
@@ -70,9 +71,10 @@ export default function SEOHead() {
     }
 
     // Custom head code
-    if (settings.custom_head_code) {
+    const injectHtml = (html: string) => {
+      if (!html) return;
       const div = document.createElement("div");
-      div.innerHTML = settings.custom_head_code;
+      div.innerHTML = html;
       const scripts = div.querySelectorAll("script");
       scripts.forEach((s) => {
         const newScript = document.createElement("script");
@@ -85,7 +87,9 @@ export default function SEOHead() {
       });
       const metas = div.querySelectorAll("meta, link");
       metas.forEach((m) => document.head.appendChild(m.cloneNode(true)));
-    }
+    };
+    if (settings.custom_head_code) injectHtml(settings.custom_head_code);
+    if (settings.adsense_ad_head) injectHtml(settings.adsense_ad_head);
   }, [settings]);
 
   const gaId = settings.ga_measurement_id;
