@@ -23,7 +23,7 @@ interface LetterResult {
   status: string;
   employeeCardNumber: string | null;
   idCard: { id: string; cardNumber: string } | null;
-  offerLetter: { id: string; letterNumber: string; htmlContent: string | null; issuedAt: string } | null;
+  offerLetter: { id: string; letterNumber: string; htmlContent: string | null; issuedAt: string; isAccepted: boolean; acceptedAt: string | null; signatureUrl: string | null } | null;
   experienceLetter: { id: string; letterNumber: string; htmlContent: string | null; category: string; issuedAt: string } | null;
   internshipCertificate: { id: string; certNumber: string; issueDate: string } | null;
 }
@@ -34,8 +34,12 @@ export default function LettersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<"all" | "name" | "employee_id" | "phone">("all");
-  const [viewingLetter, setViewingLetter] = useState<{ html: string; title: string; email?: string; phone?: string } | null>(null);
+  const [viewingLetter, setViewingLetter] = useState<{ html: string; title: string; email?: string; phone?: string; offerId?: string; isAccepted?: boolean; acceptedAt?: string | null; signatureUrl?: string | null } | null>(null);
   const [generatingCert, setGeneratingCert] = useState<string | null>(null);
+  const [showSignModal, setShowSignModal] = useState(false);
+  const [signFile, setSignFile] = useState<File | null>(null);
+  const [signPreview, setSignPreview] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
 
   const fetchUser = useCallback(async () => {
     const res = await fetch("/api/auth/me");
@@ -137,6 +141,35 @@ export default function LettersPage() {
     setGeneratingCert(null);
   };
 
+  const handleAcceptOffer = async () => {
+    if (!signFile || !viewingLetter?.offerId) return;
+    setAccepting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", signFile);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!uploadRes.ok) { alert("Failed to upload signature"); setAccepting(false); return; }
+      const uploadData = await uploadRes.json();
+      const res = await fetch("/api/offer-letters/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId: viewingLetter.offerId, signatureUrl: uploadData.url }),
+      });
+      if (res.ok) {
+        setShowSignModal(false);
+        setSignFile(null);
+        setSignPreview(null);
+        setViewingLetter({ ...viewingLetter, isAccepted: true, acceptedAt: new Date().toISOString(), signatureUrl: uploadData.url });
+        fetchLetters(searchQuery || undefined, searchType);
+        alert("Offer letter accepted successfully!");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to accept");
+      }
+    } catch { alert("Error accepting offer letter"); }
+    setAccepting(false);
+  };
+
   const isStudent = user?.role === "student";
   const pageTitle = isStudent ? "My Letters" : "Letters";
   const pageDesc = isStudent
@@ -207,7 +240,66 @@ export default function LettersPage() {
           <div className="p-4 bg-transparent overflow-auto max-h-[80vh]">
             <div dangerouslySetInnerHTML={{ __html: viewingLetter.html }} />
           </div>
+          {/* Accept Offer Letter Section */}
+          {viewingLetter.offerId && (
+            <div className="p-4 border-t border-white/[0.06]">
+              {viewingLetter.isAccepted ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-emerald-400 text-sm font-medium">Accepted on {viewingLetter.acceptedAt ? new Date(viewingLetter.acceptedAt).toLocaleDateString("en-IN") : ""}</span>
+                  {viewingLetter.signatureUrl && <img src={viewingLetter.signatureUrl} alt="Signature" className="max-h-12 ml-2" />}
+                </div>
+              ) : (
+                <button onClick={() => setShowSignModal(true)}
+                  className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 font-medium">
+                  Accept Offer Letter
+                </button>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Signature Upload Modal */}
+        {showSignModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setShowSignModal(false); setSignFile(null); setSignPreview(null); }}>
+            <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}} onClick={e => e.stopPropagation()}>
+              <h2 className="text-lg font-bold text-white mb-4">Accept Offer Letter</h2>
+              <p className="text-slate-400 text-sm mb-4">Please upload your signature to accept the offer letter.</p>
+              <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center mb-4">
+                {signPreview ? (
+                  <div>
+                    <img src={signPreview} alt="Signature preview" className="max-h-20 mx-auto mb-2" />
+                    <button onClick={() => { setSignFile(null); setSignPreview(null); }} className="text-red-400 text-xs hover:underline">Remove</button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <div className="text-4xl mb-2">✍️</div>
+                    <p className="text-white text-sm font-medium">Click to upload your signature</p>
+                    <p className="text-slate-500 text-xs mt-1">PNG, JPG (Max 2MB)</p>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSignFile(file);
+                        const reader = new FileReader();
+                        reader.onload = () => setSignPreview(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </label>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => { setShowSignModal(false); setSignFile(null); setSignPreview(null); }}
+                  className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg text-sm hover:bg-white/20">
+                  Cancel
+                </button>
+                <button onClick={handleAcceptOffer} disabled={!signFile || accepting}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50 font-medium">
+                  {accepting ? "Accepting..." : "Accept & Submit"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -344,10 +436,10 @@ export default function LettersPage() {
                 {/* Offer Letter */}
                 {r.offerLetter ? (
                   <button
-                    onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}`, email: r.studentEmail, phone: r.studentPhone || "" })}
-                    className="px-4 py-2 bg-[#0EA5B8] text-white rounded-lg text-sm hover:bg-[#0891b2] transition"
+                    onClick={() => setViewingLetter({ html: r.offerLetter!.htmlContent || "", title: `Offer Letter — ${r.studentName}`, email: r.studentEmail, phone: r.studentPhone || "", offerId: r.offerLetter!.id, isAccepted: r.offerLetter!.isAccepted, acceptedAt: r.offerLetter!.acceptedAt, signatureUrl: r.offerLetter!.signatureUrl })}
+                    className={`px-4 py-2 text-white rounded-lg text-sm transition ${r.offerLetter.isAccepted ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#0EA5B8] hover:bg-[#0891b2]"}`}
                   >
-                    Offer Letter
+                    Offer Letter {r.offerLetter.isAccepted && <span className="ml-1 text-xs bg-white/20 px-1.5 py-0.5 rounded">Accepted</span>}
                   </button>
                 ) : (
                   <span className="px-4 py-2 bg-transparent text-slate-500 rounded-lg text-sm border border-dashed border-white/[0.08]">Offer Letter — Not Generated</span>

@@ -18,12 +18,13 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, email, phone, currentPassword, newPassword } = body;
+  const { name, email, phone, currentPassword, newPassword, avatar } = body;
 
   const updateData: Record<string, unknown> = {};
 
   if (name && name !== session.name) updateData.name = name;
   if (phone !== undefined) updateData.phone = phone || null;
+  if (avatar) updateData.avatar = avatar;
 
   if (email && email !== session.email) {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -55,7 +56,7 @@ export async function PUT(request: NextRequest) {
   const updated = await prisma.user.update({
     where: { id: session.id },
     data: updateData,
-    select: { id: true, name: true, email: true, phone: true, role: true },
+    select: { id: true, name: true, email: true, phone: true, role: true, avatar: true },
   });
 
   return NextResponse.json({ user: updated, message: "Profile updated" });

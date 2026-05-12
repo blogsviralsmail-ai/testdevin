@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         },
       },
       offerLetter: {
-        select: { id: true, letterNumber: true, htmlContent: true, issuedAt: true },
+        select: { id: true, letterNumber: true, htmlContent: true, issuedAt: true, isAccepted: true, acceptedAt: true, signatureUrl: true },
       },
       experienceLetter: {
         select: { id: true, letterNumber: true, htmlContent: true, category: true, issuedAt: true },
@@ -176,6 +176,9 @@ export async function GET(request: NextRequest) {
       letterNumber: enr.offerLetter.letterNumber,
       htmlContent: replaceSettingsInHtml(enr.offerLetter.htmlContent),
       issuedAt: enr.offerLetter.issuedAt,
+      isAccepted: enr.offerLetter.isAccepted,
+      acceptedAt: enr.offerLetter.acceptedAt,
+      signatureUrl: enr.offerLetter.signatureUrl,
     } : null,
     experienceLetter: enr.experienceLetter ? {
       id: enr.experienceLetter.id,

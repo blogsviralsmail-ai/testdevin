@@ -177,7 +177,7 @@ export default function DashboardPage() {
                  stats.enrollmentStatus === "rejected" ? "Unfortunately your application was not approved this time. You can apply again." : ""}
               </p>
             </div>
-            <a href={stats.enrollmentStatus === "interview_scheduled" ? "/dashboard/interviews" : stats.enrollmentStatus === "selected" ? "/dashboard/offer-letter" : "/dashboard/applications"}
+            <a href={stats.enrollmentStatus === "interview_scheduled" ? "/dashboard/interviews" : stats.enrollmentStatus === "selected" ? "/dashboard/letters" : "/dashboard/applications"}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap text-white"
               style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', animation: "pulse 2s infinite" }}>
               {stats.enrollmentStatus === "interview_scheduled" ? "View Interview" :
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                 <span className="text-2xl">📄</span>
                 <span className="text-sm text-slate-300">My Documents</span>
               </a>
-              <a href="/dashboard/offer-letter" className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all hover:-translate-y-1" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
+              <a href="/dashboard/letters" className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all hover:-translate-y-1" style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'}}>
                 <span className="text-2xl">📨</span>
                 <span className="text-sm text-slate-300">Offer Letter</span>
               </a>
