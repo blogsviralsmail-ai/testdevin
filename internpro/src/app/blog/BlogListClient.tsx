@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 
 interface Blog {
@@ -20,9 +20,12 @@ interface Blog {
 
 interface BlogListClientProps {
   initialBlogs: Blog[];
+  totalCount: number;
 }
 
-export default function BlogListClient({ initialBlogs }: BlogListClientProps) {
+export default function BlogListClient({ initialBlogs, totalCount }: BlogListClientProps) {
+  const [allBlogs, setAllBlogs] = useState<Blog[] | null>(null);
+  const [loadingAll, setLoadingAll] = useState(false);
   const [category, setCategory] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
@@ -31,7 +34,22 @@ export default function BlogListClient({ initialBlogs }: BlogListClientProps) {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 30;
 
-  const blogs = initialBlogs;
+  const blogs = allBlogs ?? initialBlogs;
+  const hasActiveFilters = !!(search || category || state || city);
+  const needsFullData = hasActiveFilters || sortBy !== "latest" || page > 1;
+
+  const fetchAllBlogs = useCallback(() => {
+    if (allBlogs || loadingAll) return;
+    setLoadingAll(true);
+    fetch("/api/blogs?published=true&fields=listing")
+      .then((r) => r.json())
+      .then((data: Blog[]) => { setAllBlogs(data); setLoadingAll(false); })
+      .catch(() => setLoadingAll(false));
+  }, [allBlogs, loadingAll]);
+
+  useEffect(() => {
+    if (needsFullData) fetchAllBlogs();
+  }, [needsFullData, fetchAllBlogs]);
 
   const categories = useMemo(() => [...new Set(blogs.map((b) => b.category))].sort(), [blogs]);
   const states = useMemo(() => [...new Set(blogs.map((b) => b.state).filter(Boolean) as string[])].sort(), [blogs]);
@@ -71,13 +89,12 @@ export default function BlogListClient({ initialBlogs }: BlogListClientProps) {
     return result;
   }, [blogs, category, state, city, search, sortBy]);
 
+  const displayTotal = hasActiveFilters ? filteredBlogs.length : (allBlogs ? filteredBlogs.length : totalCount);
   const totalPages = Math.ceil(filteredBlogs.length / ITEMS_PER_PAGE);
   const paginatedBlogs = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
     return filteredBlogs.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredBlogs, page, ITEMS_PER_PAGE]);
-
-  const hasActiveFilters = search || category || state || city;
 
   const clearAllFilters = () => {
     setSearch("");
@@ -231,14 +248,15 @@ export default function BlogListClient({ initialBlogs }: BlogListClientProps) {
 
       {/* Results Count */}
       <div className="mb-6 text-sm text-slate-500">
-        Showing {((page - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(page * ITEMS_PER_PAGE, filteredBlogs.length)} of {filteredBlogs.length} articles
+        Showing {((page - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(page * ITEMS_PER_PAGE, filteredBlogs.length)} of {displayTotal} articles
+        {loadingAll && needsFullData && <span className="ml-2 text-cyan-400">Loading all articles...</span>}
       </div>
 
       {filteredBlogs.length === 0 ? (
         <div className="text-center py-20">
           <span className="text-5xl mb-4 block">&#128269;</span>
           <p className="text-slate-400 text-lg mb-2">
-            {hasActiveFilters ? "No articles match your filters" : "No blog posts yet"}
+            {loadingAll ? "Loading articles..." : hasActiveFilters ? "No articles match your filters" : "No blog posts yet"}
           </p>
           <p className="text-slate-500 text-sm">
             {hasActiveFilters ? "Try different filters or clear all" : "Check back soon!"}

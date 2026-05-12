@@ -10,6 +10,7 @@ export default async function BlogPage() {
   const blogs = await prisma.blogPost.findMany({
     where: { isPublished: true },
     orderBy: { createdAt: "desc" },
+    take: 30,
     select: {
       id: true,
       title: true,
@@ -26,7 +27,8 @@ export default async function BlogPage() {
     },
   });
 
-  // Serialize dates for client component
+  const totalCount = await prisma.blogPost.count({ where: { isPublished: true } });
+
   const serializedBlogs = blogs.map(b => ({
     ...b,
     createdAt: b.createdAt.toISOString(),
@@ -45,7 +47,7 @@ export default async function BlogPage() {
           </Link>
         </div>
 
-        <BlogListClient initialBlogs={serializedBlogs} />
+        <BlogListClient initialBlogs={serializedBlogs} totalCount={totalCount} />
       </main>
       <PublicFooter />
     </div>
