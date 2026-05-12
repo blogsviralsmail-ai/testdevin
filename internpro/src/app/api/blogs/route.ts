@@ -6,10 +6,36 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const published = searchParams.get("published");
   const category = searchParams.get("category");
+  const fields = searchParams.get("fields");
 
   const where: Record<string, unknown> = {};
   if (published === "true") where.isPublished = true;
   if (category) where.category = category;
+
+  // "listing" mode excludes content field (saves ~95% bandwidth for 1000+ articles)
+  if (fields === "listing") {
+    const blogs = await prisma.blogPost.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        coverImage: true,
+        author: true,
+        category: true,
+        tags: true,
+        state: true,
+        city: true,
+        views: true,
+        isPublished: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return NextResponse.json(blogs);
+  }
 
   const blogs = await prisma.blogPost.findMany({
     where,
@@ -25,7 +51,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, content, excerpt, coverImage, category, tags, isPublished } = body;
+  const { title, content, excerpt, coverImage, category, tags, state, city, isPublished } = body;
 
   if (!title || !content) {
     return NextResponse.json({ error: "Title and content required" }, { status: 400 });
@@ -46,6 +72,8 @@ export async function POST(req: NextRequest) {
       coverImage: coverImage || null,
       category: category || "General",
       tags: tags || null,
+      state: state || null,
+      city: city || null,
       author: user.name || "Admin",
       isPublished: isPublished || false,
     },
@@ -61,7 +89,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { id, title, content, excerpt, coverImage, category, tags, isPublished } = body;
+  const { id, title, content, excerpt, coverImage, category, tags, state, city, isPublished } = body;
 
   if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
@@ -74,6 +102,8 @@ export async function PUT(req: NextRequest) {
       ...(coverImage !== undefined && { coverImage }),
       ...(category && { category }),
       ...(tags !== undefined && { tags }),
+      ...(state !== undefined && { state }),
+      ...(city !== undefined && { city }),
       ...(isPublished !== undefined && { isPublished }),
     },
   });

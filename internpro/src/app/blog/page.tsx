@@ -32,7 +32,7 @@ export default function BlogPage() {
   const ITEMS_PER_PAGE = 30;
 
   useEffect(() => {
-    fetch(`/api/blogs?published=true`)
+    fetch(`/api/blogs?published=true&fields=listing`)
       .then((r) => r.json())
       .then((data) => { setBlogs(data); setLoading(false); })
       .catch(() => setLoading(false));
