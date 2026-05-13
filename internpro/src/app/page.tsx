@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import HomeClient from "./HomeClient";
 
+export const revalidate = 60;
+
 async function getHomeData() {
   const [programs, settingsRows, siteContent] = await Promise.all([
     prisma.program.findMany({

@@ -105,14 +105,14 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ initialPrograms, initialSettings, initialCms }: HomeClientProps) {
-  const [programs, setPrograms] = useState<Program[]>(initialPrograms);
-  const [isVisible, setIsVisible] = useState(true);
+  const [programs] = useState<Program[]>(initialPrograms);
+  const [isVisible] = useState(true);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [modeFilter, setModeFilter] = useState<string>("all");
   const [showPopup, setShowPopup] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [settings, setSettings] = useState<SiteSettings>(initialSettings);
-  const [cms, setCms] = useState<HomeContent>(initialCms);
+  const [settings] = useState<SiteSettings>(initialSettings);
+  const [cms] = useState<HomeContent>(initialCms);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
 
 
@@ -246,19 +246,38 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
             ))}
           </div>
 
-          {/* YouTube Video Section */}
+          {/* YouTube Video Section — Lite facade for performance */}
           {videoEnabled && (
             <div className="mt-16">
               <div className="max-w-3xl mx-auto">
                 <div className="relative w-full rounded-2xl overflow-hidden" style={{paddingBottom: '56.25%', background: '#000', border: '1px solid rgba(255,255,255,0.08)'}}>
-                  <iframe
-                    className="absolute top-0 left-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${getYoutubeId(videoUrl)}?rel=0`}
-                    title="About KKHS Media"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    loading="lazy"
-                  />
+                  {videoLoaded ? (
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={`https://www.youtube-nocookie.com/embed/${getYoutubeId(videoUrl)}?rel=0&autoplay=1`}
+                      title="About KKHS Media"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <button
+                      className="absolute top-0 left-0 w-full h-full cursor-pointer border-0 bg-black"
+                      onClick={() => setVideoLoaded(true)}
+                      aria-label="Play video about KKHS Media"
+                    >
+                      <img
+                        src={`https://img.youtube.com/vi/${getYoutubeId(videoUrl)}/hqdefault.jpg`}
+                        alt="Video thumbnail"
+                        className="absolute top-0 left-0 w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{background: 'rgba(255,0,0,0.9)'}}>
+                          <svg viewBox="0 0 24 24" width="32" height="32" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                      </div>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -488,12 +507,6 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
       <WhatsAppWidget />
 
       <style jsx>{`
-        @keyframes morphBlob {
-          0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
-          25% { border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%; }
-          50% { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
-          75% { border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%; }
-        }
         @keyframes bounce-in {
           0% { transform: scale(0.5); opacity: 0; }
           50% { transform: scale(1.05); }
