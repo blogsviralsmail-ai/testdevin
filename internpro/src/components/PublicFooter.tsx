@@ -39,7 +39,7 @@ export default function PublicFooter() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           <div>
-            <h4 className="text-lg font-bold text-white mb-5">Platform</h4>
+            <h3 className="text-lg font-bold text-white mb-5">Platform</h3>
             <div className="flex flex-wrap gap-2">
               {[
                 { href: "/programs", label: "Programs" },
@@ -55,7 +55,7 @@ export default function PublicFooter() {
             </div>
           </div>
           <div>
-            <h4 className="text-lg font-bold text-white mb-5">Company</h4>
+            <h3 className="text-lg font-bold text-white mb-5">Company</h3>
             <div className="flex flex-wrap gap-2">
               {[
                 { href: "/about", label: "About Us" },
@@ -70,7 +70,7 @@ export default function PublicFooter() {
             </div>
           </div>
           <div>
-            <h4 className="text-lg font-bold text-white mb-5">Legal</h4>
+            <h3 className="text-lg font-bold text-white mb-5">Legal</h3>
             <div className="flex flex-wrap gap-2">
               {[
                 { href: "/privacy-policy", label: "Privacy Policy" },

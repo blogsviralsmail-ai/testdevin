@@ -376,7 +376,7 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
             ))}
             <div className="flex justify-center gap-3 mt-6">
               {testimonials.map((_, i) => (
-                <button key={i} onClick={() => setActiveTestimonial(i)} className="w-2.5 h-2.5 rounded-full transition-all" aria-label={`Show testimonial ${i + 1}`} style={{background: i === activeTestimonial ? '#0EA5B8' : 'rgba(255,255,255,0.15)'}} />
+                <button key={i} onClick={() => setActiveTestimonial(i)} className="w-3 h-3 rounded-full transition-all p-3 flex items-center justify-center" aria-label={`Show testimonial ${i + 1}`}><span className="block w-2.5 h-2.5 rounded-full" style={{background: i === activeTestimonial ? '#0EA5B8' : 'rgba(255,255,255,0.15)'}} /></button>
               ))}
             </div>
           </div>
