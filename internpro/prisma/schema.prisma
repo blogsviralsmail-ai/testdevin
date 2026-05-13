@@ -801,6 +801,8 @@ model BlogPost {
   author      String   @default("Admin")
   category    String   @default("General")
   tags        String?
+  state       String?
+  city        String?
   isPublished Boolean  @default(false)
   views       Int      @default(0)
   createdAt   DateTime @default(now())

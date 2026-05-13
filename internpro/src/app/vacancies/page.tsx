@@ -43,6 +43,23 @@ export default function VacanciesPage() {
 
   return (
     <div className="min-h-screen" style={{background: '#0a0e1a', color: '#f1f5f9'}}>
+      {/* SEO: Server-readable content for Google crawler */}
+      <noscript>
+        <div>
+          <h1>Internship Openings 2026 - KKHS Media, Jaipur</h1>
+          <p>Apply for paid internship programs at KKHS Media, Jaipur. Available programs: Video Editing Internship, Digital Marketing Internship, Web Development Internship, Graphic Design Internship, Content Writing Internship. All programs include certificate, mentorship, and performance-based stipend. Duration: 1-3 months. Mode: Online and Offline available.</p>
+          <h2>Available Internship Programs</h2>
+          <ul>
+            <li>Video Editing Internship - Learn Adobe Premiere Pro, After Effects, Color Grading</li>
+            <li>Digital Marketing Internship - SEO, Google Ads, Social Media Marketing</li>
+            <li>Web Development Internship - React, Node.js, Full Stack Development</li>
+            <li>Graphic Design Internship - Photoshop, Illustrator, UI/UX Design</li>
+            <li>Content Writing Internship - SEO Writing, Blogging, Copywriting</li>
+          </ul>
+          <p>Location: Jaipur, Rajasthan. Apply now at KKHS Media for the best internship experience with real projects and industry mentorship.</p>
+          <a href="/register">Apply Now for Internship</a>
+        </div>
+      </noscript>
       {/* Background blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[600px] h-[600px]" style={{borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', background: 'radial-gradient(ellipse, rgba(14,165,184,0.08), transparent 70%)', animation: 'morphBlob 15s ease-in-out infinite'}} />

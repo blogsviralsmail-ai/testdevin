@@ -12,6 +12,8 @@ interface Blog {
   author: string;
   category: string;
   tags: string | null;
+  state: string | null;
+  city: string | null;
   isPublished: boolean;
   views: number;
   createdAt: string;
@@ -22,7 +24,7 @@ export default function BlogsPage() {
   const [loading, setLoading] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
-  const [form, setForm] = useState({ title: "", content: "", excerpt: "", coverImage: "", category: "General", tags: "", isPublished: false });
+  const [form, setForm] = useState({ title: "", content: "", excerpt: "", coverImage: "", category: "General", tags: "", state: "", city: "", isPublished: false });
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -99,7 +101,7 @@ export default function BlogsPage() {
     if (res.ok) {
       setShowEditor(false);
       setEditingBlog(null);
-      setForm({ title: "", content: "", excerpt: "", coverImage: "", category: "General", tags: "", isPublished: false });
+      setForm({ title: "", content: "", excerpt: "", coverImage: "", category: "General", tags: "", state: "", city: "", isPublished: false });
       fetchBlogs();
     } else {
       alert("Error saving blog");
@@ -129,10 +131,10 @@ export default function BlogsPage() {
   const openEditor = (blog?: Blog) => {
     if (blog) {
       setEditingBlog(blog);
-      setForm({ title: blog.title, content: blog.content, excerpt: blog.excerpt || "", coverImage: blog.coverImage || "", category: blog.category, tags: blog.tags || "", isPublished: blog.isPublished });
+      setForm({ title: blog.title, content: blog.content, excerpt: blog.excerpt || "", coverImage: blog.coverImage || "", category: blog.category, tags: blog.tags || "", state: blog.state || "", city: blog.city || "", isPublished: blog.isPublished });
     } else {
       setEditingBlog(null);
-      setForm({ title: "", content: "", excerpt: "", coverImage: "", category: "General", tags: "", isPublished: false });
+      setForm({ title: "", content: "", excerpt: "", coverImage: "", category: "General", tags: "", state: "", city: "", isPublished: false });
     }
     setShowEditor(true);
   };
@@ -187,6 +189,18 @@ export default function BlogsPage() {
                   <label className="block text-sm font-medium text-slate-300 mb-1">Tags (comma-separated)</label>
                   <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })}
                     className={inputCls} style={inputStyle} placeholder="internship, career, skills" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">State</label>
+                  <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    className={inputCls} style={inputStyle} placeholder="e.g., Rajasthan, Delhi, Karnataka" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">City</label>
+                  <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    className={inputCls} style={inputStyle} placeholder="e.g., Jaipur, New Delhi, Manipal" />
                 </div>
               </div>
               <div>
