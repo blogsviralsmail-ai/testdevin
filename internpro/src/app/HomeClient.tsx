@@ -106,7 +106,7 @@ interface HomeClientProps {
 
 export default function HomeClient({ initialPrograms, initialSettings, initialCms }: HomeClientProps) {
   const [programs, setPrograms] = useState<Program[]>(initialPrograms);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [modeFilter, setModeFilter] = useState<string>("all");
   const [showPopup, setShowPopup] = useState(false);
@@ -115,9 +115,7 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
   const [cms, setCms] = useState<HomeContent>(initialCms);
   const heroRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
+
 
   const benefits = cms.benefits?.length ? cms.benefits : defaultBenefits;
   const features = cms.features?.length ? cms.features : defaultFeatures;
@@ -152,11 +150,10 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
 
   return (
     <div className="min-h-screen" style={{background: '#0a0e1a', color: '#f1f5f9'}}>
-      {/* Organic Background Blobs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[700px] h-[700px]" style={{borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', background: 'radial-gradient(ellipse, rgba(14,165,184,0.08), transparent 70%)', animation: 'morphBlob 15s ease-in-out infinite'}} />
-        <div className="absolute top-1/3 -left-40 w-[600px] h-[600px]" style={{borderRadius: '70% 30% 30% 70% / 70% 70% 30% 30%', background: 'radial-gradient(ellipse, rgba(167,139,250,0.06), transparent 70%)', animation: 'morphBlob 18s ease-in-out infinite reverse'}} />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px]" style={{borderRadius: '50% 50% 33% 67% / 55% 27% 73% 45%', background: 'radial-gradient(ellipse, rgba(255,107,107,0.04), transparent 70%)', animation: 'morphBlob 20s ease-in-out infinite'}} />
+      {/* Organic Background Blobs — static on mobile for performance */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden hidden md:block">
+        <div className="absolute -top-40 -right-40 w-[700px] h-[700px]" style={{borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', background: 'radial-gradient(ellipse, rgba(14,165,184,0.08), transparent 70%)'}} />
+        <div className="absolute top-1/3 -left-40 w-[600px] h-[600px]" style={{borderRadius: '70% 30% 30% 70% / 70% 70% 30% 30%', background: 'radial-gradient(ellipse, rgba(167,139,250,0.06), transparent 70%)'}} />
       </div>
 
       <PublicNavbar activePath="/" />
@@ -195,7 +192,7 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
 
           <div className={`flex flex-wrap justify-center gap-8 transition-all duration-700 delay-400 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             {["No Credit Card Required", "Instant Offer Letter", "UGC Compliant", "100% Online"].map((item) => (
-              <div key={item} className="flex items-center gap-2 text-sm text-slate-500">
+              <div key={item} className="flex items-center gap-2 text-sm text-slate-400">
                 <svg className="w-4 h-4" style={{color: '#22d3ee'}} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                 {item}
               </div>
@@ -211,7 +208,7 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
             <div key={s.label} className="text-center group">
               <div className="text-3xl mb-2">{s.icon}</div>
               <div className="text-3xl md:text-4xl font-black text-white mb-1">{s.number}</div>
-              <div className="text-sm text-slate-500">{s.label}</div>
+              <div className="text-sm text-slate-400">{s.label}</div>
             </div>
           ))}
         </div>
@@ -319,7 +316,7 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
               }}>
                 <div className="text-3xl mb-3 transition-transform group-hover:scale-110">{f.icon}</div>
                 <h3 className="text-base font-bold text-white mb-1.5">{f.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+                <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -353,14 +350,14 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
                   <p className="text-xl text-slate-300 leading-relaxed mb-8 max-w-2xl mx-auto">&ldquo;{t.text}&rdquo;</p>
                   <div>
                     <p className="font-bold text-white text-lg">{t.name}</p>
-                    <p className="text-slate-500 text-sm">{t.role}</p>
+                    <p className="text-slate-400 text-sm">{t.role}</p>
                   </div>
                 </div>
               </div>
             ))}
             <div className="flex justify-center gap-3 mt-6">
               {testimonials.map((_, i) => (
-                <button key={i} onClick={() => setActiveTestimonial(i)} className="w-2.5 h-2.5 rounded-full transition-all" style={{background: i === activeTestimonial ? '#0EA5B8' : 'rgba(255,255,255,0.15)'}} />
+                <button key={i} onClick={() => setActiveTestimonial(i)} className="w-2.5 h-2.5 rounded-full transition-all" aria-label={`Show testimonial ${i + 1}`} style={{background: i === activeTestimonial ? '#0EA5B8' : 'rgba(255,255,255,0.15)'}} />
               ))}
             </div>
           </div>
@@ -407,8 +404,8 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
                       ))}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#22d3ee] transition-colors">{p.title}</h3>
-                    <p className="text-slate-500 text-sm mb-4">{p.description || `${p.title} — ${p.duration} day program`}</p>
-                    <div className="flex items-center gap-4 text-sm text-slate-500 mb-5">
+                    <p className="text-slate-400 text-sm mb-4">{p.description || `${p.title} — ${p.duration} day program`}</p>
+                    <div className="flex items-center gap-4 text-sm text-slate-400 mb-5">
                       <span className="flex items-center gap-1">⏲ {p.duration} days</span>
                       <span className="flex items-center gap-1">👥 {seatsLeft} seats left</span>
                     </div>
@@ -474,7 +471,7 @@ export default function HomeClient({ initialPrograms, initialSettings, initialCm
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'}}>
           <div className="relative max-w-md w-full rounded-3xl p-8 text-center animate-bounce-in" style={{background: '#111827', border: '1px solid rgba(14,165,184,0.3)', boxShadow: '0 0 60px rgba(14,165,184,0.15)'}}>
             <button onClick={() => setShowPopup(false)} className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${btn3d}`}
-              style={{background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 3px 0 #991b1b'}}>
+              style={{background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 3px 0 #991b1b'}} aria-label="Close popup">
               ✕
             </button>
             <div className="text-5xl mb-4">🚀</div>

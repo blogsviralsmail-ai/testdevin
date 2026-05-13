@@ -89,10 +89,10 @@ export default function PublicFooter() {
         {socials.length > 0 && (
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             {socials.map((s) => (
-              <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer" title={s.label}
+              <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer" title={s.label} aria-label={`Follow us on ${s.label}`}
                 className="social-icon-link w-11 h-11 flex items-center justify-center rounded-full transition-all duration-300 hover:-translate-y-1 hover:scale-110"
                 style={{background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 3px 0 rgba(0,0,0,0.3)', '--hover-color': s.color} as React.CSSProperties}>
-                <span className="text-slate-400 transition-colors" style={{color: 'inherit'}}>
+                <span className="text-slate-400 transition-colors" style={{color: 'inherit'}} aria-hidden="true">
                   {s.icon}
                 </span>
               </a>
@@ -101,7 +101,7 @@ export default function PublicFooter() {
         )}
 
         <div className="pt-8 text-center" style={{borderTop: '1px solid rgba(255,255,255,0.05)'}}>
-          <p className="text-slate-500 text-sm">&copy; 2020 KKHS Media Private Limited. All rights reserved.</p>
+          <p className="text-slate-400 text-sm">&copy; 2020 KKHS Media Private Limited. All rights reserved.</p>
         </div>
       </div>
     </footer>
