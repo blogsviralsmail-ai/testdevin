@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import ScrollToTop from "@/components/ScrollToTop";
 import SEOHead from "@/components/SEOHead";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -137,8 +144,8 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en">
-      <body className="antialiased">
+    <html lang="en" className={inter.variable}>
+      <body className={`${inter.className} antialiased`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
