@@ -125,22 +125,24 @@ model Document {
 }
 
 model Interview {
-  id            String     @id @default(cuid())
-  enrollmentId  String
-  scheduledAt   DateTime
-  duration      Int        @default(30)
-  mode          String     @default("online")
-  meetLink      String?
-  location      String?
-  interviewerId String
-  status        String     @default("scheduled")
-  feedback      String?
-  rating        Int?
-  result        String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  interviewer   User       @relation(fields: [interviewerId], references: [id])
-  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id])
+  id               String     @id @default(cuid())
+  enrollmentId     String
+  scheduledAt      DateTime
+  duration         Int        @default(30)
+  mode             String     @default("online")
+  meetLink         String?
+  location         String?
+  interviewerId    String
+  status           String     @default("scheduled")
+  feedback         String?
+  rating           Int?
+  result           String?
+  reminder15Sent   Boolean    @default(false)
+  reminderStartSent Boolean   @default(false)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  interviewer      User       @relation(fields: [interviewerId], references: [id])
+  enrollment       Enrollment @relation(fields: [enrollmentId], references: [id])
 }
 
 model Enrollment {
