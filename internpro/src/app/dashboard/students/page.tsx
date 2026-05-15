@@ -618,6 +618,12 @@ export default function StudentsPage() {
                                   Certificate
                                 </button>
                               )}
+                              {enrollment._count.attendances > 0 && (
+                                <button onClick={() => window.open(`/api/attendance-download?enrollmentId=${enrollment.id}`, '_blank')}
+                                  className="text-xs bg-transparent text-emerald-400 px-2 py-1 rounded hover:bg-emerald-500/10">
+                                  Attendance PDF
+                                </button>
+                              )}
                               {(enrollment.status === "active" || enrollment.status === "selected") && (
                                 <button onClick={() => setTransferModal(enrollment)}
                                   className="text-xs bg-transparent text-[#60a5fa] px-2 py-1 rounded hover:bg-blue-500/10">

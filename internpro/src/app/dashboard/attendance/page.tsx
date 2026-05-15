@@ -37,6 +37,7 @@ export default function AttendancePage() {
   const [autoCheckedIn, setAutoCheckedIn] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [myEnrollmentId, setMyEnrollmentId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const [attRes, enrollRes, meRes] = await Promise.all([
@@ -45,10 +46,21 @@ export default function AttendancePage() {
       fetch("/api/auth/me"),
     ]);
     if (attRes.ok) setRecords(await attRes.json());
-    if (enrollRes.ok) setEnrollments(await enrollRes.json());
+    if (enrollRes.ok) {
+      const enrollData = await enrollRes.json();
+      setEnrollments(enrollData);
+    }
     if (meRes.ok) {
       const meData = await meRes.json();
       setUser(meData.user);
+      // For students, find their enrollment ID for attendance download
+      if (meData.user?.role === "student") {
+        const myEnrollRes = await fetch("/api/enrollments?status=selected");
+        if (myEnrollRes.ok) {
+          const myEnrolls = await myEnrollRes.json();
+          if (myEnrolls.length > 0) setMyEnrollmentId(myEnrolls[0].id);
+        }
+      }
     }
   }, [selectedDate]);
 
@@ -154,6 +166,9 @@ export default function AttendancePage() {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="px-3 py-2 border rounded-lg text-sm text-white"
           />
+          {isStudent && myEnrollmentId && (
+            <button onClick={() => window.open(`/api/attendance-download?enrollmentId=${myEnrollmentId}`, '_blank')} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700">Download Attendance PDF</button>
+          )}
           {!isStudent && (
             <>
               <button onClick={() => { window.open(`/api/export?type=attendance&format=csv&date=${selectedDate}`, '_blank'); }} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs hover:bg-green-700">📥 Export</button>
