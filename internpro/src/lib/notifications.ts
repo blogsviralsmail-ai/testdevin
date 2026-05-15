@@ -72,12 +72,20 @@ export async function notifyApplicationStatusChange(studentEmail: string, studen
     interview: `Dear ${studentName}, you have been shortlisted for an interview for <b>${programTitle}</b>. Check your dashboard for details.`,
   };
 
+  const adminMessages: Record<string, string> = {
+    selected: `<b>${studentName}</b> (${studentEmail}) has been <b>selected</b> for <b>${programTitle}</b>.`,
+    rejected: `<b>${studentName}</b> (${studentEmail}) has been <b>rejected</b> for <b>${programTitle}</b>.`,
+    shortlisted: `<b>${studentName}</b> (${studentEmail}) has been <b>shortlisted</b> for <b>${programTitle}</b>.`,
+    interview: `<b>${studentName}</b> (${studentEmail}) has been scheduled for an <b>interview</b> for <b>${programTitle}</b>.`,
+  };
+
   const message = statusMessages[status];
   if (!message) return;
 
   // Find user by email for notification
   const user = await prisma.user.findUnique({ where: { email: studentEmail }, select: { id: true, phone: true } });
 
+  // Send to student
   await Promise.all([
     sendEmailSafe(studentEmail, `Application Update — ${programTitle}`, wrapEmailTemplate(message)),
     user?.phone ? sendWhatsAppMessage(user.phone, `Hi ${studentName}, your application for ${programTitle} has been ${status}. Check your InternPro dashboard for details.`) : Promise.resolve(),
@@ -92,6 +100,25 @@ export async function notifyApplicationStatusChange(studentEmail: string, studen
     }).catch(() => {}) : Promise.resolve(),
     sendTelegramMessage(`📋 <b>Application ${status}</b>\nStudent: ${studentName}\nProgram: ${programTitle}`),
   ]);
+
+  // Send to all admins
+  const adminMsg = adminMessages[status];
+  if (adminMsg) {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["admin", "organization"] }, isActive: true },
+      select: { id: true, name: true, email: true, phone: true },
+    });
+    for (const admin of admins) {
+      sendEmailSafe(
+        admin.email,
+        `Application ${status.charAt(0).toUpperCase() + status.slice(1)} — ${studentName} — ${programTitle}`,
+        wrapEmailTemplate(`<p>Hi ${admin.name},</p>${adminMsg}<p>Please check the <a href="https://internship.kkhsmedia.com/dashboard/applications" style="color:#4f46e5;">Applications Dashboard</a> for details.</p>`)
+      ).catch(() => {});
+      if (admin.phone) {
+        sendWhatsAppMessage(admin.phone, `Application Update: ${studentName} has been ${status} for ${programTitle}. Check dashboard for details.`).catch(() => {});
+      }
+    }
+  }
 }
 
 export async function notifyNewTask(batchId: string, taskTitle: string, programTitle: string) {
