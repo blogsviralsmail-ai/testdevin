@@ -19,7 +19,7 @@ interface Enrollment {
   workTiming: string | null;
   feeAmount: number | null;
   stipendAmount: number | null;
-  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null; plainPassword: string | null; referredBy?: { id: string; status: string; agent: { referralCode: string; user: { name: string; email: string } } }[] };
+  student: { id: string; name: string; email: string; phone: string | null; avatar: string | null; collegeName: string | null; degree: string | null; year: string | null; address: string | null; dob: string | null; employeeId: string | null; referredBy?: { id: string; status: string; agent: { referralCode: string; user: { name: string; email: string } } }[] };
   batch: { id: string; name: string; program: { title: string; domain: string; feeType: string; feeAmount: number; stipendAmount: number; mode: string } };
   _count: { attendances: number; certificates: number; payments: number };
 }
@@ -383,7 +383,7 @@ export default function StudentsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">New Password (blank = no change)</label>
-                  {editModal.student.plainPassword ? <p className="text-xs text-amber-400 mb-1">Current: {editModal.student.plainPassword}</p> : <p className="text-xs text-slate-500 mb-1">Password hidden (set new below or use &quot;Reset &amp; Show&quot; in View)</p>}
+                  <p className="text-xs text-slate-500 mb-1">Set a new password below (leave blank to keep current)</p>
                   <input type="text" value={studentForm.password} onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg text-sm text-white" placeholder="Leave blank to keep" />
                 </div>
@@ -507,20 +507,17 @@ export default function StudentsPage() {
                 {viewProfile.student.phone && <p className="text-sm text-slate-500">{viewProfile.student.phone}</p>}
                 {viewProfile.student.employeeId && <p className="text-xs text-[#22d3ee] font-medium mt-1">ID: {viewProfile.student.employeeId}</p>}
                 {isAdmin && (
-                  viewProfile.student.plainPassword 
-                    ? <p className="text-xs text-amber-400 mt-1">Password: {viewProfile.student.plainPassword}</p>
-                    : <button onClick={async () => {
+                  <button onClick={async () => {
                         const newPass = "KKHS@" + Math.random().toString(36).slice(2, 8);
                         const res = await fetch(`/api/users/${viewProfile.student.id}`, {
                           method: "PUT", headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ password: newPass }),
                         });
                         if (res.ok) {
-                          alert(`New password set: ${newPass}`);
-                          setViewProfile({ ...viewProfile, student: { ...viewProfile.student, plainPassword: newPass } });
+                          alert(`New password set: ${newPass}\n\nPlease save this — it will not be shown again.`);
                           fetchEnrollments();
                         }
-                      }} className="text-xs text-amber-400 mt-1 underline hover:text-amber-300 cursor-pointer">Reset & Show Password</button>
+                      }} className="text-xs text-amber-400 mt-1 underline hover:text-amber-300 cursor-pointer">Reset Password</button>
                 )}
               </div>
             </div>

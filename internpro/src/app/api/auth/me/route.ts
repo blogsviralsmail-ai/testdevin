@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
     }
     updateData.password = await bcrypt.hash(newPassword, 10);
-    updateData.plainPassword = newPassword;
+    // plainPassword no longer stored for security
   }
 
   if (Object.keys(updateData).length === 0) {

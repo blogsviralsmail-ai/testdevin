@@ -182,7 +182,7 @@ export default function AttendancePage() {
 
       {/* Auto Check-in Banner for Students */}
       {isStudent && (
-        <div className={`rounded-xl p-4 mb-6 text-sm border ${autoCheckedIn ? "bg-transparent border-green-200 text-green-800" : "bg-transparent border-blue-200 text-blue-800"}`}>
+        <div className={`rounded-xl p-4 mb-6 text-sm border ${autoCheckedIn ? "bg-transparent border-green-200 text-green-800" : "bg-white/[0.02] border-b border-white/[0.06]lue-200 text-blue-800"}`}>
           {autoCheckedIn ? (
             <div className="flex items-center gap-2">
               <span className="text-lg">✓</span>
@@ -202,7 +202,7 @@ export default function AttendancePage() {
 
       {!isStudent && showMark ? (
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] overflow-hidden">
-          <div className="p-4 bg-transparent flex items-center justify-between">
+          <div className="p-4 bg-white/[0.02] flex items-center justify-between">
             <h2 className="font-semibold text-white">Mark Attendance - {formatDate(selectedDate)}</h2>
             <div className="flex gap-2">
               <button onClick={() => markAll("present")} className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg hover:bg-green-200">Mark All Present</button>

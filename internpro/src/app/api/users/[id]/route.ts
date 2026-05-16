@@ -27,7 +27,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (password && password.trim()) {
       data.password = await bcrypt.hash(password, 10);
-      data.plainPassword = password;
+      // plainPassword no longer stored for security
     }
 
     const user = await prisma.user.update({

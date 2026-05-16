@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword, plainPassword: password, resetToken: null, resetExpiry: null },
+      data: { password: hashedPassword, resetToken: null, resetExpiry: null },
     });
 
     return NextResponse.json({ message: "Password reset successfully. You can now log in." });

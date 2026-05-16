@@ -156,7 +156,7 @@ export default function ReportsPage() {
                 </button>
               </div>
             </div>
-            <div className="p-4 bg-transparent overflow-auto max-h-[80vh]">
+            <div className="p-4 bg-white/[0.02] overflow-auto max-h-[80vh]">
               <div dangerouslySetInnerHTML={{ __html: viewingReport.html }} />
             </div>
           </div>

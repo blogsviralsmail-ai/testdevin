@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { loginUser } from "@/lib/auth";
 import { sendLoginNotification } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { authRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+    const { ok } = authRateLimit(ip);
+    if (!ok) {
+      return NextResponse.json({ error: "Too many login attempts. Please try again after 1 minute." }, { status: 429 });
+    }
+
     const body = await request.json();
     const { email, password } = body;
 

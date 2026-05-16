@@ -4,9 +4,16 @@ import type { SessionUser } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity";
+import { authRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+    const { ok } = authRateLimit(ip);
+    if (!ok) {
+      return NextResponse.json({ error: "Too many requests. Please try again after 1 minute." }, { status: 429 });
+    }
+
     const body = await request.json();
     const { name, email, password, phone, collegeName, degree, year, address, state, referralCode, programId, preferredMode } = body;
 

@@ -215,7 +215,7 @@ export default function DocumentsPage() {
       ) : isStudent ? (
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-transparent border-b">
+            <thead className="bg-white/[0.02] border-b border-white/[0.06]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Document</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Type</th>

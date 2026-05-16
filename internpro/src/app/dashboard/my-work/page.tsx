@@ -334,14 +334,14 @@ export default function MyWorkPage() {
                 </p>
               </div>
               {selectedDay === currentDay && (
-                <span className="px-3 py-1 bg-transparent/20 rounded-full text-sm font-medium">Today</span>
+                <span className="px-3 py-1 bg-white/10 rounded-full text-sm font-medium">Today</span>
               )}
             </div>
           </div>
 
           {/* STEP 1: Watch Videos */}
           <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
-            <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
+            <div className="bg-white/[0.02] border-b border-white/[0.06] px-5 py-3 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold">1</span>
               <div>
                 <h3 className="font-semibold text-white">Watch Video</h3>
@@ -366,7 +366,7 @@ export default function MyWorkPage() {
                             />
                           </div>
                         ) : null}
-                        <div className="p-3 bg-transparent flex items-center gap-3">
+                        <div className="p-3 bg-white/[0.02] flex items-center gap-3">
                           <span className="text-lg">{r.type === "video" ? "🎥" : r.type === "pdf" ? "📄" : "🔗"}</span>
                           <p className="flex-1 text-sm font-medium text-white truncate">{r.title}</p>
                           <a href={r.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 font-medium shrink-0">
@@ -385,7 +385,7 @@ export default function MyWorkPage() {
 
           {/* STEP 2: Read Task */}
           <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
-            <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
+            <div className="bg-white/[0.02] border-b border-white/[0.06] px-5 py-3 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold">2</span>
               <div>
                 <h3 className="font-semibold text-white">Today's Task</h3>
@@ -398,7 +398,7 @@ export default function MyWorkPage() {
                   {dayTasks.map(t => {
                     const sub = getSubmissionStatus(t.id);
                     return (
-                      <div key={t.id} className="border rounded-lg p-4 bg-transparent/50">
+                      <div key={t.id} className="border rounded-lg p-4 bg-white/5">
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <h4 className="font-semibold text-white">{t.title}</h4>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${sub.color}`}>{sub.label}</span>
@@ -420,7 +420,7 @@ export default function MyWorkPage() {
 
           {/* STEP 3: Submit Work */}
           <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
-            <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
+            <div className="bg-white/[0.02] border-b border-white/[0.06] px-5 py-3 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">3</span>
               <div>
                 <h3 className="font-semibold text-white">Submit Your Work</h3>
@@ -504,7 +504,7 @@ export default function MyWorkPage() {
           {/* Step 4: Quiz */}
           {dayQuizzes.length > 0 && (
             <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] border mb-4 overflow-hidden">
-              <div className="bg-transparent border-b px-5 py-3 flex items-center gap-3">
+              <div className="bg-white/[0.02] border-b border-white/[0.06] px-5 py-3 flex items-center gap-3">
                 <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-bold">4</span>
                 <div>
                   <h3 className="font-semibold text-white">Take Quiz</h3>
@@ -514,7 +514,7 @@ export default function MyWorkPage() {
               <div className="p-5">
                 <div className="space-y-4">
                   {dayQuizzes.map(quiz => (
-                    <div key={quiz.id} className="border rounded-lg p-4 bg-transparent/50">
+                    <div key={quiz.id} className="border rounded-lg p-4 bg-white/5">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div>
                           <h4 className="font-semibold text-white">{quiz.title}</h4>

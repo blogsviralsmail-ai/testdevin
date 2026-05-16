@@ -87,7 +87,7 @@ export async function registerUser(data: {
       name: data.name,
       email: data.email,
       password: hashedPassword,
-      plainPassword: data.password,
+      // plainPassword removed for security — no longer stored
       phone: data.phone || null,
       role: data.role || "student",
       collegeName: data.collegeName || null,
