@@ -75,6 +75,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Half-day can only be marked by admin, not by students
+    if (status === "half_day" && session.role === "student") {
+      return NextResponse.json({ error: "Only admin can mark half-day attendance" }, { status: 403 });
+    }
+
     const attendanceDate = new Date(date || new Date().toISOString().split("T")[0]);
 
     // Check if attendance already exists for today (to avoid duplicate emails)

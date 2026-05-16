@@ -51,6 +51,9 @@ export default function StudentsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [autofillModal, setAutofillModal] = useState(false);
+  const [autofillDOJ, setAutofillDOJ] = useState("");
+  const [autofillLoading, setAutofillLoading] = useState(false);
 
   const fetchEnrollments = useCallback(async () => {
     const [res, batchRes, tlRes, meRes] = await Promise.all([
@@ -253,7 +256,8 @@ export default function StudentsPage() {
             <option value="bulk_select">Select All</option>
             <option value="bulk_reject">Reject All</option>
             <option value="bulk_attendance">Mark Attendance</option>
-            <option value="bulk_trash_students">🗑️ Move to Trash</option>
+            <option value="bulk_autofill">Auto-Fill Old Data</option>
+            <option value="bulk_trash_students">Move to Trash</option>
           </select>
           <button disabled={!bulkAction || bulkLoading} onClick={async () => {
             if (!bulkAction) return;
@@ -261,6 +265,11 @@ export default function StudentsPage() {
               if (!confirm(`Move ${selectedIds.length} student(s) to trash? You can recover them later from the Trash page.`)) return;
             }
             setBulkLoading(true);
+            if (bulkAction === "bulk_autofill") {
+              setAutofillModal(true);
+              setBulkLoading(false);
+              return;
+            }
             const data: Record<string, string> = {};
             if (bulkAction === "bulk_attendance") { data.date = new Date().toISOString().split("T")[0]; data.status = "present"; }
             await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: bulkAction, ids: selectedIds, data }) });
@@ -272,6 +281,49 @@ export default function StudentsPage() {
             {bulkLoading ? "Processing..." : "Apply"}
           </button>
           <button onClick={() => setSelectedIds([])} className="text-sm text-slate-500 hover:text-slate-300">Clear</button>
+        </div>
+      )}
+
+      {/* Auto-Fill Old Data Modal */}
+      {autofillModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-xl p-6 w-full max-w-md" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+            <h2 className="text-lg font-bold text-white mb-2">Auto-Fill Old Data</h2>
+            <p className="text-sm text-slate-400 mb-4">
+              {selectedIds.length} student(s) selected. This will auto-generate:
+            </p>
+            <ul className="text-sm text-slate-300 space-y-1 mb-4 list-disc list-inside">
+              <li>Attendance (Present) for every working day from DOJ to today (Sundays excluded)</li>
+              <li>Task submissions marked as completed (85-100% score)</li>
+              <li>Admin remarks with positive comments</li>
+            </ul>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-300 mb-1">Date of Joining (optional override)</label>
+              <input type="date" value={autofillDOJ} onChange={e => setAutofillDOJ(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm text-white" style={{background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)'}} />
+              <p className="text-xs text-slate-500 mt-1">Leave empty to use each student&apos;s existing DOJ</p>
+            </div>
+            <div className="flex gap-3">
+              <button disabled={autofillLoading} onClick={async () => {
+                setAutofillLoading(true);
+                const payload: Record<string, unknown> = { enrollmentIds: selectedIds };
+                if (autofillDOJ) payload.joiningDate = autofillDOJ;
+                await fetch("/api/bulk-autofill", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                setAutofillLoading(false);
+                setAutofillModal(false);
+                setAutofillDOJ("");
+                setSelectedIds([]);
+                setBulkAction("");
+                fetchEnrollments();
+                alert("Auto-fill complete! Attendance, tasks, and remarks updated.");
+              }} className="flex-1 bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0891b2] disabled:opacity-50">
+                {autofillLoading ? "Processing..." : "Auto-Fill Now"}
+              </button>
+              <button onClick={() => { setAutofillModal(false); setBulkAction(""); }} className="px-4 py-2 bg-white/10 text-slate-300 rounded-lg text-sm hover:bg-white/20">
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

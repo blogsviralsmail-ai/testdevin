@@ -68,9 +68,23 @@ export async function POST(request: NextRequest) {
     });
 
     // Notify admins about task submission
-    const task = await prisma.task.findUnique({ where: { id: taskId }, select: { title: true, batch: { select: { program: { select: { title: true } } } } } });
+    const task = await prisma.task.findUnique({ where: { id: taskId }, select: { title: true, batchId: true, batch: { select: { program: { select: { title: true } } } } } });
     if (task) {
       notifyTaskSubmitted(session.name, task.title, task.batch.program.title).catch(() => {});
+
+      // Auto-mark attendance as "present" when student completes a task
+      const enrollment = await prisma.enrollment.findFirst({
+        where: { studentId: session.id, batchId: task.batchId, status: { in: ["selected", "active"] } },
+      });
+      if (enrollment) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        await prisma.attendance.upsert({
+          where: { enrollmentId_date: { enrollmentId: enrollment.id, date: today } },
+          create: { enrollmentId: enrollment.id, userId: session.id, date: today, status: "present", method: "task-completion", checkIn: new Date().toTimeString().slice(0, 5) },
+          update: {},
+        }).catch(() => {});
+      }
     }
 
     return NextResponse.json(submission, { status: 201 });
