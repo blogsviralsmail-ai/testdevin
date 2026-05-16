@@ -264,13 +264,13 @@ export default function AttendancePage() {
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Login Time</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Last Active</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Work Hours</th>
-                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Method</th>
+                  {!isStudent && <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Method</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.06]">
                 {records.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={isStudent ? 7 : 8} className="px-6 py-12 text-center text-slate-500">
                       No attendance records for {formatDate(selectedDate)}
                     </td>
                   </tr>
@@ -307,11 +307,11 @@ export default function AttendancePage() {
                           );
                         })() : <span className="text-xs text-slate-500">—</span>}
                       </td>
-                      <td className="px-6 py-4">
+                      {!isStudent && <td className="px-6 py-4">
                         <span className={`text-xs px-2 py-1 rounded-full ${record.method === "auto" || record.method === "task-completion" ? "bg-blue-500/10 text-[#60a5fa]" : "bg-transparent text-slate-400"}`}>
-                          {isStudent ? (record.method === "auto" || record.method === "task-completion" || record.method === "bulk-autofill" ? "Auto" : "Manual") : (record.method === "bulk-autofill" ? "System" : record.method === "task-completion" ? "Task" : record.method === "auto" ? "Auto" : record.method === "bulk" ? "Bulk" : "Manual")}
+                          {record.method === "bulk-autofill" ? "System" : record.method === "task-completion" ? "Task" : record.method === "auto" ? "Auto" : record.method === "bulk" ? "Bulk" : "Manual"}
                         </span>
-                      </td>
+                      </td>}
                     </tr>
                   ))
                 )}

@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
     orderBy: { date: "desc" },
   });
 
-  // For students, hide bulk-autofill and task-completion methods — show as "auto"
+  // For students, hide method and createdAt
   if (session.role === "student") {
-    const sanitized = attendance.map((a: Record<string, unknown>) => ({
-      ...a,
-      method: a.method === "bulk-autofill" || a.method === "task-completion" ? "auto" : a.method,
-    }));
+    const sanitized = attendance.map((a: Record<string, unknown>) => {
+      const { method, createdAt, ...rest } = a as Record<string, unknown>;
+      return { ...rest, method: "auto" };
+    });
     return NextResponse.json(sanitized);
   }
 

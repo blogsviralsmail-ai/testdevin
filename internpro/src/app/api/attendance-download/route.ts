@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
         <th style="padding:8px 10px;text-align:center;font-weight:600;">Status</th>
         <th style="padding:8px 10px;text-align:center;font-weight:600;">Check In</th>
         <th style="padding:8px 10px;text-align:center;font-weight:600;">Check Out</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:600;">Method</th>
+        ${session.role !== "student" ? '<th style="padding:8px 10px;text-align:left;font-weight:600;">Method</th>' : ''}
       </tr>
     </thead>
     <tbody>
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
           <td style="padding:6px 10px;text-align:center;"><span style="background:${statusColor};color:white;padding:2px 8px;border-radius:10px;font-size:10px;text-transform:uppercase;">${r.status}</span></td>
           <td style="padding:6px 10px;text-align:center;">${r.checkIn || "—"}</td>
           <td style="padding:6px 10px;text-align:center;">${r.checkOut || "—"}</td>
-          <td style="padding:6px 10px;text-transform:capitalize;">${r.method === "bulk-autofill" || r.method === "task-completion" ? "Auto" : r.method === "bulk" ? "System" : r.method}</td>
+          ${session.role !== "student" ? `<td style="padding:6px 10px;text-transform:capitalize;">${r.method === "bulk-autofill" || r.method === "task-completion" ? "Auto" : r.method === "bulk" ? "System" : r.method}</td>` : ''}
         </tr>`;
       }).join("")}
     </tbody>

@@ -85,7 +85,7 @@ export default function QuizzesPage() {
     if (result) {
       return (
         <div className="max-w-2xl mx-auto">
-          <div className={`rounded-xl p-8 text-center ${result.passed ? "bg-transparent border-2 border-green-200" : "bg-transparent border-2 border-red-200"}`}>
+          <div className={`rounded-xl p-8 text-center ${result.passed ? "bg-green-900/30 border-2 border-green-500/40" : "bg-red-900/30 border-2 border-red-500/40"}`}>
             <span className="text-6xl">{result.passed ? "🎉" : "😔"}</span>
             <h2 className="text-2xl font-bold mt-4">{result.passed ? "Congratulations! You Passed!" : "Better Luck Next Time"}</h2>
             <p className="text-4xl font-bold mt-4 text-[#22d3ee]">{Math.round(result.score)}%</p>
@@ -103,11 +103,11 @@ export default function QuizzesPage() {
           <button onClick={() => { setActiveQuiz(null); setQuizDetail(null); }} className="text-sm text-slate-500 hover:text-slate-300">← Back</button>
         </div>
         {quizDetail.questions.map((q, qi) => (
-          <div key={qi} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5 border">
-            <p className="font-medium mb-3">Q{qi + 1}. {q.question}</p>
+          <div key={qi} className="rounded-xl p-5" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}>
+            <p className="font-medium mb-3 text-white">Q{qi + 1}. {q.question}</p>
             <div className="space-y-2">
               {q.options.map((opt, oi) => (
-                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${answers[qi] === oi ? "border-indigo-500 bg-transparent" : "hover:bg-transparent"}`}>
+                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${answers[qi] === oi ? "border-[#0EA5B8] bg-[#0EA5B8]/10" : "border-white/10 hover:bg-white/5"}`}>
                   <input type="radio" name={`q-${qi}`} checked={answers[qi] === oi} onChange={() => { const a = [...answers]; a[qi] = oi; setAnswers(a); }} className="w-4 h-4 text-[#22d3ee]" />
                   <span className="text-sm">{opt}</span>
                 </label>
