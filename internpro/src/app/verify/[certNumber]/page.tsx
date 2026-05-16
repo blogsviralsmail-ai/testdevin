@@ -104,30 +104,30 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Program</span>
-                  <span className="font-medium">{info.programName}</span>
+                  <span className="font-medium text-gray-900">{info.programName}</span>
                 </div>
                 {info.orgName && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Organization</span>
-                    <span className="font-medium">{info.orgName}</span>
+                    <span className="font-medium text-gray-900">{info.orgName}</span>
                   </div>
                 )}
                 {info.domain && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Domain</span>
-                    <span className="font-medium">{getDomainLabel(info.domain)}</span>
+                    <span className="font-medium text-gray-900">{getDomainLabel(info.domain)}</span>
                   </div>
                 )}
                 {info.duration && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Duration</span>
-                    <span className="font-medium">{info.duration} Days</span>
+                    <span className="font-medium text-gray-900">{info.duration} Days</span>
                   </div>
                 )}
                 {info.mode && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Mode</span>
-                    <span className="font-medium">{getModeLabel(info.mode)}</span>
+                    <span className="font-medium text-gray-900">{getModeLabel(info.mode)}</span>
                   </div>
                 )}
                 {info.category && (
@@ -138,7 +138,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Issue Date</span>
-                  <span className="font-medium">{formatDate(info.issuedAt)}</span>
+                  <span className="font-medium text-gray-900">{formatDate(info.issuedAt)}</span>
                 </div>
                 {info.currentStatus && (
                   <div className="flex justify-between text-sm">
@@ -154,13 +154,13 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
                 {info.enrolledAt && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Enrolled On</span>
-                    <span className="font-medium">{formatDate(info.enrolledAt)}</span>
+                    <span className="font-medium text-gray-900">{formatDate(info.enrolledAt)}</span>
                   </div>
                 )}
                 {info.completedAt && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Completed On</span>
-                    <span className="font-medium">{formatDate(info.completedAt)}</span>
+                    <span className="font-medium text-gray-900">{formatDate(info.completedAt)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
