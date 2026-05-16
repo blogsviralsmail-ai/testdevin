@@ -9,17 +9,21 @@ export async function GET() {
   }
 
   if (session.role === "student") {
-    const [enrollments, attendances, submissions, certificates] = await Promise.all([
-      prisma.enrollment.findMany({ where: { studentId: session.id } }),
+    const [enrollments, attendances, submissions, certificates, totalTasksCount] = await Promise.all([
+      prisma.enrollment.findMany({
+        where: { studentId: session.id },
+        include: { batch: { include: { program: { select: { title: true, duration: true, domain: true } } } } },
+      }),
       prisma.attendance.count({ where: { userId: session.id, status: "present" } }),
       prisma.submission.findMany({ where: { studentId: session.id } }),
       prisma.certificate.count({ where: { enrollment: { studentId: session.id } } }),
+      prisma.task.count({ where: { batch: { enrollments: { some: { studentId: session.id } } } } }),
     ]);
 
     const completedTasks = submissions.filter((s) => s.status === "reviewed").length;
-    const totalTasks = submissions.length;
+    const submittedTasks = submissions.length;
     const avgPercentage = submissions.filter((s) => s.percentage).reduce((acc, s) => acc + (s.percentage || 0), 0);
-    const completionPercentage = totalTasks > 0 ? Math.round(avgPercentage / totalTasks) : 0;
+    const completionPercentage = submittedTasks > 0 ? Math.round(avgPercentage / submittedTasks) : 0;
 
     // Enrollment status for blinking badges
     const enrollmentStatuses = enrollments.map(e => e.status);
@@ -29,16 +33,41 @@ export async function GET() {
     const hasShortlisted = enrollmentStatuses.includes("shortlisted");
     const currentStatus = hasSelected ? "selected" : hasShortlisted ? "shortlisted" : hasInterviewScheduled ? "interview_scheduled" : hasRejected ? "rejected" : enrollmentStatuses[0] || "applied";
 
+    // Calculate days remaining for active enrollment
+    const activeEnrollment = enrollments.find(e => e.status === "selected");
+    let daysRemaining = 0;
+    let totalDays = 0;
+    let daysElapsed = 0;
+    let programName = "";
+    let progressPercent = 0;
+    if (activeEnrollment) {
+      programName = activeEnrollment.batch.program.title;
+      const durationRaw = activeEnrollment.batch.program.duration || "30 Days";
+      const durationDays = parseInt(String(durationRaw)) || 30;
+      totalDays = durationDays;
+      const joinDate = activeEnrollment.joiningDate ? new Date(activeEnrollment.joiningDate) : new Date(activeEnrollment.createdAt);
+      const now = new Date();
+      daysElapsed = Math.max(0, Math.floor((now.getTime() - joinDate.getTime()) / 86400000));
+      daysRemaining = Math.max(0, totalDays - daysElapsed);
+      progressPercent = Math.min(100, Math.round((daysElapsed / totalDays) * 100));
+    }
+
     return NextResponse.json({
       totalEnrollments: enrollments.length,
       activeEnrollments: enrollments.filter((e) => e.status === "selected").length,
       totalAttendance: attendances,
-      totalTasks,
+      totalTasks: totalTasksCount,
+      submittedTasks: submittedTasks,
       completedTasks,
       completionPercentage,
       totalCertificates: certificates,
       enrollmentStatus: currentStatus,
-      hasDocuments: true, // will be overridden below
+      hasDocuments: true,
+      daysRemaining,
+      totalDays,
+      daysElapsed,
+      programName,
+      progressPercent,
     });
   }
 

@@ -13,12 +13,18 @@ interface Stats {
   totalEnrollments?: number;
   totalAttendance?: number;
   totalTasks?: number;
+  submittedTasks?: number;
   completedTasks?: number;
   pendingApplications?: number;
   scheduledInterviews?: number;
   selectedStudents?: number;
   completionPercentage?: number;
   enrollmentStatus?: string;
+  daysRemaining?: number;
+  totalDays?: number;
+  daysElapsed?: number;
+  programName?: string;
+  progressPercent?: number;
 }
 
 interface UserInfo {
@@ -97,11 +103,11 @@ export default function DashboardPage() {
   ];
 
   const studentCards = [
-    { label: "My Applications", value: stats.totalEnrollments || 0, icon: "📋", gradient: "from-blue-500/20 to-indigo-500/20", accent: "#60a5fa" },
     { label: "Days Completed", value: stats.totalAttendance || 0, icon: "📅", gradient: "from-cyan-500/20 to-teal-500/20", accent: "#0EA5B8" },
-    { label: "Tasks Completed", value: stats.completedTasks || 0, icon: "📝", gradient: "from-emerald-500/20 to-green-500/20", accent: "#34d399" },
-    { label: "Total Tasks", value: stats.totalTasks || 0, icon: "📋", gradient: "from-violet-500/20 to-[#a78bfa]/20", accent: "#a78bfa" },
-    { label: "Completion %", value: `${stats.completionPercentage || 0}%`, icon: "📊", gradient: "from-amber-500/20 to-orange-500/20", accent: "#f59e0b" },
+    { label: "Days Remaining", value: stats.daysRemaining || 0, icon: "⏳", gradient: "from-amber-500/20 to-orange-500/20", accent: "#f59e0b" },
+    { label: "Tasks Done", value: `${stats.completedTasks || 0}/${stats.totalTasks || 0}`, icon: "📝", gradient: "from-emerald-500/20 to-green-500/20", accent: "#34d399" },
+    { label: "Avg Score", value: `${stats.completionPercentage || 0}%`, icon: "📊", gradient: "from-violet-500/20 to-[#a78bfa]/20", accent: "#a78bfa" },
+    { label: "Attendance", value: stats.totalAttendance || 0, icon: "🎯", gradient: "from-blue-500/20 to-indigo-500/20", accent: "#60a5fa" },
     { label: "Certificates", value: stats.totalCertificates || 0, icon: "🏆", gradient: "from-rose-500/20 to-pink-500/20", accent: "#FF6B6B" },
   ];
 
@@ -253,6 +259,34 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Internship Progress Bar for Students */}
+      {user?.role === "student" && stats.programName && (
+        <div className="mb-8 rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Internship Progress</h2>
+              <p className="text-sm text-slate-400 mt-0.5">{stats.programName}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-white">{stats.progressPercent || 0}%</p>
+              <p className="text-xs text-slate-500">
+                {stats.daysRemaining ? `${stats.daysRemaining} days remaining` : "Completed"}
+              </p>
+            </div>
+          </div>
+          <div className="h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <div className="h-full rounded-full transition-all duration-1000" style={{
+              width: `${stats.progressPercent || 0}%`,
+              background: 'linear-gradient(90deg, #0EA5B8, #a78bfa)',
+            }} />
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-slate-500">
+            <span>Day {stats.daysElapsed || 0}</span>
+            <span>Day {stats.totalDays || 0}</span>
+          </div>
+        </div>
+      )}
 
       {/* Upcoming Interviews for Students */}
       {user?.role === "student" && upcomingInterviews.length > 0 && (

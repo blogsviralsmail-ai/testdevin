@@ -71,6 +71,29 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
+      {/* Ranking Criteria */}
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-5">
+        <h2 className="text-sm font-semibold text-white mb-3">How Points Are Calculated</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs">
+          <div className="rounded-lg p-3" style={{background: 'rgba(14,165,184,0.1)', border: '1px solid rgba(14,165,184,0.2)'}}>
+            <p className="text-lg font-bold text-[#0EA5B8]">+10</p>
+            <p className="text-slate-400">Daily Attendance</p>
+          </div>
+          <div className="rounded-lg p-3" style={{background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)'}}>
+            <p className="text-lg font-bold text-emerald-400">+20</p>
+            <p className="text-slate-400">Task Submitted</p>
+          </div>
+          <div className="rounded-lg p-3" style={{background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)'}}>
+            <p className="text-lg font-bold text-purple-400">+15</p>
+            <p className="text-slate-400">Quiz Passed</p>
+          </div>
+          <div className="rounded-lg p-3" style={{background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)'}}>
+            <p className="text-lg font-bold text-amber-400">+5</p>
+            <p className="text-slate-400">Discussion Post</p>
+          </div>
+        </div>
+      </div>
+
       {/* Badges */}
       {allBadges.length > 0 && (
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border">

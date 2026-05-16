@@ -641,3 +641,33 @@ main > div {
 }
 .apply-now-3d:hover::before { left: 100%; }
 .apply-now-cta { text-align: center; margin: 2.5em 0; }
+
+/* ===== Mobile Responsiveness ===== */
+@media (max-width: 768px) {
+  /* Tables scroll horizontally */
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+  table { min-width: 600px; }
+  
+  /* Modals full-width on mobile */
+  .fixed.inset-0 > div { max-width: 95vw !important; max-height: 90vh !important; margin: auto; }
+  
+  /* Cards single column */
+  .grid-cols-3, .lg\:grid-cols-3, .xl\:grid-cols-3 { grid-template-columns: repeat(2, 1fr) !important; }
+  
+  /* Sidebar adjustments */
+  .sidebar-nav { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  
+  /* Smaller padding on mobile */
+  .p-6 { padding: 1rem; }
+  .p-8 { padding: 1.25rem; }
+  .px-6 { padding-left: 1rem; padding-right: 1rem; }
+  
+  /* Text sizing for mobile */
+  .text-3xl { font-size: 1.5rem; }
+  .text-2xl { font-size: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .grid-cols-2 { grid-template-columns: 1fr !important; }
+  table { min-width: 500px; }
+}
