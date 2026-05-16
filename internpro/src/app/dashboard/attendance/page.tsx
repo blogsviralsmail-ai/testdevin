@@ -308,8 +308,8 @@ export default function AttendancePage() {
                         })() : <span className="text-xs text-slate-500">—</span>}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`text-xs px-2 py-1 rounded-full ${record.method === "auto" ? "bg-blue-500/10 text-[#60a5fa]" : "bg-transparent text-slate-400"}`}>
-                          {record.method === "auto" ? "Auto" : "Manual"}
+                        <span className={`text-xs px-2 py-1 rounded-full ${record.method === "auto" || record.method === "task-completion" ? "bg-blue-500/10 text-[#60a5fa]" : "bg-transparent text-slate-400"}`}>
+                          {isStudent ? (record.method === "auto" || record.method === "task-completion" || record.method === "bulk-autofill" ? "Auto" : "Manual") : (record.method === "bulk-autofill" ? "System" : record.method === "task-completion" ? "Task" : record.method === "auto" ? "Auto" : record.method === "bulk" ? "Bulk" : "Manual")}
                         </span>
                       </td>
                     </tr>

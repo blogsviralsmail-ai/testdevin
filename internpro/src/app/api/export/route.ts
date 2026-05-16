@@ -222,12 +222,12 @@ export async function GET(request: NextRequest) {
       rows = attendances.map(a => [
         a.user.employeeId || "", a.user.name, a.user.email, a.user.phone || "",
         a.enrollment.batch.program.title, a.enrollment.batch.name,
-        formatDate(a.date), a.status, String(a.workDay || ""), a.checkIn || "", a.checkOut || "", a.method, a.ipAddress || "", a.notes || "", formatDateTime(a.createdAt),
+        formatDate(a.date), a.status, String(a.workDay || ""), a.checkIn || "", a.checkOut || "", a.method === "bulk-autofill" || a.method === "task-completion" ? "Auto" : a.method, a.ipAddress || "", a.notes || "", formatDateTime(a.createdAt),
       ]);
       jsonData = attendances.map(a => ({
         employeeId: a.user.employeeId || "", name: a.user.name, email: a.user.email, phone: a.user.phone || "",
         program: a.enrollment.batch.program.title, batch: a.enrollment.batch.name,
-        date: formatDate(a.date), status: a.status, workDay: a.workDay || "", checkIn: a.checkIn || "", checkOut: a.checkOut || "", method: a.method, ipAddress: a.ipAddress || "", notes: a.notes || "", createdAt: formatDateTime(a.createdAt),
+        date: formatDate(a.date), status: a.status, workDay: a.workDay || "", checkIn: a.checkIn || "", checkOut: a.checkOut || "", method: a.method === "bulk-autofill" || a.method === "task-completion" ? "Auto" : a.method, ipAddress: a.ipAddress || "", notes: a.notes || "", createdAt: formatDateTime(a.createdAt),
       }));
       filename = `attendance_complete_${new Date().toISOString().split("T")[0]}`;
       break;
