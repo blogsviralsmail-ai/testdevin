@@ -541,7 +541,7 @@ export default function MyWorkPage() {
           {/* Quiz Modal */}
           {takingQuiz && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-              <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.15)'}}>
                 <div className="p-6">
                   {quizResult ? (
                     <div className="text-center py-8">
@@ -557,11 +557,11 @@ export default function MyWorkPage() {
                       <h2 className="text-xl font-bold text-white mb-6">{quizzes.find(q => q.id === takingQuiz)?.title || "Quiz"}</h2>
                       <div className="space-y-6">
                         {quizQuestions.map((q, qi) => (
-                          <div key={q.id} className="border rounded-lg p-4">
+                          <div key={q.id} className="rounded-lg p-4" style={{background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)'}}>
                             <p className="font-medium text-white mb-3">Q{qi + 1}. {q.question}</p>
                             <div className="space-y-2">
                               {q.options.map((opt, oi) => (
-                                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${quizAnswers[q.id] === oi ? "border-purple-500 bg-transparent" : "border-white/[0.08] hover:bg-transparent"}`}>
+                                <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${quizAnswers[q.id] === oi ? "border-purple-500 bg-purple-500/10" : "border-white/[0.08] hover:bg-white/5"}`}>
                                   <input type="radio" name={q.id} checked={quizAnswers[q.id] === oi} onChange={() => setQuizAnswers({ ...quizAnswers, [q.id]: oi })} className="accent-purple-600" />
                                   <span className="text-sm text-slate-300">{opt}</span>
                                 </label>
