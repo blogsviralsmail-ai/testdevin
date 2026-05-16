@@ -37,9 +37,6 @@ export default function PublicNavbar({ activePath }: { activePath?: string }) {
           ) : (
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{background: 'linear-gradient(135deg, #0EA5B8, #a78bfa)'}}>KM</div>
           )}
-          <span className="text-xl font-bold" style={{background: 'linear-gradient(135deg, #22d3ee, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
-            {settings.company_name || "KKHS Media"}
-          </span>
         </Link>
         <div className="hidden md:flex items-center gap-2">
           {navLinks.map((l) => (

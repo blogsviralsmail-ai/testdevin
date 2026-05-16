@@ -19,29 +19,22 @@ interface VerifyData {
     enrolledAt?: string;
     completedAt?: string;
   };
-  // Legacy cert format
-  certificate?: {
-    certNumber: string;
-    type: string;
-    studentName: string;
-    programName: string;
-    orgName: string;
-    issueDate: string;
-    domain: string;
-    duration: number;
-    mode: string;
-  };
 }
 
 async function verifyDocument(number: string): Promise<VerifyData> {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  // Try unified API first
-  const res = await fetch(`${baseUrl}/api/verify?number=${encodeURIComponent(number)}`, { cache: "no-store" });
-  const data = await res.json();
-  if (data.valid) return data;
-  // Fallback to legacy certificate API
-  const certRes = await fetch(`${baseUrl}/api/certificates/verify/${number}`, { cache: "no-store" });
-  return certRes.json();
+  const port = process.env.PORT || "3005";
+  const baseUrl = `http://localhost:${port}`;
+  try {
+    const res = await fetch(`${baseUrl}/api/verify?number=${encodeURIComponent(number)}`, { cache: "no-store" });
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { valid: false, error: "Invalid response" };
+    }
+  } catch {
+    return { valid: false, error: "Verification service unavailable" };
+  }
 }
 
 const performanceMap: Record<string, string> = { excellent: "Outstanding", good: "Very Good", average: "Satisfactory" };
@@ -54,20 +47,9 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
   }
 
   const data = await verifyDocument(certNumber);
-
-  // Handle unified API response
   const isValid = data.valid;
-  const docType = data.type || (data.certificate ? `${data.certificate.type} Certificate` : null);
-  const info = data.data || (data.certificate ? {
-    number: data.certificate.certNumber,
-    studentName: data.certificate.studentName,
-    programName: data.certificate.programName,
-    domain: data.certificate.domain,
-    duration: data.certificate.duration,
-    mode: data.certificate.mode,
-    orgName: data.certificate.orgName,
-    issuedAt: data.certificate.issueDate,
-  } : null);
+  const docType = data.type;
+  const info = data.data;
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -104,30 +86,30 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Program</span>
-                  <span className="font-medium text-gray-900">{info.programName}</span>
+                  <span className="font-medium text-black">{info.programName}</span>
                 </div>
                 {info.orgName && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Organization</span>
-                    <span className="font-medium text-gray-900">{info.orgName}</span>
+                    <span className="font-medium text-black">{info.orgName}</span>
                   </div>
                 )}
                 {info.domain && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Domain</span>
-                    <span className="font-medium text-gray-900">{getDomainLabel(info.domain)}</span>
+                    <span className="font-medium text-black">{getDomainLabel(info.domain)}</span>
                   </div>
                 )}
                 {info.duration && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Duration</span>
-                    <span className="font-medium text-gray-900">{info.duration} Days</span>
+                    <span className="font-medium text-black">{info.duration} Days</span>
                   </div>
                 )}
                 {info.mode && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Mode</span>
-                    <span className="font-medium text-gray-900">{getModeLabel(info.mode)}</span>
+                    <span className="font-medium text-black">{getModeLabel(info.mode)}</span>
                   </div>
                 )}
                 {info.category && (
@@ -138,29 +120,24 @@ export default async function VerifyPage({ params }: { params: Promise<{ certNum
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Issue Date</span>
-                  <span className="font-medium text-gray-900">{formatDate(info.issuedAt)}</span>
+                  <span className="font-medium text-black">{formatDate(info.issuedAt)}</span>
                 </div>
                 {info.currentStatus && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Current Status</span>
-                    <span className={`font-semibold px-2 py-0.5 rounded text-xs ${
-                      info.currentStatus.includes("Completed") ? "bg-green-100 text-green-700" :
-                      info.currentStatus.includes("Working") || info.currentStatus === "Selected" ? "bg-blue-100 text-blue-700" :
-                      info.currentStatus.includes("Rejected") || info.currentStatus.includes("Terminated") || info.currentStatus.includes("Dropped") ? "bg-red-100 text-red-700" :
-                      "bg-yellow-100 text-yellow-700"
-                    }`}>{info.currentStatus}</span>
+                    <span className="font-semibold text-black">{info.currentStatus}</span>
                   </div>
                 )}
                 {info.enrolledAt && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Enrolled On</span>
-                    <span className="font-medium text-gray-900">{formatDate(info.enrolledAt)}</span>
+                    <span className="font-medium text-black">{formatDate(info.enrolledAt)}</span>
                   </div>
                 )}
                 {info.completedAt && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Completed On</span>
-                    <span className="font-medium text-gray-900">{formatDate(info.completedAt)}</span>
+                    <span className="font-medium text-black">{formatDate(info.completedAt)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
