@@ -13,6 +13,12 @@ interface Enrollment {
   student: { name: string; email: string };
   batch: { name: string; program: { title: string; duration: number } };
 }
+interface AnalyticsOverview {
+  totalStudents: number; activeStudents: number; completedStudents: number; dropoutCount: number;
+  totalPrograms: number; totalBatches: number; totalRevenue: number;
+  enrollmentsByStatus: Record<string, number>; monthlyTrend: Record<string, number>;
+}
+interface BatchStat { batchName: string; programName: string; studentCount: number; totalAttendance: number; avgAttendancePerStudent: number; totalSubmissions: number; avgScore: number; }
 
 export default function ReportsPage() {
   const [user, setUser] = useState<UserSession | null>(null);
@@ -21,13 +27,26 @@ export default function ReportsPage() {
   const [viewingReport, setViewingReport] = useState<{ html: string; title: string; studentName: string; studentEmail: string } | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
   const [emailing, setEmailing] = useState(false);
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
+  const [batchStats, setBatchStats] = useState<BatchStat[]>([]);
 
   const fetchData = useCallback(async () => {
     const [meRes, enrollRes] = await Promise.all([
       fetch("/api/auth/me"),
       fetch("/api/enrollments"),
     ]);
-    if (meRes.ok) { const d = await meRes.json(); setUser(d.user); }
+    if (meRes.ok) {
+      const d = await meRes.json();
+      setUser(d.user);
+      if (d.user?.role === "admin" || d.user?.role === "organization") {
+        const [overviewRes, batchRes] = await Promise.all([
+          fetch("/api/reports/analytics?type=overview"),
+          fetch("/api/reports/analytics?type=batch-comparison"),
+        ]);
+        if (overviewRes.ok) setAnalytics(await overviewRes.json());
+        if (batchRes.ok) { const bd = await batchRes.json(); setBatchStats(bd.batchStats || []); }
+      }
+    }
     if (enrollRes.ok) setEnrollments(await enrollRes.json());
     setLoading(false);
   }, []);
@@ -108,6 +127,92 @@ export default function ReportsPage() {
         <h1 className="text-2xl font-bold text-white">Reports</h1>
         <p className="text-slate-400">View daily task reports. Reports cover joining date to current/completion date.</p>
       </div>
+
+      {/* Admin Analytics Section */}
+      {isAdmin && analytics && (
+        <div className="mb-8 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Total Students", value: analytics.totalStudents, icon: "👥", color: "#60a5fa" },
+              { label: "Active Interns", value: analytics.activeStudents, icon: "🎓", color: "#34d399" },
+              { label: "Completed", value: analytics.completedStudents, icon: "🏆", color: "#a78bfa" },
+              { label: "Dropout / Rejected", value: analytics.dropoutCount, icon: "📉", color: "#f87171" },
+            ].map(s => (
+              <div key={s.label} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{s.icon}</span>
+                  <span className="text-xs text-slate-400">{s.label}</span>
+                </div>
+                <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Enrollment Status Breakdown */}
+          <div className="rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <h3 className="text-sm font-semibold text-white mb-3">Enrollment Status Breakdown</h3>
+            <div className="flex gap-3 flex-wrap">
+              {Object.entries(analytics.enrollmentsByStatus).map(([status, count]) => (
+                <div key={status} className="rounded-lg px-4 py-2 text-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <p className="text-lg font-bold text-white">{count}</p>
+                  <p className="text-[10px] text-slate-400 capitalize">{status.replace("_", " ")}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Batch Comparison */}
+          {batchStats.length > 0 && (
+            <div className="rounded-xl p-5 overflow-x-auto" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <h3 className="text-sm font-semibold text-white mb-3">Batch Comparison</h3>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-slate-500 border-b border-white/[0.06]">
+                    <th className="pb-2 pr-4">Batch</th>
+                    <th className="pb-2 pr-4">Program</th>
+                    <th className="pb-2 pr-4 text-center">Students</th>
+                    <th className="pb-2 pr-4 text-center">Avg Attendance</th>
+                    <th className="pb-2 pr-4 text-center">Submissions</th>
+                    <th className="pb-2 text-center">Avg Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {batchStats.map(b => (
+                    <tr key={b.batchName} className="border-b border-white/[0.03]">
+                      <td className="py-2 pr-4 text-white font-medium">{b.batchName}</td>
+                      <td className="py-2 pr-4 text-slate-400">{b.programName}</td>
+                      <td className="py-2 pr-4 text-center text-white">{b.studentCount}</td>
+                      <td className="py-2 pr-4 text-center text-white">{b.avgAttendancePerStudent} days</td>
+                      <td className="py-2 pr-4 text-center text-white">{b.totalSubmissions}</td>
+                      <td className="py-2 text-center font-semibold" style={{ color: b.avgScore >= 70 ? '#34d399' : b.avgScore >= 50 ? '#f59e0b' : '#f87171' }}>{b.avgScore}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Monthly Enrollment Trend */}
+          {Object.keys(analytics.monthlyTrend).length > 0 && (
+            <div className="rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <h3 className="text-sm font-semibold text-white mb-3">Monthly Enrollment Trend</h3>
+              <div className="flex gap-2 items-end h-32 overflow-x-auto">
+                {Object.entries(analytics.monthlyTrend).slice(-12).map(([month, count]) => {
+                  const maxCount = Math.max(...Object.values(analytics.monthlyTrend));
+                  const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                  return (
+                    <div key={month} className="flex flex-col items-center gap-1 min-w-[40px]">
+                      <span className="text-[10px] text-slate-400">{count}</span>
+                      <div className="w-6 rounded-t" style={{ height: `${Math.max(4, height)}%`, background: 'linear-gradient(180deg, #0EA5B8, #a78bfa)' }} />
+                      <span className="text-[9px] text-slate-500">{month.slice(5)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {selectedEnrollments.length === 0 ? (
         <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 text-center border">
