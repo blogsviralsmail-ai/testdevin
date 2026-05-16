@@ -83,6 +83,27 @@ const defaultPrograms = [
       "Best for students who want strong portfolio and job readiness",
     ],
   },
+  {
+    id: "permanent_fulltime",
+    title: "Full-Time Permanent Employment",
+    fees: "Salary Based",
+    feesNote: "Monthly Salary",
+    duration: "Permanent (No Expiry)",
+    mode: "Office / Hybrid",
+    modeIcon: "office",
+    image: "",
+    color: "#7c3aed",
+    idealFor: "Experienced professionals who want long-term career with KKHS Media — no fixed end date",
+    highlights: [
+      "Full-time permanent position — no expiry date",
+      "Monthly salary based on experience and role",
+      "Work on all company programs and departments",
+      "Daily tasks assigned by admin/team lead",
+      "Training courses and skill development",
+      "Career growth opportunities within the company",
+      "Apply to any program based on your skills",
+    ],
+  },
 ];
 
 export async function GET() {

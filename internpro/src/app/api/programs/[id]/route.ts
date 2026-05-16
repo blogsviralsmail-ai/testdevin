@@ -44,13 +44,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json();
-    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats, isPublished, thumbnail } = body;
+    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats, isPublished, thumbnail, programType } = body;
 
     const data: Record<string, unknown> = {};
     if (title !== undefined) data.title = title;
     if (description !== undefined) data.description = description;
     if (domain !== undefined) data.domain = domain;
     if (mode !== undefined) data.mode = mode;
+    if (programType !== undefined) data.programType = programType;
     if (duration !== undefined) data.duration = duration;
     if (feeType !== undefined) data.feeType = feeType;
     if (feeAmount !== undefined) data.feeAmount = feeAmount;

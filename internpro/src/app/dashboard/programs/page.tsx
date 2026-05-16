@@ -10,6 +10,7 @@ interface Program {
   title: string;
   domain: string;
   mode: string;
+  programType: string;
   duration: number;
   feeType: string;
   feeAmount: number;
@@ -32,7 +33,7 @@ export default function ProgramsPage() {
   const [error, setError] = useState("");
   const [user, setUser] = useState<UserSession | null>(null);
   const [form, setForm] = useState({
-    title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", duration: "90",
+    title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", programType: "internship", duration: "90",
     feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "",
   });
   const [uploading, setUploading] = useState(false);
@@ -65,7 +66,7 @@ export default function ProgramsPage() {
   };
 
   const resetForm = () => {
-    setForm({ title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "" });
+    setForm({ title: "", description: "", domain: "web-dev", customDomain: "", mode: "online", programType: "internship", duration: "90", feeType: "free", feeAmount: "0", stipendAmount: "0", maxSeats: "50", thumbnail: "" });
     setEditId(null);
     setShowForm(false);
   };
@@ -77,6 +78,7 @@ export default function ProgramsPage() {
       domain: program.domain,
       customDomain: "",
       mode: program.mode,
+      programType: program.programType || "internship",
       duration: String(program.duration),
       feeType: program.feeType,
       feeAmount: String(program.feeAmount),
@@ -171,7 +173,7 @@ export default function ProgramsPage() {
           <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
         </div>
       )}
-          <p className="text-slate-400 text-sm">Manage your internship programs</p>
+          <p className="text-slate-400 text-sm">Manage internship &amp; permanent programs</p>
         </div>
         {isAdmin && (
           <button onClick={() => { if (showForm) resetForm(); else setShowForm(true); }} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">
@@ -219,9 +221,18 @@ export default function ProgramsPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Duration (days)</label>
-              <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white" required />
+              <label className="block text-sm font-medium text-slate-300 mb-1">Program Type</label>
+              <select value={form.programType} onChange={(e) => setForm({ ...form, programType: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white">
+                <option value="internship">Internship (Fixed Duration)</option>
+                <option value="permanent">Permanent / Full-Time (No Expiry)</option>
+              </select>
             </div>
+            {form.programType !== "permanent" && (
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Duration (days)</label>
+                <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white" required />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Fee Type</label>
               <select value={form.feeType} onChange={(e) => setForm({ ...form, feeType: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm text-white">
@@ -297,6 +308,9 @@ export default function ProgramsPage() {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${program.isPublished ? "bg-emerald-500/10 text-emerald-400" : "bg-transparent text-slate-400"}`}>
                         {program.isPublished ? "Published" : "Draft"}
                       </span>
+                      {(program.programType === "permanent") && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400">Permanent</span>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3">
                       <span className="text-xs bg-transparent text-[#22d3ee] px-2 py-1 rounded">{getDomainLabel(program.domain)}</span>
@@ -305,7 +319,7 @@ export default function ProgramsPage() {
                           {m === "online" ? "💻 Online" : m === "offline" ? "🏢 Offline" : m === "hybrid" ? "🔄 Hybrid" : getModeLabel(m)}
                         </span>
                       ))}
-                      <span className="text-xs bg-transparent text-[#a78bfa] px-2 py-1 rounded">{program.duration} days</span>
+                      <span className="text-xs bg-transparent text-[#a78bfa] px-2 py-1 rounded">{program.programType === "permanent" ? "No Expiry" : `${program.duration} days`}</span>
                       <span className="text-xs bg-transparent text-emerald-400 px-2 py-1 rounded">{getFeeTypeLabel(program.feeType)}{program.feeType === "paid" ? ` - ${formatCurrency(program.feeAmount)}` : program.feeType === "stipend" ? ` - ${formatCurrency(program.stipendAmount)}/mo` : ""}</span>
                     </div>
                     <div className="flex items-center gap-6 text-sm text-slate-500">

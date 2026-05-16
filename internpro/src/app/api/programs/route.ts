@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats, thumbnail } = body;
+    const { title, description, domain, mode, duration, feeType, feeAmount, stipendAmount, maxSeats, thumbnail, programType } = body;
     let { orgId } = body;
 
     if (!orgId) {
@@ -44,8 +44,9 @@ export async function POST(request: NextRequest) {
       if (org) orgId = org.id;
     }
 
-    if (!title || !domain || !duration || !orgId) {
-      return NextResponse.json({ error: "Title, domain, duration, and organization are required" }, { status: 400 });
+    const isPermanent = programType === "permanent";
+    if (!title || !domain || !orgId || (!isPermanent && !duration)) {
+      return NextResponse.json({ error: "Title, domain, and organization are required" }, { status: 400 });
     }
 
     const slug = slugify(title) + "-" + Date.now().toString(36);
@@ -57,7 +58,8 @@ export async function POST(request: NextRequest) {
         description: description || null,
         domain,
         mode: mode || "online",
-        duration: parseInt(duration),
+        programType: programType || "internship",
+        duration: isPermanent ? 0 : parseInt(duration),
         feeType: feeType || "free",
         feeAmount: parseFloat(feeAmount || "0"),
         stipendAmount: parseFloat(stipendAmount || "0"),

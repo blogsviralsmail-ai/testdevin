@@ -28,6 +28,7 @@ const fallbackImages: Record<string, string> = {
   basic_certification: makePlaceholder("#8b5cf6", "#ec4899", "📜"),
   free_hybrid_internship: makePlaceholder("#f59e0b", "#ef4444", "💼"),
   stipend_office_internship: makePlaceholder("#10b981", "#0EA5B8", "🏢"),
+  permanent_fulltime: makePlaceholder("#7c3aed", "#4f46e5", "👔"),
 };
 
 // SVG icons for each mode
