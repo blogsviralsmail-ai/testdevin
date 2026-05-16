@@ -36,8 +36,36 @@ export async function sendWhatsAppMessage({ phone, message }: WhatsAppMessage): 
       body: JSON.stringify({ phone: fullPhone, message }),
     });
 
+    // Log delivery status
+    const status = res.ok ? "sent" : "failed";
+    const responseText = await res.text().catch(() => "");
+    try {
+      await prisma.activityLog.create({
+        data: {
+          action: "whatsapp_message",
+          entity: "whatsapp",
+          entityId: fullPhone,
+          details: `WhatsApp ${status}: ${message.slice(0, 100)}${responseText ? ` [API: ${responseText.slice(0, 50)}]` : ""}`,
+          userId: "system",
+          userName: "System",
+        },
+      });
+    } catch { /* logging failed, don't block */ }
+
     return res.ok;
-  } catch {
+  } catch (err) {
+    try {
+      await prisma.activityLog.create({
+        data: {
+          action: "whatsapp_message",
+          entity: "whatsapp",
+          entityId: phone,
+          details: `WhatsApp failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+          userId: "system",
+          userName: "System",
+        },
+      });
+    } catch { /* logging failed */ }
     return false;
   }
 }
