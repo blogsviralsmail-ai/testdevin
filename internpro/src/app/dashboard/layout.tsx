@@ -22,7 +22,7 @@ const navItems = [
   // Recruitment
   { href: "/dashboard/applications", label: "Applications", icon: "📋", roles: ["admin", "organization"] },
   { href: "/dashboard/interviews", label: "Interviews", icon: "🎤", roles: ["admin", "organization", "student"] },
-  { href: "/dashboard/students", label: "Students", icon: "👥", roles: ["admin", "organization", "teamleader"] },
+  { href: "/dashboard/students", label: "Students & Employees", icon: "👥", roles: ["admin", "organization", "teamleader"] },
 
   // Academics
   { href: "/dashboard/programs", label: "Programs", icon: "📚", roles: ["admin", "organization", "teamleader"] },

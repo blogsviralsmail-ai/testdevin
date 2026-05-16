@@ -150,6 +150,7 @@ model Enrollment {
   studentId          String
   batchId            String
   status             String            @default("applied")
+  employmentType     String            @default("intern")
   enrolledAt         DateTime          @default(now())
   completedAt        DateTime?
   createdAt          DateTime          @default(now())

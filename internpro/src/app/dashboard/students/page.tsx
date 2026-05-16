@@ -9,6 +9,7 @@ import { serverExportCSV, serverExportPDF } from "@/lib/export-utils";
 interface Enrollment {
   id: string;
   status: string;
+  employmentType: string;
   enrolledAt: string;
   joiningDate: string | null;
   feeType: string | null;
@@ -36,7 +37,7 @@ export default function StudentsPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [filter, setFilter] = useState("");
   const [editModal, setEditModal] = useState<Enrollment | null>(null);
-  const [editForm, setEditForm] = useState({ status: "", remarks: "" });
+  const [editForm, setEditForm] = useState({ status: "", remarks: "", employmentType: "intern" });
   const [studentForm, setStudentForm] = useState({ name: "", email: "", phone: "", password: "", collegeName: "", degree: "", year: "", address: "", joiningDate: "", avatar: "" });
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [viewProfile, setViewProfile] = useState<Enrollment | null>(null);
@@ -46,6 +47,7 @@ export default function StudentsPage() {
   const [teamLeaders, setTeamLeaders] = useState<{ id: string; name: string }[]>([]);
   const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -109,8 +111,8 @@ export default function StudentsPage() {
       return;
     }
 
-    // Update enrollment status + joining date
-    const enrollData: Record<string, unknown> = { status: editForm.status };
+    // Update enrollment status + joining date + employment type
+    const enrollData: Record<string, unknown> = { status: editForm.status, employmentType: editForm.employmentType };
     if (studentForm.joiningDate) enrollData.joiningDate = studentForm.joiningDate;
     await fetch(`/api/enrollments/${editModal.id}`, {
       method: "PUT",
@@ -170,6 +172,7 @@ export default function StudentsPage() {
 
   const filtered = enrollments.filter((e) => {
     if (filter !== "" && e.status !== filter) return false;
+    if (typeFilter !== "" && (e.employmentType || "intern") !== typeFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return e.student.name.toLowerCase().includes(q) || e.student.email.toLowerCase().includes(q) || (e.student.phone && e.student.phone.includes(q)) || e.batch.program.title.toLowerCase().includes(q) || (e.student.employeeId && e.student.employeeId.toLowerCase().includes(q));
@@ -210,7 +213,7 @@ export default function StudentsPage() {
           onExportCSV={handleExportCSV}
           onExportPDF={handleExportPDF}
         />
-          <p className="text-slate-400 text-sm">Manage enrolled students across all programs</p>
+          <p className="text-slate-400 text-sm">Manage interns and full-time employees across all programs</p>
         </div>
         <div className="flex gap-2 flex-wrap items-center">
           <button onClick={() => { window.open('/api/export?type=students&format=csv', '_blank'); }} className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-green-700">📥 Export CSV</button>
@@ -226,6 +229,16 @@ export default function StudentsPage() {
               className={`text-xs px-3 py-1.5 rounded-lg transition ${filter === s ? "bg-[#0EA5B8] text-white" : "bg-transparent text-slate-400 hover:bg-white/10"}`}
             >
               {s === "" ? "All" : s.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+            </button>
+          ))}
+          <span className="text-slate-600 mx-1">|</span>
+          {["", "intern", "fulltime"].map((t) => (
+            <button
+              key={`type-${t}`}
+              onClick={() => setTypeFilter(t)}
+              className={`text-xs px-3 py-1.5 rounded-lg transition ${typeFilter === t ? "bg-purple-600 text-white" : "bg-transparent text-slate-400 hover:bg-white/10"}`}
+            >
+              {t === "" ? "All Types" : t === "intern" ? "Interns" : "Full-Time"}
             </button>
           ))}
         </div>
@@ -355,20 +368,30 @@ export default function StudentsPage() {
                     className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Status</label>
-                <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm text-white">
-                  <option value="applied">Applied</option>
-                  <option value="pending">Pending</option>
-                  <option value="interview_scheduled">Interview Scheduled</option>
-                  <option value="shortlisted">Shortlisted</option>
-                  <option value="selected">Selected</option>
-                  <option value="active">Active (Joined)</option>
-                  <option value="completed">Completed</option>
-                  <option value="dropped">Dropped / Left Early</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Status</label>
+                  <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-white">
+                    <option value="applied">Applied</option>
+                    <option value="pending">Pending</option>
+                    <option value="interview_scheduled">Interview Scheduled</option>
+                    <option value="shortlisted">Shortlisted</option>
+                    <option value="selected">Selected</option>
+                    <option value="active">Active (Joined)</option>
+                    {editForm.employmentType !== "fulltime" && <option value="completed">Completed</option>}
+                    <option value="dropped">Dropped / Left Early</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Employment Type</label>
+                  <select value={editForm.employmentType} onChange={(e) => setEditForm({ ...editForm, employmentType: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-white">
+                    <option value="intern">Intern</option>
+                    <option value="fulltime">Full-Time Permanent</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
@@ -458,8 +481,9 @@ export default function StudentsPage() {
                 <div><span className="text-slate-500 text-xs">Mode</span><p className="font-medium text-[#60a5fa] capitalize">{viewProfile.batch.program.mode}</p></div>
                 <div><span className="text-slate-500 text-xs">Domain</span><p className="font-medium text-white">{viewProfile.batch.program.domain}</p></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div><span className="text-slate-500 text-xs">Status</span><p><span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(viewProfile.status)}`}>{viewProfile.status.replace("_", " ")}</span></p></div>
+                <div><span className="text-slate-500 text-xs">Type</span><p><span className={`text-xs px-2 py-1 rounded-full ${viewProfile.employmentType === "fulltime" ? "bg-purple-500/10 text-purple-400" : "bg-sky-500/10 text-sky-400"}`}>{viewProfile.employmentType === "fulltime" ? "Full-Time" : "Intern"}</span></p></div>
                 <div><span className="text-slate-500 text-xs">Joining Date</span><p className="font-medium text-white">{viewProfile.joiningDate ? formatDate(viewProfile.joiningDate) : "—"}</p></div>
               </div>
               {viewProfile.student.referredBy && viewProfile.student.referredBy.length > 0 && (
@@ -512,6 +536,7 @@ export default function StudentsPage() {
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Employee ID</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Program</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Joining Date</th>
+                  <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Type</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Status</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Attendance</th>
                   <th className="text-left text-xs font-medium text-slate-500 px-6 py-3">Actions</th>
@@ -550,6 +575,11 @@ export default function StudentsPage() {
                         <span className="text-xs text-slate-400">{enrollment.joiningDate ? new Date(enrollment.joiningDate).toLocaleDateString("en-IN") : "—"}</span>
                       </td>
                       <td className="px-6 py-4">
+                        <span className={`text-xs px-2 py-1 rounded-full ${enrollment.employmentType === "fulltime" ? "bg-purple-500/10 text-purple-400" : "bg-sky-500/10 text-sky-400"}`}>
+                          {enrollment.employmentType === "fulltime" ? "Full-Time" : "Intern"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
                         <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(enrollment.status)}`}>
                           {enrollment.status.replace("_", " ")}
                         </span>
@@ -575,7 +605,7 @@ export default function StudentsPage() {
                               <button
                                 onClick={() => {
                                   setEditModal(enrollment);
-                                  setEditForm({ status: enrollment.status, remarks: "" });
+                                  setEditForm({ status: enrollment.status, remarks: "", employmentType: enrollment.employmentType || "intern" });
                                   setStudentForm({
                                     name: enrollment.student.name || "",
                                     email: enrollment.student.email || "",

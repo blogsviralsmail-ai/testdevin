@@ -55,13 +55,13 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
       });
 
-      headers = ["Employee ID", "Name", "Email", "Phone", "College", "Degree", "Year", "State", "Address", "DOB", "Program", "Domain", "Program Mode", "Program Duration (days)", "Program Fee Type", "Batch", "Batch Leader", "Referred By", "Referrer Email", "Referral Code", "Referral Status", "Status", "Fee Type", "Fee Amount", "Stipend Amount", "Salary", "Weekoffs", "Paid Leaves", "Work Timing", "Joining Date", "Preferred Mode", "Payment Status", "Current Work Day", "Admin Approved", "Admin Remarks", "TL Category", "TL Remarks", "Offer Letter #", "Offer Accepted", "Offer Accepted At", "Enrolled At", "Completed At", "Created At"];
+      headers = ["Employee ID", "Name", "Email", "Phone", "College", "Degree", "Year", "State", "Address", "DOB", "Program", "Domain", "Program Mode", "Program Duration (days)", "Program Fee Type", "Batch", "Batch Leader", "Referred By", "Referrer Email", "Referral Code", "Referral Status", "Employment Type", "Status", "Fee Type", "Fee Amount", "Stipend Amount", "Salary", "Weekoffs", "Paid Leaves", "Work Timing", "Joining Date", "Preferred Mode", "Payment Status", "Current Work Day", "Admin Approved", "Admin Remarks", "TL Category", "TL Remarks", "Offer Letter #", "Offer Accepted", "Offer Accepted At", "Enrolled At", "Completed At", "Created At"];
       rows = enrollments.map(e => [
         e.student.employeeId || "", e.student.name, e.student.email, e.student.phone || "", e.student.collegeName || "", e.student.degree || "", e.student.year || "", e.student.state || "", e.student.address || "", formatDate(e.student.dob),
         e.batch.program.title, e.batch.program.domain, e.batch.program.mode, String(e.batch.program.duration), e.batch.program.feeType,
         e.batch.name, e.batch.leader?.name || "",
         e.student.referredBy?.[0]?.agent?.user?.name || "", e.student.referredBy?.[0]?.agent?.user?.email || "", e.student.referredBy?.[0]?.agent?.referralCode || "", e.student.referredBy?.[0]?.status || "",
-        e.status, e.feeType || "", String(e.feeAmount || ""), String(e.stipendAmount || ""), String(e.salary || ""), String(e.weekoffs || ""), String(e.paidLeaves || ""), e.workTiming || "", formatDate(e.joiningDate), e.preferredMode || "", e.paymentStatus, String(e.currentWorkDay),
+        e.employmentType || "intern", e.status, e.feeType || "", String(e.feeAmount || ""), String(e.stipendAmount || ""), String(e.salary || ""), String(e.weekoffs || ""), String(e.paidLeaves || ""), e.workTiming || "", formatDate(e.joiningDate), e.preferredMode || "", e.paymentStatus, String(e.currentWorkDay),
         e.adminApproved ? "Yes" : "No", e.adminRemarks || "", e.teamLeaderCategory || "", e.teamLeaderRemarks || "",
         e.offerLetter?.letterNumber || "", e.offerLetter?.isAccepted ? "Yes" : "No", formatDateTime(e.offerLetter?.acceptedAt),
         formatDateTime(e.enrolledAt), formatDateTime(e.completedAt), formatDateTime(e.createdAt),
