@@ -1105,6 +1105,22 @@ export default function SettingsPage() {
               </div>
             </div>
             <p className="text-xs text-slate-500 mt-3">Get keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Razorpay Dashboard</a>. Use test keys for testing.</p>
+
+            {/* Cash Payment Toggle */}
+            <div className="mt-6 pt-6 border-t border-white/[0.06]">
+              <h3 className="text-sm font-semibold text-white mb-3">Cash Payment Option</h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-300">Allow Cash Payments</p>
+                  <p className="text-xs text-slate-500">Students can choose to pay cash at office (requires admin approval)</p>
+                </div>
+                <button
+                  onClick={() => updateSetting("cash_payment_enabled", settings.cash_payment_enabled === "true" ? "false" : "true")}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${settings.cash_payment_enabled === "true" ? "bg-[#0EA5B8]" : "bg-slate-600"}`}>
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${settings.cash_payment_enabled === "true" ? "translate-x-6" : "translate-x-0"}`} />
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

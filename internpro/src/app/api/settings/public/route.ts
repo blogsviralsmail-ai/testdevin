@@ -10,6 +10,7 @@ export async function GET() {
     "social_facebook", "social_instagram", "social_twitter", "social_linkedin",
     "social_youtube", "social_telegram", "social_pinterest", "social_whatsapp_channel",
     "adsense_ad_head", "adsense_ad_before", "adsense_ad_after",
+    "cash_payment_enabled",
   ];
   const settings = await prisma.setting.findMany({
     where: { key: { in: publicKeys } },

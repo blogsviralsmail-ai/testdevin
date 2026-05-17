@@ -14,6 +14,10 @@ interface EnrollmentData {
   student: { name: string; email: string };
 }
 
+interface PaymentSettings {
+  cashPaymentEnabled: boolean;
+}
+
 declare global {
   interface Window {
     Razorpay: new (options: Record<string, unknown>) => { open: () => void };
@@ -30,18 +34,32 @@ export default function PaymentPage() {
   const [pendingCash, setPendingCash] = useState(false);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "cash">("razorpay");
+  const [razorpayReady, setRazorpayReady] = useState(false);
+  const [paySettings, setPaySettings] = useState<PaymentSettings>({ cashPaymentEnabled: false });
 
   useEffect(() => {
     if (!enrollmentId) { setLoading(false); return; }
-    fetch(`/api/student-payment?enrollmentId=${enrollmentId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { setEnrollment(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch(`/api/student-payment?enrollmentId=${enrollmentId}`).then(r => r.ok ? r.json() : null),
+      fetch("/api/settings/public").then(r => r.ok ? r.json() : { settings: {} }),
+    ]).then(([data, settingsData]) => {
+      setEnrollment(data);
+      const s = settingsData.settings || settingsData || {};
+      setPaySettings({ cashPaymentEnabled: s.cash_payment_enabled === "true" });
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, [enrollmentId]);
 
   const handleRazorpayPayment = async () => {
     if (!enrollment) return;
     setProcessing(true); setError("");
+
+    if (!razorpayReady || !window.Razorpay) {
+      setError("Payment gateway is loading. Please wait a moment and try again.");
+      setProcessing(false);
+      return;
+    }
+
     try {
       const orderRes = await fetch("/api/payments/razorpay", {
         method: "POST",
@@ -98,8 +116,9 @@ export default function PaymentPage() {
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch {
-      setError("Failed to initialize payment. Please try again.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setError(`Payment initialization failed: ${msg}. Please refresh and try again.`);
       setProcessing(false);
     }
   };
@@ -128,10 +147,10 @@ export default function PaymentPage() {
   };
 
   const handlePayment = () => {
-    if (paymentMethod === "razorpay") {
-      handleRazorpayPayment();
-    } else {
+    if (paymentMethod === "cash" && paySettings.cashPaymentEnabled) {
       handleCashPayment();
+    } else {
+      handleRazorpayPayment();
     }
   };
 
@@ -181,7 +200,7 @@ export default function PaymentPage() {
 
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" onReady={() => setRazorpayReady(true)} onLoad={() => setRazorpayReady(true)} />
       <div className="max-w-lg mx-auto py-8">
         <div className="rounded-2xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] overflow-hidden">
           {/* Header */}
@@ -204,49 +223,58 @@ export default function PaymentPage() {
 
             {/* Payment Method Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-300 mb-3">Choose Payment Method</label>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Razorpay Option */}
-                <button onClick={() => setPaymentMethod("razorpay")}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${paymentMethod === "razorpay" ? 'border-[#0EA5B8] bg-[#0EA5B8]/10 ring-1 ring-[#0EA5B8]/30' : 'border-white/[0.08] hover:border-white/20'}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">💳</span>
-                    <span className={`text-sm font-bold ${paymentMethod === "razorpay" ? 'text-[#22d3ee]' : 'text-slate-300'}`}>Pay Online</span>
-                  </div>
-                  <p className="text-xs text-slate-500">UPI, Cards, Net Banking, Wallets</p>
-                  <div className="flex gap-1 mt-2">
-                    <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">GPay</span>
-                    <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">PhonePe</span>
-                    <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">Cards</span>
-                  </div>
-                </button>
+              {paySettings.cashPaymentEnabled ? (
+                <>
+                  <label className="block text-sm font-medium text-slate-300 mb-3">Choose Payment Method</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Razorpay Option */}
+                    <button onClick={() => setPaymentMethod("razorpay")}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${paymentMethod === "razorpay" ? 'border-[#0EA5B8] bg-[#0EA5B8]/10 ring-1 ring-[#0EA5B8]/30' : 'border-white/[0.08] hover:border-white/20'}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">💳</span>
+                        <span className={`text-sm font-bold ${paymentMethod === "razorpay" ? 'text-[#22d3ee]' : 'text-slate-300'}`}>Pay Online</span>
+                      </div>
+                      <p className="text-xs text-slate-500">UPI, Cards, Net Banking, Wallets</p>
+                      <div className="flex gap-1 mt-2">
+                        <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">GPay</span>
+                        <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">PhonePe</span>
+                        <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">Cards</span>
+                      </div>
+                    </button>
 
-                {/* Cash Option */}
-                <button onClick={() => setPaymentMethod("cash")}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${paymentMethod === "cash" ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30' : 'border-white/[0.08] hover:border-white/20'}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">💵</span>
-                    <span className={`text-sm font-bold ${paymentMethod === "cash" ? 'text-amber-400' : 'text-slate-300'}`}>Pay Cash</span>
+                    {/* Cash Option */}
+                    <button onClick={() => setPaymentMethod("cash")}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${paymentMethod === "cash" ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30' : 'border-white/[0.08] hover:border-white/20'}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">💵</span>
+                        <span className={`text-sm font-bold ${paymentMethod === "cash" ? 'text-amber-400' : 'text-slate-300'}`}>Pay Cash</span>
+                      </div>
+                      <p className="text-xs text-slate-500">Pay at office in person</p>
+                      <div className="flex gap-1 mt-2">
+                        <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">Office</span>
+                        <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">In-Person</span>
+                      </div>
+                    </button>
                   </div>
-                  <p className="text-xs text-slate-500">Pay at office in person</p>
-                  <div className="flex gap-1 mt-2">
-                    <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">Office</span>
-                    <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400">In-Person</span>
-                  </div>
-                </button>
-              </div>
+                </>
+              ) : (
+                <div className="bg-[#0EA5B8]/10 border border-[#0EA5B8]/30 rounded-xl p-4">
+                  <p className="text-sm font-medium text-[#22d3ee] mb-1">💳 Secure Online Payment</p>
+                  <p className="text-xs text-[#22d3ee]/70">Powered by Razorpay. Pay securely using UPI, Debit/Credit Card, Net Banking, or Wallets. Your offer letter will be generated instantly after payment.</p>
+                </div>
+              )}
             </div>
 
-            {/* Cash Info */}
-            {paymentMethod === "cash" && (
+            {/* Cash Info — only when cash enabled and selected */}
+            {paySettings.cashPaymentEnabled && paymentMethod === "cash" && (
               <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                 <p className="text-sm font-medium text-amber-400 mb-1">💵 Cash Payment</p>
                 <p className="text-xs text-amber-300/70">Pay the fee amount at the office. Admin will verify and approve your payment. Your offer letter will be generated after approval.</p>
               </div>
             )}
 
-            {/* Razorpay Info */}
-            {paymentMethod === "razorpay" && (
+            {/* Razorpay Info — when cash is enabled and razorpay selected */}
+            {paySettings.cashPaymentEnabled && paymentMethod === "razorpay" && (
               <div className="mb-6 bg-[#0EA5B8]/10 border border-[#0EA5B8]/30 rounded-xl p-4">
                 <p className="text-sm font-medium text-[#22d3ee] mb-1">💳 Secure Online Payment</p>
                 <p className="text-xs text-[#22d3ee]/70">Powered by Razorpay. Pay securely using UPI, Debit/Credit Card, Net Banking, or Wallets. Your offer letter will be generated instantly after payment.</p>
@@ -262,14 +290,14 @@ export default function PaymentPage() {
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                   Processing...
                 </span>
-              ) : paymentMethod === "razorpay"
-                ? `Pay Now — ₹${enrollment.feeAmount.toLocaleString()}`
-                : `Submit Cash Payment — ₹${enrollment.feeAmount.toLocaleString()}`
+              ) : (paySettings.cashPaymentEnabled && paymentMethod === "cash")
+                ? `Submit Cash Payment — ₹${enrollment.feeAmount.toLocaleString()}`
+                : `Pay Now — ₹${enrollment.feeAmount.toLocaleString()}`
               }
             </button>
 
             <p className="text-center text-xs text-slate-500 mt-4">
-              {paymentMethod === "razorpay" ? "🔒 Secured by Razorpay • 256-bit encrypted" : "Cash payment requires admin approval"}
+              {(paySettings.cashPaymentEnabled && paymentMethod === "cash") ? "Cash payment requires admin approval" : "🔒 Secured by Razorpay • 256-bit encrypted"}
             </p>
           </div>
         </div>
