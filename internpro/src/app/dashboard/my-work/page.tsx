@@ -88,7 +88,9 @@ export default function MyWorkPage() {
       if (enrollRes.ok) {
         const eData = await enrollRes.json();
         setEnrollment(eData);
-        setSelectedDay(eData.currentDay || 1);
+        const day = eData.currentDay || 1;
+        const maxDay = eData.totalDays || 45;
+        setSelectedDay(Math.min(day, maxDay));
       }
       if (quizRes.ok) setQuizzes(await quizRes.json());
     } catch { /* ignore */ }
