@@ -1,0 +1,643 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { formatDate } from "@/lib/utils";
+import PaymentBlockMessage from "@/components/PaymentBlockMessage";
+
+interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string;
+  dayNumber: number | null;
+  dueDate: string | null;
+  maxPoints: number;
+  scope: string;
+  assignedTo: string | null;
+  isUrgent: boolean;
+  batch: { name: string; program: { title: string } };
+  _count: { submissions: number };
+}
+
+interface Submission {
+  id: string;
+  taskId: string;
+  content: string | null;
+  fileUrl: string | null;
+  percentage: number | null;
+  feedback: string | null;
+  reviewedBy: string | null;
+  status: string;
+  task: { title: string; maxPoints: number; dayNumber: number | null };
+}
+
+interface Batch {
+  id: string;
+  name: string;
+  program: { title: string };
+}
+
+interface StudentOption {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+}
+
+interface UserSession {
+  id: string;
+  role: string;
+  name: string;
+}
+
+export default function TasksPage() {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [user, setUser] = useState<UserSession | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [submitModal, setSubmitModal] = useState<string | null>(null);
+  const [submitContent, setSubmitContent] = useState("");
+  const [submitFile, setSubmitFile] = useState("");
+  const [form, setForm] = useState({
+    batchId: "", title: "", description: "", type: "regular",
+    dayNumber: "", maxPoints: "100", scope: "all", assignedTo: "", isUrgent: false,
+  });
+  const [studentSearch, setStudentSearch] = useState("");
+  const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const [selectedStudentName, setSelectedStudentName] = useState("");
+  const [filterBatch, setFilterBatch] = useState("");
+  const [filterStudent, setFilterStudent] = useState("");
+  const [editTaskModal, setEditTaskModal] = useState<Task | null>(null);
+  const [editTaskForm, setEditTaskForm] = useState({ title: "", description: "", type: "regular", dayNumber: "", maxPoints: "100", isUrgent: false });
+  const [viewTaskModal, setViewTaskModal] = useState<Task | null>(null);
+  const [fileUploading, setFileUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchData = useCallback(async () => {
+    const [tasksRes, batchesRes, meRes] = await Promise.all([
+      fetch("/api/tasks"),
+      fetch("/api/batches"),
+      fetch("/api/auth/me"),
+    ]);
+    if (tasksRes.ok) setTasks(await tasksRes.json());
+    if (batchesRes.ok) setBatches(await batchesRes.json());
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      setUser(meData.user);
+    }
+
+    const subsRes = await fetch("/api/submissions");
+    if (subsRes.ok) setSubmissions(await subsRes.json());
+  }, []);
+
+  const searchStudents = useCallback(async (query: string) => {
+    if (query.length < 1) { setStudentOptions([]); return; }
+    const res = await fetch(`/api/users?role=student`);
+    if (res.ok) {
+      const all: StudentOption[] = await res.json();
+      const q = query.toLowerCase();
+      setStudentOptions(all.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.email.toLowerCase().includes(q) ||
+        (s.phone && s.phone.includes(q))
+      ).slice(0, 10));
+      setShowStudentDropdown(true);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...form,
+        dayNumber: form.dayNumber ? parseInt(form.dayNumber) : undefined,
+        maxPoints: parseInt(form.maxPoints),
+      }),
+    });
+    if (res.ok) {
+      setShowForm(false);
+      setForm({ batchId: "", title: "", description: "", type: "regular", dayNumber: "", maxPoints: "100", scope: "all", assignedTo: "", isUrgent: false });
+      fetchData();
+    }
+  };
+
+  const handleSubmitTask = async (taskId: string) => {
+    const res = await fetch("/api/submissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, content: submitContent, fileUrl: submitFile || undefined }),
+    });
+    if (res.ok) {
+      setSubmitModal(null);
+      setSubmitContent("");
+      setSubmitFile("");
+      fetchData();
+    }
+  };
+
+  const getSubmissionForTask = (taskId: string) => {
+    return submissions.find((s) => s.taskId === taskId);
+  };
+
+  const handleEditTask = async () => {
+    if (!editTaskModal) return;
+    await fetch(`/api/tasks/${editTaskModal.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editTaskForm),
+    });
+    setEditTaskModal(null);
+    fetchData();
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm("Are you sure? This will delete the task and all its submissions.")) return;
+    const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Delete failed" }));
+      alert("Error: " + (data.error || "Failed to delete task"));
+    }
+    fetchData();
+  };
+
+  const handleDeleteBatchTasks = async (batchId: string, batchLabel: string) => {
+    const batchTasks = tasks.filter((t) => t.batch.name === batchLabel || (batches.find((b) => b.id === batchId)?.name === t.batch.name));
+    if (!confirm(`Delete ALL ${batchTasks.length} tasks for this batch? This will also delete all submissions.`)) return;
+    for (const task of tasks.filter((t) => {
+      const b = batches.find((b) => b.id === batchId);
+      return b && `${t.batch.program.title} - ${t.batch.name}` === `${b.program.title} - ${b.name}`;
+    })) {
+      await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+    }
+    fetchData();
+  };
+
+  const isStudent = user?.role === "student";
+  const isAdmin = user?.role === "admin" || user?.role === "organization";
+  const isTeamLeader = user?.role === "teamleader";
+
+  const totalTasks = tasks.length;
+  const submittedTasks = submissions.filter((s) => s.status !== "pending").length;
+  const reviewedTasks = submissions.filter((s) => s.status === "reviewed").length;
+  const avgPercentage = reviewedTasks > 0
+    ? (submissions.filter((s) => s.percentage !== null).reduce((sum, s) => sum + (s.percentage || 0), 0) / reviewedTasks).toFixed(1)
+    : "0";
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === tasks.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(tasks.map((item: { id: string }) => item.id)));
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} tasks?`)) return;
+    setBulkDeleting(true);
+    await fetch("/api/bulk-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_delete_tasks", ids: Array.from(selectedIds) }) });
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+    fetchData();
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            {isStudent ? "My Tasks & Assignments" : "Tasks & Assignments"}
+          </h1>
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <span className="text-sm text-red-400 font-medium">{selectedIds.size} selected</span>
+          <button onClick={handleBulkDelete} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs rounded-lg hover:bg-white/20">Clear</button>
+        </div>
+      )}
+          <p className="text-slate-400 text-sm">
+            {isStudent ? "Complete daily tasks and track your progress" : "Create and manage day-based tasks for students"}
+          </p>
+        </div>
+        {!isStudent && (
+          <button onClick={() => setShowForm(!showForm)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">
+            {showForm ? "Cancel" : "+ New Task"}
+          </button>
+        )}
+      </div>
+
+      {/* Student Stats */}
+      {isStudent && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border">
+            <p className="text-2xl font-bold text-[#22d3ee]">{totalTasks}</p>
+            <p className="text-xs text-slate-500">Total Tasks</p>
+          </div>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border">
+            <p className="text-2xl font-bold text-emerald-400">{submittedTasks}</p>
+            <p className="text-xs text-slate-500">Submitted</p>
+          </div>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border">
+            <p className="text-2xl font-bold text-[#60a5fa]">{reviewedTasks}</p>
+            <p className="text-xs text-slate-500">Reviewed</p>
+          </div>
+          <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border">
+            <p className="text-2xl font-bold text-[#a78bfa]">{avgPercentage}%</p>
+            <p className="text-xs text-slate-500">Avg Score</p>
+          </div>
+        </div>
+      )}
+
+      {/* Create Task Form (Admin/TeamLeader) */}
+      {showForm && !isStudent && (
+        <form onSubmit={handleCreate} className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border mb-6">
+          <h2 className="text-lg font-semibold mb-4">Create New Task</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Batch</label>
+              <select value={form.batchId} onChange={(e) => setForm({ ...form, batchId: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" required>
+                <option value="">Select Batch</option>
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.program.title} - {b.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Day Number</label>
+              <input type="number" min="1" value={form.dayNumber} onChange={(e) => setForm({ ...form, dayNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 1, 2, 3..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Title</label>
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Max Points</label>
+              <input type="number" value={form.maxPoints} onChange={(e) => setForm({ ...form, maxPoints: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Scope</label>
+              <select value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
+                <option value="all">All Students</option>
+                <option value="individual">Individual Student</option>
+              </select>
+            </div>
+            {form.scope === "individual" && (
+              <div className="relative">
+                <label className="block text-sm font-medium text-slate-300 mb-1">Assign To Student</label>
+                <input
+                  value={selectedStudentName || studentSearch}
+                  onChange={(e) => {
+                    setStudentSearch(e.target.value);
+                    setSelectedStudentName("");
+                    setForm({ ...form, assignedTo: "" });
+                    searchStudents(e.target.value);
+                  }}
+                  onFocus={() => { if (studentSearch.length >= 1) setShowStudentDropdown(true); }}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white"
+                  placeholder="Type name, email or phone..."
+                />
+                {showStudentDropdown && studentOptions.length > 0 && (
+                  <div className="absolute z-20 w-full mt-1 bg-transparent border rounded-lg shadow-none max-h-48 overflow-y-auto">
+                    {studentOptions.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setForm({ ...form, assignedTo: s.id });
+                          setSelectedStudentName(`${s.name} (${s.email})`);
+                          setStudentSearch("");
+                          setShowStudentDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-transparent text-sm border-b last:border-b-0"
+                      >
+                        <span className="font-medium text-white">{s.name}</span>
+                        <span className="text-slate-500 ml-2">{s.email}</span>
+                        {s.phone && <span className="text-slate-500 ml-2">{s.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {form.assignedTo && (
+                  <p className="text-xs text-emerald-400 mt-1">Selected: {selectedStudentName}</p>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-3 mt-6">
+              <input type="checkbox" id="isUrgent" checked={form.isUrgent} onChange={(e) => setForm({ ...form, isUrgent: e.target.checked })} className="w-4 h-4" />
+              <label htmlFor="isUrgent" className="text-sm font-medium text-red-400">Mark as Urgent Task</label>
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" rows={3} />
+          </div>
+          <button type="submit" className="mt-4 bg-[#0EA5B8] text-white px-6 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition">Create Task</button>
+        </form>
+      )}
+
+      {/* Search + Filters */}
+      <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border mb-6">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-medium text-slate-500 mb-1">Search Tasks</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by task title..." className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm text-white focus:ring-2 focus:ring-[#0EA5B8] focus:border-indigo-500" />
+              {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400">✕</button>}
+            </div>
+          </div>
+          {!isStudent && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Filter by Batch</label>
+                <select value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)} className="px-3 py-2 border rounded-lg text-sm text-white min-w-[200px]">
+                  <option value="">All Batches</option>
+                  {batches.map((b) => (
+                    <option key={b.id} value={`${b.program.title} - ${b.name}`}>{b.program.title} - {b.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Filter by Student</label>
+                <input type="text" value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)} placeholder="Type student name..." className="px-3 py-2 border rounded-lg text-sm text-white min-w-[200px]" />
+              </div>
+            </>
+          )}
+          {(filterBatch || filterStudent || searchQuery) && (
+            <button onClick={() => { setFilterBatch(""); setFilterStudent(""); setSearchQuery(""); }} className="text-xs text-red-400 hover:text-red-800 mt-5">Clear All</button>
+          )}
+        </div>
+      </div>
+
+      {/* Batch-level Delete */}
+      {(isAdmin || isTeamLeader) && batches.length > 0 && (
+        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-4 border mb-6">
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">Batch-wise Task Management</h3>
+          <div className="flex flex-wrap gap-2">
+            {batches.map((b) => {
+              const count = tasks.filter((t) => `${t.batch.program.title} - ${t.batch.name}` === `${b.program.title} - ${b.name}`).length;
+              return (
+                <div key={b.id} className="flex items-center gap-2 rounded-lg bg-[rgba(255,255,255,0.03)] border border-white/[0.06] px-3 py-2 text-xs relative">
+            <label className="absolute top-3 left-3 z-10 cursor-pointer"><input type="checkbox" checked={selectedIds.has(b.id)} onChange={() => toggleSelect(b.id)} className="rounded border-white/20 bg-white/5 accent-[#0EA5B8] w-4 h-4" /></label>
+                  <span className="text-slate-300">{b.program.title} - {b.name}</span>
+                  <span className="text-slate-500">({count} tasks)</span>
+                  {count > 0 && (
+                    <button onClick={() => handleDeleteBatchTasks(b.id, b.name)}
+                      className="text-red-400 hover:text-red-800 font-medium">Delete All</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Task List */}
+      <div className="space-y-4">
+        {tasks.length === 0 ? (
+          <>
+            {isStudent && <PaymentBlockMessage feature="Tasks" />}
+            {!isStudent && (
+              <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-12 border text-center">
+                <p className="text-4xl mb-4">📝</p>
+                <p className="text-slate-400">No tasks yet. Create your first task!</p>
+              </div>
+            )}
+          </>
+        ) : (
+          tasks.filter((task) => {
+            if (filterBatch && `${task.batch.program.title} - ${task.batch.name}` !== filterBatch) return false;
+            if (filterStudent && !task.assignedTo?.toLowerCase().includes(filterStudent.toLowerCase())) return false;
+            if (searchQuery.trim() && !task.title.toLowerCase().includes(searchQuery.toLowerCase()) && !(task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
+            return true;
+          }).map((task) => {
+            const submission = getSubmissionForTask(task.id);
+            const isReviewed = submission?.status === "reviewed";
+            const isSubmitted = !!submission;
+
+            return (
+              <div key={task.id} className={`rounded-xl bg-[rgba(255,255,255,0.03)] border border-white/[0.06] p-6 border transition hover:shadow-none ${task.isUrgent ? "border-red-300 bg-transparent/30" : "border-white/[0.06]"}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {task.dayNumber && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#0EA5B8]/10 text-[#22d3ee] font-medium">
+                          Day {task.dayNumber}
+                        </span>
+                      )}
+                      <h3 className="text-base font-semibold text-white">{task.title}</h3>
+                      {task.isUrgent && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-medium">URGENT</span>
+                      )}
+                      {task.scope === "individual" && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">Individual</span>
+                      )}
+                    </div>
+                    {task.description && <p className="text-sm text-slate-400 mb-3">{task.description}</p>}
+                    <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
+                      <span>📦 {task.batch.program.title} - {task.batch.name}</span>
+                      <span>💯 Max: {task.maxPoints} points</span>
+                      {task.dueDate && <span>📅 Due: {formatDate(task.dueDate)}</span>}
+                      {!isStudent && <span>📄 {task._count.submissions} submissions</span>}
+                    </div>
+                  </div>
+
+                  {/* Admin/TL: View/Edit/Delete buttons */}
+                  {(isAdmin || isTeamLeader) && (
+                    <div className="ml-4 flex-shrink-0 flex gap-1">
+                      <button onClick={() => setViewTaskModal(task)}
+                        className="text-xs px-3 py-1 rounded bg-blue-500/10 text-[#60a5fa] hover:bg-blue-200">
+                        View
+                      </button>
+                      <button onClick={() => {
+                        setEditTaskModal(task);
+                        setEditTaskForm({
+                          title: task.title,
+                          description: task.description || "",
+                          type: task.type,
+                          dayNumber: task.dayNumber?.toString() || "",
+                          maxPoints: task.maxPoints.toString(),
+                          isUrgent: task.isUrgent,
+                        });
+                      }}
+                        className="text-xs px-3 py-1 rounded bg-transparent text-slate-300 hover:bg-white/10">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDeleteTask(task.id)}
+                        className="text-xs px-3 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-200">
+                        Delete
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Student: Submit/Status */}
+                  {isStudent && (
+                    <div className="ml-4 text-right">
+                      {isReviewed ? (
+                        <div>
+                          <div className="text-2xl font-bold text-emerald-400">{submission.percentage}%</div>
+                          <p className="text-xs text-slate-500">Score</p>
+                          {submission.feedback && (
+                            <p className="text-xs text-slate-400 mt-1 max-w-[200px]">{submission.feedback}</p>
+                          )}
+                        </div>
+                      ) : isSubmitted ? (
+                        <div>
+                          <span className="text-xs px-3 py-1 rounded-full bg-amber-500/10 text-amber-400">Under Review</span>
+                          <button
+                            onClick={() => { setSubmitModal(task.id); setSubmitContent(submission.content || ""); setSubmitFile(submission.fileUrl || ""); }}
+                            className="block mt-2 text-xs text-[#22d3ee] hover:underline"
+                          >
+                            Resubmit
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setSubmitModal(task.id)}
+                          className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2] transition"
+                        >
+                          Submit Work
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* View Task Modal */}
+      {viewTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+            <h2 className="text-lg font-bold text-white mb-2">{viewTaskModal.title}</h2>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {viewTaskModal.dayNumber && <span className="text-xs px-2 py-0.5 rounded-full bg-[#0EA5B8]/10 text-[#22d3ee]">Day {viewTaskModal.dayNumber}</span>}
+                <span className="text-xs px-2 py-0.5 rounded-full bg-transparent text-slate-300">{viewTaskModal.type}</span>
+                {viewTaskModal.isUrgent && <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">URGENT</span>}
+              </div>
+              <p className="text-sm text-slate-400">{viewTaskModal.description || "No description"}</p>
+              <div className="text-xs text-slate-500 space-y-1">
+                <p>Max Points: {viewTaskModal.maxPoints}</p>
+                <p>Batch: {viewTaskModal.batch.program.title} - {viewTaskModal.batch.name}</p>
+                <p>Scope: {viewTaskModal.scope}</p>
+                <p>Submissions: {viewTaskModal._count.submissions}</p>
+              </div>
+            </div>
+            <button onClick={() => setViewTaskModal(null)} className="mt-4 w-full px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {editTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+            <h2 className="text-lg font-bold text-white mb-4">Edit Task</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Title</label>
+                <input value={editTaskForm.title} onChange={(e) => setEditTaskForm({...editTaskForm, title: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Description</label>
+                <textarea value={editTaskForm.description} onChange={(e) => setEditTaskForm({...editTaskForm, description: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-white" rows={3} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Day Number</label>
+                  <input type="number" value={editTaskForm.dayNumber} onChange={(e) => setEditTaskForm({...editTaskForm, dayNumber: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Max Points</label>
+                  <input type="number" value={editTaskForm.maxPoints} onChange={(e) => setEditTaskForm({...editTaskForm, maxPoints: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg text-sm text-white" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked={editTaskForm.isUrgent} onChange={(e) => setEditTaskForm({...editTaskForm, isUrgent: e.target.checked})} />
+                <label className="text-sm text-red-400">Urgent Task</label>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={handleEditTask} className="flex-1 px-4 py-2 bg-[#0EA5B8] text-white rounded-lg hover:bg-[#0891b2]">Save</button>
+              <button onClick={() => setEditTaskModal(null)} className="px-4 py-2 bg-transparent text-slate-300 rounded-lg hover:bg-white/10">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit Task Modal */}
+      {submitModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-xl p-6 w-full max-w-lg" style={{background: '#111827', border: '1px solid rgba(255,255,255,0.1)'}}>
+            <h2 className="text-lg font-semibold mb-4">Submit Your Work</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Work Description / Report</label>
+                <textarea
+                  value={submitContent}
+                  onChange={(e) => setSubmitContent(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                  rows={5}
+                  placeholder="Describe what you did, your approach, and results..."
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">File URL or Upload</label>
+                <input
+                  value={submitFile}
+                  onChange={(e) => setSubmitFile(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                  placeholder="Link to your work (Google Drive, GitHub, etc.)"
+                />
+                <div className="mt-2">
+                  <label className="text-xs text-[#22d3ee] hover:text-[#0EA5B8] cursor-pointer font-medium border border-[#0EA5B8]/20 rounded-lg px-3 py-1.5 inline-block">
+                    {fileUploading ? "Uploading..." : "Upload File"}
+                    <input type="file" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setFileUploading(true);
+                      const fd = new FormData(); fd.append("file", file);
+                      const res = await fetch("/api/upload", { method: "POST", body: fd });
+                      if (res.ok) { const d = await res.json(); setSubmitFile(d.url); }
+                      setFileUploading(false);
+                    }} />
+                  </label>
+                  {submitFile && <span className="text-xs text-emerald-400 ml-2">File attached</span>}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => { setSubmitModal(null); setSubmitContent(""); setSubmitFile(""); }} className="px-4 py-2 border rounded-lg text-sm hover:bg-transparent">
+                Cancel
+              </button>
+              <button onClick={() => handleSubmitTask(submitModal)} className="bg-[#0EA5B8] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#0891b2]">
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

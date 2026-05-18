@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { sendQuizAttemptEmail } from "@/lib/email";
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  const { id } = await params;
+
+  const { answers, timeTaken } = await request.json();
+  if (!answers) return NextResponse.json({ error: "Answers required" }, { status: 400 });
+
+  // Check if already attempted (only for logged-in users)
+  if (session) {
+    const existing = await prisma.quizAttempt.findUnique({ where: { quizId_userId: { quizId: id, userId: session.id } } });
+    if (existing) return NextResponse.json({ error: "Already attempted" }, { status: 400 });
+  }
+
+  const quiz = await prisma.quiz.findUnique({ where: { id }, include: { questions: { orderBy: { order: "asc" } } } });
+  if (!quiz) return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+
+  // Calculate score
+  let score = 0;
+  let totalPoints = 0;
+  quiz.questions.forEach((q, i) => {
+    totalPoints += q.points;
+    if (answers[i] === q.correctAnswer) score += q.points;
+  });
+
+  const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
+  const passed = percentage >= quiz.passingScore;
+
+  // Save attempt only for logged-in users
+  if (session) {
+    const attempt = await prisma.quizAttempt.create({
+      data: { quizId: id, userId: session.id, answers: JSON.stringify(answers), score: percentage, totalPoints, passed, timeTaken, completedAt: new Date() },
+    });
+
+    if (passed) {
+      await prisma.gamificationPoint.create({ data: { userId: session.id, points: Math.round(percentage / 2), reason: `Quiz passed: ${quiz.title}`, category: "quiz" } });
+    }
+
+    // Send quiz result email (non-blocking)
+    const user = await prisma.user.findUnique({ where: { id: session.id }, select: { name: true, email: true } });
+    if (user?.email) {
+      sendQuizAttemptEmail(user.name, user.email, quiz.title, percentage, passed).catch(() => {});
+    }
+
+    return NextResponse.json({ ...attempt, score: percentage, passed });
+  }
+
+  // Anonymous attempt — just return score (not saved)
+  return NextResponse.json({ score: percentage, passed, totalPoints, anonymous: true });
+}
