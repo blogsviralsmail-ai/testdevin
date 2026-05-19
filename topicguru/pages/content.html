@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TopicGuru – Lesson Content</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="../images/icon.png" type="image/png">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/content.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="../index.html" class="nav-logo">
+      <img src="../images/icon.png" alt="TopicGuru">
+      <span>Topic<span class="highlight">Guru</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <div class="nav-actions">
+      <a href="login.html" class="btn btn-outline">Login</a>
+      <a href="register.html" class="btn btn-primary">Sign Up</a>
+    </div>
+    <div class="hamburger" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <div class="page-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a href="javascript:history.back()" class="back-btn">&#8592; Back to Chapters</a>
+      <div class="class-badge">
+        <div class="badge-num" id="badge-num"></div>
+        <div class="badge-text" id="badge-text">
+          <strong id="content-title">Lesson</strong>
+          <span id="content-title-en"></span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="../index.html">&#127968; Home</a>
+        <a href="#" onclick="switchTab('content');return false;" class="active" id="side-content">&#128196; Content</a>
+        <a href="#" onclick="switchTab('video');return false;" id="side-video">&#127909; Video</a>
+        <a href="#" onclick="switchTab('chart');return false;" id="side-chart">&#128202; Charts</a>
+        <a href="#" onclick="switchTab('pdf');return false;" id="side-pdf">&#128196; PDF Notes</a>
+        <a href="#" onclick="switchTab('quiz');return false;" id="side-quiz">&#9889; Quiz</a>
+        <a href="#" onclick="switchTab('interactive');return false;" id="side-interactive">&#127922; Interactive</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="breadcrumb">
+        <a href="../index.html">Home</a>
+        <span>&#8250;</span>
+        <a href="javascript:history.back()" id="breadcrumb-subject">Subject</a>
+        <span>&#8250;</span>
+        <span id="breadcrumb-chapter">Chapter</span>
+      </div>
+
+      <!-- Content Tabs -->
+      <div class="content-tabs" style="margin: 20px 0; flex-wrap:wrap;">
+        <button class="content-tab active" id="tab-content-btn" onclick="switchTab('content')">&#128196; Content</button>
+        <button class="content-tab" id="tab-video-btn" onclick="switchTab('video')">&#127909; Video</button>
+        <button class="content-tab" id="tab-chart-btn" onclick="switchTab('chart')">&#128202; Charts</button>
+        <button class="content-tab" id="tab-pdf-btn" onclick="switchTab('pdf')">&#128196; PDF Notes</button>
+        <button class="content-tab" id="tab-quiz-btn" onclick="switchTab('quiz')">&#9889; Quiz</button>
+        <button class="content-tab" id="tab-interactive-btn" onclick="switchTab('interactive')">&#127922; Interactive</button>
+      </div>
+
+      <!-- Content Body -->
+      <div id="tab-content" class="tab-content">
+        <div class="content-viewer" id="content-viewer">
+          <div class="content-body" id="content-body"></div>
+        </div>
+      </div>
+
+      <!-- Video Section -->
+      <div id="tab-video" class="tab-content" style="display:none;">
+        <div class="content-viewer">
+          <h2 class="section-head">&#127909; Video Lessons</h2>
+          <div id="video-container"></div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div id="tab-chart" class="tab-content" style="display:none;">
+        <div class="content-viewer">
+          <h2 class="section-head">&#128202; Charts & Diagrams</h2>
+          <div id="chart-container"></div>
+        </div>
+      </div>
+
+      <!-- PDF Section -->
+      <div id="tab-pdf" class="tab-content" style="display:none;">
+        <div class="content-viewer">
+          <h2 class="section-head">&#128196; PDF Notes</h2>
+          <div id="pdf-container"></div>
+        </div>
+      </div>
+
+      <!-- Quiz Section -->
+      <div id="tab-quiz" class="tab-content" style="display:none;">
+        <div class="quiz-container" id="quiz-container"></div>
+      </div>
+
+      <!-- Interactive Section -->
+      <div id="tab-interactive" class="tab-content" style="display:none;">
+        <div class="content-viewer">
+          <h2 class="section-head">&#127922; Interactive Activities</h2>
+          <div id="interactive-container"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-bottom">
+      <p>&copy; 2026 TopicGuru by Shikhan Sagar Team. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../js/cbse-data.js"></script>
+  <script src="../js/cbse-content-data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/content-data.js"></script>
+  <script src="../js/content-renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TopicGuru – Smart & Simple Online Learning</title>
+  <meta name="description" content="TopicGuru - Smart aur Simple Online Learning App. Step-by-step lessons, quizzes aur examples ke through apne favorite topics ko samajh sakte hain.">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="images/icon.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <img src="images/icon.png" alt="TopicGuru">
+      <span>Topic<span class="highlight">Guru</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="pages/about.html">About</a>
+      <a href="pages/pricing.html">Pricing</a>
+      <a href="pages/contact.html">Contact</a>
+    </div>
+    <div class="nav-actions">
+      <a href="pages/login.html" class="btn btn-outline">Login</a>
+      <a href="pages/register.html" class="btn btn-primary">Sign Up</a>
+    </div>
+    <div class="hamburger" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Welcome Back! <span class="wave">&#128075;</span></h1>
+      <p class="subtitle">TopicGuru – Smart & Simple Online Learning App</p>
+      <p class="subtitle" style="font-size:0.95rem;max-width:600px;margin:0 auto;">TopicGuru ek online learning app hai jiska purpose hai learning ko easy, simple aur practical banana. Yahan aap step-by-step lessons, quizzes aur examples ke through apne favorite topics ko samajh sakte hain — kabhi bhi, kahin se bhi.</p>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="number">10K+</div>
+          <div class="label">Downloads</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">2</div>
+          <div class="label">Boards</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">5</div>
+          <div class="label">Classes (6-10)</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">200+</div>
+          <div class="label">Chapters</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Board Selection -->
+  <section class="section" id="board-section">
+    <div class="section-title">
+      <h2>Select Your Board &#127891;</h2>
+      <p>Apna board choose karein — GSEB ya CBSE</p>
+    </div>
+    <div class="board-grid" id="board-grid">
+      <a href="#classes" class="board-card gseb-board fade-in" onclick="selectBoard('gseb')">
+        <div class="board-icon">&#127963;</div>
+        <div class="board-name">GSEB</div>
+        <div class="board-desc">Gujarat Board (ગુજરાત બોર્ડ)</div>
+        <div class="board-details">Gujarati Medium • Class 6-10 • 7 Subjects</div>
+      </a>
+      <a href="#classes" class="board-card cbse-board fade-in" onclick="selectBoard('cbse')">
+        <div class="board-icon">&#127970;</div>
+        <div class="board-name">CBSE</div>
+        <div class="board-desc">CBSE Board (NCERT Syllabus)</div>
+        <div class="board-details">Hindi + English • Class 6-10 • 6 Subjects</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Class Selection -->
+  <section class="section" id="classes">
+    <div class="section-title">
+      <h2 id="class-section-title">Select Class &#128218;</h2>
+      <p id="class-section-sub">Select your class to start learning</p>
+    </div>
+    <div class="class-grid" id="class-grid">
+      <!-- Rendered by JS -->
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="section" style="background:#FFF;">
+    <div class="section-title">
+      <h2>Key Features &#11088;</h2>
+      <p>TopicGuru makes learning easy, simple and practical</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#128218;</div>
+        <h3>Simple Lessons</h3>
+        <p>Simple aur easy-to-understand lessons jo beginners bhi aasani se samajh saken. Har topic short sections me divide hota hai.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#9989;</div>
+        <h3>Quizzes & Practice</h3>
+        <p>Quizzes aur practice content se apni learning ko test karo. Interactive questions ke saath fast revision karo.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#128161;</div>
+        <h3>Practical Examples</h3>
+        <p>Real-world examples ke through concepts ko better samjho. Visual aids aur diagrams ke saath easy learning.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#128241;</div>
+        <h3>Clean Interface</h3>
+        <p>Clean aur user-friendly interface jo distraction-free learning provide kare. Simple navigation aur quick access.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#127760;</div>
+        <h3>Learn Anywhere</h3>
+        <p>Learn anytime, anywhere. Apni speed par seekho bina kisi pressure ke. Mobile-friendly platform.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#128640;</div>
+        <h3>Coming Soon</h3>
+        <p>More topics, Advanced lessons, Certificates, New tools & features. TopicGuru continuously evolving hai.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who Is It For -->
+  <section class="section">
+    <div class="section-title">
+      <h2>&#128104;&#8205;&#127891; Suitable For</h2>
+      <p>TopicGuru is designed for everyone who wants to learn</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#127891;</div>
+        <h3>Students</h3>
+        <p>Class 6 to 10 ke students ke liye perfect learning companion. Board exam preparation ke liye ideal.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#128214;</div>
+        <h3>Beginners</h3>
+        <p>Agar aap kisi topic ko scratch se seekhna chahte hain, TopicGuru perfect starting point hai.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">&#128170;</div>
+        <h3>Self-Learners</h3>
+        <p>Apni pace par seekho. No pressure, no deadlines. Learn at your own speed with TopicGuru.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section" style="background:#FFF;">
+    <div class="section-title">
+      <h2>&#128172; Students Reviews</h2>
+      <p>See what our students say about TopicGuru</p>
+    </div>
+    <div class="testimonial-grid">
+      <div class="testimonial-card fade-in">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"TopicGuru ne meri padhai bahut easy bana di. Gujarati medium me sab kuch milta hai. Very helpful app!"</p>
+        <div class="author">Arjun Patel</div>
+        <div class="role">Class 8 Student, Ahmedabad</div>
+      </div>
+      <div class="testimonial-card fade-in">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Quizzes bahut acche hain! Har chapter ke baad quiz dene se concepts clear ho jaate hain. Best learning app."</p>
+        <div class="author">Priya Sharma</div>
+        <div class="role">Class 10 Student, Surat</div>
+      </div>
+      <div class="testimonial-card fade-in">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+        <p>"Mere bacche ke liye perfect app hai. Content quality acchi hai aur interface simple hai. Recommend karta hun."</p>
+        <div class="author">Rakesh Desai</div>
+        <div class="role">Parent, Vadodara</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download CTA -->
+  <section class="download-cta">
+    <h2>Download TopicGuru App</h2>
+    <p>Apni learning journey start karein — smart tareeke se, bina pressure ke</p>
+    <a href="https://play.google.com/store/apps/details?id=in.topicguru.app" target="_blank" class="store-btn">
+      <span class="store-icon">&#9654;</span>
+      <div>
+        <small>GET IT ON</small><br>
+        <strong>Google Play</strong>
+      </div>
+    </a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h3>TopicGuru</h3>
+        <p>Smart & Simple Online Learning App. Learning ko easy, simple aur practical banana — yahi hamara mission hai.</p>
+        <p style="margin-top:10px;"><strong>Shikhan Sagar Team</strong></p>
+      </div>
+      <div class="footer-col">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="pages/about.html">About</a></li>
+          <li><a href="pages/pricing.html">Pricing</a></li>
+          <li><a href="pages/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Classes</h3>
+        <ul>
+          <li><a href="pages/subjects.html?class=6">Class 6 (&#2727;&#2763;&#2736;&#2723; 6)</a></li>
+          <li><a href="pages/subjects.html?class=7">Class 7 (&#2727;&#2763;&#2736;&#2723; 7)</a></li>
+          <li><a href="pages/subjects.html?class=8">Class 8 (&#2727;&#2763;&#2736;&#2723; 8)</a></li>
+          <li><a href="pages/subjects.html?class=9">Class 9 (&#2727;&#2763;&#2736;&#2723; 9)</a></li>
+          <li><a href="pages/subjects.html?class=10">Class 10 (&#2727;&#2763;&#2736;&#2723; 10)</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Legal</h3>
+        <ul>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Data Safety</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 TopicGuru by Shikhan Sagar Team. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/cbse-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

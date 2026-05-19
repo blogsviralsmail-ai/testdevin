@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TopicGuru – Select Chapter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="../images/icon.png" type="image/png">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="../index.html" class="nav-logo">
+      <img src="../images/icon.png" alt="TopicGuru">
+      <span>Topic<span class="highlight">Guru</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <div class="nav-actions">
+      <a href="login.html" class="btn btn-outline">Login</a>
+      <a href="register.html" class="btn btn-primary">Sign Up</a>
+    </div>
+    <div class="hamburger" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <div class="page-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a href="javascript:history.back()" class="back-btn">&#8592; Back</a>
+      <div class="class-badge">
+        <div class="badge-num" id="badge-num"></div>
+        <div class="badge-text" id="badge-text"></div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="../index.html">&#127968; Home</a>
+        <a href="#" class="active">&#128218; Chapters</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="breadcrumb">
+        <a href="../index.html">Home</a>
+        <span>&#8250;</span>
+        <a href="javascript:history.back()" id="breadcrumb-subject">Subject</a>
+        <span>&#8250;</span>
+        <span>Chapters</span>
+      </div>
+
+      <div class="section" style="padding-top:20px;">
+        <div class="section-title">
+          <h2 id="page-title">&#2730;&#2765;&#2736;&#2709;&#2736;&#2723; &#2730;&#2744;&#2690;&#2726; &#2709;&#2736;&#2763; &#128214;</h2>
+          <p>Select a chapter to explore content</p>
+        </div>
+
+        <div class="toggle-container" style="justify-content:center;">
+          <span class="toggle-label active">&#128196; Content</span>
+          <span class="toggle-label">&#9654; Interactive</span>
+        </div>
+
+        <div class="chapter-list" id="chapter-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-bottom">
+      <p>&copy; 2026 TopicGuru by Shikhan Sagar Team. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../js/cbse-data.js"></script>
+  <script src="../js/app.js"></script>
+</body>
+</html>
