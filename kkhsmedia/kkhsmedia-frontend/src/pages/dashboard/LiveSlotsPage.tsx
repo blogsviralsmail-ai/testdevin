@@ -65,6 +65,10 @@ export default function LiveSlotsPage() {
   const [ytUrlLoading, setYtUrlLoading] = useState(false);
   const [gdriveUrl, setGdriveUrl] = useState('');
   const [playlistVideoIds, setPlaylistVideoIds] = useState<string[]>([]);
+  const [playlistUrls, setPlaylistUrls] = useState<string[]>(['']);
+  const [playlistMode, setPlaylistMode] = useState<'videos' | 'urls'>('videos');
+  const [playlistJobId, setPlaylistJobId] = useState<string | null>(null);
+  const [playlistJobStatus, setPlaylistJobStatus] = useState<{status: string; downloaded: number; total: number} | null>(null);
   const [streamLoop, setStreamLoop] = useState(true);
 
   const platformIcons: Record<string, React.ReactNode> = {
@@ -200,6 +204,8 @@ export default function LiveSlotsPage() {
     setYoutubeUrlInfo(null);
     setGdriveUrl('');
     setPlaylistVideoIds([]);
+    setPlaylistUrls(['']);
+    setPlaylistMode('videos');
     setStreamLoop(true);
   };
 
@@ -235,6 +241,13 @@ export default function LiveSlotsPage() {
         await streamingAPI.youtubeUrl({ slotId, url: youtubeUrl.trim(), loop: streamLoop });
       } else if (videoSource === 'google_drive' && gdriveUrl.trim()) {
         await streamingAPI.cloudStream({ slotId, cloudUrl: gdriveUrl.trim(), provider: 'gdrive', loop: streamLoop });
+      } else if (videoSource === 'playlist' && playlistMode === 'urls' && playlistUrls.filter(u => u.trim()).length > 0) {
+        const validUrls = playlistUrls.filter(u => u.trim());
+        const res = await streamingAPI.playlistFromUrls({ slotId, urls: validUrls, loop: streamLoop });
+        if (res.data?.jobId) {
+          setPlaylistJobId(res.data.jobId);
+          setPlaylistJobStatus({ status: 'downloading', downloaded: 0, total: validUrls.length });
+        }
       } else if (videoSource === 'playlist' && playlistVideoIds.length > 0) {
         await streamingAPI.playlistQueue({ slotId, videoIds: playlistVideoIds });
       } else {
@@ -252,6 +265,8 @@ export default function LiveSlotsPage() {
     setYoutubeUrlInfo(null);
     setGdriveUrl('');
     setPlaylistVideoIds([]);
+    setPlaylistUrls(['']);
+    setPlaylistMode('videos');
   };
 
   const handleSaveSchedule = async (slotId: string) => {
@@ -430,7 +445,10 @@ export default function LiveSlotsPage() {
     if (videoSource === 'uploaded') return !!slot.videoId;
     if (videoSource === 'youtube_url') return !!youtubeUrl.trim();
     if (videoSource === 'google_drive') return !!gdriveUrl.trim();
-    if (videoSource === 'playlist') return playlistVideoIds.length > 0;
+    if (videoSource === 'playlist') {
+      if (playlistMode === 'urls') return playlistUrls.filter(u => u.trim()).length > 0;
+      return playlistVideoIds.length > 0;
+    }
     return false;
   };
 
@@ -1074,25 +1092,96 @@ export default function LiveSlotsPage() {
             {/* Playlist Queue Source */}
             {videoSource === 'playlist' && (
               <div className="mb-4 p-3 bg-purple-50 rounded-xl space-y-3">
-                <p className="text-sm text-secondary">Multiple uploaded videos ko queue me add karo - ek ke baad ek stream hongi.</p>
-                {videos.length === 0 ? (
-                  <p className="text-sm text-orange-600 flex items-center gap-1"><AlertCircle size={14} /> Koi video upload nahi hai. Pehle Videos page se upload karo.</p>
-                ) : (
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {videos.map(v => (
-                      <label key={v.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition ${playlistVideoIds.includes(v.id) ? 'bg-purple-100 border border-purple-300' : 'surface-base border hover:bg-[rgb(var(--bg-muted))]'}`}>
-                        <input type="checkbox" checked={playlistVideoIds.includes(v.id)} onChange={() => togglePlaylistVideo(v.id)} className="rounded" />
-                        <Film size={14} className="text-tertiary" />
-                        <span className="text-sm truncate">{v.name}</span>
-                        {playlistVideoIds.includes(v.id) && (
-                          <span className="ml-auto text-xs text-purple-600 font-medium">#{playlistVideoIds.indexOf(v.id) + 1}</span>
-                        )}
-                      </label>
-                    ))}
-                  </div>
+                {/* Toggle: Videos vs URLs */}
+                <div className="flex gap-2 mb-2">
+                  <button type="button" onClick={() => setPlaylistMode('videos')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition ${playlistMode === 'videos' ? 'bg-purple-600 text-white' : 'bg-white border text-secondary'}`}>
+                    <Film size={12} className="inline mr-1" />Uploaded Videos
+                  </button>
+                  <button type="button" onClick={() => setPlaylistMode('urls')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition ${playlistMode === 'urls' ? 'bg-purple-600 text-white' : 'bg-white border text-secondary'}`}>
+                    <Link size={12} className="inline mr-1" />YouTube/Drive Links
+                  </button>
+                </div>
+
+                {/* Mode: Uploaded Videos */}
+                {playlistMode === 'videos' && (
+                  <>
+                    <p className="text-sm text-secondary">Uploaded videos select karo - ek ke baad ek stream hongi.</p>
+                    {videos.length === 0 ? (
+                      <p className="text-sm text-orange-600 flex items-center gap-1"><AlertCircle size={14} /> Koi video upload nahi hai. Pehle Videos page se upload karo.</p>
+                    ) : (
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {videos.map(v => (
+                          <label key={v.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition ${playlistVideoIds.includes(v.id) ? 'bg-purple-100 border border-purple-300' : 'surface-base border hover:bg-[rgb(var(--bg-muted))]'}`}>
+                            <input type="checkbox" checked={playlistVideoIds.includes(v.id)} onChange={() => togglePlaylistVideo(v.id)} className="rounded" />
+                            <Film size={14} className="text-tertiary" />
+                            <span className="text-sm truncate">{v.name}</span>
+                            {playlistVideoIds.includes(v.id) && (
+                              <span className="ml-auto text-xs text-purple-600 font-medium">#{playlistVideoIds.indexOf(v.id) + 1}</span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {playlistVideoIds.length > 0 && (
+                      <p className="text-xs text-purple-700 font-medium">{playlistVideoIds.length} videos selected - will play in order</p>
+                    )}
+                  </>
                 )}
-                {playlistVideoIds.length > 0 && (
-                  <p className="text-xs text-purple-700 font-medium">{playlistVideoIds.length} videos selected - will play in order</p>
+
+                {/* Mode: YouTube/Drive URLs */}
+                {playlistMode === 'urls' && (
+                  <>
+                    <p className="text-sm text-secondary">Multiple YouTube/Drive links paste karo - download hoke ek ke baad ek stream hongi. Download ke baad Videos mein bhi show hongi.</p>
+                    <div className="space-y-2">
+                      {playlistUrls.map((url, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={url}
+                            onChange={e => {
+                              const newUrls = [...playlistUrls];
+                              newUrls[idx] = e.target.value;
+                              setPlaylistUrls(newUrls);
+                            }}
+                            placeholder={`https://youtube.com/watch?v=... (Video ${idx + 1})`}
+                            className="flex-1 px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2"
+                          />
+                          {playlistUrls.length > 1 && (
+                            <button type="button" onClick={() => setPlaylistUrls(playlistUrls.filter((_, i) => i !== idx))}
+                              className="px-2 text-red-500 hover:bg-red-50 rounded-lg">
+                              <X size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" onClick={() => setPlaylistUrls([...playlistUrls, ''])}
+                      className="text-xs text-purple-600 font-medium flex items-center gap-1 hover:underline">
+                      <Plus size={12} /> Add another URL
+                    </button>
+                    {playlistUrls.filter(u => u.trim()).length > 0 && (
+                      <p className="text-xs text-purple-700 font-medium">
+                        {playlistUrls.filter(u => u.trim()).length} URLs added - will download & stream automatically
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* Job status indicator */}
+                {playlistJobStatus && (
+                  <div className="p-2 bg-blue-50 rounded-lg text-xs text-blue-700">
+                    {playlistJobStatus.status === 'downloading' && (
+                      <span>⏳ Downloading... {playlistJobStatus.downloaded}/{playlistJobStatus.total} videos</span>
+                    )}
+                    {playlistJobStatus.status === 'streaming' && (
+                      <span>🎬 Playlist streaming started!</span>
+                    )}
+                    {playlistJobStatus.status === 'failed' && (
+                      <span>❌ Download failed. Please try again.</span>
+                    )}
+                  </div>
                 )}
               </div>
             )}

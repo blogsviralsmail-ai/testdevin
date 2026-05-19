@@ -65,6 +65,9 @@ export default function AdminSlots() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [gdriveUrl, setGdriveUrl] = useState('');
   const [playlistVideoIds, setPlaylistVideoIds] = useState<string[]>([]);
+  const [playlistUrls, setPlaylistUrls] = useState<string[]>(['']);
+  const [playlistMode, setPlaylistMode] = useState<'videos' | 'urls'>('videos');
+  const [playlistJobStatus, setPlaylistJobStatus] = useState<{status: string; downloaded: number; total: number} | null>(null);
   const [streamLoop, setStreamLoop] = useState(true);
 
   const [showScheduleModal, setShowScheduleModal] = useState<string | null>(null);
@@ -133,7 +136,7 @@ export default function AdminSlots() {
   const openStreamModal = (slotId: string) => {
     setShowStreamModal(slotId); setStreamThumb(null); setStreamEndDate('');
     setVideoSource('uploaded'); setYoutubeUrl(''); setGdriveUrl('');
-    setPlaylistVideoIds([]); setStreamLoop(true);
+    setPlaylistVideoIds([]); setPlaylistUrls(['']); setPlaylistMode('videos'); setStreamLoop(true);
   };
 
   const handleStartStream = async (slotId: string) => {
@@ -148,13 +151,17 @@ export default function AdminSlots() {
         await streamingAPI.youtubeUrl({ slotId, url: youtubeUrl.trim(), loop: streamLoop });
       else if (videoSource === 'google_drive' && gdriveUrl.trim())
         await streamingAPI.cloudStream({ slotId, cloudUrl: gdriveUrl.trim(), provider: 'gdrive', loop: streamLoop });
-      else if (videoSource === 'playlist' && playlistVideoIds.length > 0)
+      else if (videoSource === 'playlist' && playlistMode === 'urls' && playlistUrls.filter(u => u.trim()).length > 0) {
+        const validUrls = playlistUrls.filter(u => u.trim());
+        const res = await streamingAPI.playlistFromUrls({ slotId, urls: validUrls, loop: streamLoop });
+        if (res.data?.jobId) setPlaylistJobStatus({ status: 'downloading', downloaded: 0, total: validUrls.length });
+      } else if (videoSource === 'playlist' && playlistVideoIds.length > 0)
         await streamingAPI.playlistQueue({ slotId, videoIds: playlistVideoIds });
       else await slotsAPI.startStream(slotId);
       loadData();
     } catch (err: unknown) { setError(errMsg(err) || 'Failed to start stream'); }
     setActionLoading(null); setStreamThumb(null); setStreamEndDate('');
-    setYoutubeUrl(''); setGdriveUrl(''); setPlaylistVideoIds([]);
+    setYoutubeUrl(''); setGdriveUrl(''); setPlaylistVideoIds([]); setPlaylistUrls(['']); setPlaylistMode('videos');
   };
 
   const handleStopStream = async (slotId: string) => {
@@ -456,14 +463,57 @@ export default function AdminSlots() {
                     onChange={e => setGdriveUrl(e.target.value)} className={inputCls} />
                 )}
                 {videoSource === 'playlist' && (
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    {videos.map(v => (
-                      <label key={v.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-[rgb(var(--bg-muted))] cursor-pointer text-sm">
-                        <input type="checkbox" checked={playlistVideoIds.includes(v.id)} onChange={() => togglePl(v.id)} className="rounded" />
-                        {v.name}
-                      </label>
-                    ))}
-                    {playlistVideoIds.length > 0 && <p className="text-xs text-tertiary mt-1">{playlistVideoIds.length} videos in queue</p>}
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setPlaylistMode('videos')}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition ${playlistMode === 'videos' ? 'bg-purple-600 text-white' : 'bg-white border text-secondary'}`}>
+                        Uploaded Videos
+                      </button>
+                      <button type="button" onClick={() => setPlaylistMode('urls')}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition ${playlistMode === 'urls' ? 'bg-purple-600 text-white' : 'bg-white border text-secondary'}`}>
+                        YouTube/Drive Links
+                      </button>
+                    </div>
+                    {playlistMode === 'videos' && (
+                      <div className="max-h-48 overflow-y-auto space-y-1">
+                        {videos.map(v => (
+                          <label key={v.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-[rgb(var(--bg-muted))] cursor-pointer text-sm">
+                            <input type="checkbox" checked={playlistVideoIds.includes(v.id)} onChange={() => togglePl(v.id)} className="rounded" />
+                            {v.name}
+                          </label>
+                        ))}
+                        {playlistVideoIds.length > 0 && <p className="text-xs text-tertiary mt-1">{playlistVideoIds.length} videos in queue</p>}
+                      </div>
+                    )}
+                    {playlistMode === 'urls' && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-secondary">Multiple YouTube/Drive links paste karo - download hoke auto-play hongi.</p>
+                        {playlistUrls.map((url, idx) => (
+                          <div key={idx} className="flex gap-2">
+                            <input type="text" value={url}
+                              onChange={e => { const u = [...playlistUrls]; u[idx] = e.target.value; setPlaylistUrls(u); }}
+                              placeholder={`https://youtube.com/watch?v=... (${idx + 1})`}
+                              className={inputCls} />
+                            {playlistUrls.length > 1 && (
+                              <button type="button" onClick={() => setPlaylistUrls(playlistUrls.filter((_, i) => i !== idx))}
+                                className="px-2 text-red-500 hover:bg-red-50 rounded-lg"><X size={14} /></button>
+                            )}
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => setPlaylistUrls([...playlistUrls, ''])}
+                          className="text-xs text-purple-600 font-medium hover:underline">+ Add another URL</button>
+                        {playlistUrls.filter(u => u.trim()).length > 0 && (
+                          <p className="text-xs text-tertiary">{playlistUrls.filter(u => u.trim()).length} URLs - will download & stream</p>
+                        )}
+                      </div>
+                    )}
+                    {playlistJobStatus && (
+                      <div className="p-2 bg-blue-50 rounded-lg text-xs text-blue-700">
+                        {playlistJobStatus.status === 'downloading' && <span>Downloading... {playlistJobStatus.downloaded}/{playlistJobStatus.total}</span>}
+                        {playlistJobStatus.status === 'streaming' && <span>Playlist streaming started!</span>}
+                        {playlistJobStatus.status === 'failed' && <span>Download failed.</span>}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

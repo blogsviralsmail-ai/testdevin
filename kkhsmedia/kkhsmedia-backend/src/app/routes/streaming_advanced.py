@@ -616,6 +616,253 @@ async def start_playlist_queue(req: PlaylistQueueRequest, user=Depends(get_curre
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============ PLAYLIST FROM URLs (Download + Stream) ============
+
+class PlaylistUrlsRequest(BaseModel):
+    slotId: str
+    urls: list  # List of YouTube/Drive URLs to download and play
+    loop: bool = True
+
+
+@router.post("/playlist-from-urls")
+async def start_playlist_from_urls(req: PlaylistUrlsRequest, user=Depends(get_current_user)):
+    """Download multiple YouTube/Drive URLs, save to Videos collection, then stream as playlist.
+    Downloads happen in background; streaming starts as soon as first video is ready."""
+    db = get_db()
+    slot = await db.slots.find_one({"_id": ObjectId(req.slotId), "userId": user["id"]})
+    if not slot:
+        raise HTTPException(status_code=404, detail="Slot not found")
+    if not slot.get("streamKey"):
+        raise HTTPException(status_code=400, detail="Stream key not set")
+
+    if not req.urls or len(req.urls) == 0:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+
+    yt_dlp = shutil.which("yt-dlp")
+    if not yt_dlp:
+        raise HTTPException(status_code=500, detail="yt-dlp not installed on server")
+
+    upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Create a playlist job record to track progress
+    job_id = str(ObjectId())
+    await db.playlist_jobs.insert_one({
+        "_id": ObjectId(job_id),
+        "userId": user["id"],
+        "slotId": req.slotId,
+        "urls": req.urls,
+        "loop": req.loop,
+        "status": "downloading",
+        "downloaded": 0,
+        "total": len(req.urls),
+        "videoIds": [],
+        "createdAt": datetime.utcnow(),
+    })
+
+    # Background task: download all URLs, save to Videos, then start playlist stream
+    async def _download_and_stream():
+        video_ids = []
+        video_files = []
+        env = _clean_env()
+
+        for idx, url in enumerate(req.urls):
+            try:
+                url = url.strip()
+                if not url:
+                    continue
+
+                # Get video title for naming
+                title_cmd = [yt_dlp, "--get-title", "--no-playlist"]
+                # Use cookies for YouTube
+                cookie_args = ["--cookies", _YT_COOKIES_PATH] if os.path.exists(_YT_COOKIES_PATH) else []
+                js_args = ["--js-runtimes", "deno"]
+                title_result = subprocess.run(
+                    [*title_cmd, *js_args, *cookie_args, url],
+                    capture_output=True, text=True, timeout=60, env=env,
+                )
+                video_title = title_result.stdout.strip() if title_result.returncode == 0 else f"Video {idx + 1}"
+                if not video_title:
+                    video_title = f"Video {idx + 1}"
+
+                # Download the video
+                import uuid as _uuid
+                file_id = _uuid.uuid4().hex
+                output_path = os.path.join(upload_dir, f"{file_id}.mp4")
+
+                dl_cmd = [
+                    yt_dlp,
+                    "-f", "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best[ext=mp4]/best",
+                    "--merge-output-format", "mp4",
+                    "--no-playlist",
+                    *js_args, *cookie_args,
+                    "-o", output_path,
+                    url,
+                ]
+                dl_result = subprocess.run(dl_cmd, capture_output=True, text=True, timeout=600, env=env)
+
+                if dl_result.returncode != 0 or not os.path.exists(output_path):
+                    logger.warning(f"Playlist URL download failed for {url}: {dl_result.stderr[:200]}")
+                    continue
+
+                file_size = os.path.getsize(output_path)
+
+                # Generate thumbnail
+                from app.routes.videos import generate_thumbnail, get_video_duration
+                thumb_dir = os.path.join(upload_dir, "thumbnails")
+                os.makedirs(thumb_dir, exist_ok=True)
+                thumb_path = os.path.join(thumb_dir, f"{file_id}.jpg")
+                thumbnail_url = ""
+                if generate_thumbnail(output_path, thumb_path):
+                    thumbnail_url = f"/api/videos/file/thumbnails/{file_id}.jpg"
+
+                duration = get_video_duration(output_path)
+
+                # Save to Videos collection
+                video_doc = {
+                    "userId": user["id"],
+                    "name": video_title,
+                    "originalName": f"{video_title}.mp4",
+                    "s3Key": f"local/{user['id']}/{file_id}.mp4",
+                    "fileUrl": output_path,
+                    "fileSize": file_size,
+                    "duration": duration,
+                    "thumbnailUrl": thumbnail_url,
+                    "sourceUrl": url,
+                    "status": "ready",
+                    "createdAt": datetime.utcnow(),
+                    "updatedAt": datetime.utcnow(),
+                }
+                result = await db.videos.insert_one(video_doc)
+                vid_id = str(result.inserted_id)
+                video_ids.append(vid_id)
+                video_files.append(output_path)
+
+                # Update job progress
+                await db.playlist_jobs.update_one(
+                    {"_id": ObjectId(job_id)},
+                    {"$set": {"downloaded": idx + 1, "videoIds": video_ids}}
+                )
+                logger.info(f"Playlist download [{idx+1}/{len(req.urls)}]: {video_title} -> {output_path}")
+
+            except subprocess.TimeoutExpired:
+                logger.warning(f"Playlist URL download timed out for {url}")
+                continue
+            except Exception as e:
+                logger.error(f"Playlist URL download error for {url}: {e}")
+                continue
+
+        if not video_files:
+            await db.playlist_jobs.update_one(
+                {"_id": ObjectId(job_id)},
+                {"$set": {"status": "failed", "error": "No videos could be downloaded"}}
+            )
+            return
+
+        # All downloads done - start playlist stream
+        concat_file = os.path.join(upload_dir, f"playlist_{req.slotId}.txt")
+        with open(concat_file, "w") as f:
+            for vf in video_files:
+                safe_path = vf.replace("'", "'\\''")
+                f.write(f"file '{safe_path}'\n")
+
+        # Build destination
+        platform = slot.get("platform", "youtube")
+        stream_key = slot["streamKey"]
+        rtmp_url = slot.get("rtmpUrl", "")
+        if platform == "custom" and rtmp_url:
+            destination = f"{rtmp_url}/{stream_key}" if stream_key else rtmp_url
+        elif rtmp_url:
+            destination = f"{rtmp_url}/{stream_key}"
+        else:
+            rtmp_urls = {
+                "youtube": "rtmp://a.rtmp.youtube.com/live2",
+                "facebook": "rtmps://live-api-s.facebook.com:443/rtmp",
+                "twitch": "rtmp://live.twitch.tv/app",
+            }
+            base = rtmp_urls.get(platform, "rtmp://a.rtmp.youtube.com/live2")
+            destination = f"{base}/{stream_key}"
+
+        # Stop existing stream
+        slot_id_str = str(slot["_id"])
+        existing = active_streams.pop(slot_id_str, None)
+        if existing and existing.get("process"):
+            try:
+                existing["process"].kill()
+                await existing["process"].wait()
+            except Exception:
+                pass
+
+        ffmpeg = _get_ffmpeg_path()
+        loop_args = ["-stream_loop", "-1"] if req.loop else []
+        cmd = [
+            ffmpeg, "-re", *loop_args,
+            "-f", "concat", "-safe", "0", "-i", concat_file,
+            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+            "-b:v", "4500k", "-maxrate", "5000k", "-bufsize", "10000k",
+            "-vf", "scale=-2:720",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
+            "-f", "flv", "-flvflags", "no_duration_filesize",
+            destination,
+        ]
+
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            active_streams[slot_id_str] = {
+                "process": process, "pid": process.pid, "platform": platform,
+                "video_url": concat_file, "destination": destination,
+                "stream_key": stream_key, "rtmp_url": rtmp_url,
+                "started_at": datetime.utcnow().isoformat(), "restart_count": 0,
+                "source_type": "playlist_urls",
+            }
+            await db.slots.update_one(
+                {"_id": ObjectId(req.slotId)},
+                {"$set": {
+                    "isStreaming": True, "streamProcessId": process.pid,
+                    "sourceType": "playlist_urls", "playlistVideos": video_ids,
+                    "updatedAt": datetime.utcnow(),
+                }}
+            )
+            await db.playlist_jobs.update_one(
+                {"_id": ObjectId(job_id)},
+                {"$set": {"status": "streaming", "pid": process.pid}}
+            )
+            logger.info(f"Playlist URL stream started for slot {slot_id_str} with {len(video_files)} videos")
+        except Exception as e:
+            logger.error(f"Failed to start playlist stream: {e}")
+            await db.playlist_jobs.update_one(
+                {"_id": ObjectId(job_id)},
+                {"$set": {"status": "failed", "error": str(e)}}
+            )
+
+    asyncio.create_task(_download_and_stream())
+
+    return {
+        "message": f"Downloading {len(req.urls)} videos... Stream will start automatically when ready.",
+        "jobId": job_id,
+        "total": len(req.urls),
+    }
+
+
+@router.get("/playlist-job/{job_id}")
+async def get_playlist_job_status(job_id: str, user=Depends(get_current_user)):
+    """Check the status of a playlist download/stream job."""
+    db = get_db()
+    job = await db.playlist_jobs.find_one({"_id": ObjectId(job_id), "userId": user["id"]})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {
+        "id": str(job["_id"]),
+        "status": job.get("status"),
+        "downloaded": job.get("downloaded", 0),
+        "total": job.get("total", 0),
+        "videoIds": job.get("videoIds", []),
+        "error": job.get("error"),
+    }
+
+
 # ============ SCHEDULED PLAYLIST ============
 
 class ScheduledPlaylistItem(BaseModel):
