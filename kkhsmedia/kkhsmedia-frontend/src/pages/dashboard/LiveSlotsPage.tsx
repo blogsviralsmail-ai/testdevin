@@ -67,7 +67,6 @@ export default function LiveSlotsPage() {
   const [playlistVideoIds, setPlaylistVideoIds] = useState<string[]>([]);
   const [playlistUrls, setPlaylistUrls] = useState<string[]>(['']);
   const [playlistMode, setPlaylistMode] = useState<'videos' | 'urls'>('videos');
-  const [playlistJobId, setPlaylistJobId] = useState<string | null>(null);
   const [playlistJobStatus, setPlaylistJobStatus] = useState<{status: string; downloaded: number; total: number} | null>(null);
   const [streamLoop, setStreamLoop] = useState(true);
 
@@ -245,7 +244,6 @@ export default function LiveSlotsPage() {
         const validUrls = playlistUrls.filter(u => u.trim());
         const res = await streamingAPI.playlistFromUrls({ slotId, urls: validUrls, loop: streamLoop });
         if (res.data?.jobId) {
-          setPlaylistJobId(res.data.jobId);
           setPlaylistJobStatus({ status: 'downloading', downloaded: 0, total: validUrls.length });
         }
       } else if (videoSource === 'playlist' && playlistVideoIds.length > 0) {
