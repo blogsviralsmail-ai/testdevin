@@ -458,45 +458,116 @@ function getDefaultContent(classId, subjectId, chapterId) {
   const key = `${classId}-${subjectId}-${chapterId}`;
   if (contentData[key]) return contentData[key];
 
-  const chapters = chapterData[`${classId}-${subjectId}`];
+  const allChapters = getActiveChapterData();
+  const chapters = allChapters[`${classId}-${subjectId}`];
   if (!chapters) return null;
   const chapter = chapters.find(c => c.id === parseInt(chapterId));
   if (!chapter) return null;
+
+  if (currentBoard === 'cbse') {
+    return {
+      title: chapter.name,
+      titleEn: chapter.nameEn,
+      content: `
+        <h3>${chapter.name} (${chapter.nameEn})</h3>
+        <p>In this chapter, we will study ${chapter.nameEn} in detail as per NCERT/CBSE syllabus.</p>
+
+        <h3>Introduction</h3>
+        <p>This chapter belongs to the ${chapter.desc} section. Here we will understand the fundamental concepts and principles.</p>
+
+        <h3>Key Points</h3>
+        <ul>
+          <li>Fundamental concepts of ${chapter.nameEn}</li>
+          <li>Practical examples and applications</li>
+          <li>Important definitions and terms</li>
+          <li>Practice questions for board exams</li>
+        </ul>
+
+        <h3>Summary</h3>
+        <p>In this chapter we learned the key concepts of ${chapter.nameEn}. Practice regularly and test your knowledge with quizzes.</p>
+      `,
+      quiz: [
+        {
+          question: `What is the main topic of the chapter "${chapter.nameEn}"?`,
+          options: [chapter.desc, 'Mathematics', 'Sports', 'Music'],
+          correct: 0
+        },
+        {
+          question: 'This chapter is from which class?',
+          options: [`Class ${parseInt(classId) - 1}`, `Class ${classId}`, `Class ${parseInt(classId) + 1}`, `Class ${parseInt(classId) + 2}`],
+          correct: 1
+        }
+      ]
+    };
+  }
 
   return {
     title: chapter.name,
     titleEn: chapter.nameEn,
     content: `
       <h3>${chapter.name} (${chapter.nameEn})</h3>
-      <p>આ પ્રકરણમાં આપણે ${chapter.nameEn} વિશે વિગતવાર અભ્યાસ કરીશું.</p>
+      <p>\u0A86 \u0AAA\u0ACD\u0AB0\u0A95\u0AB0\u0AA3\u0AAE\u0ABE\u0A82 \u0A86\u0AAA\u0AA3\u0AC7 ${chapter.nameEn} \u0AB5\u0ABF\u0AB6\u0AC7 \u0AB5\u0ABF\u0A97\u0AA4\u0AB5\u0ABE\u0AB0 \u0A85\u0AAD\u0ACD\u0AAF\u0ABE\u0AB8 \u0A95\u0AB0\u0AC0\u0AB6\u0AC1\u0A82.</p>
 
-      <h3>પરિચય (Introduction)</h3>
-      <p>આ પ્રકરણ ${chapter.desc} વિભાગનો ભાગ છે. અહીં આપણે મૂળભૂત ખ્યાલો અને સિદ્ધાંતો સમજીશું.</p>
+      <h3>\u0AAA\u0AB0\u0ABF\u0A9A\u0AAF (Introduction)</h3>
+      <p>\u0A86 \u0AAA\u0ACD\u0AB0\u0A95\u0AB0\u0AA3 ${chapter.desc} \u0AB5\u0ABF\u0AAD\u0ABE\u0A97\u0AA8\u0ACB \u0AAD\u0ABE\u0A97 \u0A9B\u0AC7. \u0A85\u0AB9\u0AC0\u0A82 \u0A86\u0AAA\u0AA3\u0AC7 \u0AAE\u0AC2\u0AB3\u0AAD\u0AC2\u0AA4 \u0A96\u0ACD\u0AAF\u0ABE\u0AB2\u0ACB \u0A85\u0AA8\u0AC7 \u0AB8\u0ABF\u0AA6\u0ACD\u0AA7\u0ABE\u0A82\u0AA4\u0ACB \u0AB8\u0AAE\u0A9C\u0AC0\u0AB6\u0AC1\u0A82.</p>
 
-      <h3>મુખ્ય મુદ્દાઓ (Key Points)</h3>
+      <h3>\u0AAE\u0AC1\u0A96\u0ACD\u0AAF \u0AAE\u0AC1\u0AA6\u0ACD\u0AA6\u0ABE\u0A93 (Key Points)</h3>
       <ul>
-        <li>${chapter.nameEn} ના મૂળભૂત સિદ્ધાંતો</li>
-        <li>વ્યવહારિક ઉદાહરણો</li>
-        <li>મહત્વપૂર્ણ પરિભાષાઓ</li>
-        <li>અભ્યાસ પ્રશ્નો</li>
+        <li>${chapter.nameEn} \u0AA8\u0ABE \u0AAE\u0AC2\u0AB3\u0AAD\u0AC2\u0AA4 \u0AB8\u0ABF\u0AA6\u0ACD\u0AA7\u0ABE\u0A82\u0AA4\u0ACB</li>
+        <li>\u0AB5\u0ACD\u0AAF\u0AB5\u0AB9\u0ABE\u0AB0\u0ABF\u0A95 \u0A89\u0AA6\u0ABE\u0AB9\u0AB0\u0AA3\u0ACB</li>
+        <li>\u0AAE\u0AB9\u0AA4\u0ACD\u0AB5\u0AAA\u0AC2\u0AB0\u0ACD\u0AA3 \u0AAA\u0AB0\u0ABF\u0AAD\u0ABE\u0AB7\u0ABE\u0A93</li>
+        <li>\u0A85\u0AAD\u0ACD\u0AAF\u0ABE\u0AB8 \u0AAA\u0ACD\u0AB0\u0AB6\u0ACD\u0AA8\u0ACB</li>
       </ul>
 
-      <h3>સારાંશ (Summary)</h3>
-      <p>આ પ્રકરણમાં આપણે ${chapter.nameEn} ના મુખ્ય ખ્યાલો શીખ્યા. નિયમિત અભ્યાસ કરો અને ક્વિઝ દ્વારા પોતાનું જ્ઞાન ચકાસો.</p>
+      <h3>\u0AB8\u0ABE\u0AB0\u0ABE\u0A82\u0AB6 (Summary)</h3>
+      <p>\u0A86 \u0AAA\u0ACD\u0AB0\u0A95\u0AB0\u0AA3\u0AAE\u0ABE\u0A82 \u0A86\u0AAA\u0AA3\u0AC7 ${chapter.nameEn} \u0AA8\u0ABE \u0AAE\u0AC1\u0A96\u0ACD\u0AAF \u0A96\u0ACD\u0AAF\u0ABE\u0AB2\u0ACB \u0AB6\u0AC0\u0A96\u0ACD\u0AAF\u0ABE. \u0AA8\u0ABF\u0AAF\u0AAE\u0ABF\u0AA4 \u0A85\u0AAD\u0ACD\u0AAF\u0ABE\u0AB8 \u0A95\u0AB0\u0ACB \u0A85\u0AA8\u0AC7 \u0A95\u0ACD\u0AB5\u0ABF\u0A9D \u0AA6\u0ACD\u0AB5\u0ABE\u0AB0\u0ABE \u0AAA\u0ACB\u0AA4\u0ABE\u0AA8\u0AC1\u0A82 \u0A9C\u0ACD\u0A9E\u0ABE\u0AA8 \u0A9A\u0A95\u0ABE\u0AB8\u0ACB.</p>
     `,
     quiz: [
       {
-        question: `${chapter.nameEn} પ્રકરણનો મુખ્ય વિષય શું છે?`,
-        options: [chapter.desc, 'ગણિત', 'ખેલ', 'સંગીત'],
+        question: `${chapter.nameEn} \u0AAA\u0ACD\u0AB0\u0A95\u0AB0\u0AA3\u0AA8\u0ACB \u0AAE\u0AC1\u0A96\u0ACD\u0AAF \u0AB5\u0ABF\u0AB7\u0AAF \u0AB6\u0AC1\u0A82 \u0A9B\u0AC7?`,
+        options: [chapter.desc, '\u0A97\u0AA3\u0ABF\u0AA4', '\u0A96\u0AC7\u0AB2', '\u0AB8\u0A82\u0A97\u0AC0\u0AA4'],
         correct: 0
       },
       {
-        question: 'આ પ્રકરણ કયા ધોરણમાં આવે છે?',
-        options: [`ધોરણ ${parseInt(classId) - 1}`, `ધોરણ ${classId}`, `ધોરણ ${parseInt(classId) + 1}`, `ધોરણ ${parseInt(classId) + 2}`],
+        question: '\u0A86 \u0AAA\u0ACD\u0AB0\u0A95\u0AB0\u0AA3 \u0A95\u0AAF\u0ABE \u0AA7\u0ACB\u0AB0\u0AA3\u0AAE\u0ABE\u0A82 \u0A86\u0AB5\u0AC7 \u0A9B\u0AC7?',
+        options: [`\u0AA7\u0ACB\u0AB0\u0AA3 ${parseInt(classId) - 1}`, `\u0AA7\u0ACB\u0AB0\u0AA3 ${classId}`, `\u0AA7\u0ACB\u0AB0\u0AA3 ${parseInt(classId) + 1}`, `\u0AA7\u0ACB\u0AB0\u0AA3 ${parseInt(classId) + 2}`],
         correct: 1
       }
     ]
   };
+}
+
+// ========== BOARD SELECTION ==========
+let currentBoard = localStorage.getItem('selectedBoard') || 'gseb';
+
+function selectBoard(board) {
+  currentBoard = board;
+  localStorage.setItem('selectedBoard', board);
+  renderClassGrid();
+  // Update section title
+  const title = document.getElementById('class-section-title');
+  const sub = document.getElementById('class-section-sub');
+  if (title) title.textContent = board === 'cbse' ? 'Select Class (CBSE) \u{1F4DA}' : '\u0AA7\u0ACB\u0AB0\u0AA3 \u0AAA\u0AB8\u0A82\u0AA6 \u0A95\u0AB0\u0ACB (GSEB) \u{1F4DA}';
+  if (sub) sub.textContent = board === 'cbse' ? 'NCERT Syllabus - Classes 6 to 10' : 'Gujarat Board - Classes 6 to 10';
+  // Highlight active board
+  document.querySelectorAll('.board-card').forEach(c => c.classList.remove('active-board'));
+  const activeCard = document.querySelector(`.${board}-board`);
+  if (activeCard) activeCard.classList.add('active-board');
+}
+
+function getActiveClassData() {
+  if (currentBoard === 'cbse' && typeof cbseClassData !== 'undefined') return cbseClassData;
+  return classData;
+}
+
+function getActiveSubjectData() {
+  if (currentBoard === 'cbse' && typeof cbseSubjectData !== 'undefined') return cbseSubjectData;
+  return subjectData;
+}
+
+function getActiveChapterData() {
+  if (currentBoard === 'cbse' && typeof cbseChapterData !== 'undefined') return cbseChapterData;
+  return chapterData;
 }
 
 // ========== NAVIGATION ==========
@@ -609,10 +680,14 @@ function handleContact(e) {
 // ========== DYNAMIC PAGE RENDERING ==========
 function getParams() {
   const params = new URLSearchParams(window.location.search);
+  const board = params.get('board') || localStorage.getItem('selectedBoard') || 'gseb';
+  currentBoard = board;
+  localStorage.setItem('selectedBoard', board);
   return {
     classId: params.get('class'),
     subject: params.get('subject'),
-    chapter: params.get('chapter')
+    chapter: params.get('chapter'),
+    board: board
   };
 }
 
@@ -620,8 +695,9 @@ function renderClassGrid() {
   const grid = document.getElementById('class-grid');
   if (!grid) return;
 
-  grid.innerHTML = classData.map(cls => `
-    <a href="pages/subjects.html?class=${cls.id}" class="class-card ${cls.gradient} fade-in">
+  const classes = getActiveClassData();
+  grid.innerHTML = classes.map(cls => `
+    <a href="pages/subjects.html?class=${cls.id}&board=${currentBoard}" class="class-card ${cls.gradient} fade-in">
       <div class="class-number">${cls.id}</div>
       <div class="class-label">${cls.name}</div>
     </a>
@@ -633,21 +709,26 @@ function renderSubjects() {
   const params = getParams();
   if (!grid || !params.classId) return;
 
-  const subjects = subjectData[params.classId] || [];
-  const cls = classData.find(c => c.id === parseInt(params.classId));
+  const allSubjects = getActiveSubjectData();
+  const allClasses = getActiveClassData();
+  const subjects = allSubjects[params.classId] || [];
+  const cls = allClasses.find(c => c.id === parseInt(params.classId));
 
   // Update page title
   const title = document.getElementById('page-title');
-  if (title) title.textContent = `વિષય પસંદ કરો - ${cls ? cls.name : ''}`;
+  if (title) {
+    const boardLabel = params.board === 'cbse' ? 'CBSE' : 'GSEB';
+    title.textContent = params.board === 'cbse' ? `Select Subject - ${cls ? cls.nameEn : ''} (${boardLabel})` : `\u0AB5\u0ABF\u0AB7\u0AAF \u0AAA\u0AB8\u0A82\u0AA6 \u0A95\u0AB0\u0ACB - ${cls ? cls.name : ''}`;
+  }
 
   // Update sidebar
   const badgeNum = document.getElementById('badge-num');
   const badgeText = document.getElementById('badge-text');
   if (badgeNum) badgeNum.textContent = params.classId;
-  if (badgeText) badgeText.innerHTML = `<strong>${cls ? cls.name : ''}</strong>Select Subject`;
+  if (badgeText) badgeText.innerHTML = `<strong>${cls ? cls.name || cls.nameEn : ''}</strong>Select Subject`;
 
   grid.innerHTML = subjects.map(sub => `
-    <a href="chapters.html?class=${params.classId}&subject=${sub.id}" class="subject-card ${sub.bg} fade-in">
+    <a href="chapters.html?class=${params.classId}&subject=${sub.id}&board=${params.board}" class="subject-card ${sub.bg} fade-in">
       <div class="subject-icon">${sub.icon}</div>
       <div class="subject-name">${sub.name}</div>
     </a>
@@ -660,29 +741,34 @@ function renderChapters() {
   if (!list || !params.classId || !params.subject) return;
 
   const key = `${params.classId}-${params.subject}`;
-  const chapters = chapterData[key] || [];
-  const cls = classData.find(c => c.id === parseInt(params.classId));
-  const subjects = subjectData[params.classId] || [];
+  const allChapters = getActiveChapterData();
+  const allClasses = getActiveClassData();
+  const allSubjects = getActiveSubjectData();
+  const chapters = allChapters[key] || [];
+  const cls = allClasses.find(c => c.id === parseInt(params.classId));
+  const subjects = allSubjects[params.classId] || [];
   const sub = subjects.find(s => s.id === params.subject);
 
   // Update page elements
   const title = document.getElementById('page-title');
-  if (title) title.textContent = `પ્રકરણ પસંદ કરો - ${sub ? sub.name : ''}`;
+  if (title) {
+    title.textContent = params.board === 'cbse' ? `Select Chapter - ${sub ? sub.nameEn : ''}` : `\u0AAA\u0ACD\u0AB0\u0A95\u0AB0\u0AA3 \u0AAA\u0AB8\u0A82\u0AA6 \u0A95\u0AB0\u0ACB - ${sub ? sub.name : ''}`;
+  }
 
   const badgeNum = document.getElementById('badge-num');
   const badgeText = document.getElementById('badge-text');
   if (badgeNum) badgeNum.textContent = params.classId;
-  if (badgeText) badgeText.innerHTML = `<strong>${sub ? sub.name : ''}</strong>${cls ? cls.name : ''}`;
+  if (badgeText) badgeText.innerHTML = `<strong>${sub ? sub.name || sub.nameEn : ''}</strong>${cls ? cls.name || cls.nameEn : ''}`;
 
   const breadcrumb = document.getElementById('breadcrumb-subject');
-  if (breadcrumb) breadcrumb.textContent = sub ? sub.name : '';
+  if (breadcrumb) breadcrumb.textContent = sub ? sub.name || sub.nameEn : '';
 
   list.innerHTML = chapters.map(ch => `
-    <a href="content.html?class=${params.classId}&subject=${params.subject}&chapter=${ch.id}" class="chapter-item fade-in">
+    <a href="content.html?class=${params.classId}&subject=${params.subject}&chapter=${ch.id}&board=${params.board}" class="chapter-item fade-in">
       <div class="chapter-number">${ch.id}</div>
       <div class="chapter-info">
         <h3>${ch.name}</h3>
-        <p>${ch.nameEn} • ${ch.desc}</p>
+        <p>${ch.nameEn} \u2022 ${ch.desc}</p>
       </div>
       <div class="chapter-play">&#9654;</div>
     </a>
@@ -708,10 +794,11 @@ function renderContent() {
   if (titleEn) titleEn.textContent = content.titleEn;
 
   // Update breadcrumbs
-  const subjects = subjectData[params.classId] || [];
+  const allSubjects = getActiveSubjectData();
+  const subjects = allSubjects[params.classId] || [];
   const sub = subjects.find(s => s.id === params.subject);
   const bcSubject = document.getElementById('breadcrumb-subject');
-  if (bcSubject) bcSubject.textContent = sub ? sub.name : '';
+  if (bcSubject) bcSubject.textContent = sub ? sub.name || sub.nameEn : '';
   const bcChapter = document.getElementById('breadcrumb-chapter');
   if (bcChapter) bcChapter.textContent = content.title;
 
@@ -744,6 +831,21 @@ function switchTab(tab) {
 
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', function() {
+  // Init board from URL or localStorage
+  const urlBoard = new URLSearchParams(window.location.search).get('board');
+  if (urlBoard) {
+    currentBoard = urlBoard;
+    localStorage.setItem('selectedBoard', urlBoard);
+  }
+  // Highlight active board on home page
+  const activeCard = document.querySelector(`.${currentBoard}-board`);
+  if (activeCard) activeCard.classList.add('active-board');
+  // Update class section title
+  const csTitle = document.getElementById('class-section-title');
+  const csSub = document.getElementById('class-section-sub');
+  if (csTitle) csTitle.textContent = currentBoard === 'cbse' ? 'Select Class (CBSE) \u{1F4DA}' : '\u0AA7\u0ACB\u0AB0\u0AA3 \u0AAA\u0AB8\u0A82\u0AA6 \u0A95\u0AB0\u0ACB (GSEB) \u{1F4DA}';
+  if (csSub) csSub.textContent = currentBoard === 'cbse' ? 'NCERT Syllabus - Classes 6 to 10' : 'Gujarat Board - Classes 6 to 10';
+
   renderClassGrid();
   renderSubjects();
   renderChapters();

@@ -6,6 +6,11 @@
   const key = params.classId + '-' + params.subject + '-' + params.chapter;
 
   function getChapterRichData() {
+    // Check CBSE content data first if board is cbse
+    if (params.board === 'cbse' && typeof cbseRichContentData !== 'undefined') {
+      const cbseKey = 'cbse-' + key;
+      if (cbseRichContentData[cbseKey]) return cbseRichContentData[cbseKey];
+    }
     if (typeof richContentData !== 'undefined' && richContentData[key]) {
       return richContentData[key];
     }
@@ -13,13 +18,16 @@
   }
 
   function generateDefaultRichContent(p) {
-    const subj = (subjectData[p.classId] || []).find(s => s.id === p.subject) || {};
-    const chapters = chapterData[p.classId + '-' + p.subject] || [];
+    const activeSubjects = (typeof getActiveSubjectData === 'function') ? getActiveSubjectData() : subjectData;
+    const activeChapters = (typeof getActiveChapterData === 'function') ? getActiveChapterData() : chapterData;
+    const subj = (activeSubjects[p.classId] || []).find(s => s.id === p.subject) || {};
+    const chapters = activeChapters[p.classId + '-' + p.subject] || [];
     const ch = chapters.find(c => String(c.id) === String(p.chapter)) || {};
     const chName = ch.name || 'Chapter ' + p.chapter;
     const chNameEn = ch.nameEn || '';
     const subjName = subj.name || p.subject;
     const subjNameEn = subj.nameEn || p.subject;
+    const isCBSE = p.board === 'cbse';
     return {
       videos: [
         { title: chName + ' - Video Lesson', titleEn: chNameEn + ' - Explained', id: 'dQw4w9WgXcQ', duration: '15:00', views: '10K+' },
@@ -28,19 +36,23 @@
       charts: [
         {
           title: chName + ' - Overview Chart',
-          desc: chNameEn + ' ના મુખ્ય concepts નો overview',
+          desc: isCBSE ? (chNameEn + ' - Key concepts overview') : (chNameEn + ' ના મુખ્ય concepts નો overview'),
           type: 'diagram',
           items: [
-            { icon: '📖', label: 'Introduction', sublabel: 'પરિચય' },
-            { icon: '🔑', label: 'Key Concepts', sublabel: 'મુખ્ય ખ્યાલો' },
-            { icon: '📝', label: 'Practice', sublabel: 'અભ્યાસ' },
-            { icon: '✅', label: 'Summary', sublabel: 'સારાંશ' }
+            { icon: '📖', label: 'Introduction', sublabel: isCBSE ? 'परिचय' : 'પરિચય' },
+            { icon: '🔑', label: 'Key Concepts', sublabel: isCBSE ? 'मुख्य धारणाएँ' : 'મુખ્ય ખ્યાલો' },
+            { icon: '📝', label: 'Practice', sublabel: isCBSE ? 'अभ्यास' : 'અભ્યાસ' },
+            { icon: '✅', label: 'Summary', sublabel: isCBSE ? 'सारांश' : 'સારાંશ' }
           ]
         }
       ],
       pdf: {
         title: chName + ' - Study Notes',
-        sections: [
+        sections: isCBSE ? [
+          { heading: 'Introduction (परिचय)', body: chNameEn + ' is an important part of ' + subjNameEn + '. In this chapter we will learn the key concepts as per NCERT syllabus.' },
+          { heading: 'Key Points (मुख्य बिंदु)', list: ['Fundamental concepts of ' + chNameEn, 'Practical examples and applications', 'Important definitions and terms', 'Practice questions for CBSE board exams'] },
+          { heading: 'Summary (सारांश)', body: 'In this chapter we learned the key concepts of ' + chNameEn + '. Practice regularly for better understanding.' }
+        ] : [
           { heading: 'પરિચય (Introduction)', body: chNameEn + ' એ ' + subjNameEn + ' નો એક મહત્વપૂર્ણ ભાગ છે. આ પ્રકરણમાં આપણે મુખ્ય concepts શીખીશું.' },
           { heading: 'મુખ્ય મુદ્દાઓ (Key Points)', list: [chNameEn + ' ના મૂળભૂત સિદ્ધાંતો', 'વ્યવહારિક ઉદાહરણો', 'મહત્વપૂર્ણ પરિભાષાઓ', 'અભ્યાસ પ્રશ્નો'] },
           { heading: 'સારાંશ (Summary)', body: 'આ પ્રકરણમાં આપણે ' + chNameEn + ' ના મુખ્ય ખ્યાલો શીખ્યા. નિયમિત અભ્યાસ કરો.' }
@@ -50,7 +62,7 @@
         {
           type: 'truefalse',
           title: chName + ' - True/False',
-          desc: 'નીચેના વિધાનો True છે કે False?',
+          desc: isCBSE ? 'Are these statements True or False?' : 'નીચેના વિધાનો True છે કે False?',
           items: [
             { statement: chNameEn + ' is part of ' + subjNameEn, answer: true },
             { statement: chNameEn + ' is not important for exams', answer: false },

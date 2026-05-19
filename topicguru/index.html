@@ -35,7 +35,6 @@
   <section class="hero">
     <div class="hero-content">
       <h1>Welcome Back! <span class="wave">&#128075;</span></h1>
-      <p class="subtitle-gu">તમારો ધોરણ પસંદ કરો</p>
       <p class="subtitle">TopicGuru – Smart & Simple Online Learning App</p>
       <p class="subtitle" style="font-size:0.95rem;max-width:600px;margin:0 auto;">TopicGuru ek online learning app hai jiska purpose hai learning ko easy, simple aur practical banana. Yahan aap step-by-step lessons, quizzes aur examples ke through apne favorite topics ko samajh sakte hain — kabhi bhi, kahin se bhi.</p>
 
@@ -45,26 +44,48 @@
           <div class="label">Downloads</div>
         </div>
         <div class="hero-stat">
+          <div class="number">2</div>
+          <div class="label">Boards</div>
+        </div>
+        <div class="hero-stat">
           <div class="number">5</div>
           <div class="label">Classes (6-10)</div>
         </div>
         <div class="hero-stat">
-          <div class="number">7</div>
-          <div class="label">Subjects</div>
-        </div>
-        <div class="hero-stat">
-          <div class="number">100+</div>
+          <div class="number">200+</div>
           <div class="label">Chapters</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Class Selection -->
-  <section class="section">
+  <!-- Board Selection -->
+  <section class="section" id="board-section">
     <div class="section-title">
-      <h2>ધોરણ પસંદ કરો &#128218;</h2>
-      <p>Select your class to start learning</p>
+      <h2>Select Your Board &#127891;</h2>
+      <p>Apna board choose karein — GSEB ya CBSE</p>
+    </div>
+    <div class="board-grid" id="board-grid">
+      <a href="#classes" class="board-card gseb-board fade-in" onclick="selectBoard('gseb')">
+        <div class="board-icon">&#127963;</div>
+        <div class="board-name">GSEB</div>
+        <div class="board-desc">Gujarat Board (ગુજરાત બોર્ડ)</div>
+        <div class="board-details">Gujarati Medium • Class 6-10 • 7 Subjects</div>
+      </a>
+      <a href="#classes" class="board-card cbse-board fade-in" onclick="selectBoard('cbse')">
+        <div class="board-icon">&#127970;</div>
+        <div class="board-name">CBSE</div>
+        <div class="board-desc">CBSE Board (NCERT Syllabus)</div>
+        <div class="board-details">Hindi + English • Class 6-10 • 6 Subjects</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Class Selection -->
+  <section class="section" id="classes">
+    <div class="section-title">
+      <h2 id="class-section-title">Select Class &#128218;</h2>
+      <p id="class-section-sub">Select your class to start learning</p>
     </div>
     <div class="class-grid" id="class-grid">
       <!-- Rendered by JS -->
@@ -218,6 +239,7 @@
     </div>
   </footer>
 
+  <script src="js/cbse-data.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

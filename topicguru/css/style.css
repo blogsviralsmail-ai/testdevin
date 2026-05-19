@@ -317,6 +317,70 @@ img {
   color: var(--text-secondary);
 }
 
+/* Board Selection */
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.board-card {
+  border-radius: var(--radius);
+  padding: 30px 20px;
+  text-align: center;
+  text-decoration: none;
+  color: #fff;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.board-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-hover);
+}
+
+.board-card.active-board {
+  outline: 4px solid #FFD700;
+  outline-offset: 2px;
+  transform: scale(1.03);
+}
+
+.gseb-board {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+}
+
+.cbse-board {
+  background: linear-gradient(135deg, #6C63FF, #42A5F5);
+}
+
+.board-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.board-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.board-desc {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-top: 5px;
+}
+
+.board-details {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-top: 8px;
+}
+
 .class-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
