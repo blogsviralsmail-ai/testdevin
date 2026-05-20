@@ -583,9 +583,12 @@ async def start_playlist_queue(req: PlaylistQueueRequest, user=Depends(get_curre
 
     ffmpeg = _get_ffmpeg_path()
     cmd = [
-        ffmpeg, "-re", "-stream_loop", "-1",
+        ffmpeg, "-re", "-fflags", "+genpts+igndts", "-stream_loop", "-1",
         "-f", "concat", "-safe", "0", "-i", concat_file,
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
+        "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+        "-b:v", "4500k", "-maxrate", "5000k", "-bufsize", "8000k",
+        "-g", "60", "-keyint_min", "60", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
         "-f", "flv", "-flvflags", "no_duration_filesize",
         destination,
     ]
