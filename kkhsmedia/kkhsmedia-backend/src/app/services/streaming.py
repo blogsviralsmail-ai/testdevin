@@ -172,12 +172,20 @@ async def start_ffmpeg_stream(
         # With -c:v copy, some MP4 files fail to loop because FFmpeg
         # cannot seek back to the start properly, causing the stream
         # to stop after one playthrough (~video duration).
+
+        # Detect concat playlist files (used by playlist-queue)
+        is_concat = video_url.endswith(".txt") and "playlist_" in video_url
+        if is_concat:
+            input_args = ["-f", "concat", "-safe", "0", "-i", video_url]
+        else:
+            input_args = ["-i", video_url]
+
         cmd = [
             ffmpeg,
             "-re",
             "-fflags", "+genpts+igndts",
             "-stream_loop", "-1",
-            "-i", video_url,
+            *input_args,
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-tune", "zerolatency",
@@ -655,7 +663,7 @@ async def _scheduler_loop():
                         pass
 
                 if not is_running:
-                    if not slot.get("videoId") or not slot.get("streamKey"):
+                    if not slot.get("streamKey"):
                         await db.slots.update_one(
                             {"_id": slot["_id"]},
                             {"$set": {"isStreaming": False, "streamProcessId": None, "updatedAt": now}}
@@ -677,16 +685,32 @@ async def _scheduler_loop():
                             )
                             continue
 
-                    video = await db.videos.find_one({"_id": bson.ObjectId(slot["videoId"])})
-                    if not video:
-                        await db.slots.update_one(
-                            {"_id": slot["_id"]},
-                            {"$set": {"isStreaming": False, "streamProcessId": None, "updatedAt": now}}
-                        )
-                        continue
+                    # For playlist_queue, use the concat file instead of single video
+                    source_type = slot.get("sourceType", "")
+                    upload_dir = os.getenv("UPLOAD_DIR", "/tmp/kkhsmedia_uploads")
+                    concat_file = os.path.join(upload_dir, f"playlist_{slot_id}.txt")
 
-                    video_file_url = video.get("fileUrl", video.get("s3Key", ""))
-                    logger.info(f"Scheduler: Recovering orphaned stream for slot {slot_id}")
+                    if source_type == "playlist_queue" and os.path.exists(concat_file):
+                        video_file_url = concat_file
+                        logger.info(f"Scheduler: Recovering orphaned playlist-queue for slot {slot_id}")
+                    else:
+                        if not slot.get("videoId"):
+                            await db.slots.update_one(
+                                {"_id": slot["_id"]},
+                                {"$set": {"isStreaming": False, "streamProcessId": None, "updatedAt": now}}
+                            )
+                            continue
+
+                        video = await db.videos.find_one({"_id": bson.ObjectId(slot["videoId"])})
+                        if not video:
+                            await db.slots.update_one(
+                                {"_id": slot["_id"]},
+                                {"$set": {"isStreaming": False, "streamProcessId": None, "updatedAt": now}}
+                            )
+                            continue
+
+                        video_file_url = video.get("fileUrl", video.get("s3Key", ""))
+                        logger.info(f"Scheduler: Recovering orphaned stream for slot {slot_id}")
 
                     new_pid = await start_ffmpeg_stream(
                         slot_id=slot_id,
