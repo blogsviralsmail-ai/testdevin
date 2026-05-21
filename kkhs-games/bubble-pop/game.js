@@ -335,11 +335,15 @@
   }
 
   function pushRowDown() {
-    // Shift all rows down and add new row at top
     for (var r = ROWS - 1; r > 0; r--) {
-      grid[r] = grid[r - 1];
+      var maxC = (r % 2 === 1) ? COLS - 1 : COLS;
+      var prevMaxC = ((r - 1) % 2 === 1) ? COLS - 1 : COLS;
+      grid[r] = [];
+      for (var c = 0; c < maxC; c++) {
+        grid[r][c] = (c < prevMaxC && grid[r - 1][c] >= 0) ? grid[r - 1][c] : -1;
+      }
     }
-    var maxC0 = COLS;
+    var maxC0 = (0 % 2 === 1) ? COLS - 1 : COLS;
     grid[0] = [];
     for (var c = 0; c < maxC0; c++) {
       grid[0][c] = randomColor();

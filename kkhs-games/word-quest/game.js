@@ -4,15 +4,15 @@
   // --- Word Database ---
   var WORD_SETS = [
     { letters: 'CATDOG', words: ['CAT', 'COD', 'COG', 'COT', 'DAG', 'DOC', 'DOG', 'DOT', 'GAT', 'GOD', 'GOT', 'OAT', 'TAG', 'TAD', 'TAO', 'TOD', 'TOG', 'ADO', 'AGO', 'GAD', 'OCA', 'COAT', 'GOAT', 'TACO', 'TOGA'] },
-    { letters: 'SUNRKE', words: ['RUN', 'SUN', 'USE', 'RUE', 'URN', 'INK', 'NUB', 'RUB', 'SUE', 'ERN', 'SEN', 'RES', 'NUS', 'RUNE', 'RUSE', 'SURE', 'USER', 'NUKE', 'RUNES', 'NURSE'] },
+    { letters: 'SUNRKE', words: ['RUN', 'SUN', 'USE', 'RUE', 'URN', 'SUE', 'ERN', 'SEN', 'RES', 'NUS', 'KEN', 'RUNE', 'RUSE', 'SURE', 'USER', 'NUKE', 'SUNK', 'RUSK', 'RUNES', 'NURSE'] },
     { letters: 'PLAYTE', words: ['PAL', 'PAT', 'PAY', 'PEA', 'APE', 'APT', 'ATE', 'EAT', 'LAP', 'LAY', 'LEA', 'LET', 'ALP', 'ALE', 'TAP', 'TEA', 'YAP', 'YET', 'PET', 'PLY', 'LATE', 'LEAP', 'PALE', 'PEAL', 'PLAY', 'PLEA', 'TALE', 'TAPE', 'TYPE', 'PLATE', 'PETAL', 'LEAPT'] },
-    { letters: 'FHSIRE', words: ['FIG', 'FIN', 'FIR', 'HER', 'HIS', 'IRE', 'SHE', 'SIR', 'HEF', 'REF', 'RIF', 'SER', 'FIRE', 'FISH', 'HIRE', 'RISE', 'RIFE', 'FIRS', 'HERS', 'SHIRE', 'FRESH', 'FISHER'] },
+    { letters: 'FHSIRE', words: ['FIR', 'HER', 'HIS', 'IRE', 'SHE', 'SIR', 'REF', 'RIF', 'SER', 'IFS', 'FIRE', 'FISH', 'HIRE', 'RISE', 'RIFE', 'FIRS', 'HERS', 'HEIR', 'SHIRE', 'FRESH', 'HEIRS', 'FISHER'] },
     { letters: 'BRDAEN', words: ['BAD', 'BAN', 'BAR', 'BED', 'BEN', 'DEN', 'EAR', 'END', 'ERA', 'RAN', 'RED', 'AND', 'ARE', 'BANE', 'BAND', 'BARE', 'BARN', 'BEAN', 'BEAR', 'BEND', 'BEAD', 'DEAR', 'EARN', 'NEAR', 'READ', 'BRAND', 'BREAD'] },
-    { letters: 'TMLIGH', words: ['GIT', 'HIM', 'HIT', 'LIT', 'MIG', 'GILT', 'GRIT', 'GRIM', 'HILT', 'GIRTH', 'LIGHT', 'MIGHT', 'TIGHT', 'BLIGHT'] },
-    { letters: 'WORNDS', words: ['DON', 'NOR', 'NOW', 'OWN', 'ROD', 'ROW', 'SON', 'SOW', 'WON', 'DOWN', 'DONS', 'GOWN', 'NODS', 'ROWS', 'SNOW', 'SOWN', 'WORD', 'WORN', 'DROWN', 'FROWN', 'SWORD', 'WORDS', 'DOWNS', 'SHOWN', 'SWORN', 'CROWN', 'DROWNS'] },
-    { letters: 'STAREK', words: ['ATE', 'ARE', 'ART', 'ASK', 'EAR', 'EAT', 'ERA', 'RAT', 'SAT', 'SEA', 'SET', 'TAR', 'TEA', 'EARS', 'EAST', 'EATS', 'RATE', 'REST', 'SAKE', 'SEAR', 'SEAT', 'STAR', 'TAKE', 'TASK', 'TEAR', 'SAKE', 'RATES', 'SKATE', 'STARE', 'STEAK', 'TAKES', 'TEARS', 'STAKE'] },
-    { letters: 'HCEMSA', words: ['ACE', 'ACS', 'ASH', 'CAM', 'HAM', 'HAS', 'HEM', 'MAC', 'MAS', 'SAC', 'SHE', 'ACES', 'ACME', 'CAME', 'CASE', 'CASH', 'EACH', 'HAMS', 'LAME', 'MACE', 'MASH', 'MESA', 'SAME', 'SEAM', 'SHAM', 'SHAME', 'CHASE', 'MACES', 'SCHEMA'] },
-    { letters: 'FLOWED', words: ['DEW', 'ELF', 'FED', 'FEW', 'FLO', 'FLU', 'FLY', 'FOE', 'LED', 'LOW', 'ODE', 'OLD', 'OWE', 'OWL', 'OWN', 'WED', 'WOE', 'DOLE', 'FLOW', 'FLED', 'FLEW', 'FOLD', 'FOWL', 'LODE', 'OWED', 'WELD', 'WOLF', 'FLOWED'] }
+    { letters: 'TMLIGH', words: ['GIT', 'HIM', 'HIT', 'LIT', 'MIG', 'MIL', 'GILT', 'HILT', 'GLIM', 'MILT', 'LITH', 'LIGHT', 'MIGHT'] },
+    { letters: 'WORNDS', words: ['DON', 'NOR', 'NOW', 'OWN', 'ROD', 'ROW', 'SON', 'SOW', 'WON', 'DOWN', 'DONS', 'NODS', 'ROWS', 'SNOW', 'SOWN', 'WORD', 'WORN', 'RODS', 'OWNS', 'DROWN', 'SWORD', 'WORDS', 'DOWNS', 'SWORN', 'DROWNS'] },
+    { letters: 'STAREK', words: ['ATE', 'ARE', 'ART', 'ASK', 'EAR', 'EAT', 'ERA', 'RAT', 'SAT', 'SEA', 'SET', 'TAR', 'TEA', 'EARS', 'EAST', 'EATS', 'RATE', 'REST', 'SAKE', 'SEAR', 'SEAT', 'STAR', 'TAKE', 'TASK', 'TEAR', 'RATES', 'SKATE', 'STARE', 'STEAK', 'TAKES', 'TEARS', 'STAKE'] },
+    { letters: 'HCEMSA', words: ['ACE', 'ASH', 'CAM', 'HAM', 'HAS', 'HEM', 'MAC', 'MAS', 'SAC', 'SHE', 'ACES', 'ACME', 'CAME', 'CASE', 'CASH', 'EACH', 'HAMS', 'MACE', 'MASH', 'MESA', 'SAME', 'SEAM', 'SHAM', 'ACHE', 'SHAME', 'CHASE', 'MACES', 'ACHES', 'SCHEMA'] },
+    { letters: 'FLOWED', words: ['DEW', 'ELF', 'FED', 'FEW', 'FLO', 'FOE', 'LED', 'LOW', 'ODE', 'OLD', 'OWE', 'OWL', 'WED', 'WOE', 'DOLE', 'FLOW', 'FLED', 'FLEW', 'FOLD', 'FOWL', 'LODE', 'OWED', 'WELD', 'WOLF', 'WOLD', 'DOWEL', 'LOWED', 'FLOWED'] }
   ];
 
   // --- FB SDK ---
@@ -123,9 +123,22 @@
   var isDragging = false;
   var letterRadius;
 
+  function canFormWord(word, availableLetters) {
+    var pool = availableLetters.split('');
+    for (var i = 0; i < word.length; i++) {
+      var idx = pool.indexOf(word[i]);
+      if (idx === -1) return false;
+      pool.splice(idx, 1);
+    }
+    return true;
+  }
+
   function setupLevel() {
     var setIdx = (level - 1) % WORD_SETS.length;
-    currentSet = WORD_SETS[setIdx];
+    currentSet = JSON.parse(JSON.stringify(WORD_SETS[setIdx]));
+    currentSet.words = currentSet.words.filter(function (w) {
+      return canFormWord(w, currentSet.letters);
+    });
     letters = currentSet.letters.split('');
     // Shuffle letters
     for (var i = letters.length - 1; i > 0; i--) {

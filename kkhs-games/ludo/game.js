@@ -205,11 +205,12 @@
           HOME_ENTRY[player] - (pos + PLAYER_START[player]) % 52 :
           52 - (pos + PLAYER_START[player]) % 52 + HOME_ENTRY[player];
 
-        if (stepsToHome === 0) stepsToHome = 52;
-
-        if (dice <= stepsToHome) {
+        if (stepsToHome === 0) {
+          // At home entry — dice goes directly into home straight
+          if (dice <= 6) movable.push(i);
+        } else if (dice <= stepsToHome) {
           movable.push(i);
-        } else if (dice > stepsToHome) {
+        } else {
           var homeSteps = dice - stepsToHome;
           if (homeSteps <= 6) movable.push(i);
         }
@@ -242,10 +243,12 @@
       } else {
         stepsToHome = 52 - actualOld + homeEntry;
       }
-      if (stepsToHome === 0) stepsToHome = 52;
-
-      if (dice > stepsToHome && stepsToHome <= 51) {
-        // Entering home straight
+      if (stepsToHome === 0) {
+        // At home entry — go directly into home straight
+        if (dice <= 6) {
+          pieces[player][pieceIdx] = 51 + dice;
+        }
+      } else if (dice > stepsToHome) {
         var homeSteps = dice - stepsToHome;
         if (homeSteps <= 6) {
           pieces[player][pieceIdx] = 51 + homeSteps;
