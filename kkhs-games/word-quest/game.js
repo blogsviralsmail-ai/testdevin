@@ -33,19 +33,26 @@
       clearTimeout(fallbackTimer); fbReady(); return;
     }
     FBInstant.initializeAsync().then(function () {
-      FBInstant.setLoadingProgress(50);
       playerName = FBInstant.player.getName() || 'Player';
-      return FBInstant.player.getDataAsync(['bestScore']);
-    }).then(function (data) {
-      if (data && data.bestScore) bestScore = data.bestScore;
-      document.getElementById('bestScore').textContent = bestScore;
       FBInstant.setLoadingProgress(100);
       return FBInstant.startGameAsync();
     }).then(function () {
-      clearTimeout(fallbackTimer); fbReady();
+      clearTimeout(fallbackTimer);
+      FBInstant.player.getDataAsync(['bestScore']).then(function (data) {
+        if (data && data.bestScore) {
+          bestScore = data.bestScore;
+          document.getElementById('bestScore').textContent = bestScore;
+        }
+      }).catch(function () {});
+      fbReady();
     }).catch(function (e) {
       console.error('FB Init error:', e);
-      clearTimeout(fallbackTimer); fbReady();
+      clearTimeout(fallbackTimer);
+      if (FBInstant.startGameAsync) {
+        FBInstant.startGameAsync().then(fbReady).catch(fbReady);
+      } else {
+        fbReady();
+      }
     });
   }
 

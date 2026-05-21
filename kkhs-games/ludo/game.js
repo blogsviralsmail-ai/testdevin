@@ -19,19 +19,26 @@
       clearTimeout(fallbackTimer); fbReady(); return;
     }
     FBInstant.initializeAsync().then(function () {
-      FBInstant.setLoadingProgress(50);
       playerName = FBInstant.player.getName() || 'Player';
-      return FBInstant.player.getDataAsync(['totalWins']);
-    }).then(function (data) {
-      if (data && data.totalWins) totalWins = data.totalWins;
-      document.getElementById('bestScore').textContent = totalWins;
       FBInstant.setLoadingProgress(100);
       return FBInstant.startGameAsync();
     }).then(function () {
-      clearTimeout(fallbackTimer); fbReady();
+      clearTimeout(fallbackTimer);
+      FBInstant.player.getDataAsync(['totalWins']).then(function (data) {
+        if (data && data.totalWins) {
+          totalWins = data.totalWins;
+          document.getElementById('bestScore').textContent = totalWins;
+        }
+      }).catch(function () {});
+      fbReady();
     }).catch(function (e) {
       console.error('FB Init error:', e);
-      clearTimeout(fallbackTimer); fbReady();
+      clearTimeout(fallbackTimer);
+      if (FBInstant.startGameAsync) {
+        FBInstant.startGameAsync().then(fbReady).catch(fbReady);
+      } else {
+        fbReady();
+      }
     });
   }
 
