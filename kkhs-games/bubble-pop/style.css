@@ -1,0 +1,25 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a23; }
+canvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+#ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+#ui-overlay button, #ui-overlay .sound-toggle { pointer-events: auto; }
+.hidden { display: none !important; }
+.brand { font-size: 14px; color: #00d4ff; text-transform: uppercase; letter-spacing: 3px; text-align: center; margin-top: 20%; }
+.game-title { font-size: 36px; color: #fff; text-align: center; font-weight: 800; text-shadow: 2px 2px 8px rgba(0,212,255,0.3); margin: 10px 0; }
+.loading-bar-container { width: 60%; margin: 30px auto; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; }
+.loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #00d4ff, #7b2ff7); border-radius: 4px; transition: width 0.3s; }
+.loading-text { text-align: center; color: #aaa; font-size: 14px; }
+.best-score { text-align: center; color: #00d4ff; font-size: 18px; margin: 15px 0; }
+.btn-primary { display: block; margin: 15px auto; padding: 14px 50px; font-size: 20px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #7b2ff7, #00d4ff); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,212,255,0.4); }
+.btn-secondary { display: block; margin: 10px auto; padding: 10px 35px; font-size: 16px; color: #00d4ff; background: transparent; border: 2px solid #00d4ff; border-radius: 25px; cursor: pointer; }
+.btn-primary:active, .btn-secondary:active { transform: scale(0.95); }
+.sound-toggle { text-align: center; color: #888; font-size: 14px; margin-top: 20px; cursor: pointer; }
+#hud { padding: 10px 15px; }
+.hud-row { display: flex; justify-content: space-between; align-items: center; }
+.score-display { color: #fff; font-size: 22px; font-weight: 700; text-shadow: 1px 1px 4px rgba(0,0,0,0.6); }
+.combo-display { color: #00d4ff; font-size: 18px; font-weight: 700; }
+#game-over-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: rgba(0,0,0,0.75); }
+.game-over-title { font-size: 40px; color: #fff; font-weight: 800; margin-bottom: 10px; }
+.final-score { font-size: 28px; color: #00d4ff; margin-bottom: 10px; }
+.new-best { color: #4eff4e; font-size: 20px; font-weight: 700; animation: pulse 0.6s infinite alternate; margin-bottom: 10px; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.15); } }
