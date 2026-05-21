@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>KKHS Puzzle</title>
+  <script src="https://connect.facebook.net/en_US/fbinstant.8.0.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="ui-overlay">
+    <div id="loading-screen">
+      <div class="brand">KKHS Games</div>
+      <div class="game-title">Magic Puzzle</div>
+      <div class="loading-bar-container">
+        <div class="loading-bar" id="loadingBar"></div>
+      </div>
+      <div class="loading-text">Loading...</div>
+    </div>
+    <div id="menu-screen" class="hidden">
+      <div class="brand">KKHS Games</div>
+      <div class="game-title">Magic Puzzle</div>
+      <div class="best-score">Best: <span id="bestScore">0</span></div>
+      <div class="difficulty-select">
+        <button class="diff-btn active" data-size="3">3x3</button>
+        <button class="diff-btn" data-size="4">4x4</button>
+        <button class="diff-btn" data-size="5">5x5</button>
+      </div>
+      <button id="playBtn" class="btn-primary">PLAY</button>
+      <button id="leaderboardBtn" class="btn-secondary">Leaderboard</button>
+      <div class="sound-toggle" id="soundToggle">Sound: ON</div>
+    </div>
+    <div id="hud" class="hidden">
+      <div class="hud-row">
+        <div class="score-display">Moves: <span id="moves">0</span></div>
+        <div class="timer-display">Time: <span id="timer">0:00</span></div>
+      </div>
+      <div class="hud-row" style="margin-top:5px;">
+        <div class="level-display">Level <span id="level">1</span></div>
+        <div class="score-total">Score: <span id="score">0</span></div>
+      </div>
+    </div>
+    <div id="win-screen" class="hidden">
+      <div class="win-title">Solved!</div>
+      <div class="win-stats">
+        <div>Moves: <span id="winMoves">0</span></div>
+        <div>Time: <span id="winTime">0:00</span></div>
+        <div>Score: <span id="winScore">0</span></div>
+      </div>
+      <button id="nextBtn" class="btn-primary">Next Level</button>
+      <button id="shareBtn2" class="btn-secondary">Share</button>
+    </div>
+    <div id="game-over-screen" class="hidden">
+      <div class="game-over-title">Amazing!</div>
+      <div class="final-score">Total Score: <span id="finalScore">0</span></div>
+      <div class="new-best hidden" id="newBest">NEW BEST!</div>
+      <button id="retryBtn" class="btn-primary">Play Again</button>
+      <button id="shareBtn" class="btn-secondary">Share Score</button>
+      <button id="menuBtn" class="btn-secondary">Menu</button>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
