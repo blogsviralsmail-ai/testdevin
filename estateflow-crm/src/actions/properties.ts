@@ -25,7 +25,8 @@ export async function getProperties(filters?: {
   if (filters?.minPrice) query = query.gte('price', filters.minPrice);
   if (filters?.maxPrice) query = query.lte('price', filters.maxPrice);
   if (filters?.search) {
-    query = query.or(`title.ilike.%${filters.search}%,location.ilike.%${filters.search}%,address.ilike.%${filters.search}%`);
+    const sanitized = filters.search.replace(/[,().]/g, '');
+    query = query.or(`title.ilike.%${sanitized}%,location.ilike.%${sanitized}%,address.ilike.%${sanitized}%`);
   }
 
   const { data, error } = await query;

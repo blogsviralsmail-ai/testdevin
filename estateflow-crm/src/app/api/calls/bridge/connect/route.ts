@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
 
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const conferenceName = url.searchParams.get('conferenceName');
@@ -8,6 +17,8 @@ export async function POST(request: Request) {
   const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
   const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
   const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+
+  const safeConferenceName = escapeXml(conferenceName || 'default');
 
   if (twilioAccountSid && twilioAuthToken && twilioPhone && leadPhone) {
     try {
@@ -22,7 +33,7 @@ export async function POST(request: Request) {
           body: new URLSearchParams({
             To: leadPhone,
             From: twilioPhone,
-            Twiml: `<Response><Dial><Conference>${conferenceName}</Conference></Dial></Response>`,
+            Twiml: `<Response><Dial><Conference>${safeConferenceName}</Conference></Dial></Response>`,
           }),
         }
       );
@@ -35,7 +46,7 @@ export async function POST(request: Request) {
 <Response>
   <Say voice="alice">Connecting you now.</Say>
   <Dial>
-    <Conference>${conferenceName || 'default'}</Conference>
+    <Conference>${safeConferenceName}</Conference>
   </Dial>
 </Response>`;
 

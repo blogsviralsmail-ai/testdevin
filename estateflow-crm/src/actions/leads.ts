@@ -23,7 +23,8 @@ export async function getLeads(filters?: {
   if (filters?.temperature) query = query.eq('temperature', filters.temperature);
   if (filters?.agentId) query = query.eq('assigned_agent_id', filters.agentId);
   if (filters?.search) {
-    query = query.or(`full_name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+    const sanitized = filters.search.replace(/[,().]/g, '');
+    query = query.or(`full_name.ilike.%${sanitized}%,phone.ilike.%${sanitized}%,email.ilike.%${sanitized}%`);
   }
 
   const { data, error } = await query;

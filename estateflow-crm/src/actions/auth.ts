@@ -1,8 +1,16 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+
+function getSupabaseAdmin() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
@@ -96,7 +104,8 @@ export async function inviteTeamMember(formData: FormData) {
   const role = formData.get('role') as string;
   const phone = formData.get('phone') as string;
 
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+  const adminClient = getSupabaseAdmin();
+  const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email,
     password: Math.random().toString(36).slice(-12),
     email_confirm: true,

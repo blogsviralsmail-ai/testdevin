@@ -14,10 +14,10 @@ export default async function LeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [lead, activities, recommended] = await Promise.all([
-    getLead(id),
+  const lead = await getLead(id);
+  const [activities, recommended] = await Promise.all([
     getLeadActivities(id),
-    getRecommendedProperties({ property_type: null, budget_min: null, budget_max: null, preferred_location: null }),
+    getRecommendedProperties(lead),
   ]);
 
   return (
