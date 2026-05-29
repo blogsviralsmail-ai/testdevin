@@ -2,6 +2,15 @@ import type { Lead, Profile, CallLog } from '@/types';
 
 const DRY_RUN = !process.env.TWILIO_ACCOUNT_SID || process.env.DRY_RUN === 'true';
 
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 interface BridgeCallResult {
   success: boolean;
   callSid: string | null;
@@ -115,7 +124,7 @@ export async function makeDirectCall(
         body: new URLSearchParams({
           To: lead.phone,
           From: config.phoneNumber,
-          Twiml: `<Response><Dial callerId="${config.phoneNumber}"><Number>${lead.phone}</Number></Dial></Response>`,
+          Twiml: `<Response><Dial callerId="${escapeXml(config.phoneNumber)}"><Number>${escapeXml(lead.phone)}</Number></Dial></Response>`,
           StatusCallback: `${baseUrl}/api/calls/status?leadId=${lead.id}&agentId=${agent.id}`,
         }),
       }

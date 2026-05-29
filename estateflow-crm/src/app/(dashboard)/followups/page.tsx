@@ -8,7 +8,7 @@ export default async function FollowUpsPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const params = await searchParams;
-  const followups = await getFollowUps({ status: params.status || 'pending' });
+  const followups = await getFollowUps(params.status ? { status: params.status } : undefined);
 
   return (
     <>

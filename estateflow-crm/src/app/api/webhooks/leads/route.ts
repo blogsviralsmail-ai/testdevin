@@ -21,7 +21,6 @@ const leadWebhookSchema = z.object({
   budgetMax: z.number().optional(),
   preferredLocation: z.string().optional(),
   notes: z.string().optional(),
-  organizationId: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -31,33 +30,31 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = leadWebhookSchema.parse(body);
 
-    let organizationId = parsed.organizationId;
+    let organizationId: string | undefined;
+
+    if (webhookSecret) {
+      const { data: settings } = await supabaseAdmin
+        .from('integration_settings')
+        .select('organization_id')
+        .eq('webhook_secret', webhookSecret)
+        .single();
+
+      if (settings) {
+        organizationId = settings.organization_id;
+      }
+    }
 
     if (!organizationId) {
-      if (webhookSecret) {
-        const { data: settings } = await supabaseAdmin
-          .from('integration_settings')
-          .select('organization_id')
-          .eq('webhook_secret', webhookSecret)
-          .single();
+      const { data: org } = await supabaseAdmin
+        .from('organizations')
+        .select('id')
+        .limit(1)
+        .single();
 
-        if (settings) {
-          organizationId = settings.organization_id;
-        }
+      if (!org) {
+        return NextResponse.json({ error: 'No organization found' }, { status: 400 });
       }
-
-      if (!organizationId) {
-        const { data: org } = await supabaseAdmin
-          .from('organizations')
-          .select('id')
-          .limit(1)
-          .single();
-
-        if (!org) {
-          return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-        }
-        organizationId = org.id;
-      }
+      organizationId = org.id;
     }
 
     const { data: intSettings } = await supabaseAdmin
@@ -80,7 +77,7 @@ export async function POST(request: Request) {
       'website': 'website',
       'referral': 'referral',
     };
-    const normalizedSource = sourceMap[parsed.source?.toLowerCase() || ''] || parsed.source || 'other';
+    const normalizedSource = sourceMap[parsed.source?.toLowerCase() || ''] || 'other';
 
     const { data: lead, error } = await supabaseAdmin
       .from('leads')
