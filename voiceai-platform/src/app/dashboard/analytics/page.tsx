@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Clock, TrendingUp, Users, ArrowUpRight } from "lucide-react";
+import { Phone, Clock, TrendingUp, Users, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 const weeklyData = [
   { day: "Mon", calls: 45 },
@@ -46,8 +46,8 @@ export default function AnalyticsPage() {
           <div key={stat.label} className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-5">
             <div className="flex items-center justify-between">
               <stat.icon className="h-5 w-5 text-[#00d4aa]" />
-              <span className="flex items-center gap-1 text-xs text-green-400">
-                <ArrowUpRight className="h-3 w-3" /> {stat.change}
+              <span className={`flex items-center gap-1 text-xs ${stat.change.startsWith("-") ? "text-yellow-400" : "text-green-400"}`}>
+                {stat.change.startsWith("-") ? <ArrowDownRight className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />} {stat.change}
               </span>
             </div>
             <p className="mt-3 text-2xl font-bold text-white">{stat.value}</p>

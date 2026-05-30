@@ -137,7 +137,7 @@ export default function AgentDetailPage() {
                 <Input
                   type="number"
                   value={agent.maxCallDuration}
-                  onChange={(e) => setAgent({ ...agent, maxCallDuration: parseInt(e.target.value) })}
+                  onChange={(e) => setAgent({ ...agent, maxCallDuration: parseInt(e.target.value) || 0 })}
                   className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
                 />
               </div>

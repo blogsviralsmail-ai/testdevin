@@ -17,6 +17,9 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
       router.push("/dashboard");
