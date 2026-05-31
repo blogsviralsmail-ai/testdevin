@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   ArrowLeft, Bot, Mic, Globe, FileText,
-  Play, Settings, BarChart3, Plug, Save
+  Play, Settings, BarChart3, Plug, Save, Loader2, CheckCircle, AlertCircle
 } from "lucide-react";
 
 const tabs = [
@@ -20,19 +21,151 @@ const tabs = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
+const voiceOptions = [
+  { value: "alloy", label: "Alloy (Female)" },
+  { value: "echo", label: "Echo (Male)" },
+  { value: "fable", label: "Fable (Female, British)" },
+  { value: "onyx", label: "Onyx (Male, Deep)" },
+  { value: "nova", label: "Nova (Female, Warm)" },
+  { value: "shimmer", label: "Shimmer (Female, Soft)" },
+];
+
+const languageOptions = [
+  { value: "en-US", label: "English (US)" },
+  { value: "en-GB", label: "English (UK)" },
+  { value: "hi-IN", label: "Hindi" },
+  { value: "es-ES", label: "Spanish" },
+  { value: "fr-FR", label: "French" },
+  { value: "de-DE", label: "German" },
+  { value: "ja-JP", label: "Japanese" },
+  { value: "pt-BR", label: "Portuguese" },
+];
+
+const modelOptions = [
+  { value: "gpt-4o-mini", label: "GPT-4o Mini (Fast & Affordable)" },
+  { value: "gpt-4o", label: "GPT-4o (Most Capable)" },
+  { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+  { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo (Budget)" },
+];
+
+interface AgentData {
+  id: string;
+  name: string;
+  system_prompt: string;
+  greeting_message: string;
+  voice: string;
+  language: string;
+  model: string;
+  max_call_duration: number;
+  temperature: number;
+  status: string;
+  use_case: string;
+  total_calls: number;
+  avg_duration: number;
+  created_at: string;
+}
+
 export default function AgentDetailPage() {
+  const params = useParams();
+  const agentId = params.id as string;
+
   const [activeTab, setActiveTab] = useState("config");
-  const [agent, setAgent] = useState({
-    name: "Sales Agent",
-    systemPrompt: "You are a friendly sales agent who qualifies leads by asking about their needs, budget, and timeline. Be conversational and helpful. Always ask for the caller's name and company.",
-    greeting: "Hello! Thanks for calling. I'm here to help you find the perfect solution. What are you looking for today?",
-    voice: "rachel",
-    language: "English (US)",
-    status: true,
-    maxCallDuration: 10,
-    endCallPhrases: "goodbye, end call, that's all",
-    transferNumber: "+1 (555) 000-0000",
-  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  const [agent, setAgent] = useState<AgentData | null>(null);
+
+  const [name, setName] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("");
+  const [greeting, setGreeting] = useState("");
+  const [voice, setVoice] = useState("alloy");
+  const [language, setLanguage] = useState("en-US");
+  const [model, setModel] = useState("gpt-4o-mini");
+  const [maxCallDuration, setMaxCallDuration] = useState(300);
+  const [temperature, setTemperature] = useState(0.7);
+  const [status, setStatus] = useState(true);
+
+  const loadAgent = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/agents?id=${agentId}`);
+      const data = await res.json();
+      if (data && !data.error) {
+        setAgent(data);
+        setName(data.name || "");
+        setSystemPrompt(data.system_prompt || "");
+        setGreeting(data.greeting_message || "");
+        setVoice(data.voice || "alloy");
+        setLanguage(data.language || "en-US");
+        setModel(data.model || "gpt-4o-mini");
+        setMaxCallDuration(data.max_call_duration || 300);
+        setTemperature(data.temperature || 0.7);
+        setStatus(data.status === "active");
+      }
+    } catch (err) {
+      console.error("Failed to load agent:", err);
+    }
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => {
+    loadAgent();
+  }, [loadAgent]);
+
+  async function handleSave() {
+    setSaving(true);
+    setSaveStatus("idle");
+    try {
+      const res = await fetch("/api/agents", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: agentId,
+          name,
+          system_prompt: systemPrompt,
+          greeting_message: greeting,
+          voice,
+          language,
+          model,
+          max_call_duration: maxCallDuration,
+          temperature,
+          status: status ? "active" : "paused",
+        }),
+      });
+      if (res.ok) {
+        setSaveStatus("success");
+        await loadAgent();
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      } else {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+    } catch {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+    setSaving(false);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00d4aa]" />
+      </div>
+    );
+  }
+
+  if (!agent) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-3" />
+        <h2 className="text-xl font-bold text-white mb-2">Agent Not Found</h2>
+        <p className="text-gray-400 mb-4">The agent you&apos;re looking for doesn&apos;t exist.</p>
+        <Link href="/dashboard/agents">
+          <Button className="bg-[#00d4aa] text-black hover:bg-[#00b894]">Back to Agents</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -48,9 +181,9 @@ export default function AgentDetailPage() {
               <Bot className="h-5 w-5 text-[#00d4aa]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">{agent.name}</h2>
-              <span className={`text-xs font-medium ${agent.status ? "text-green-400" : "text-yellow-400"}`}>
-                {agent.status ? "Active" : "Paused"}
+              <h2 className="text-xl font-bold text-white">{name}</h2>
+              <span className={`text-xs font-medium ${status ? "text-green-400" : "text-yellow-400"}`}>
+                {status ? "Active" : "Paused"}
               </span>
             </div>
           </div>
@@ -60,8 +193,20 @@ export default function AgentDetailPage() {
           <Button variant="outline" className="border-white/20 text-gray-300">
             <Play className="mr-2 h-4 w-4" /> Test Agent
           </Button>
-          <Button className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-            <Save className="mr-2 h-4 w-4" /> Save Changes
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-[#00d4aa] text-black hover:bg-[#00b894]"
+          >
+            {saving ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+            ) : saveStatus === "success" ? (
+              <><CheckCircle className="mr-2 h-4 w-4" /> Saved!</>
+            ) : saveStatus === "error" ? (
+              <><AlertCircle className="mr-2 h-4 w-4" /> Error</>
+            ) : (
+              <><Save className="mr-2 h-4 w-4" /> Save Changes</>
+            )}
           </Button>
         </div>
       </div>
@@ -94,16 +239,16 @@ export default function AgentDetailPage() {
                 <p className="text-xs text-gray-500">Enable or disable this agent</p>
               </div>
               <Switch
-                checked={agent.status}
-                onCheckedChange={(checked) => setAgent({ ...agent, status: checked })}
+                checked={status}
+                onCheckedChange={setStatus}
               />
             </div>
 
             <div>
               <Label className="text-gray-300">Agent Name</Label>
               <Input
-                value={agent.name}
-                onChange={(e) => setAgent({ ...agent, name: e.target.value })}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
               />
             </div>
@@ -112,8 +257,8 @@ export default function AgentDetailPage() {
               <Label className="text-gray-300">System Prompt</Label>
               <p className="text-xs text-gray-500 mt-0.5">Define your agent&apos;s behavior and personality</p>
               <Textarea
-                value={agent.systemPrompt}
-                onChange={(e) => setAgent({ ...agent, systemPrompt: e.target.value })}
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
                 className="mt-2 border-white/10 bg-[#0a0f1a] text-white min-h-[150px]"
               />
             </div>
@@ -121,8 +266,8 @@ export default function AgentDetailPage() {
             <div>
               <Label className="text-gray-300">Greeting Message</Label>
               <Input
-                value={agent.greeting}
-                onChange={(e) => setAgent({ ...agent, greeting: e.target.value })}
+                value={greeting}
+                onChange={(e) => setGreeting(e.target.value)}
                 className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
               />
             </div>
@@ -133,32 +278,40 @@ export default function AgentDetailPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label className="text-gray-300">Max Call Duration (minutes)</Label>
+                <Label className="text-gray-300">Max Call Duration (seconds)</Label>
                 <Input
                   type="number"
-                  value={agent.maxCallDuration}
-                  onChange={(e) => setAgent({ ...agent, maxCallDuration: parseInt(e.target.value) || 0 })}
+                  value={maxCallDuration}
+                  onChange={(e) => setMaxCallDuration(parseInt(e.target.value) || 0)}
                   className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
                 />
               </div>
               <div>
-                <Label className="text-gray-300">Transfer Number</Label>
+                <Label className="text-gray-300">Temperature</Label>
+                <p className="text-xs text-gray-500 mt-0.5">0 = focused, 1 = creative</p>
                 <Input
-                  value={agent.transferNumber}
-                  onChange={(e) => setAgent({ ...agent, transferNumber: e.target.value })}
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="2"
+                  value={temperature}
+                  onChange={(e) => setTemperature(parseFloat(e.target.value) || 0.7)}
                   className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
                 />
               </div>
             </div>
 
             <div>
-              <Label className="text-gray-300">End Call Phrases</Label>
-              <p className="text-xs text-gray-500 mt-0.5">Comma-separated phrases that trigger call end</p>
-              <Input
-                value={agent.endCallPhrases}
-                onChange={(e) => setAgent({ ...agent, endCallPhrases: e.target.value })}
-                className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
-              />
+              <Label className="text-gray-300">AI Model</Label>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0f1a] text-white px-3 py-2 text-sm"
+              >
+                {modelOptions.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -170,19 +323,19 @@ export default function AgentDetailPage() {
             <Label className="text-gray-300 text-base flex items-center gap-2">
               <Mic className="h-4 w-4 text-[#00d4aa]" /> Voice Selection
             </Label>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {["Rachel", "James", "Sarah", "Michael", "Priya", "Raj", "Maria", "Carlos"].map((voice) => (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {voiceOptions.map((v) => (
                 <button
-                  key={voice}
-                  onClick={() => setAgent({ ...agent, voice: voice.toLowerCase() })}
+                  key={v.value}
+                  onClick={() => setVoice(v.value)}
                   className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
-                    agent.voice === voice.toLowerCase()
+                    voice === v.value
                       ? "border-[#00d4aa] bg-[#00d4aa]/5"
                       : "border-white/10 hover:border-white/20"
                   }`}
                 >
                   <Mic className="h-4 w-4 text-[#00d4aa]" />
-                  <span className="text-sm font-medium text-white">{voice}</span>
+                  <span className="text-sm font-medium text-white">{v.label}</span>
                 </button>
               ))}
             </div>
@@ -193,17 +346,17 @@ export default function AgentDetailPage() {
               <Globe className="h-4 w-4 text-[#00d4aa]" /> Language
             </Label>
             <div className="mt-3 flex flex-wrap gap-2">
-              {["English (US)", "English (UK)", "Hindi", "Spanish", "French", "German", "Japanese", "Tamil"].map((lang) => (
+              {languageOptions.map((lang) => (
                 <button
-                  key={lang}
-                  onClick={() => setAgent({ ...agent, language: lang })}
+                  key={lang.value}
+                  onClick={() => setLanguage(lang.value)}
                   className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
-                    agent.language === lang
+                    language === lang.value
                       ? "border-[#00d4aa] bg-[#00d4aa]/10 text-[#00d4aa]"
                       : "border-white/10 text-gray-400 hover:border-white/20"
                   }`}
                 >
-                  {lang}
+                  {lang.label}
                 </button>
               ))}
             </div>
@@ -242,9 +395,9 @@ export default function AgentDetailPage() {
       {activeTab === "analytics" && (
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { label: "Total Calls", value: "456" },
-            { label: "Avg Duration", value: "3:45" },
-            { label: "Success Rate", value: "78%" },
+            { label: "Total Calls", value: agent.total_calls || 0 },
+            { label: "Avg Duration", value: `${agent.avg_duration || 0}s` },
+            { label: "Use Case", value: agent.use_case || "general" },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-5">
               <p className="text-sm text-gray-400">{stat.label}</p>
