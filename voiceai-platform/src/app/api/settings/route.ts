@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       "TWILIO_ACCOUNT_SID",
       "TWILIO_AUTH_TOKEN",
       "OPENAI_API_KEY",
+      "ELEVENLABS_API_KEY",
       "BASE_URL",
       "DEFAULT_VOICE",
       "DEFAULT_MODEL",

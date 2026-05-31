@@ -185,14 +185,28 @@ export default function NewAgentPage() {
                 onChange={(e) => setAgent({ ...agent, language: e.target.value })}
                 className="mt-1 w-full rounded-md bg-[#0a0f1a] border border-white/10 text-white px-3 py-2"
               >
+                <option value="auto">Auto-Detect (Multi-Language)</option>
+                <option value="hi-IN">Hindi (हिन्दी)</option>
+                <option value="en-IN">English (India)</option>
                 <option value="en-US">English (US)</option>
+                <option value="bn-IN">Bengali (বাংলা)</option>
+                <option value="ta-IN">Tamil (தமிழ்)</option>
+                <option value="te-IN">Telugu (తెలుగు)</option>
+                <option value="mr-IN">Marathi (मराठी)</option>
+                <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+                <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
+                <option value="ml-IN">Malayalam (മലയാളം)</option>
+                <option value="pa-IN">Punjabi (ਪੰਜਾਬੀ)</option>
+                <option value="ur-IN">Urdu (اردو)</option>
+                <option value="or-IN">Odia (ଓଡ଼ିଆ)</option>
+                <option value="as-IN">Assamese (অসমীয়া)</option>
                 <option value="en-GB">English (UK)</option>
-                <option value="hi-IN">Hindi</option>
                 <option value="es-ES">Spanish</option>
                 <option value="fr-FR">French</option>
                 <option value="de-DE">German</option>
                 <option value="ja-JP">Japanese</option>
                 <option value="pt-BR">Portuguese</option>
+                <option value="ar-SA">Arabic</option>
               </select>
             </div>
             <div>

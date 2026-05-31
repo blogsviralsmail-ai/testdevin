@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import twilio from "twilio";
-import { getAgent, updateCallBySid } from "@/lib/db";
+import { getAgent, updateCallBySid, listKnowledgeDocs } from "@/lib/db";
 import { getSetting } from "@/lib/db";
 import { chat } from "@/lib/openai-client";
+import { storeTTSRequest } from "@/lib/tts-cache";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,32 +25,74 @@ export async function POST(request: NextRequest) {
     const VoiceResponse = twilio.twiml.VoiceResponse;
     const response = new VoiceResponse();
 
+    const agentVoice = agent?.voice || "alloy";
+    const language = agent?.language || "en-US";
+    const isElevenLabs = agentVoice.startsWith("el:");
+    const isEnglish = language.startsWith("en-") || language === "en";
+    const useCustomTTS = isElevenLabs || !isEnglish;
+    const sttLanguage = language === "auto" ? "en-IN" : (language.includes("-") ? language : "en-US");
+
+    // Helper to speak text using the right TTS method
+    const speakInGather = (gatherNode: ReturnType<typeof response.gather>, text: string) => {
+      if (useCustomTTS) {
+        const voiceId = isElevenLabs ? agentVoice.replace("el:", "") : undefined;
+        const provider = isElevenLabs ? "elevenlabs" : "openai";
+        const ttsVoice = isElevenLabs ? "alloy" : agentVoice;
+        const ttsId = storeTTSRequest(text, ttsVoice, provider, voiceId);
+        gatherNode.play(`${baseUrl}/api/tts/${ttsId}`);
+      } else {
+        const voiceMap: Record<string, string> = {
+          alloy: "Polly.Joanna", echo: "Polly.Matthew", fable: "Polly.Amy",
+          onyx: "Polly.Brian", nova: "Polly.Salli", shimmer: "Polly.Kimberly",
+        };
+        gatherNode.say({ voice: (voiceMap[agentVoice] || "Polly.Joanna") as "Polly.Joanna" }, text);
+      }
+    }
+
+    const speakDirect = (text: string) => {
+      if (useCustomTTS) {
+        const voiceId = isElevenLabs ? agentVoice.replace("el:", "") : undefined;
+        const provider = isElevenLabs ? "elevenlabs" : "openai";
+        const ttsVoice = isElevenLabs ? "alloy" : agentVoice;
+        const ttsId = storeTTSRequest(text, ttsVoice, provider, voiceId);
+        response.play(`${baseUrl}/api/tts/${ttsId}`);
+      } else {
+        const voiceMap: Record<string, string> = {
+          alloy: "Polly.Joanna", echo: "Polly.Matthew", fable: "Polly.Amy",
+          onyx: "Polly.Brian", nova: "Polly.Salli", shimmer: "Polly.Kimberly",
+        };
+        response.say({ voice: (voiceMap[agentVoice] || "Polly.Joanna") as "Polly.Joanna" }, text);
+      }
+    }
+
     if (!speechResult) {
-      response.say("I didn't catch that. Could you please repeat?");
       const gather = response.gather({
         input: ["speech"],
         action: `${baseUrl}/api/twilio/gather?agent_id=${agentId}&call_sid=${callSid}`,
         method: "POST",
         speechTimeout: "auto",
-        language: "en-US" as const,
+        language: sttLanguage as "en-US",
         enhanced: true,
       });
-      gather.say("I'm listening.");
+      speakInGather(gather, "I didn't catch that. Could you please repeat?");
       response.hangup();
       return new NextResponse(response.toString(), {
         headers: { "Content-Type": "text/xml" },
       });
     }
 
-    // Check for goodbye intent
+    // Check for goodbye intent (multi-language)
     const lowerSpeech = speechResult.toLowerCase();
-    if (lowerSpeech.includes("goodbye") || lowerSpeech.includes("bye") || lowerSpeech.includes("hang up") || lowerSpeech.includes("end call")) {
-      response.say("Thank you for calling! Goodbye!");
+    const goodbyeWords = ["goodbye", "bye", "hang up", "end call", "alvida", "dhanyavaad", "shukriya", "namaste"];
+    if (goodbyeWords.some(w => lowerSpeech.includes(w))) {
+      const goodbyeMsg = !isEnglish && language !== "auto"
+        ? "Thank you for calling! Goodbye!"
+        : "Thank you for calling! Goodbye!";
+      speakDirect(goodbyeMsg);
       response.hangup();
 
-      // Update call transcript
       updateCallBySid(callSid, {
-        transcript: `User: ${speechResult}\nAgent: Thank you for calling! Goodbye!`,
+        transcript: `User: ${speechResult}\nAgent: ${goodbyeMsg}`,
         status: "completed",
         ended_at: new Date().toISOString(),
       });
@@ -59,25 +102,41 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Build system prompt with knowledge base
+    let systemPrompt = agent?.system_prompt || "You are a helpful voice AI assistant. Keep responses concise and conversational, under 2 sentences.";
+
+    // Inject knowledge base content
+    const knowledgeDocs = agentId ? listKnowledgeDocs(agentId) as { name: string; content: string }[] : [];
+    if (knowledgeDocs.length > 0) {
+      const knowledgeContext = knowledgeDocs.map(d => `[${d.name}]:\n${d.content}`).join("\n\n");
+      systemPrompt += `\n\nKNOWLEDGE BASE (use this information to answer questions):\n${knowledgeContext}`;
+    }
+
+    // Add language instruction
+    const langMap: Record<string, string> = {
+      "hi-IN": "Hindi", "bn-IN": "Bengali", "ta-IN": "Tamil", "te-IN": "Telugu",
+      "mr-IN": "Marathi", "gu-IN": "Gujarati", "kn-IN": "Kannada", "ml-IN": "Malayalam",
+      "pa-IN": "Punjabi", "ur-IN": "Urdu", "or-IN": "Odia", "as-IN": "Assamese",
+      "es-ES": "Spanish", "fr-FR": "French", "de-DE": "German", "ja-JP": "Japanese",
+      "pt-BR": "Portuguese", "ar-SA": "Arabic",
+    };
+    const langName = langMap[language];
+    if (language === "auto") {
+      systemPrompt += "\n\nIMPORTANT: Detect the language the caller is speaking and respond in the SAME language. If they speak Hindi, reply in Hindi. If English, reply in English.";
+    } else if (langName && !language.startsWith("en")) {
+      systemPrompt += `\n\nIMPORTANT: Always respond in ${langName}. The caller expects ${langName} responses.`;
+    }
+
+    systemPrompt += "\n\nIMPORTANT: Keep your responses very brief (1-2 sentences max) since this is a phone conversation. Be natural and conversational.";
+
     // Get AI response
-    const systemPrompt = agent?.system_prompt || "You are a helpful voice AI assistant. Keep responses concise and conversational, under 2 sentences.";
     const aiResponse = await chat(
       callSid,
       speechResult,
-      systemPrompt + "\n\nIMPORTANT: Keep your responses very brief (1-2 sentences max) since this is a phone conversation. Be natural and conversational.",
+      systemPrompt,
       agent?.model || "gpt-4o-mini",
       agent?.temperature ?? 0.7
     );
-
-    const voiceMap: Record<string, string> = {
-      alloy: "Polly.Joanna",
-      echo: "Polly.Matthew",
-      fable: "Polly.Amy",
-      onyx: "Polly.Brian",
-      nova: "Polly.Salli",
-      shimmer: "Polly.Kimberly",
-    };
-    const twilioVoice = voiceMap[agent?.voice || "alloy"] || "Polly.Joanna";
 
     // Continue the conversation
     const gather = response.gather({
@@ -85,12 +144,12 @@ export async function POST(request: NextRequest) {
       action: `${baseUrl}/api/twilio/gather?agent_id=${agentId}&call_sid=${callSid}`,
       method: "POST",
       speechTimeout: "auto",
-      language: (agent?.language?.includes("-") ? agent.language : "en-US") as "en-US",
+      language: sttLanguage as "en-US",
       enhanced: true,
     });
-    gather.say({ voice: twilioVoice as "Polly.Joanna" }, aiResponse);
+    speakInGather(gather, aiResponse);
 
-    response.say({ voice: twilioVoice as "Polly.Joanna" }, "Are you still there?");
+    speakDirect("Are you still there?");
     response.hangup();
 
     // Update transcript incrementally

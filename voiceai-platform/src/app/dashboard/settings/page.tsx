@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Key, Phone, Brain, CheckCircle, XCircle, Loader2, Save, Globe } from "lucide-react";
+import { Settings, Key, Phone, Brain, CheckCircle, XCircle, Loader2, Save, Globe, Mic } from "lucide-react";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
     TWILIO_ACCOUNT_SID: "",
     TWILIO_AUTH_TOKEN: "",
     OPENAI_API_KEY: "",
+    ELEVENLABS_API_KEY: "",
     BASE_URL: "",
   });
   const [status, setStatus] = useState<{ twilio: string; openai: string }>({
@@ -160,6 +161,38 @@ export default function SettingsPage() {
             </div>
             <p className="text-gray-600 text-xs mt-2">
               Get this from <a href="https://platform.openai.com/api-keys" target="_blank" className="text-[#00d4aa] hover:underline">platform.openai.com/api-keys</a>
+            </p>
+          </div>
+
+          {/* ElevenLabs */}
+          <div className="bg-[#0a0f1a] rounded-lg p-5 border border-white/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Mic className="h-5 w-5 text-purple-400" />
+                <div>
+                  <h3 className="text-white font-medium">ElevenLabs</h3>
+                  <p className="text-gray-500 text-sm">Custom voice cloning & ultra-realistic TTS (optional)</p>
+                </div>
+              </div>
+              {configured.includes("ELEVENLABS_API_KEY") ? (
+                <span className="flex items-center gap-1 text-green-400 text-sm"><CheckCircle className="h-4 w-4" /> Configured</span>
+              ) : (
+                <span className="text-gray-500 text-sm">Not configured</span>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-gray-400">API Key</Label>
+              <Input
+                type="password"
+                value={settings.ELEVENLABS_API_KEY}
+                onChange={(e) => setSettings({ ...settings, ELEVENLABS_API_KEY: e.target.value })}
+                placeholder="Enter your ElevenLabs API key"
+                className="mt-1 bg-[#1a1f2e] border-white/10 text-white"
+              />
+            </div>
+            <p className="text-gray-600 text-xs mt-2">
+              Get this from <a href="https://elevenlabs.io" target="_blank" className="text-[#00d4aa] hover:underline">elevenlabs.io</a> → Profile → API Keys. Used for custom voice cloning.
             </p>
           </div>
 

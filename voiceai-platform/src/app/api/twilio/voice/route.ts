@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import twilio from "twilio";
 import { getPhoneNumberByNumber, getAgent, createCall } from "@/lib/db";
 import { getSetting } from "@/lib/db";
+import { storeTTSRequest } from "@/lib/tts-cache";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,28 +43,58 @@ export async function POST(request: NextRequest) {
     const response = new VoiceResponse();
 
     const greetingMessage = agent?.greeting_message || "Hello! How can I help you today?";
-    const voiceMap: Record<string, string> = {
-      alloy: "Polly.Joanna",
-      echo: "Polly.Matthew",
-      fable: "Polly.Amy",
-      onyx: "Polly.Brian",
-      nova: "Polly.Salli",
-      shimmer: "Polly.Kimberly",
-    };
-    const twilioVoice = voiceMap[agent?.voice || "alloy"] || "Polly.Joanna";
+    const agentVoice = agent?.voice || "alloy";
     const language = agent?.language || "en-US";
+
+    // Determine if we need OpenAI TTS (non-English or ElevenLabs voice)
+    const isElevenLabs = agentVoice.startsWith("el:");
+    const isEnglish = language.startsWith("en-") || language === "en";
+    const useCustomTTS = isElevenLabs || !isEnglish;
+
+    // For speech recognition, map language codes
+    const sttLanguage = language === "auto" ? "en-IN" : (language.includes("-") ? language : `${language}-US`);
 
     const gather = response.gather({
       input: ["speech"],
       action: `${baseUrl}/api/twilio/gather?agent_id=${agentId}&call_sid=${callSid}`,
       method: "POST",
       speechTimeout: "auto",
-      language: (language.includes("-") ? language : `${language}-US`) as "en-US",
+      language: sttLanguage as "en-US",
       enhanced: true,
     });
-    gather.say({ voice: twilioVoice as "Polly.Joanna" }, greetingMessage);
 
-    response.say({ voice: twilioVoice as "Polly.Joanna" }, "I didn't catch that. Goodbye!");
+    if (useCustomTTS) {
+      // Use OpenAI TTS or ElevenLabs via Play
+      const voiceId = isElevenLabs ? agentVoice.replace("el:", "") : undefined;
+      const provider = isElevenLabs ? "elevenlabs" : "openai";
+      const ttsVoice = isElevenLabs ? "alloy" : agentVoice;
+      const ttsId = storeTTSRequest(greetingMessage, ttsVoice, provider, voiceId);
+      gather.play(`${baseUrl}/api/tts/${ttsId}`);
+    } else {
+      // Use Polly for English with OpenAI voices
+      const voiceMap: Record<string, string> = {
+        alloy: "Polly.Joanna",
+        echo: "Polly.Matthew",
+        fable: "Polly.Amy",
+        onyx: "Polly.Brian",
+        nova: "Polly.Salli",
+        shimmer: "Polly.Kimberly",
+      };
+      const twilioVoice = voiceMap[agentVoice] || "Polly.Joanna";
+      gather.say({ voice: twilioVoice as "Polly.Joanna" }, greetingMessage);
+    }
+
+    // Fallback if no speech detected
+    if (useCustomTTS) {
+      const fallbackId = storeTTSRequest("I didn't catch that. Goodbye!", isElevenLabs ? "alloy" : agentVoice, isElevenLabs ? "elevenlabs" : "openai", isElevenLabs ? agentVoice.replace("el:", "") : undefined);
+      response.play(`${baseUrl}/api/tts/${fallbackId}`);
+    } else {
+      const voiceMap: Record<string, string> = {
+        alloy: "Polly.Joanna", echo: "Polly.Matthew", fable: "Polly.Amy",
+        onyx: "Polly.Brian", nova: "Polly.Salli", shimmer: "Polly.Kimberly",
+      };
+      response.say({ voice: (voiceMap[agentVoice] || "Polly.Joanna") as "Polly.Joanna" }, "I didn't catch that. Goodbye!");
+    }
     response.hangup();
 
     return new NextResponse(response.toString(), {

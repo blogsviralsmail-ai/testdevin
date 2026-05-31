@@ -31,14 +31,28 @@ const voiceOptions = [
 ];
 
 const languageOptions = [
+  { value: "auto", label: "Auto-Detect (Multi-Language)" },
+  { value: "hi-IN", label: "Hindi (हिन्दी)" },
+  { value: "en-IN", label: "English (India)" },
   { value: "en-US", label: "English (US)" },
+  { value: "bn-IN", label: "Bengali (বাংলা)" },
+  { value: "ta-IN", label: "Tamil (தமிழ்)" },
+  { value: "te-IN", label: "Telugu (తెలుగు)" },
+  { value: "mr-IN", label: "Marathi (मराठी)" },
+  { value: "gu-IN", label: "Gujarati (ગુજરાતી)" },
+  { value: "kn-IN", label: "Kannada (ಕನ್ನಡ)" },
+  { value: "ml-IN", label: "Malayalam (മലയാളം)" },
+  { value: "pa-IN", label: "Punjabi (ਪੰਜਾਬੀ)" },
+  { value: "ur-IN", label: "Urdu (اردو)" },
+  { value: "or-IN", label: "Odia (ଓଡ଼ିଆ)" },
+  { value: "as-IN", label: "Assamese (অসমীয়া)" },
   { value: "en-GB", label: "English (UK)" },
-  { value: "hi-IN", label: "Hindi" },
   { value: "es-ES", label: "Spanish" },
   { value: "fr-FR", label: "French" },
   { value: "de-DE", label: "German" },
   { value: "ja-JP", label: "Japanese" },
   { value: "pt-BR", label: "Portuguese" },
+  { value: "ar-SA", label: "Arabic" },
 ];
 
 const modelOptions = [
@@ -84,6 +98,15 @@ export default function AgentDetailPage() {
   const [maxCallDuration, setMaxCallDuration] = useState(300);
   const [temperature, setTemperature] = useState(0.7);
   const [status, setStatus] = useState(true);
+  const [voiceProvider, setVoiceProvider] = useState<"openai" | "elevenlabs">("openai");
+  const [elevenLabsVoiceId, setElevenLabsVoiceId] = useState("");
+  const [elVoices, setElVoices] = useState<{voice_id: string; name: string; category: string}[]>([]);
+  const [elVoicesLoading, setElVoicesLoading] = useState(false);
+  const [knowledgeDocs, setKnowledgeDocs] = useState<{id: string; name: string; content: string; type: string; created_at: string}[]>([]);
+  const [showAddKnowledge, setShowAddKnowledge] = useState(false);
+  const [knowledgeMode, setKnowledgeMode] = useState<"text" | "file">("text");
+  const [newKnowledge, setNewKnowledge] = useState({ name: "", content: "" });
+  const [savingKnowledge, setSavingKnowledge] = useState(false);
 
   const loadAgent = useCallback(async () => {
     try {
@@ -111,10 +134,69 @@ export default function AgentDetailPage() {
     loadAgent();
   }, [loadAgent]);
 
+  useEffect(() => {
+    if (agentId) loadKnowledge();
+  }, [agentId]);
+
+  async function loadKnowledge() {
+    try {
+      const res = await fetch(`/api/knowledge?agent_id=${agentId}`);
+      const data = await res.json();
+      setKnowledgeDocs(Array.isArray(data) ? data : []);
+    } catch (err) { console.error("Failed to load knowledge:", err); }
+  }
+
+  async function loadElevenLabsVoices() {
+    setElVoicesLoading(true);
+    try {
+      const res = await fetch("/api/elevenlabs/voices");
+      const data = await res.json();
+      if (data.voices) setElVoices(data.voices);
+    } catch (err) { console.error("Failed to load ElevenLabs voices:", err); }
+    setElVoicesLoading(false);
+  }
+
+  async function handleAddKnowledge() {
+    if (!newKnowledge.name || !newKnowledge.content) return;
+    setSavingKnowledge(true);
+    try {
+      const res = await fetch("/api/knowledge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId, name: newKnowledge.name, content: newKnowledge.content, type: knowledgeMode }),
+      });
+      if (res.ok) {
+        setShowAddKnowledge(false);
+        setNewKnowledge({ name: "", content: "" });
+        loadKnowledge();
+      }
+    } catch (err) { console.error("Failed to add knowledge:", err); }
+    setSavingKnowledge(false);
+  }
+
+  async function handleDeleteKnowledge(id: string) {
+    try {
+      await fetch(`/api/knowledge?id=${id}`, { method: "DELETE" });
+      loadKnowledge();
+    } catch (err) { console.error("Failed to delete:", err); }
+  }
+
+  function handleKnowledgeFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNewKnowledge(prev => ({ ...prev, name: file.name }));
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setNewKnowledge(prev => ({ ...prev, content: ev.target?.result as string }));
+    };
+    reader.readAsText(file);
+  }
+
   async function handleSave() {
     setSaving(true);
     setSaveStatus("idle");
     try {
+      const finalVoice = voiceProvider === "elevenlabs" && elevenLabsVoiceId ? `el:${elevenLabsVoiceId}` : voice;
       const res = await fetch("/api/agents", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -123,7 +205,7 @@ export default function AgentDetailPage() {
           name,
           system_prompt: systemPrompt,
           greeting_message: greeting,
-          voice,
+          voice: finalVoice,
           language,
           model,
           max_call_duration: maxCallDuration,
@@ -318,29 +400,104 @@ export default function AgentDetailPage() {
       )}
 
       {activeTab === "voice" && (
-        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
+        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-6">
+          {/* Voice Provider */}
           <div>
-            <Label className="text-gray-300 text-base flex items-center gap-2">
-              <Mic className="h-4 w-4 text-[#00d4aa]" /> Voice Selection
+            <Label className="text-gray-300 text-base flex items-center gap-2 mb-3">
+              <Mic className="h-4 w-4 text-[#00d4aa]" /> Voice Provider
             </Label>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {voiceOptions.map((v) => (
-                <button
-                  key={v.value}
-                  onClick={() => setVoice(v.value)}
-                  className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
-                    voice === v.value
-                      ? "border-[#00d4aa] bg-[#00d4aa]/5"
-                      : "border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <Mic className="h-4 w-4 text-[#00d4aa]" />
-                  <span className="text-sm font-medium text-white">{v.label}</span>
-                </button>
-              ))}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setVoiceProvider("openai")}
+                className={`flex-1 rounded-lg border p-4 text-left transition-all ${
+                  voiceProvider === "openai" ? "border-[#00d4aa] bg-[#00d4aa]/5" : "border-white/10 hover:border-white/20"
+                }`}
+              >
+                <p className="text-white font-medium">OpenAI Built-in</p>
+                <p className="text-xs text-gray-400 mt-1">6 high-quality voices, multi-language support</p>
+              </button>
+              <button
+                onClick={() => { setVoiceProvider("elevenlabs"); if (elVoices.length === 0) loadElevenLabsVoices(); }}
+                className={`flex-1 rounded-lg border p-4 text-left transition-all ${
+                  voiceProvider === "elevenlabs" ? "border-[#00d4aa] bg-[#00d4aa]/5" : "border-white/10 hover:border-white/20"
+                }`}
+              >
+                <p className="text-white font-medium">ElevenLabs Custom</p>
+                <p className="text-xs text-gray-400 mt-1">Clone your own voice, ultra-realistic</p>
+              </button>
             </div>
           </div>
 
+          {/* OpenAI Voice Selection */}
+          {voiceProvider === "openai" && (
+            <div>
+              <Label className="text-gray-300 text-base flex items-center gap-2">
+                <Mic className="h-4 w-4 text-[#00d4aa]" /> Voice Selection
+              </Label>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {voiceOptions.map((v) => (
+                  <button
+                    key={v.value}
+                    onClick={() => setVoice(v.value)}
+                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                      voice === v.value
+                        ? "border-[#00d4aa] bg-[#00d4aa]/5"
+                        : "border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    <Mic className="h-4 w-4 text-[#00d4aa]" />
+                    <span className="text-sm font-medium text-white">{v.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ElevenLabs Voice Selection */}
+          {voiceProvider === "elevenlabs" && (
+            <div>
+              <Label className="text-gray-300 text-base flex items-center gap-2">
+                <Mic className="h-4 w-4 text-[#00d4aa]" /> ElevenLabs Voice
+              </Label>
+              <p className="text-xs text-gray-500 mt-1 mb-3">Select from your ElevenLabs voices or enter a custom Voice ID</p>
+              {elVoicesLoading ? (
+                <div className="flex items-center gap-2 text-gray-400"><Loader2 className="h-4 w-4 animate-spin" /> Loading voices...</div>
+              ) : elVoices.length > 0 ? (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {elVoices.map((v) => (
+                    <button
+                      key={v.voice_id}
+                      onClick={() => setElevenLabsVoiceId(v.voice_id)}
+                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                        elevenLabsVoiceId === v.voice_id
+                          ? "border-[#00d4aa] bg-[#00d4aa]/5"
+                          : "border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <Mic className="h-4 w-4 text-[#00d4aa]" />
+                      <div>
+                        <span className="text-sm font-medium text-white">{v.name}</span>
+                        <span className="text-xs text-gray-500 block">{v.category}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No voices found. Add ElevenLabs API key in Settings first, or enter Voice ID below.</p>
+              )}
+              <div className="mt-3">
+                <Label className="text-gray-400 text-sm">Or enter Voice ID manually</Label>
+                <Input
+                  value={elevenLabsVoiceId}
+                  onChange={(e) => setElevenLabsVoiceId(e.target.value)}
+                  placeholder="Enter ElevenLabs Voice ID"
+                  className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Language Selection */}
           <div>
             <Label className="text-gray-300 text-base flex items-center gap-2">
               <Globe className="h-4 w-4 text-[#00d4aa]" /> Language
@@ -365,15 +522,107 @@ export default function AgentDetailPage() {
       )}
 
       {activeTab === "knowledge" && (
-        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6">
-          <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-gray-500 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-2">Knowledge Base</h3>
-            <p className="text-gray-400 mb-4">Upload documents to train this agent with custom knowledge</p>
-            <Button className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-              Upload Documents
+        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-white">Knowledge Base</h3>
+              <p className="text-xs text-gray-500">Add product info, FAQs, docs — agent will use this during calls</p>
+            </div>
+            <Button onClick={() => setShowAddKnowledge(true)} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
+              <FileText className="mr-2 h-4 w-4" /> Add Knowledge
             </Button>
           </div>
+
+          {knowledgeDocs.length === 0 ? (
+            <div className="text-center py-8 border border-dashed border-white/10 rounded-lg">
+              <FileText className="h-10 w-10 text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-400">No knowledge added yet</p>
+              <p className="text-xs text-gray-500 mt-1">Add text or upload files to train this agent</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {knowledgeDocs.map((doc) => (
+                <div key={doc.id} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-white/5 bg-[#0a0f1a] hover:bg-white/5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium text-sm">{doc.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{doc.content.substring(0, 120)}...</p>
+                    <p className="text-xs text-gray-600 mt-1">{doc.type} &middot; {new Date(doc.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <button onClick={() => handleDeleteKnowledge(doc.id)} className="text-red-400 hover:text-red-300 p-1"><AlertCircle className="h-4 w-4" /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add Knowledge Modal */}
+          {showAddKnowledge && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+              <div className="bg-[#1a1f2e] rounded-xl border border-white/10 p-6 w-full max-w-lg space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-white">Add Knowledge</h3>
+                  <button onClick={() => setShowAddKnowledge(false)} className="text-gray-400 hover:text-white">&times;</button>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setKnowledgeMode("text")}
+                    className={`px-3 py-1.5 rounded-lg text-sm ${knowledgeMode === "text" ? "bg-[#00d4aa] text-black" : "bg-white/5 text-gray-400"}`}
+                  >Manual Text</button>
+                  <button
+                    onClick={() => setKnowledgeMode("file")}
+                    className={`px-3 py-1.5 rounded-lg text-sm ${knowledgeMode === "file" ? "bg-[#00d4aa] text-black" : "bg-white/5 text-gray-400"}`}
+                  >Upload File</button>
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Title / Name</Label>
+                  <Input
+                    value={newKnowledge.name}
+                    onChange={(e) => setNewKnowledge({ ...newKnowledge, name: e.target.value })}
+                    placeholder="e.g., Product Price List, FAQ, Company Info"
+                    className="mt-1 bg-[#0a0f1a] border-white/10 text-white"
+                  />
+                </div>
+
+                {knowledgeMode === "text" ? (
+                  <div>
+                    <Label className="text-gray-400">Content</Label>
+                    <Textarea
+                      value={newKnowledge.content}
+                      onChange={(e) => setNewKnowledge({ ...newKnowledge, content: e.target.value })}
+                      placeholder="Paste your product info, FAQ, pricing, company details here..."
+                      rows={8}
+                      className="mt-1 bg-[#0a0f1a] border-white/10 text-white"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-gray-400">Upload File (.txt, .csv, .md)</Label>
+                    <input
+                      type="file"
+                      accept=".txt,.csv,.md,.text"
+                      onChange={handleKnowledgeFileUpload}
+                      className="mt-2 block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-[#00d4aa] file:text-black hover:file:bg-[#00b894]"
+                    />
+                    {newKnowledge.content && (
+                      <p className="text-xs text-green-400 mt-2">File loaded: {newKnowledge.content.length} characters</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="ghost" onClick={() => setShowAddKnowledge(false)} className="text-gray-400">Cancel</Button>
+                  <Button
+                    onClick={handleAddKnowledge}
+                    disabled={savingKnowledge || !newKnowledge.name || !newKnowledge.content}
+                    className="bg-[#00d4aa] text-black hover:bg-[#00b894]"
+                  >
+                    {savingKnowledge ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : <><Save className="mr-2 h-4 w-4" /> Save Knowledge</>}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
