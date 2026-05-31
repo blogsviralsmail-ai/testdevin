@@ -1,116 +1,207 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Phone, Plus, Globe, MapPin } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Phone, Plus, Loader2, RefreshCw } from "lucide-react";
 
-const ownedNumbers = [
-  { id: "1", number: "+1 (555) 123-4567", type: "Local", country: "US", agent: "Sales Agent", status: "active", monthlyCost: "$2.00" },
-  { id: "2", number: "+1 (555) 987-6543", type: "Toll-Free", country: "US", agent: "Support Bot", status: "active", monthlyCost: "$5.00" },
-  { id: "3", number: "+91 98765 43210", type: "Local", country: "IN", agent: "Lead Qualifier", status: "active", monthlyCost: "$1.50" },
-];
+interface PhoneNumber {
+  id: string;
+  number: string;
+  friendly_name: string;
+  agent_id: string | null;
+  status: string;
+  country: string;
+  created_at: string;
+}
 
-const availableNumbers = [
-  { number: "+1 (555) 100-2001", type: "Local", country: "US", city: "New York", monthlyCost: "$2.00" },
-  { number: "+1 (555) 200-3002", type: "Local", country: "US", city: "Los Angeles", monthlyCost: "$2.00" },
-  { number: "+1 (800) 300-4003", type: "Toll-Free", country: "US", city: "National", monthlyCost: "$5.00" },
-  { number: "+91 11 1234 5678", type: "Local", country: "IN", city: "Delhi", monthlyCost: "$1.50" },
-  { number: "+91 22 8765 4321", type: "Local", country: "IN", city: "Mumbai", monthlyCost: "$1.50" },
-  { number: "+44 20 7123 4567", type: "Local", country: "UK", city: "London", monthlyCost: "$3.00" },
-];
+interface Agent {
+  id: string;
+  name: string;
+}
 
-export default function PhoneNumbersPage() {
-  const [showShop, setShowShop] = useState(false);
-  const [countryFilter, setCountryFilter] = useState("all");
+export default function NumbersPage() {
+  const [numbers, setNumbers] = useState<PhoneNumber[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [buying, setBuying] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [showBuy, setShowBuy] = useState(false);
+  const [areaCode, setAreaCode] = useState("");
+  const [error, setError] = useState("");
 
-  const filteredAvailable = countryFilter === "all"
-    ? availableNumbers
-    : availableNumbers.filter((n) => n.country === countryFilter);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      const [numRes, agentRes] = await Promise.all([
+        fetch("/api/numbers"),
+        fetch("/api/agents"),
+      ]);
+      const numData = await numRes.json();
+      const agentData = await agentRes.json();
+      setNumbers(Array.isArray(numData) ? numData : []);
+      setAgents(Array.isArray(agentData) ? agentData : []);
+    } catch (err) {
+      console.error("Failed to load data:", err);
+    }
+    setLoading(false);
+  }
+
+  async function buyNumber() {
+    setBuying(true);
+    setError("");
+    try {
+      const res = await fetch("/api/numbers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "buy", area_code: areaCode }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setShowBuy(false);
+        loadData();
+      }
+    } catch {
+      setError("Failed to buy number. Check your Twilio credentials in Settings.");
+    }
+    setBuying(false);
+  }
+
+  async function syncNumbers() {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/numbers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync" }),
+      });
+      const data = await res.json();
+      if (data.numbers) {
+        setNumbers(data.numbers);
+      }
+    } catch (err) {
+      console.error("Failed to sync:", err);
+    }
+    setSyncing(false);
+  }
+
+  async function assignAgent(numberId: string, agentId: string) {
+    try {
+      await fetch("/api/numbers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: numberId, agent_id: agentId || null }),
+      });
+      loadData();
+    } catch (err) {
+      console.error("Failed to assign agent:", err);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00d4aa]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Phone Numbers</h2>
-          <p className="text-gray-400">Manage your phone numbers and buy new ones</p>
+          <h1 className="text-2xl font-bold text-white">Phone Numbers</h1>
+          <p className="text-gray-400 mt-1">{numbers.length} number{numbers.length !== 1 ? "s" : ""}</p>
         </div>
-        <Button onClick={() => setShowShop(!showShop)} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-          <Plus className="mr-2 h-4 w-4" /> Buy Number
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={syncNumbers} disabled={syncing} className="border-white/20 text-gray-300">
+            {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            Sync from Twilio
+          </Button>
+          <Button onClick={() => setShowBuy(true)} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
+            <Plus className="mr-2 h-4 w-4" /> Buy Number
+          </Button>
+        </div>
       </div>
 
-      {/* Owned Numbers */}
-      <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50">
-        <div className="border-b border-white/10 p-4">
-          <h3 className="font-semibold text-white">Your Numbers ({ownedNumbers.length})</h3>
-        </div>
-        <div className="divide-y divide-white/5">
-          {ownedNumbers.map((num) => (
-            <div key={num.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#00d4aa]/10">
-                  <Phone className="h-5 w-5 text-[#00d4aa]" />
-                </div>
-                <div>
-                  <p className="font-medium text-white">{num.number}</p>
-                  <p className="text-xs text-gray-500">{num.type} &middot; {num.country} &middot; Assigned to: {num.agent}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400">{num.monthlyCost}/mo</span>
-                <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
-                  {num.status}
-                </span>
-              </div>
+      {showBuy && (
+        <div className="bg-[#1a1f2e] rounded-xl p-6 border border-[#00d4aa]/30">
+          <h3 className="text-white font-medium mb-4">Buy a New Phone Number</h3>
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <Label className="text-gray-400">Area Code (optional)</Label>
+              <Input
+                value={areaCode}
+                onChange={(e) => setAreaCode(e.target.value)}
+                placeholder="e.g., 415"
+                className="mt-1 bg-[#0a0f1a] border-white/10 text-white"
+              />
             </div>
-          ))}
+            <Button onClick={buyNumber} disabled={buying} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
+              {buying ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Buying...</> : "Buy Number"}
+            </Button>
+            <Button variant="ghost" onClick={() => setShowBuy(false)} className="text-gray-400">Cancel</Button>
+          </div>
+          {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
         </div>
-      </div>
+      )}
 
-      {/* Numbers Shop */}
-      {showShop && (
-        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50">
-          <div className="border-b border-white/10 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <h3 className="font-semibold text-white flex items-center gap-2">
-              <Globe className="h-4 w-4 text-[#00d4aa]" /> Numbers Shop
-            </h3>
-            <div className="flex gap-2">
-              {["all", "US", "IN", "UK"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCountryFilter(c)}
-                  className={`rounded-full border px-3 py-1 text-xs transition-all ${
-                    countryFilter === c
-                      ? "border-[#00d4aa] bg-[#00d4aa]/10 text-[#00d4aa]"
-                      : "border-white/10 text-gray-400 hover:text-white"
-                  }`}
-                >
-                  {c === "all" ? "All" : c}
-                </button>
+      {numbers.length === 0 ? (
+        <div className="bg-[#1a1f2e] rounded-xl p-12 text-center border border-white/10">
+          <Phone className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-white text-lg font-medium mb-2">No phone numbers yet</h3>
+          <p className="text-gray-400 mb-4">Buy a Twilio number or sync existing numbers</p>
+        </div>
+      ) : (
+        <div className="bg-[#1a1f2e] rounded-xl border border-white/10 overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="px-4 py-3 text-left text-sm text-gray-400 font-medium">Number</th>
+                <th className="px-4 py-3 text-left text-sm text-gray-400 font-medium">Assigned Agent</th>
+                <th className="px-4 py-3 text-left text-sm text-gray-400 font-medium">Status</th>
+                <th className="px-4 py-3 text-left text-sm text-gray-400 font-medium">Added</th>
+              </tr>
+            </thead>
+            <tbody>
+              {numbers.map((num) => (
+                <tr key={num.id} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-[#00d4aa]" />
+                      <span className="text-white font-mono">{num.number}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={num.agent_id || ""}
+                      onChange={(e) => assignAgent(num.id, e.target.value)}
+                      className="bg-[#0a0f1a] border border-white/10 rounded px-2 py-1 text-sm text-white"
+                    >
+                      <option value="">No agent assigned</option>
+                      {agents.map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-1 rounded-full ${num.status === "active" ? "bg-green-500/10 text-green-400" : "bg-gray-500/10 text-gray-400"}`}>
+                      {num.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-400">
+                    {new Date(num.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
-          <div className="divide-y divide-white/5">
-            {filteredAvailable.map((num, i) => (
-              <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">{num.number}</p>
-                    <p className="text-xs text-gray-500">{num.type} &middot; {num.country} &middot; {num.city}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-400">{num.monthlyCost}/mo</span>
-                  <Button size="sm" className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-                    Buy
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+            </tbody>
+          </table>
         </div>
       )}
     </div>

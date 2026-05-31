@@ -1,194 +1,241 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { User, Bell, Shield, Globe, Paintbrush } from "lucide-react";
+import { Settings, Key, Phone, Brain, CheckCircle, XCircle, Loader2, Save, Globe } from "lucide-react";
 
 export default function SettingsPage() {
-  const [profile, setProfile] = useState({
-    name: "John Smith",
-    email: "john@company.com",
-    company: "My Company",
-    timezone: "UTC-5 (Eastern)",
+  const [settings, setSettings] = useState({
+    TWILIO_ACCOUNT_SID: "",
+    TWILIO_AUTH_TOKEN: "",
+    OPENAI_API_KEY: "",
+    BASE_URL: "",
   });
+  const [status, setStatus] = useState<{ twilio: string; openai: string }>({
+    twilio: "not_configured",
+    openai: "not_configured",
+  });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [configured, setConfigured] = useState<string[]>([]);
 
-  const [notifications, setNotifications] = useState({
-    email: true,
-    callCompleted: true,
-    campaignFinished: true,
-    weeklyReport: true,
-    billing: true,
-  });
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/settings");
+      const data = await res.json();
+      if (data.settings) {
+        setSettings((prev) => ({ ...prev, ...data.settings }));
+      }
+      if (data.configured) {
+        setConfigured(data.configured);
+      }
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+    }
+    setLoading(false);
+  }
+
+  async function saveSettings() {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings }),
+      });
+      const data = await res.json();
+      if (data.status) {
+        setStatus(data.status);
+      }
+      if (data.success) {
+        loadSettings();
+      }
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+    }
+    setSaving(false);
+  }
+
+  function StatusBadge({ s }: { s: string }) {
+    if (s === "connected") return <span className="flex items-center gap-1 text-green-400 text-sm"><CheckCircle className="h-4 w-4" /> Connected</span>;
+    if (s === "invalid") return <span className="flex items-center gap-1 text-red-400 text-sm"><XCircle className="h-4 w-4" /> Invalid</span>;
+    return <span className="text-gray-500 text-sm">Not configured</span>;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00d4aa]" />
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-white">Settings</h2>
-        <p className="text-gray-400">Manage your account and preferences</p>
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <Settings className="h-6 w-6 text-[#00d4aa]" />
+          Settings
+        </h1>
+        <p className="text-gray-400 mt-1">Configure your API keys and platform settings</p>
       </div>
 
-      {/* Profile */}
-      <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
-        <div className="flex items-center gap-3 mb-2">
-          <User className="h-5 w-5 text-[#00d4aa]" />
-          <h3 className="font-semibold text-white">Profile</h3>
-        </div>
+      {/* API Keys Section */}
+      <div className="bg-[#1a1f2e] rounded-xl p-6 border border-white/10">
+        <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-6">
+          <Key className="h-5 w-5 text-[#00d4aa]" />
+          API Keys
+        </h2>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label className="text-gray-300">Full Name</Label>
-            <Input
-              value={profile.name}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
-            />
-          </div>
-          <div>
-            <Label className="text-gray-300">Email</Label>
-            <Input
-              value={profile.email}
-              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
-            />
-          </div>
-          <div>
-            <Label className="text-gray-300">Company</Label>
-            <Input
-              value={profile.company}
-              onChange={(e) => setProfile({ ...profile, company: e.target.value })}
-              className="mt-1 border-white/10 bg-[#0a0f1a] text-white"
-            />
-          </div>
-          <div>
-            <Label className="text-gray-300">Timezone</Label>
-            <select className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0f1a] px-3 py-2 text-white">
-              <option>UTC-5 (Eastern)</option>
-              <option>UTC-8 (Pacific)</option>
-              <option>UTC+0 (GMT)</option>
-              <option>UTC+5:30 (IST)</option>
-              <option>UTC+9 (JST)</option>
-            </select>
-          </div>
-        </div>
-
-        <Button className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-          Save Profile
-        </Button>
-      </div>
-
-      {/* Notifications */}
-      <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
-        <div className="flex items-center gap-3 mb-2">
-          <Bell className="h-5 w-5 text-[#00d4aa]" />
-          <h3 className="font-semibold text-white">Notifications</h3>
-        </div>
-
-        <div className="space-y-4">
-          {[
-            { key: "email" as const, label: "Email Notifications", desc: "Receive notifications via email" },
-            { key: "callCompleted" as const, label: "Call Completed", desc: "Get notified when a call is completed" },
-            { key: "campaignFinished" as const, label: "Campaign Finished", desc: "Get notified when a campaign completes" },
-            { key: "weeklyReport" as const, label: "Weekly Report", desc: "Receive weekly analytics summary" },
-            { key: "billing" as const, label: "Billing Alerts", desc: "Get notified about billing events" },
-          ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-white">{item.label}</p>
-                <p className="text-xs text-gray-500">{item.desc}</p>
+        <div className="space-y-6">
+          {/* Twilio */}
+          <div className="bg-[#0a0f1a] rounded-lg p-5 border border-white/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Phone className="h-5 w-5 text-blue-400" />
+                <div>
+                  <h3 className="text-white font-medium">Twilio</h3>
+                  <p className="text-gray-500 text-sm">Phone numbers & calling</p>
+                </div>
               </div>
-              <Switch
-                checked={notifications[item.key]}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, [item.key]: checked })
-                }
+              <StatusBadge s={configured.includes("TWILIO_ACCOUNT_SID") ? (status.twilio !== "not_configured" ? status.twilio : "connected") : "not_configured"} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-400">Account SID</Label>
+                <Input
+                  type="text"
+                  value={settings.TWILIO_ACCOUNT_SID}
+                  onChange={(e) => setSettings({ ...settings, TWILIO_ACCOUNT_SID: e.target.value })}
+                  placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  className="mt-1 bg-[#1a1f2e] border-white/10 text-white"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-400">Auth Token</Label>
+                <Input
+                  type="password"
+                  value={settings.TWILIO_AUTH_TOKEN}
+                  onChange={(e) => setSettings({ ...settings, TWILIO_AUTH_TOKEN: e.target.value })}
+                  placeholder="Enter your auth token"
+                  className="mt-1 bg-[#1a1f2e] border-white/10 text-white"
+                />
+              </div>
+            </div>
+            <p className="text-gray-600 text-xs mt-2">
+              Get these from <a href="https://console.twilio.com" target="_blank" className="text-[#00d4aa] hover:underline">console.twilio.com</a>
+            </p>
+          </div>
+
+          {/* OpenAI */}
+          <div className="bg-[#0a0f1a] rounded-lg p-5 border border-white/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Brain className="h-5 w-5 text-green-400" />
+                <div>
+                  <h3 className="text-white font-medium">OpenAI</h3>
+                  <p className="text-gray-500 text-sm">AI conversation engine</p>
+                </div>
+              </div>
+              <StatusBadge s={configured.includes("OPENAI_API_KEY") ? (status.openai !== "not_configured" ? status.openai : "connected") : "not_configured"} />
+            </div>
+
+            <div>
+              <Label className="text-gray-400">API Key</Label>
+              <Input
+                type="password"
+                value={settings.OPENAI_API_KEY}
+                onChange={(e) => setSettings({ ...settings, OPENAI_API_KEY: e.target.value })}
+                placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                className="mt-1 bg-[#1a1f2e] border-white/10 text-white"
               />
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Security */}
-      <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
-        <div className="flex items-center gap-3 mb-2">
-          <Shield className="h-5 w-5 text-[#00d4aa]" />
-          <h3 className="font-semibold text-white">Security</h3>
-        </div>
-
-        <div>
-          <Label className="text-gray-300">Change Password</Label>
-          <div className="mt-2 space-y-3">
-            <Input type="password" placeholder="Current password" className="border-white/10 bg-[#0a0f1a] text-white" />
-            <Input type="password" placeholder="New password" className="border-white/10 bg-[#0a0f1a] text-white" />
-            <Input type="password" placeholder="Confirm new password" className="border-white/10 bg-[#0a0f1a] text-white" />
+            <p className="text-gray-600 text-xs mt-2">
+              Get this from <a href="https://platform.openai.com/api-keys" target="_blank" className="text-[#00d4aa] hover:underline">platform.openai.com/api-keys</a>
+            </p>
           </div>
-          <Button className="mt-3 bg-[#00d4aa] text-black hover:bg-[#00b894]">
-            Update Password
-          </Button>
-        </div>
 
-        <div className="pt-4 border-t border-white/10">
-          <h4 className="text-sm font-medium text-white mb-2">Two-Factor Authentication</h4>
-          <p className="text-xs text-gray-500 mb-3">Add an extra layer of security to your account</p>
-          <Button variant="outline" className="border-white/20 text-gray-300">
-            Enable 2FA
-          </Button>
-        </div>
-      </div>
-
-      {/* White Label */}
-      <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
-        <div className="flex items-center gap-3 mb-2">
-          <Paintbrush className="h-5 w-5 text-[#00d4aa]" />
-          <h3 className="font-semibold text-white">Branding</h3>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label className="text-gray-300">Company Name</Label>
-            <Input defaultValue="VoiceAI Pro" className="mt-1 border-white/10 bg-[#0a0f1a] text-white" />
-          </div>
-          <div>
-            <Label className="text-gray-300">Brand Color</Label>
-            <div className="mt-1 flex items-center gap-2">
-              <input type="color" defaultValue="#00d4aa" className="h-10 w-10 rounded cursor-pointer border-0" />
-              <Input defaultValue="#00d4aa" className="border-white/10 bg-[#0a0f1a] text-white" />
+          {/* Base URL */}
+          <div className="bg-[#0a0f1a] rounded-lg p-5 border border-white/5">
+            <div className="flex items-center gap-3 mb-4">
+              <Globe className="h-5 w-5 text-purple-400" />
+              <div>
+                <h3 className="text-white font-medium">Base URL</h3>
+                <p className="text-gray-500 text-sm">Your platform&apos;s public URL (for Twilio webhooks)</p>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div>
-          <Label className="text-gray-300">Logo</Label>
-          <div className="mt-2 flex items-center gap-4 rounded-lg border border-dashed border-white/20 bg-[#0a0f1a] p-4">
-            <div className="h-12 w-12 rounded-lg bg-white/5 flex items-center justify-center">
-              <Globe className="h-6 w-6 text-gray-500" />
-            </div>
             <div>
-              <p className="text-sm text-gray-300">Upload your logo</p>
-              <p className="text-xs text-gray-500">PNG or SVG, max 2MB</p>
+              <Label className="text-gray-400">URL</Label>
+              <Input
+                type="url"
+                value={settings.BASE_URL}
+                onChange={(e) => setSettings({ ...settings, BASE_URL: e.target.value })}
+                placeholder="https://calling.kkhsmedia.com"
+                className="mt-1 bg-[#1a1f2e] border-white/10 text-white"
+              />
             </div>
-            <Button size="sm" variant="outline" className="ml-auto border-white/20 text-gray-300">
-              Upload
-            </Button>
           </div>
         </div>
 
-        <Button className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-          Save Branding
-        </Button>
+        <div className="mt-6 flex justify-end">
+          <Button
+            onClick={saveSettings}
+            disabled={saving}
+            className="bg-[#00d4aa] text-black hover:bg-[#00b894] font-medium"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifying & Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save & Verify
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Danger Zone */}
-      <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">
-        <h3 className="font-semibold text-red-400 mb-2">Danger Zone</h3>
-        <p className="text-sm text-gray-400 mb-4">
-          Once you delete your account, there is no going back. Please be certain.
-        </p>
-        <Button variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
-          Delete Account
-        </Button>
+      {/* How it works */}
+      <div className="bg-[#1a1f2e] rounded-xl p-6 border border-white/10">
+        <h2 className="text-lg font-semibold text-white mb-4">How it Works</h2>
+        <div className="space-y-3 text-gray-400 text-sm">
+          <div className="flex gap-3">
+            <span className="text-[#00d4aa] font-bold">1.</span>
+            <p>Add your Twilio Account SID & Auth Token to enable phone calling</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-[#00d4aa] font-bold">2.</span>
+            <p>Add your OpenAI API Key to power AI conversations</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-[#00d4aa] font-bold">3.</span>
+            <p>Set your Base URL (this site&apos;s public address) for Twilio webhooks</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-[#00d4aa] font-bold">4.</span>
+            <p>Go to Phone Numbers → Buy a number from Twilio</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-[#00d4aa] font-bold">5.</span>
+            <p>Create an AI Agent with a system prompt describing its behavior</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-[#00d4aa] font-bold">6.</span>
+            <p>Assign the phone number to the agent — calls to that number will be handled by AI!</p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,31 +1,66 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Bot, Phone, MoreVertical, Plus, Search } from "lucide-react";
+import { Bot, Plus, Phone, Clock, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 
-const mockAgents = [
-  { id: "1", name: "Sales Agent", desc: "Handles inbound sales calls and qualifies leads", calls: 456, status: "active", language: "English", voice: "Rachel", created: "2024-01-15" },
-  { id: "2", name: "Support Bot", desc: "24/7 customer support for common inquiries", calls: 328, status: "active", language: "English, Hindi", voice: "James", created: "2024-01-20" },
-  { id: "3", name: "Lead Qualifier", desc: "Outbound lead qualification for marketing campaigns", calls: 212, status: "active", language: "English", voice: "Sarah", created: "2024-02-01" },
-  { id: "4", name: "Appointment Setter", desc: "Books appointments with prospects automatically", calls: 156, status: "paused", language: "English, Spanish", voice: "Michael", created: "2024-02-10" },
-  { id: "5", name: "Collections Agent", desc: "Handles payment reminders and collection calls", calls: 82, status: "active", language: "English", voice: "Emily", created: "2024-03-01" },
-];
+interface Agent {
+  id: string;
+  name: string;
+  status: string;
+  use_case: string;
+  voice: string;
+  language: string;
+  total_calls: number;
+  avg_duration: number;
+  created_at: string;
+  phone_number_id: string | null;
+}
 
 export default function AgentsPage() {
-  const [search, setSearch] = useState("");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mockAgents.filter((a) =>
-    a.name.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    loadAgents();
+  }, []);
+
+  async function loadAgents() {
+    try {
+      const res = await fetch("/api/agents");
+      const data = await res.json();
+      setAgents(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load agents:", err);
+    }
+    setLoading(false);
+  }
+
+  async function deleteAgent(id: string) {
+    if (!confirm("Are you sure you want to delete this agent?")) return;
+    try {
+      await fetch(`/api/agents?id=${id}`, { method: "DELETE" });
+      setAgents(agents.filter((a) => a.id !== id));
+    } catch (err) {
+      console.error("Failed to delete agent:", err);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00d4aa]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Voice AI Agents</h2>
-          <p className="text-gray-400">Create and manage your voice AI assistants</p>
+          <h1 className="text-2xl font-bold text-white">AI Agents</h1>
+          <p className="text-gray-400 mt-1">{agents.length} agent{agents.length !== 1 ? "s" : ""} created</p>
         </div>
         <Link href="/dashboard/agents/new">
           <Button className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
@@ -34,66 +69,67 @@ export default function AgentsPage() {
         </Link>
       </div>
 
-      <div className="relative w-full sm:w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-        <input
-          type="text"
-          placeholder="Search agents..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-white/10 bg-[#1a1f2e] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-[#00d4aa] focus:outline-none"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((agent) => (
-          <Link
-            key={agent.id}
-            href={`/dashboard/agents/${agent.id}`}
-            className="group rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-5 hover:border-[#00d4aa]/30 transition-all"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#00d4aa]/10">
-                  <Bot className="h-5 w-5 text-[#00d4aa]" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white group-hover:text-[#00d4aa] transition-colors">{agent.name}</h3>
-                  <span className={`text-xs font-medium ${
-                    agent.status === "active" ? "text-green-400" : "text-yellow-400"
-                  }`}>
-                    {agent.status}
-                  </span>
-                </div>
-              </div>
-              <button className="text-gray-500 hover:text-white" onClick={(e) => e.preventDefault()}>
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </div>
-
-            <p className="mt-3 text-sm text-gray-400 line-clamp-2">{agent.desc}</p>
-
-            <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <Phone className="h-3 w-3" /> {agent.calls} calls
-              </span>
-              <span>{agent.language}</span>
-              <span>Voice: {agent.voice}</span>
-            </div>
+      {agents.length === 0 ? (
+        <div className="bg-[#1a1f2e] rounded-xl p-12 text-center border border-white/10">
+          <Bot className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-white text-lg font-medium mb-2">No agents yet</h3>
+          <p className="text-gray-400 mb-4">Create your first AI agent to start making calls</p>
+          <Link href="/dashboard/agents/new">
+            <Button className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
+              <Plus className="mr-2 h-4 w-4" /> Create Your First Agent
+            </Button>
           </Link>
-        ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {agents.map((agent) => (
+            <div key={agent.id} className="bg-[#1a1f2e] rounded-xl p-5 border border-white/10 hover:border-[#00d4aa]/30 transition-colors group">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-[#00d4aa]/10 flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-[#00d4aa]" />
+                  </div>
+                  <div>
+                    <Link href={`/dashboard/agents/${agent.id}`}>
+                      <h3 className="text-white font-medium hover:text-[#00d4aa] transition-colors">{agent.name}</h3>
+                    </Link>
+                    <span className="text-xs text-gray-500 capitalize">{agent.use_case}</span>
+                  </div>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full ${agent.status === "active" ? "bg-green-500/10 text-green-400" : "bg-yellow-500/10 text-yellow-400"}`}>
+                  {agent.status}
+                </span>
+              </div>
 
-        {/* Create New Card */}
-        <Link
-          href="/dashboard/agents/new"
-          className="group flex items-center justify-center rounded-xl border border-dashed border-white/10 bg-transparent p-5 hover:border-[#00d4aa]/30 transition-all min-h-[180px]"
-        >
-          <div className="text-center">
-            <Plus className="h-8 w-8 text-gray-500 group-hover:text-[#00d4aa] mx-auto mb-2 transition-colors" />
-            <p className="text-sm text-gray-500 group-hover:text-white transition-colors">Create New Agent</p>
-          </div>
-        </Link>
-      </div>
+              <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" /> {agent.total_calls} calls
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> {agent.avg_duration}s avg
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>Voice: {agent.voice}</span>
+                <span>|</span>
+                <span>Lang: {agent.language}</span>
+              </div>
+
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+                <Link href={`/dashboard/agents/${agent.id}`}>
+                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white text-xs">
+                    Configure
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 text-xs" onClick={() => deleteAgent(agent.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

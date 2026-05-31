@@ -6,260 +6,223 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Mic, Upload, Globe, Sparkles } from "lucide-react";
-import Link from "next/link";
-
-const voices = [
-  { id: "rachel", name: "Rachel", lang: "English (US)", gender: "Female" },
-  { id: "james", name: "James", lang: "English (US)", gender: "Male" },
-  { id: "sarah", name: "Sarah", lang: "English (UK)", gender: "Female" },
-  { id: "michael", name: "Michael", lang: "English (UK)", gender: "Male" },
-  { id: "priya", name: "Priya", lang: "Hindi", gender: "Female" },
-  { id: "raj", name: "Raj", lang: "Hindi", gender: "Male" },
-  { id: "maria", name: "Maria", lang: "Spanish", gender: "Female" },
-  { id: "carlos", name: "Carlos", lang: "Spanish", gender: "Male" },
-];
-
-const languages = [
-  "English (US)", "English (UK)", "Hindi", "Spanish", "French",
-  "German", "Japanese", "Tamil", "Portuguese", "Arabic",
-];
+import { Bot, Loader2, ArrowLeft, Sparkles } from "lucide-react";
 
 const useCaseTemplates = [
-  { id: "lead", name: "Lead Generation", prompt: "You are a friendly sales agent who qualifies leads by asking about their needs, budget, and timeline. Be conversational and helpful." },
-  { id: "appointment", name: "Appointment Booking", prompt: "You are a professional receptionist who helps callers book appointments. Check available slots, confirm details, and send confirmation." },
-  { id: "support", name: "Customer Support", prompt: "You are a helpful customer support agent. Listen to the customer's issue, provide solutions, and escalate to a human if needed." },
-  { id: "collection", name: "Collections", prompt: "You are a professional collections agent. Politely remind customers about outstanding payments and help arrange payment plans." },
-  { id: "custom", name: "Custom", prompt: "" },
+  {
+    name: "Lead Generation",
+    prompt: "You are a friendly and professional lead generation agent. Your goal is to qualify potential customers by asking about their needs, budget, timeline, and decision-making process. Be conversational but focused on gathering key information. Always be polite and helpful.",
+    greeting: "Hi there! I'm calling from [Company]. I'd love to learn more about your business needs. Do you have a moment to chat?",
+  },
+  {
+    name: "Appointment Booking",
+    prompt: "You are an appointment scheduling assistant. Help callers book, reschedule, or cancel appointments. Ask for their preferred date, time, and any special requirements. Confirm all details before finalizing.",
+    greeting: "Hello! I can help you schedule an appointment. What date and time works best for you?",
+  },
+  {
+    name: "Customer Support",
+    prompt: "You are a helpful customer support agent. Listen carefully to customer issues, ask clarifying questions, and provide solutions. If you can't resolve an issue, offer to escalate it. Always be empathetic and professional.",
+    greeting: "Thank you for calling! How can I help you today?",
+  },
+  {
+    name: "Sales",
+    prompt: "You are a skilled sales agent. Present products/services based on customer needs, handle objections professionally, and guide customers toward making informed purchase decisions. Be persuasive but never pushy.",
+    greeting: "Hi! Thank you for your interest. Let me help you find the perfect solution for your needs.",
+  },
+  {
+    name: "Survey / Feedback",
+    prompt: "You are a friendly survey agent. Ask customers questions about their experience, collect ratings and feedback. Keep questions brief and thank them for their time. Record their responses accurately.",
+    greeting: "Hello! We'd love to hear about your recent experience. Would you mind answering a few quick questions?",
+  },
+  {
+    name: "Custom",
+    prompt: "",
+    greeting: "Hello! How can I help you today?",
+  },
 ];
 
 export default function NewAgentPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [agentData, setAgentData] = useState({
+  const [saving, setSaving] = useState(false);
+  const [agent, setAgent] = useState({
     name: "",
-    useCase: "",
-    systemPrompt: "",
-    voice: "rachel",
-    language: "English (US)",
-    greeting: "Hello! How can I help you today?",
+    system_prompt: "",
+    greeting_message: "Hello! How can I help you today?",
+    voice: "alloy",
+    language: "en",
+    model: "gpt-4o-mini",
+    max_call_duration: 300,
+    temperature: 0.7,
+    use_case: "general",
   });
 
-  const handleUseCaseSelect = (template: typeof useCaseTemplates[0]) => {
-    setAgentData({
-      ...agentData,
-      useCase: template.id,
-      systemPrompt: template.prompt,
-    });
-  };
-
-  const handleCreate = () => {
-    router.push("/dashboard/agents");
-  };
+  async function handleCreate() {
+    if (!agent.name || !agent.system_prompt) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(agent),
+      });
+      const data = await res.json();
+      if (data.id) {
+        router.push(`/dashboard/agents/${data.id}`);
+      }
+    } catch (err) {
+      console.error("Failed to create agent:", err);
+    }
+    setSaving(false);
+  }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/agents">
-          <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+        <Button variant="ghost" onClick={() => router.back()} className="text-gray-400 hover:text-white">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div>
-          <h2 className="text-2xl font-bold text-white">Create New Agent</h2>
-          <p className="text-gray-400">Step {step} of 3</p>
+          <h1 className="text-2xl font-bold text-white">Create New Agent</h1>
+          <p className="text-gray-400 mt-1">Step {step} of 3</p>
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress bar */}
       <div className="flex gap-2">
         {[1, 2, 3].map((s) => (
-          <div
-            key={s}
-            className={`h-1 flex-1 rounded-full transition-all ${
-              s <= step ? "bg-[#00d4aa]" : "bg-white/10"
-            }`}
-          />
+          <div key={s} className={`h-1 flex-1 rounded-full ${s <= step ? "bg-[#00d4aa]" : "bg-white/10"}`} />
         ))}
       </div>
 
       {step === 1 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
-            <div>
-              <Label className="text-gray-300 text-base">Agent Name *</Label>
-              <Input
-                value={agentData.name}
-                onChange={(e) => setAgentData({ ...agentData, name: e.target.value })}
-                placeholder="e.g., Sales Agent, Support Bot"
-                className="mt-2 border-white/10 bg-[#0a0f1a] text-white text-lg"
-              />
-            </div>
-
-            <div>
-              <Label className="text-gray-300 text-base">Choose a Use Case</Label>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {useCaseTemplates.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => handleUseCaseSelect(template)}
-                    className={`rounded-lg border p-4 text-left transition-all ${
-                      agentData.useCase === template.id
-                        ? "border-[#00d4aa] bg-[#00d4aa]/5"
-                        : "border-white/10 hover:border-white/20"
-                    }`}
-                  >
-                    <h4 className="font-medium text-white">{template.name}</h4>
-                    <p className="mt-1 text-xs text-gray-500 line-clamp-2">
-                      {template.prompt || "Write your own custom prompt"}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-gray-300 text-base">System Prompt *</Label>
-              <p className="text-xs text-gray-500 mt-1">Define how your AI agent should behave and respond</p>
-              <Textarea
-                value={agentData.systemPrompt}
-                onChange={(e) => setAgentData({ ...agentData, systemPrompt: e.target.value })}
-                placeholder="You are a helpful voice AI assistant that..."
-                className="mt-2 border-white/10 bg-[#0a0f1a] text-white min-h-[150px]"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button
-              onClick={() => setStep(2)}
-              disabled={!agentData.name || !agentData.systemPrompt}
-              className="bg-[#00d4aa] text-black hover:bg-[#00b894]"
-            >
-              Next: Voice & Language <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+        <div className="bg-[#1a1f2e] rounded-xl p-6 border border-white/10 space-y-6">
+          <h2 className="text-lg font-semibold text-white">Choose a Use Case</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {useCaseTemplates.map((template) => (
+              <button
+                key={template.name}
+                onClick={() => {
+                  setAgent({
+                    ...agent,
+                    use_case: template.name.toLowerCase().replace(/ /g, "_"),
+                    system_prompt: template.prompt,
+                    greeting_message: template.greeting,
+                  });
+                  setStep(2);
+                }}
+                className="p-4 rounded-lg border border-white/10 hover:border-[#00d4aa]/50 bg-[#0a0f1a] text-left transition-colors"
+              >
+                <Sparkles className="h-5 w-5 text-[#00d4aa] mb-2" />
+                <p className="text-white font-medium text-sm">{template.name}</p>
+              </button>
+            ))}
           </div>
         </div>
       )}
 
       {step === 2 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
-            <div>
-              <Label className="text-gray-300 text-base flex items-center gap-2">
-                <Mic className="h-4 w-4 text-[#00d4aa]" /> Select Voice
-              </Label>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {voices.map((voice) => (
-                  <button
-                    key={voice.id}
-                    onClick={() => setAgentData({ ...agentData, voice: voice.id })}
-                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
-                      agentData.voice === voice.id
-                        ? "border-[#00d4aa] bg-[#00d4aa]/5"
-                        : "border-white/10 hover:border-white/20"
-                    }`}
-                  >
-                    <Mic className="h-4 w-4 text-[#00d4aa]" />
-                    <div>
-                      <p className="text-sm font-medium text-white">{voice.name}</p>
-                      <p className="text-xs text-gray-500">{voice.lang} &middot; {voice.gender}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-gray-300 text-base flex items-center gap-2">
-                <Globe className="h-4 w-4 text-[#00d4aa]" /> Language
-              </Label>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {languages.map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => setAgentData({ ...agentData, language: lang })}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
-                      agentData.language === lang
-                        ? "border-[#00d4aa] bg-[#00d4aa]/10 text-[#00d4aa]"
-                        : "border-white/10 text-gray-400 hover:border-white/20"
-                    }`}
-                  >
-                    {lang}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-gray-300 text-base">Greeting Message</Label>
-              <Input
-                value={agentData.greeting}
-                onChange={(e) => setAgentData({ ...agentData, greeting: e.target.value })}
-                placeholder="Hello! How can I help you today?"
-                className="mt-2 border-white/10 bg-[#0a0f1a] text-white"
-              />
-            </div>
+        <div className="bg-[#1a1f2e] rounded-xl p-6 border border-white/10 space-y-4">
+          <h2 className="text-lg font-semibold text-white">Agent Details</h2>
+          <div>
+            <Label className="text-gray-400">Agent Name</Label>
+            <Input
+              value={agent.name}
+              onChange={(e) => setAgent({ ...agent, name: e.target.value })}
+              placeholder="e.g., Sales Agent, Support Bot"
+              className="mt-1 bg-[#0a0f1a] border-white/10 text-white"
+            />
           </div>
-
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep(1)} className="border-white/20 text-gray-300">
-              Back
-            </Button>
-            <Button onClick={() => setStep(3)} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-              Next: Knowledge Base <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          <div>
+            <Label className="text-gray-400">System Prompt (Agent Instructions)</Label>
+            <Textarea
+              value={agent.system_prompt}
+              onChange={(e) => setAgent({ ...agent, system_prompt: e.target.value })}
+              placeholder="Describe how the agent should behave..."
+              rows={6}
+              className="mt-1 bg-[#0a0f1a] border-white/10 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-gray-400">Greeting Message</Label>
+            <Input
+              value={agent.greeting_message}
+              onChange={(e) => setAgent({ ...agent, greeting_message: e.target.value })}
+              placeholder="What the agent says when answering"
+              className="mt-1 bg-[#0a0f1a] border-white/10 text-white"
+            />
+          </div>
+          <div className="flex justify-between pt-4">
+            <Button variant="ghost" onClick={() => setStep(1)} className="text-gray-400">Back</Button>
+            <Button onClick={() => setStep(3)} disabled={!agent.name || !agent.system_prompt} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">Next</Button>
           </div>
         </div>
       )}
 
       {step === 3 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-6 space-y-5">
+        <div className="bg-[#1a1f2e] rounded-xl p-6 border border-white/10 space-y-4">
+          <h2 className="text-lg font-semibold text-white">Voice & Model Settings</h2>
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-300 text-base">Knowledge Base</Label>
-              <p className="text-xs text-gray-500 mt-1">Upload documents to train your agent with custom knowledge</p>
-              <div className="mt-3 flex flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-[#0a0f1a] p-8">
-                <Upload className="h-8 w-8 text-gray-500 mb-3" />
-                <p className="text-sm text-gray-400 mb-1">Drag & drop files here or click to browse</p>
-                <p className="text-xs text-gray-500">Supports PDF, DOCX, TXT, CSV (Max 50MB)</p>
-                <Button variant="outline" className="mt-4 border-white/20 text-gray-300">
-                  Browse Files
-                </Button>
-              </div>
+              <Label className="text-gray-400">Voice</Label>
+              <select
+                value={agent.voice}
+                onChange={(e) => setAgent({ ...agent, voice: e.target.value })}
+                className="mt-1 w-full rounded-md bg-[#0a0f1a] border border-white/10 text-white px-3 py-2"
+              >
+                <option value="alloy">Alloy (Female)</option>
+                <option value="echo">Echo (Male)</option>
+                <option value="fable">Fable (Female, British)</option>
+                <option value="onyx">Onyx (Male, Deep)</option>
+                <option value="nova">Nova (Female, Warm)</option>
+                <option value="shimmer">Shimmer (Female, Soft)</option>
+              </select>
             </div>
-
-            <div className="rounded-lg border border-white/10 bg-[#0a0f1a] p-4">
-              <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#00d4aa]" /> Agent Summary
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Name</span>
-                  <span className="text-white">{agentData.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Voice</span>
-                  <span className="text-white">{voices.find(v => v.id === agentData.voice)?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Language</span>
-                  <span className="text-white">{agentData.language}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Use Case</span>
-                  <span className="text-white capitalize">{agentData.useCase || "Custom"}</span>
-                </div>
-              </div>
+            <div>
+              <Label className="text-gray-400">Language</Label>
+              <select
+                value={agent.language}
+                onChange={(e) => setAgent({ ...agent, language: e.target.value })}
+                className="mt-1 w-full rounded-md bg-[#0a0f1a] border border-white/10 text-white px-3 py-2"
+              >
+                <option value="en-US">English (US)</option>
+                <option value="en-GB">English (UK)</option>
+                <option value="hi-IN">Hindi</option>
+                <option value="es-ES">Spanish</option>
+                <option value="fr-FR">French</option>
+                <option value="de-DE">German</option>
+                <option value="ja-JP">Japanese</option>
+                <option value="pt-BR">Portuguese</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-gray-400">AI Model</Label>
+              <select
+                value={agent.model}
+                onChange={(e) => setAgent({ ...agent, model: e.target.value })}
+                className="mt-1 w-full rounded-md bg-[#0a0f1a] border border-white/10 text-white px-3 py-2"
+              >
+                <option value="gpt-4o-mini">GPT-4o Mini (Fast & Affordable)</option>
+                <option value="gpt-4o">GPT-4o (Most Capable)</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Budget)</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-gray-400">Max Call Duration (seconds)</Label>
+              <Input
+                type="number"
+                value={agent.max_call_duration}
+                onChange={(e) => setAgent({ ...agent, max_call_duration: parseInt(e.target.value) || 0 })}
+                className="mt-1 bg-[#0a0f1a] border-white/10 text-white"
+              />
             </div>
           </div>
 
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep(2)} className="border-white/20 text-gray-300">
-              Back
-            </Button>
-            <Button onClick={handleCreate} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
-              Create Agent <Sparkles className="ml-2 h-4 w-4" />
+          <div className="flex justify-between pt-4">
+            <Button variant="ghost" onClick={() => setStep(2)} className="text-gray-400">Back</Button>
+            <Button onClick={handleCreate} disabled={saving || !agent.name} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
+              {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : <><Bot className="mr-2 h-4 w-4" /> Create Agent</>}
             </Button>
           </div>
         </div>

@@ -1,143 +1,226 @@
 "use client";
 
-import { useState } from "react";
-import { Phone, Play, Download, Search, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Phone, Clock, ArrowUpRight, ArrowDownLeft, Loader2, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-const calls = [
-  { id: "1", agent: "Sales Agent", phone: "+1 (555) 123-4567", caller: "John Smith", duration: "3:45", status: "completed", sentiment: "positive", time: "2024-03-15 14:23", summary: "Interested in enterprise plan, requested callback" },
-  { id: "2", agent: "Support Bot", phone: "+1 (555) 987-6543", caller: "Jane Doe", duration: "5:12", status: "completed", sentiment: "neutral", time: "2024-03-15 14:10", summary: "Asked about billing issue, resolved" },
-  { id: "3", agent: "Lead Qualifier", phone: "+91 98765 43210", caller: "Raj Patel", duration: "2:30", status: "no_answer", sentiment: "n/a", time: "2024-03-15 13:55", summary: "No answer, voicemail left" },
-  { id: "4", agent: "Appointment Setter", phone: "+1 (555) 456-7890", caller: "Mike Johnson", duration: "6:18", status: "completed", sentiment: "positive", time: "2024-03-15 13:30", summary: "Appointment booked for March 20" },
-  { id: "5", agent: "Collections Agent", phone: "+1 (555) 321-0987", caller: "Sarah Wilson", duration: "1:45", status: "voicemail", sentiment: "n/a", time: "2024-03-15 13:15", summary: "Left payment reminder voicemail" },
-  { id: "6", agent: "Sales Agent", phone: "+1 (555) 654-3210", caller: "Bob Brown", duration: "4:22", status: "completed", sentiment: "negative", time: "2024-03-15 12:45", summary: "Not interested at this time" },
-  { id: "7", agent: "Support Bot", phone: "+1 (555) 789-0123", caller: "Alice Green", duration: "7:10", status: "completed", sentiment: "positive", time: "2024-03-15 12:20", summary: "Complex issue resolved, customer satisfied" },
-  { id: "8", agent: "Lead Qualifier", phone: "+44 20 7123 4567", caller: "David Wilson", duration: "3:05", status: "completed", sentiment: "positive", time: "2024-03-15 11:50", summary: "Qualified lead, passed to sales team" },
-];
+interface Call {
+  id: string;
+  agent_id: string;
+  direction: string;
+  from_number: string;
+  to_number: string;
+  status: string;
+  duration: number;
+  transcript: string;
+  sentiment: string;
+  summary: string;
+  recording_url: string;
+  created_at: string;
+}
 
-export default function RecentCallsPage() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+interface Agent {
+  id: string;
+  name: string;
+}
+
+export default function CallsPage() {
+  const [calls, setCalls] = useState<Call[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expandedCall, setExpandedCall] = useState<string | null>(null);
+  const [showDialer, setShowDialer] = useState(false);
+  const [dialNumber, setDialNumber] = useState("");
+  const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedFrom, setSelectedFrom] = useState("");
+  const [numbers, setNumbers] = useState<{ id: string; number: string }[]>([]);
+  const [dialing, setDialing] = useState(false);
 
-  const filtered = calls.filter((c) => {
-    const matchesSearch = c.caller.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search);
-    const matchesStatus = statusFilter === "all" || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      const [callRes, agentRes, numRes] = await Promise.all([
+        fetch("/api/calls?limit=100"),
+        fetch("/api/agents"),
+        fetch("/api/numbers"),
+      ]);
+      const callData = await callRes.json();
+      const agentData = await agentRes.json();
+      const numData = await numRes.json();
+      setCalls(Array.isArray(callData) ? callData : []);
+      setAgents(Array.isArray(agentData) ? agentData : []);
+      setNumbers(Array.isArray(numData) ? numData : []);
+    } catch (err) {
+      console.error("Failed to load data:", err);
+    }
+    setLoading(false);
+  }
+
+  async function makeCall() {
+    if (!dialNumber || !selectedAgent || !selectedFrom) return;
+    setDialing(true);
+    try {
+      await fetch("/api/calls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to_number: dialNumber,
+          from_number: selectedFrom,
+          agent_id: selectedAgent,
+        }),
+      });
+      setShowDialer(false);
+      setDialNumber("");
+      loadData();
+    } catch (err) {
+      console.error("Failed to make call:", err);
+    }
+    setDialing(false);
+  }
+
+  function getAgentName(agentId: string) {
+    return agents.find((a) => a.id === agentId)?.name || "Unknown Agent";
+  }
+
+  function formatDuration(seconds: number) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00d4aa]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Recent Calls</h2>
-        <p className="text-gray-400">View and analyze all your voice AI call logs</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Recent Calls</h1>
+          <p className="text-gray-400 mt-1">{calls.length} call{calls.length !== 1 ? "s" : ""}</p>
+        </div>
+        <Button onClick={() => setShowDialer(!showDialer)} className="bg-[#00d4aa] text-black hover:bg-[#00b894]">
+          <PhoneCall className="mr-2 h-4 w-4" /> Make a Call
+        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-4">
-          <p className="text-sm text-gray-400">Total Calls</p>
-          <p className="text-2xl font-bold text-white mt-1">{calls.length}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-4">
-          <p className="text-sm text-gray-400">Completed</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{calls.filter(c => c.status === "completed").length}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-4">
-          <p className="text-sm text-gray-400">Avg Duration</p>
-          <p className="text-2xl font-bold text-white mt-1">4:14</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50 p-4">
-          <p className="text-sm text-gray-400">Positive Sentiment</p>
-          <p className="text-2xl font-bold text-[#00d4aa] mt-1">62%</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search by name or phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-[#1a1f2e] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-[#00d4aa] focus:outline-none"
-          />
-        </div>
-        <div className="flex gap-2">
-          {["all", "completed", "no_answer", "voicemail"].map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`rounded-full border px-3 py-1.5 text-xs transition-all ${
-                statusFilter === s
-                  ? "border-[#00d4aa] bg-[#00d4aa]/10 text-[#00d4aa]"
-                  : "border-white/10 text-gray-400 hover:text-white"
-              }`}
+      {showDialer && (
+        <div className="bg-[#1a1f2e] rounded-xl p-6 border border-[#00d4aa]/30">
+          <h3 className="text-white font-medium mb-4">Outbound Call</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <Input
+              value={dialNumber}
+              onChange={(e) => setDialNumber(e.target.value)}
+              placeholder="+1234567890"
+              className="bg-[#0a0f1a] border-white/10 text-white"
+            />
+            <select
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value)}
+              className="bg-[#0a0f1a] border border-white/10 rounded-md px-3 py-2 text-white text-sm"
             >
-              {s === "all" ? "All" : s.replace("_", " ")}
-            </button>
-          ))}
+              <option value="">Select Agent</option>
+              {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+            <select
+              value={selectedFrom}
+              onChange={(e) => setSelectedFrom(e.target.value)}
+              className="bg-[#0a0f1a] border border-white/10 rounded-md px-3 py-2 text-white text-sm"
+            >
+              <option value="">From Number</option>
+              {numbers.map((n) => <option key={n.id} value={n.number}>{n.number}</option>)}
+            </select>
+            <Button onClick={makeCall} disabled={dialing || !dialNumber || !selectedAgent || !selectedFrom} className="bg-[#00d4aa] text-black">
+              {dialing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Call"}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Calls List */}
-      <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/50">
-        <div className="divide-y divide-white/5">
-          {filtered.map((call) => (
-            <div key={call.id}>
+      {calls.length === 0 ? (
+        <div className="bg-[#1a1f2e] rounded-xl p-12 text-center border border-white/10">
+          <Phone className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-white text-lg font-medium mb-2">No calls yet</h3>
+          <p className="text-gray-400">Calls will appear here once your AI agents start handling them</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {calls.map((call) => (
+            <div key={call.id} className="bg-[#1a1f2e] rounded-lg border border-white/10 overflow-hidden">
               <button
                 onClick={() => setExpandedCall(expandedCall === call.id ? null : call.id)}
-                className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 hover:bg-white/5 transition-colors text-left"
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                    call.status === "completed" ? "bg-green-500/10" : "bg-gray-500/10"
-                  }`}>
-                    <Phone className={`h-5 w-5 ${call.status === "completed" ? "text-green-400" : "text-gray-400"}`} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">{call.caller}</p>
-                    <p className="text-xs text-gray-500">{call.phone} &middot; {call.agent}</p>
+                  {call.direction === "inbound" ? (
+                    <ArrowDownLeft className="h-4 w-4 text-blue-400" />
+                  ) : (
+                    <ArrowUpRight className="h-4 w-4 text-green-400" />
+                  )}
+                  <div className="text-left">
+                    <p className="text-white text-sm">{call.direction === "inbound" ? call.from_number : call.to_number}</p>
+                    <p className="text-gray-500 text-xs">{getAgentName(call.agent_id)}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="flex items-center gap-1 text-gray-400">
-                    <Clock className="h-3 w-3" /> {call.duration}
-                  </span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    call.sentiment === "positive" ? "bg-green-500/10 text-green-400" :
-                    call.sentiment === "negative" ? "bg-red-500/10 text-red-400" :
-                    call.sentiment === "neutral" ? "bg-blue-500/10 text-blue-400" :
+                <div className="flex items-center gap-4">
+                  {call.sentiment && (
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      call.sentiment === "positive" ? "bg-green-500/10 text-green-400" :
+                      call.sentiment === "negative" ? "bg-red-500/10 text-red-400" :
+                      "bg-gray-500/10 text-gray-400"
+                    }`}>
+                      {call.sentiment}
+                    </span>
+                  )}
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    call.status === "completed" ? "bg-green-500/10 text-green-400" :
+                    call.status === "in-progress" ? "bg-blue-500/10 text-blue-400" :
+                    call.status === "failed" ? "bg-red-500/10 text-red-400" :
                     "bg-gray-500/10 text-gray-400"
                   }`}>
-                    {call.sentiment}
+                    {call.status}
                   </span>
-                  <span className="text-xs text-gray-500">{call.time}</span>
+                  <span className="text-gray-400 text-sm flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> {formatDuration(call.duration)}
+                  </span>
+                  <span className="text-gray-500 text-xs">{new Date(call.created_at).toLocaleString()}</span>
                 </div>
               </button>
 
               {expandedCall === call.id && (
-                <div className="border-t border-white/5 bg-[#0a0f1a]/50 p-4 space-y-3">
-                  <div>
-                    <p className="text-xs font-medium text-gray-400 mb-1">Call Summary</p>
-                    <p className="text-sm text-white">{call.summary}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="border-white/20 text-gray-300 h-8">
-                      <Play className="h-3 w-3 mr-1" /> Play Recording
-                    </Button>
-                    <Button size="sm" variant="outline" className="border-white/20 text-gray-300 h-8">
-                      <Download className="h-3 w-3 mr-1" /> Download
-                    </Button>
-                  </div>
+                <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-3">
+                  {call.summary && (
+                    <div>
+                      <p className="text-gray-500 text-xs mb-1">Summary</p>
+                      <p className="text-gray-300 text-sm">{call.summary}</p>
+                    </div>
+                  )}
+                  {call.transcript && (
+                    <div>
+                      <p className="text-gray-500 text-xs mb-1">Transcript</p>
+                      <pre className="text-gray-300 text-sm whitespace-pre-wrap bg-[#0a0f1a] rounded p-3">{call.transcript}</pre>
+                    </div>
+                  )}
+                  {call.recording_url && (
+                    <div>
+                      <p className="text-gray-500 text-xs mb-1">Recording</p>
+                      <audio controls src={call.recording_url} className="w-full" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
