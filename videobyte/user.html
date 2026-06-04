@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — VideoByte</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--dark:#1C1C28;--coral:#E85D3A;--gray:#6B7280;--light-gray:#E5E7EB;--white:#fff;--green:#059669;--blue:#2563EB;--purple:#7C3AED;--sidebar:240px}
+body{font-family:'Inter',sans-serif;background:#F9FAFB;-webkit-font-smoothing:antialiased}
+
+/* Auth check */
+.auth-loading{display:flex;align-items:center;justify-content:center;min-height:100vh;font-size:14px;color:var(--gray)}
+
+/* Sidebar */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:var(--dark);color:#fff;overflow-y:auto;z-index:50;display:flex;flex-direction:column}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 20px 10px;font-weight:800;font-size:18px}
+.sidebar-logo svg{width:30px;height:30px}
+.nav-section{padding:8px 12px 0}
+.nav-section-title{font-size:10px;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.35);padding:12px 8px 6px;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;transition:all .15s;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:var(--coral);color:#fff}
+.nav-item .icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:16px 20px;font-size:11px;color:rgba(255,255,255,.3);text-align:center}
+
+/* Main */
+.main{margin-left:var(--sidebar);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:var(--white);border-bottom:1px solid #F1F5F9;position:sticky;top:0;z-index:40}
+.topbar h2{font-size:18px;font-weight:800;color:var(--dark)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.user-badge{font-size:12px;font-weight:600;color:var(--gray);display:flex;align-items:center;gap:6px}
+.btn-logout{padding:8px 16px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:none;color:var(--dark);transition:all .2s}
+.btn-logout:hover{border-color:var(--coral);color:var(--coral)}
+
+/* Content */
+.content{padding:24px 28px}
+.section-panel{display:none}
+.section-panel.active{display:block}
+
+/* Cards */
+.card{background:var(--white);border-radius:14px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:20px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--dark)}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{border-radius:14px;padding:20px;color:#fff}
+.stat-card .label{font-size:12px;font-weight:600;opacity:.85}
+.stat-card .value{font-size:28px;font-weight:800;margin-top:4px}
+.stat-card.coral{background:linear-gradient(135deg,#E85D3A,#f0875f)}
+.stat-card.green{background:linear-gradient(135deg,#059669,#34D399)}
+.stat-card.blue{background:linear-gradient(135deg,#2563EB,#60A5FA)}
+.stat-card.purple{background:linear-gradient(135deg,#7C3AED,#A78BFA)}
+
+/* Table */
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);padding:10px 12px;border-bottom:2px solid #F1F5F9;letter-spacing:.5px}
+.table td{padding:12px;border-bottom:1px solid #F1F5F9;color:#374151}
+
+/* Form elements */
+.btn-sm{padding:10px 20px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-coral{background:var(--coral);color:#fff}
+.btn-coral:hover{background:#D04F30}
+.btn-coral:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline-sm{background:none;border:1.5px solid var(--light-gray);color:var(--dark);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+select,input[type="text"],input[type="datetime-local"],textarea{padding:10px 12px;border:1.5px solid var(--light-gray);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .2s}
+select:focus,input:focus,textarea:focus{border-color:var(--coral)}
+textarea{resize:vertical;min-height:80px}
+
+/* Upload drop zone */
+.drop-zone{border:2px dashed var(--light-gray);border-radius:14px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;background:#FAFBFC}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--coral);background:#FEF7F5}
+.drop-zone p{color:var(--gray);font-size:14px;margin-top:8px}
+
+/* Platform tabs */
+.platform-tab{padding:10px 18px;border:1.5px solid var(--light-gray);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:var(--white);display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.platform-tab.active{background:var(--coral);color:#fff;border-color:var(--coral)}
+.platform-content{display:none}
+.platform-content:first-of-type{display:block}
+
+/* Progress */
+.progress-bar{height:10px;background:var(--light-gray);border-radius:6px;overflow:hidden;margin:12px 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--coral),#f0875f);transition:width .3s;border-radius:6px}
+
+/* Badge */
+.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase}
+.badge-green{background:#ECFDF5;color:#059669}
+.badge-blue{background:#EFF6FF;color:#2563EB}
+.badge-red{background:#FEF2F2;color:#991B1B}
+.badge-yellow{background:#FFFBEB;color:#B45309}
+
+/* Channel card */
+.ch-card{display:flex;gap:16px;padding:18px;border:1px solid #F1F5F9;border-radius:14px;margin-bottom:12px;align-items:center}
+.ch-card img{width:56px;height:56px;border-radius:50%;object-fit:cover}
+.ch-info{flex:1}
+.ch-info h4{font-size:14px;font-weight:700}
+.ch-info p{font-size:12px;color:var(--gray)}
+.ch-stats{display:flex;gap:20px;font-size:12px;color:var(--gray);margin-top:4px}
+.ch-stats span{font-weight:700;color:var(--dark)}
+
+/* Analytics chart */
+.chart-bar{display:flex;align-items:flex-end;gap:3px;height:140px;padding-top:10px}
+.chart-bar .bar{flex:1;background:linear-gradient(to top,var(--coral),#f0875f);border-radius:4px 4px 0 0;min-width:6px;transition:height .3s}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow:auto;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:16px}
+
+@media(max-width:1024px){
+    .sidebar{width:64px}
+    .sidebar-logo span,.nav-section-title,.nav-item em,.sidebar-footer{display:none}
+    .main{margin-left:64px}
+    .nav-item{justify-content:center;padding:12px}
+}
+</style>
+<script>fetch('auth.php?action=me',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d||!d.user){location.replace('login.html');}else if(d.user.role==='admin'){location.replace('admin.html');}else{document.getElementById('app').style.display='block';document.querySelector('.auth-loading').style.display='none';window._user=d.user;initDashboard();}}).catch(function(){location.replace('login.html');});</script>
+</head>
+<body>
+<div class="auth-loading">Loading…</div>
+
+<div id="app" style="display:none">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#E85D3A"/><polygon points="13,9 13,23 24,16" fill="white"/></svg>
+            <span>VideoByte</span>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Main</div>
+            <a class="nav-item active" data-section="dashboard"><span class="icon">📊</span><em>Dashboard</em></a>
+            <a class="nav-item" data-section="channels"><span class="icon">📺</span><em>My Channels</em></a>
+            <a class="nav-item" data-section="youtube-connect"><span class="icon">🔗</span><em>YouTube Connect</em></a>
+            <a class="nav-item" data-section="analytics"><span class="icon">📈</span><em>My Analytics</em></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Content</div>
+            <a class="nav-item" data-section="all-videos"><span class="icon">🎬</span><em>My Videos</em></a>
+            <a class="nav-item" data-section="upload"><span class="icon">📤</span><em>Upload Videos</em></a>
+            <a class="nav-item" data-section="schedule"><span class="icon">📅</span><em>Schedule</em></a>
+            <a class="nav-item" data-section="history"><span class="icon">📋</span><em>Upload History</em></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Live</div>
+            <a class="nav-item" data-section="live"><span class="icon">🔴</span><em>Go Live</em></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Account</div>
+            <a class="nav-item" data-section="profile"><span class="icon">👤</span><em>My Profile</em></a>
+        </div>
+
+        <div class="sidebar-footer">&copy; 2024 VideoByte<br>Airbyte Technologies</div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <h2 id="pageTitle">Dashboard</h2>
+            <div class="topbar-right">
+                <div class="user-badge"><span id="userBadge">User</span></div>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Dashboard -->
+            <div class="section-panel active" id="sec-dashboard">
+                <div id="welcomeBanner" style="background:linear-gradient(135deg,var(--coral),#f0875f);color:#fff;border-radius:14px;padding:24px;margin-bottom:24px">
+                    <div style="font-size:20px;font-weight:800" id="welcomeText">Welcome back!</div>
+                    <div style="font-size:13px;opacity:.85;margin-top:4px">Manage your channels and publish content from here.</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card coral"><div class="label">Total Channels</div><div class="value" id="statChannels">&mdash;</div></div>
+                    <div class="stat-card green"><div class="label">Total Videos</div><div class="value" id="statVideos">&mdash;</div></div>
+                    <div class="stat-card blue"><div class="label">Total Subscribers</div><div class="value" id="statSubs">&mdash;</div></div>
+                    <div class="stat-card purple"><div class="label">Total Views</div><div class="value" id="statViews">&mdash;</div></div>
+                </div>
+            </div>
+
+            <!-- My Channels -->
+            <div class="section-panel" id="sec-channels">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                        <div class="card-title" style="margin:0">Connected Channels</div>
+                        <button class="btn-sm btn-coral" onclick="connectYouTube()">+ Connect Channel</button>
+                    </div>
+                    <div id="channelsList"><p style="color:var(--gray);font-size:13px">Loading channels…</p></div>
+                </div>
+            </div>
+
+            <!-- YouTube Connect -->
+            <div class="section-panel" id="sec-youtube-connect">
+                <div class="card" style="text-align:center;padding:48px">
+                    <div style="font-size:48px;margin-bottom:16px">🔗</div>
+                    <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">Connect Your YouTube Channel</h3>
+                    <p style="color:var(--gray);font-size:14px;margin-bottom:24px">Authorize VideoByte to manage your YouTube channel. We'll access your videos, analytics, and upload capability.</p>
+                    <button class="btn-sm btn-coral" style="padding:14px 32px;font-size:15px" onclick="connectYouTube()">Connect with YouTube</button>
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div class="section-panel" id="sec-analytics">
+                <div class="card">
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                        <select id="anChannelSelect" onchange="loadAnalytics()" style="min-width:200px"><option value="">Select channel</option></select>
+                        <select id="anDays" onchange="loadAnalytics()"><option value="7">7 Days</option><option value="28" selected>28 Days</option><option value="90">90 Days</option></select>
+                    </div>
+                    <div id="analyticsContent">
+                        <p style="color:var(--gray);font-size:13px">Select a channel to view analytics.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Videos -->
+            <div class="section-panel" id="sec-all-videos">
+                <div class="card">
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                        <select id="vidChannelSelect" onchange="loadVideos()"><option value="">Select channel</option></select>
+                        <input type="text" id="vidSearch" placeholder="Search videos…" oninput="filterVideos()" style="flex:1;min-width:160px">
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table class="table">
+                            <thead><tr><th>Thumbnail</th><th>Title</th><th>Views</th><th>Likes</th><th>Privacy</th><th>Published</th></tr></thead>
+                            <tbody id="videosBody"><tr><td colspan="6" style="color:var(--gray);text-align:center;padding:20px">Select a channel</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload -->
+            <div class="section-panel" id="sec-upload">
+                <div class="card" style="padding:16px 24px">
+                    <div style="font-size:13px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Upload To</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap" id="platformTabs">
+                        <button class="platform-tab active" data-platform="youtube" onclick="switchPlatform('youtube')">▶ YouTube</button>
+                        <button class="platform-tab" data-platform="shorts" onclick="switchPlatform('shorts')">📱 Shorts</button>
+                        <button class="platform-tab" data-platform="instagram" onclick="switchPlatform('instagram')">📷 Instagram</button>
+                        <button class="platform-tab" data-platform="tiktok" onclick="switchPlatform('tiktok')">♪ TikTok</button>
+                        <button class="platform-tab" data-platform="facebook" onclick="switchPlatform('facebook')">f Facebook</button>
+                    </div>
+                </div>
+
+                <!-- YouTube Upload -->
+                <div id="platform-youtube" class="platform-content" style="display:block">
+                    <div class="card">
+                        <div class="card-title">Upload New Video to YouTube</div>
+                        <div class="drop-zone" id="ytDropZone" ondrop="handleDrop(event,'yt')" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" onclick="document.getElementById('ytFile').click()">
+                            <div style="font-size:32px">📁</div>
+                            <p>Drag & drop your video here, or click to browse</p>
+                            <input type="file" id="ytFile" accept="video/*" style="display:none" onchange="handleFiles(this.files)">
+                        </div>
+                        <div id="ytFileName" style="display:none;font-size:13px;color:var(--dark);font-weight:600;margin-top:10px"></div>
+                        <div id="ytForm" style="display:none;margin-top:20px">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                                <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Channel</label><select id="uploadChannelSelect" style="width:100%"><option value="">Select channel</option></select></div>
+                                <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Category</label><select id="uploadCategory" style="width:100%"></select></div>
+                            </div>
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Title</label><input type="text" id="uploadTitle" style="width:100%" placeholder="Video title"></div>
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Description</label><textarea id="uploadDesc" style="width:100%" placeholder="Video description" rows="4"></textarea></div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                                <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Tags (comma-separated)</label><input type="text" id="uploadTags" style="width:100%" placeholder="tag1, tag2, tag3"></div>
+                                <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Privacy</label><select id="uploadPrivacy" style="width:100%"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select></div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                                <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Thumbnail (optional)</label><input type="file" id="uploadThumb" accept="image/*"></div>
+                                <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Schedule (IST, optional)</label><input type="datetime-local" id="uploadSchedule" style="width:100%"></div>
+                            </div>
+                            <div class="progress-bar" id="ytProgress" style="display:none"><div class="progress-fill" id="ytProgressFill"></div></div>
+                            <div id="ytProgressText" style="display:none;font-size:12px;color:var(--gray);margin-bottom:12px"></div>
+                            <button class="btn-sm btn-coral" id="ytUploadBtn" onclick="uploadVideo()">Upload to YouTube</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shorts Upload -->
+                <div id="platform-shorts" class="platform-content">
+                    <div class="card">
+                        <div class="card-title">Upload YouTube Shorts</div>
+                        <div class="drop-zone" onclick="document.getElementById('shortsFile').click()">
+                            <div style="font-size:32px">📱</div>
+                            <p>Select a vertical video (under 60 seconds recommended)</p>
+                            <input type="file" id="shortsFile" accept="video/*" style="display:none" onchange="handleShortsFile(this.files)">
+                        </div>
+                        <div id="shortsFileName" style="display:none;font-size:13px;margin-top:10px"></div>
+                        <div id="shortsForm" style="display:none;margin-top:20px">
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Channel</label><select id="shortsChannelSelect" style="width:100%"><option value="">Select channel</option></select></div>
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Title</label><input type="text" id="shortsTitle" style="width:100%" placeholder="Title #Shorts"></div>
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Description</label><textarea id="shortsDesc" style="width:100%" rows="3" placeholder="Description"></textarea></div>
+                            <button class="btn-sm btn-coral" id="shortsUploadBtn" onclick="uploadShorts()">Upload Short</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instagram Upload -->
+                <div id="platform-instagram" class="platform-content">
+                    <div class="card">
+                        <div class="card-title">Publish to Instagram Reels</div>
+                        <div class="drop-zone" onclick="document.getElementById('igFile').click()">
+                            <div style="font-size:32px">📷</div>
+                            <p>Select a video for Instagram Reels</p>
+                            <input type="file" id="igFile" accept="video/*" style="display:none" onchange="handleIgFile(this.files)">
+                        </div>
+                        <div id="igForm" style="display:none;margin-top:20px">
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Caption</label><textarea id="igCaption" style="width:100%" rows="3" placeholder="Write a caption…"></textarea></div>
+                            <button class="btn-sm btn-coral" id="igUploadBtn" onclick="uploadInstagram()">Publish to Instagram</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TikTok Upload -->
+                <div id="platform-tiktok" class="platform-content">
+                    <div class="card">
+                        <div class="card-title">Publish to TikTok</div>
+                        <div class="drop-zone" onclick="document.getElementById('ttFile').click()">
+                            <div style="font-size:32px">♪</div>
+                            <p>Select a video for TikTok</p>
+                            <input type="file" id="ttFile" accept="video/*" style="display:none" onchange="handleTtFile(this.files)">
+                        </div>
+                        <div id="ttForm" style="display:none;margin-top:20px">
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Caption</label><textarea id="ttCaption" style="width:100%" rows="3" placeholder="Write a caption…"></textarea></div>
+                            <button class="btn-sm btn-coral" id="ttUploadBtn" onclick="uploadTiktok()">Publish to TikTok</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facebook Upload -->
+                <div id="platform-facebook" class="platform-content">
+                    <div class="card">
+                        <div class="card-title">Publish to Facebook</div>
+                        <div class="drop-zone" onclick="document.getElementById('fbFile').click()">
+                            <div style="font-size:32px">f</div>
+                            <p>Select a video for Facebook</p>
+                            <input type="file" id="fbFile" accept="video/*" style="display:none" onchange="handleFbFile(this.files)">
+                        </div>
+                        <div id="fbForm" style="display:none;margin-top:20px">
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Page</label><select id="fbPageSelect" style="width:100%"><option value="">Select Facebook page</option></select></div>
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Title</label><input type="text" id="fbTitle" style="width:100%" placeholder="Video title"></div>
+                            <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Description</label><textarea id="fbDesc" style="width:100%" rows="3" placeholder="Description"></textarea></div>
+                            <button class="btn-sm btn-coral" id="fbUploadBtn" onclick="uploadFacebook()">Publish to Facebook</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="section-panel" id="sec-schedule">
+                <div class="card">
+                    <div class="card-title">My Scheduled Uploads</div>
+                    <table class="table">
+                        <thead><tr><th>Filename</th><th>Title</th><th>Channel</th><th>Schedule (IST)</th><th>Status</th></tr></thead>
+                        <tbody id="scheduleBody"><tr><td colspan="5" style="text-align:center;color:var(--gray)">No scheduled uploads</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Upload History -->
+            <div class="section-panel" id="sec-history">
+                <div class="card">
+                    <div class="card-title">My Upload History</div>
+                    <table class="table">
+                        <thead><tr><th>Video</th><th>Platform</th><th>Uploaded</th><th>Size</th><th>Status</th></tr></thead>
+                        <tbody id="historyBody"><tr><td colspan="5" style="text-align:center;color:var(--gray)">Loading…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Go Live -->
+            <div class="section-panel" id="sec-live">
+                <div class="card" style="margin-bottom:18px">
+                    <div class="card-title">Upload a video to go live</div>
+                    <p style="color:var(--gray);font-size:13px;margin:-10px 0 16px">Your video is encoded first, then becomes ready to stream. Max: <b>2GB</b>.</p>
+                    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+                        <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Video file</label><input type="file" id="liveFile" accept="video/*" style="font-size:13px"></div>
+                        <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Quality</label><select id="liveQuality"><option value="720">720p</option><option value="1080">1080p</option></select></div>
+                        <button class="btn-sm btn-coral" onclick="liveUpload()">Upload</button>
+                    </div>
+                    <div id="liveUpWrap" style="display:none;margin-top:16px">
+                        <div class="progress-bar"><div class="progress-fill" id="liveUpBar" style="width:0"></div></div>
+                        <div id="liveUpTxt" style="font-size:12px;color:var(--gray);margin-top:6px"></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom:18px">
+                    <div class="card-title">My videos</div>
+                    <table class="table"><thead><tr><th>Video</th><th>Quality</th><th>Status</th><th style="text-align:right">Action</th></tr></thead>
+                    <tbody id="liveVideos"><tr><td colspan="4" style="color:var(--gray);padding:18px">Loading…</td></tr></tbody></table>
+                </div>
+                <div class="card">
+                    <div class="card-title">Active live streams</div>
+                    <table class="table"><thead><tr><th>Title</th><th>Platform</th><th>Mode</th><th>Status</th><th style="text-align:right">Action</th></tr></thead>
+                    <tbody id="liveActive"><tr><td colspan="5" style="color:var(--gray);padding:18px">No active streams</td></tr></tbody></table>
+                </div>
+            </div>
+
+            <!-- Go Live Modal -->
+            <div id="goLiveModal" class="modal-overlay">
+                <div class="modal">
+                    <h3>Go Live</h3>
+                    <div id="glVideoName" style="font-size:13px;color:var(--gray);margin-bottom:18px"></div>
+                    <div style="margin-bottom:14px">
+                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Method</label>
+                        <div style="display:flex;gap:8px">
+                            <label style="flex:1;text-align:center;padding:9px;border:1.5px solid var(--light-gray);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="radio" name="glMethod" value="channel" checked onchange="glMethodChange()"> Connected channel</label>
+                            <label style="flex:1;text-align:center;padding:9px;border:1.5px solid var(--light-gray);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="radio" name="glMethod" value="key" onchange="glMethodChange()"> Stream key</label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Platform</label><select id="glPlatform" style="width:100%"><option value="youtube">YouTube</option><option value="facebook">Facebook</option></select></div>
+                    <div id="glChannelMode" style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Channel</label><select id="glChannel" style="width:100%"><option value="">Select channel</option></select></div>
+                    <div id="glKeyMode" style="display:none;margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Stream Key</label><input type="text" id="glKey" style="width:100%" placeholder="Paste stream key"></div>
+                    <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Title</label><input type="text" id="glTitle" style="width:100%" placeholder="Live title"></div>
+                    <div style="margin-bottom:18px">
+                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Mode</label>
+                        <label style="font-size:13px;margin-right:16px"><input type="radio" name="glMode" value="once" checked> Play once</label>
+                        <label style="font-size:13px"><input type="radio" name="glMode" value="loop"> Loop (24×7)</label>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end">
+                        <button class="btn-outline-sm" onclick="closeGoLive()">Cancel</button>
+                        <button class="btn-sm btn-coral" onclick="startLive()">Start Live</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="section-panel" id="sec-profile">
+                <div class="card">
+                    <div class="card-title">My Profile</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:500px">
+                        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Name</label><input type="text" id="profName" style="width:100%" disabled></div>
+                        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Email</label><input type="text" id="profEmail" style="width:100%" disabled></div>
+                        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Role</label><input type="text" id="profRole" style="width:100%" disabled></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var allChannels = [];
+var allVideos = [];
+var selectedFile = null;
+
+function initDashboard() {
+    document.getElementById('userBadge').textContent = window._user.name;
+    document.getElementById('welcomeText').textContent = 'Welcome back, ' + window._user.name + '!';
+    document.getElementById('profName').value = window._user.name;
+    document.getElementById('profEmail').value = window._user.email;
+    document.getElementById('profRole').value = window._user.role;
+    loadChannels();
+}
+
+/* Navigation */
+document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+        this.classList.add('active');
+        var section = this.getAttribute('data-section');
+        document.querySelectorAll('.section-panel').forEach(function(p){p.classList.remove('active');});
+        document.getElementById('sec-' + section).classList.add('active');
+        document.getElementById('pageTitle').textContent = this.querySelector('em').textContent;
+        onSectionLoad(section);
+    });
+});
+
+var loadedSections = {};
+function onSectionLoad(s) {
+    if (loadedSections[s]) return;
+    loadedSections[s] = true;
+    if (s === 'channels' || s === 'youtube-connect') loadChannels();
+    else if (s === 'analytics') populateSelects();
+    else if (s === 'all-videos') populateSelects();
+    else if (s === 'history') loadHistory();
+    else if (s === 'live') { loadLiveVideos(); loadLiveActive(); }
+    else if (s === 'schedule') loadSchedule();
+}
+
+/* Helpers */
+function fmt(n) { if (n >= 1e6) return (n/1e6).toFixed(1)+'M'; if (n >= 1e3) return (n/1e3).toFixed(1)+'K'; return n.toString(); }
+function fmtSize(b) { if (b >= 1073741824) return (b/1073741824).toFixed(1)+' GB'; if (b >= 1048576) return (b/1048576).toFixed(0)+' MB'; return (b/1024).toFixed(0)+' KB'; }
+function esc(s) { return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+/* Channels */
+function loadChannels() {
+    fetch('api.php?action=channels', {credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d) {
+        if (!d.ok) return;
+        allChannels = d.channels || [];
+        // Update stats
+        var totalSubs=0, totalVids=0, totalViews=0;
+        allChannels.forEach(function(c){ totalSubs+=c.subscriberCount||0; totalVids+=c.videoCount||0; totalViews+=c.viewCount||0; });
+        document.getElementById('statChannels').textContent = allChannels.length;
+        document.getElementById('statVideos').textContent = fmt(totalVids);
+        document.getElementById('statSubs').textContent = fmt(totalSubs);
+        document.getElementById('statViews').textContent = fmt(totalViews);
+
+        // Channel list
+        var html = '';
+        allChannels.forEach(function(c) {
+            html += '<div class="ch-card"><img src="'+esc(c.thumbnail||'')+'" alt=""><div class="ch-info"><h4>'+esc(c.title)+'</h4><div class="ch-stats"><div><span>'+fmt(c.subscriberCount)+'</span> subs</div><div><span>'+fmt(c.videoCount)+'</span> videos</div><div><span>'+fmt(c.viewCount)+'</span> views</div></div></div><button class="btn-outline-sm" onclick="disconnectChannel(\''+esc(c.id)+'\')">Disconnect</button></div>';
+        });
+        if (!html) html = '<p style="color:var(--gray);font-size:13px;text-align:center;padding:20px">No channels connected yet. Click "Connect Channel" to get started.</p>';
+        document.getElementById('channelsList').innerHTML = html;
+
+        populateSelects();
+    });
+}
+
+function populateSelects() {
+    ['uploadChannelSelect','shortsChannelSelect','vidChannelSelect','anChannelSelect','glChannel'].forEach(function(id) {
+        var sel = document.getElementById(id);
+        if (!sel) return;
+        var val = sel.value;
+        sel.innerHTML = '<option value="">Select channel</option>';
+        allChannels.forEach(function(c) { sel.innerHTML += '<option value="'+esc(c.id)+'">'+esc(c.title)+'</option>'; });
+        sel.value = val;
+    });
+}
+
+function connectYouTube() {
+    fetch('api.php?action=auth_url', {credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d) {
+        if (d.ok && d.url) window.location.href = d.url;
+        else alert(d.message || 'YouTube API not configured yet. Ask admin to set up API keys.');
+    });
+}
+
+function disconnectChannel(id) {
+    if (!confirm('Disconnect this channel?')) return;
+    fetch('api.php?action=disconnect&channel_id='+id, {credentials:'same-origin'}).then(function(){loadChannels();});
+}
+
+/* Platform switching */
+function switchPlatform(p) {
+    document.querySelectorAll('.platform-tab').forEach(function(t){t.classList.remove('active');});
+    document.querySelector('.platform-tab[data-platform="'+p+'"]').classList.add('active');
+    document.querySelectorAll('.platform-content').forEach(function(c){c.style.display='none';});
+    document.getElementById('platform-'+p).style.display='block';
+}
+
+/* File handlers */
+function handleDrop(e,prefix) { e.preventDefault(); e.currentTarget.classList.remove('dragover'); handleFiles(e.dataTransfer.files); }
+function handleFiles(files) {
+    if (!files.length) return;
+    selectedFile = files[0];
+    document.getElementById('ytForm').style.display = 'block';
+    document.getElementById('ytFileName').style.display = 'block';
+    document.getElementById('ytFileName').textContent = files[0].name + ' (' + fmtSize(files[0].size) + ')';
+    document.getElementById('uploadTitle').value = files[0].name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
+    loadCategories();
+}
+
+var shortsFileObj = null;
+function handleShortsFile(files) { if (!files.length) return; shortsFileObj=files[0]; document.getElementById('shortsForm').style.display='block'; document.getElementById('shortsFileName').style.display='block'; document.getElementById('shortsFileName').textContent=files[0].name; document.getElementById('shortsTitle').value=files[0].name.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ')+' #Shorts'; }
+
+var igFileObj=null;
+function handleIgFile(files){if(!files.length)return;igFileObj=files[0];document.getElementById('igForm').style.display='block';}
+var ttFileObj=null;
+function handleTtFile(files){if(!files.length)return;ttFileObj=files[0];document.getElementById('ttForm').style.display='block';}
+var fbFileObj=null;
+function handleFbFile(files){if(!files.length)return;fbFileObj=files[0];document.getElementById('fbForm').style.display='block';}
+
+/* Categories */
+function loadCategories() {
+    fetch('api.php?action=categories', {credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d) {
+        var sel = document.getElementById('uploadCategory');
+        sel.innerHTML = '';
+        (d.categories || []).forEach(function(c) { sel.innerHTML += '<option value="'+c.id+'">'+esc(c.title)+'</option>'; });
+    });
+}
+
+/* YouTube Upload */
+function uploadVideo() {
+    if (!selectedFile) { alert('Select a video file first.'); return; }
+    var channelId = document.getElementById('uploadChannelSelect').value;
+    if (!channelId) { alert('Select a channel.'); return; }
+    var title = document.getElementById('uploadTitle').value.trim();
+    if (!title) { alert('Enter a title.'); return; }
+
+    var fd = new FormData();
+    fd.append('video', selectedFile);
+    fd.append('channel_id', channelId);
+    fd.append('title', title);
+    fd.append('description', document.getElementById('uploadDesc').value);
+    fd.append('tags', document.getElementById('uploadTags').value);
+    fd.append('category_id', document.getElementById('uploadCategory').value);
+    fd.append('privacy', document.getElementById('uploadPrivacy').value);
+    fd.append('scheduled_at', document.getElementById('uploadSchedule').value);
+
+    var btn = document.getElementById('ytUploadBtn');
+    btn.disabled = true; btn.textContent = 'Uploading…';
+    document.getElementById('ytProgress').style.display = 'block';
+    document.getElementById('ytProgressText').style.display = 'block';
+
+    var xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            var pct = Math.round(e.loaded / e.total * 100);
+            document.getElementById('ytProgressFill').style.width = pct + '%';
+            document.getElementById('ytProgressText').textContent = pct + '% — ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total);
+        }
+    };
+    xhr.onload = function() {
+        var d = JSON.parse(xhr.responseText);
+        if (d.ok) { alert('Upload successful!'); location.reload(); }
+        else { alert(d.message || 'Upload failed.'); btn.disabled=false; btn.textContent='Upload to YouTube'; }
+    };
+    xhr.onerror = function() { alert('Network error.'); btn.disabled=false; btn.textContent='Upload to YouTube'; };
+    xhr.open('POST', 'api.php?action=upload');
+    xhr.withCredentials = true;
+    xhr.send(fd);
+}
+
+/* Shorts Upload */
+function uploadShorts() {
+    if (!shortsFileObj) return;
+    var channelId = document.getElementById('shortsChannelSelect').value;
+    if (!channelId) { alert('Select a channel.'); return; }
+    var title = document.getElementById('shortsTitle').value.trim();
+    if (!title) return;
+    if (title.indexOf('#Shorts') === -1) title += ' #Shorts';
+
+    var fd = new FormData();
+    fd.append('video', shortsFileObj);
+    fd.append('channel_id', channelId);
+    fd.append('title', title);
+    fd.append('description', document.getElementById('shortsDesc').value);
+    fd.append('tags', '');
+    fd.append('category_id', '22');
+    fd.append('privacy', 'public');
+
+    var btn = document.getElementById('shortsUploadBtn');
+    btn.disabled=true; btn.textContent='Uploading…';
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function() { var d=JSON.parse(xhr.responseText); alert(d.ok?'Short uploaded!':d.message||'Failed'); btn.disabled=false; btn.textContent='Upload Short'; };
+    xhr.open('POST','api.php?action=upload'); xhr.withCredentials=true; xhr.send(fd);
+}
+
+/* Social uploads */
+function uploadInstagram() {
+    if (!igFileObj) return;
+    var fd = new FormData(); fd.append('video',igFileObj); fd.append('platform','instagram'); fd.append('caption',document.getElementById('igCaption').value);
+    var btn=document.getElementById('igUploadBtn'); btn.disabled=true; btn.textContent='Publishing…';
+    var xhr=new XMLHttpRequest();
+    xhr.onload=function(){var d=JSON.parse(xhr.responseText);alert(d.ok?'Queued for Instagram!':d.message||'Failed');btn.disabled=false;btn.textContent='Publish to Instagram';};
+    xhr.open('POST','api.php?action=social_upload');xhr.withCredentials=true;xhr.send(fd);
+}
+function uploadTiktok() {
+    if (!ttFileObj) return;
+    var fd = new FormData(); fd.append('video',ttFileObj); fd.append('platform','tiktok'); fd.append('caption',document.getElementById('ttCaption').value);
+    var btn=document.getElementById('ttUploadBtn'); btn.disabled=true; btn.textContent='Publishing…';
+    var xhr=new XMLHttpRequest();
+    xhr.onload=function(){var d=JSON.parse(xhr.responseText);alert(d.ok?'Queued for TikTok!':d.message||'Failed');btn.disabled=false;btn.textContent='Publish to TikTok';};
+    xhr.open('POST','api.php?action=social_upload');xhr.withCredentials=true;xhr.send(fd);
+}
+function uploadFacebook() {
+    if (!fbFileObj) return;
+    var fd = new FormData(); fd.append('video',fbFileObj); fd.append('platform','facebook'); fd.append('title',document.getElementById('fbTitle').value); fd.append('description',document.getElementById('fbDesc').value); fd.append('page_id',document.getElementById('fbPageSelect').value);
+    var btn=document.getElementById('fbUploadBtn'); btn.disabled=true; btn.textContent='Publishing…';
+    var xhr=new XMLHttpRequest();
+    xhr.onload=function(){var d=JSON.parse(xhr.responseText);alert(d.ok?'Queued for Facebook!':d.message||'Failed');btn.disabled=false;btn.textContent='Publish to Facebook';};
+    xhr.open('POST','api.php?action=social_upload');xhr.withCredentials=true;xhr.send(fd);
+}
+
+/* Videos */
+function loadVideos() {
+    var ch = document.getElementById('vidChannelSelect').value;
+    if (!ch) return;
+    document.getElementById('videosBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Loading…</td></tr>';
+    fetch('api.php?action=videos&channel_id='+ch, {credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d) {
+        allVideos = d.videos || [];
+        renderVideos(allVideos);
+    });
+}
+function renderVideos(vids) {
+    if (!vids.length) { document.getElementById('videosBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray)">No videos found</td></tr>'; return; }
+    var html='';
+    vids.forEach(function(v){
+        html+='<tr><td><img src="'+esc(v.thumbnail)+'" style="width:80px;border-radius:6px"></td><td style="font-weight:600">'+esc(v.title)+'</td><td>'+fmt(v.views||0)+'</td><td>'+fmt(v.likes||0)+'</td><td><span class="badge badge-'+(v.privacy==='public'?'green':v.privacy==='unlisted'?'yellow':'red')+'">'+esc(v.privacy)+'</span></td><td style="font-size:12px;color:var(--gray)">'+(v.publishedAt?new Date(v.publishedAt).toLocaleDateString():'')+'</td></tr>';
+    });
+    document.getElementById('videosBody').innerHTML=html;
+}
+function filterVideos() {
+    var q = document.getElementById('vidSearch').value.toLowerCase();
+    renderVideos(allVideos.filter(function(v){return v.title.toLowerCase().indexOf(q)>=0;}));
+}
+
+/* Analytics */
+function loadAnalytics() {
+    var ch = document.getElementById('anChannelSelect').value;
+    var days = document.getElementById('anDays').value;
+    if (!ch) return;
+    document.getElementById('analyticsContent').innerHTML = '<p style="color:var(--gray)">Loading analytics…</p>';
+    fetch('api.php?action=analytics&days='+days+'&channel_id='+ch, {credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d) {
+        if (!d.ok || !d.analytics) { document.getElementById('analyticsContent').innerHTML='<p style="color:var(--gray)">No analytics data. Make sure YouTube Analytics API is configured.</p>'; return; }
+        var an = d.analytics;
+        var html = '<div class="stats-grid"><div class="stat-card coral"><div class="label">Views</div><div class="value" id="anViews">&mdash;</div></div><div class="stat-card green"><div class="label">Watch Time</div><div class="value" id="anWatch">&mdash;</div></div><div class="stat-card blue"><div class="label">Subscribers</div><div class="value" id="anSubs">&mdash;</div></div><div class="stat-card purple"><div class="label">Revenue</div><div class="value" id="anRev">&mdash;</div></div></div>';
+        html += '<div class="card"><div class="card-title">Views Over Time</div><div class="chart-bar" id="anChart"></div></div>';
+        document.getElementById('analyticsContent').innerHTML = html;
+
+        // Parse summary
+        if (an.summary && an.summary.rows && an.summary.rows[0]) {
+            var r = an.summary.rows[0];
+            document.getElementById('anViews').textContent = fmt(r[0]||0);
+            document.getElementById('anWatch').textContent = Math.round((r[1]||0)/60)+'h';
+            document.getElementById('anSubs').textContent = '+'+fmt(r[2]||0);
+            document.getElementById('anRev').textContent = '$'+(r[3]||0).toFixed(2);
+        }
+        // Chart
+        if (an.daily && an.daily.rows) {
+            var chart = document.getElementById('anChart');
+            var max = Math.max.apply(null, an.daily.rows.map(function(r){return r[1]||0;})) || 1;
+            chart.innerHTML = an.daily.rows.map(function(r){ return '<div class="bar" style="height:'+Math.max(2,(r[1]||0)/max*130)+'px" title="'+r[0]+': '+fmt(r[1]||0)+' views"></div>'; }).join('');
+        }
+    });
+}
+
+/* History */
+function loadHistory() {
+    fetch('api.php?action=history', {credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d) {
+        var rows = d.history || [];
+        if (!rows.length) { document.getElementById('historyBody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--gray)">No uploads yet</td></tr>'; return; }
+        var html='';
+        rows.forEach(function(r){
+            var badge = r.status==='completed'?'green':r.status==='failed'?'red':r.status==='queued'?'yellow':'blue';
+            html+='<tr><td style="font-weight:600">'+esc(r.filename)+'</td><td>'+esc(r.platform)+'</td><td style="font-size:12px;color:var(--gray)">'+new Date(r.created_at).toLocaleString()+'</td><td>'+fmtSize(r.file_size||0)+'</td><td><span class="badge badge-'+badge+'">'+esc(r.status)+'</span></td></tr>';
+        });
+        document.getElementById('historyBody').innerHTML=html;
+    });
+}
+
+/* Schedule */
+function loadSchedule() {
+    fetch('api.php?action=queue', {credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d) {
+        var rows = (d.queue||[]).filter(function(r){return r.scheduled_at;});
+        if (!rows.length) { document.getElementById('scheduleBody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--gray)">No scheduled uploads</td></tr>'; return; }
+        var html='';
+        rows.forEach(function(r){
+            html+='<tr><td>'+esc(r.filename)+'</td><td>'+esc(r.title)+'</td><td>'+esc(r.channel_id||'—')+'</td><td>'+new Date(r.scheduled_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+'</td><td><span class="badge badge-yellow">'+esc(r.status)+'</span></td></tr>';
+        });
+        document.getElementById('scheduleBody').innerHTML=html;
+    });
+}
+
+/* Live Streaming */
+function liveUpload() {
+    var file = document.getElementById('liveFile').files[0];
+    if (!file) { alert('Select a video.'); return; }
+    var fd = new FormData();
+    fd.append('video', file);
+    fd.append('quality', document.getElementById('liveQuality').value);
+    document.getElementById('liveUpWrap').style.display='block';
+    var xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = function(e){if(e.lengthComputable){var p=Math.round(e.loaded/e.total*100);document.getElementById('liveUpBar').style.width=p+'%';document.getElementById('liveUpTxt').textContent=p+'% uploaded';}};
+    xhr.onload = function(){var d=JSON.parse(xhr.responseText);if(d.ok){alert('Video uploaded & ready!');loadLiveVideos();}else{alert(d.message||'Failed');}};
+    xhr.open('POST','api.php?action=live_upload');xhr.withCredentials=true;xhr.send(fd);
+}
+
+function loadLiveVideos() {
+    fetch('api.php?action=live_videos',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        var vids=d.videos||[];
+        if(!vids.length){document.getElementById('liveVideos').innerHTML='<tr><td colspan="4" style="color:var(--gray);padding:18px">No videos uploaded</td></tr>';return;}
+        var html='';
+        vids.forEach(function(v){
+            var badge=v.status==='ready'?'green':v.status==='encoding'?'yellow':'blue';
+            html+='<tr><td style="font-weight:600">'+esc(v.filename)+'</td><td>'+esc(v.quality)+'p</td><td><span class="badge badge-'+badge+'">'+esc(v.status)+'</span></td><td style="text-align:right">'+(v.status==='ready'?'<button class="btn-sm btn-coral" onclick="openGoLive('+v.id+',\''+esc(v.filename)+'\')">Go Live</button>':'—')+'</td></tr>';
+        });
+        document.getElementById('liveVideos').innerHTML=html;
+    });
+}
+
+function loadLiveActive() {
+    fetch('api.php?action=live_active',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        var streams=d.streams||[];
+        if(!streams.length){document.getElementById('liveActive').innerHTML='<tr><td colspan="5" style="color:var(--gray);padding:18px">No active streams</td></tr>';return;}
+        var html='';
+        streams.forEach(function(s){
+            html+='<tr><td style="font-weight:600">'+esc(s.title)+'</td><td>'+esc(s.platform)+'</td><td>'+esc(s.mode)+'</td><td><span class="badge badge-green">'+esc(s.status)+'</span></td><td style="text-align:right"><button class="btn-outline-sm" style="color:#991B1B;border-color:#FECACA" onclick="stopLive('+s.id+')">Stop</button></td></tr>';
+        });
+        document.getElementById('liveActive').innerHTML=html;
+    });
+}
+
+var currentLiveVideoId=null;
+function openGoLive(videoId,name){currentLiveVideoId=videoId;document.getElementById('glVideoName').textContent=name;document.getElementById('goLiveModal').classList.add('show');}
+function closeGoLive(){document.getElementById('goLiveModal').classList.remove('show');}
+function glMethodChange(){var m=document.querySelector('input[name="glMethod"]:checked').value;document.getElementById('glChannelMode').style.display=m==='channel'?'block':'none';document.getElementById('glKeyMode').style.display=m==='key'?'block':'none';}
+
+function startLive(){
+    var method=document.querySelector('input[name="glMethod"]:checked').value;
+    var data={video_id:currentLiveVideoId,platform:document.getElementById('glPlatform').value,title:document.getElementById('glTitle').value,mode:document.querySelector('input[name="glMode"]:checked').value};
+    if(method==='channel')data.channel_id=document.getElementById('glChannel').value;
+    else data.stream_key=document.getElementById('glKey').value;
+    fetch('api.php?action=live_start',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)}).then(function(r){return r.json();}).then(function(d){
+        if(d.ok){alert('Live stream started!');closeGoLive();loadLiveActive();}else{alert(d.message||'Failed');}
+    });
+}
+
+function stopLive(id){
+    if(!confirm('Stop this live stream?'))return;
+    fetch('api.php?action=live_stop',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({stream_id:id})}).then(function(){loadLiveActive();});
+}
+
+/* Logout */
+function logout() {
+    fetch('auth.php?action=logout', {credentials:'same-origin'}).finally(function(){
+        localStorage.removeItem('vb_auth');
+        window.location.href = 'login.html';
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign Up — VideoByte</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--coral:#E85D3A;--dark:#1C1C28;--gray:#6B7280}
+body{font-family:'Inter',sans-serif;background:#F9FAFB;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px}
+.logo svg{width:36px;height:36px}
+.logo span{font-size:22px;font-weight:800;color:var(--dark)}
+.subtitle{text-align:center;color:var(--gray);font-size:14px;margin-bottom:32px}
+label{display:block;font-size:12px;font-weight:600;color:var(--dark);margin-bottom:6px}
+input{width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .2s;box-sizing:border-box}
+input:focus{border-color:var(--coral)}
+.field{margin-bottom:18px}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-coral{background:var(--coral);color:#fff}
+.btn-coral:hover{background:#D04F30}
+.btn-coral:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{background:transparent;border:1.5px solid #E5E7EB;color:var(--dark);font-size:14px;padding:12px}
+.links{text-align:center;margin-top:20px;font-size:13px;color:var(--gray)}
+.links a{color:var(--coral);font-weight:600}
+.err{display:none;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+.ok{display:none;background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+.panel{display:none}
+.panel.active{display:block}
+.otp-input{text-align:center;font-size:24px;letter-spacing:8px;font-weight:700}
+.resend{text-align:center;margin-top:12px;font-size:12px;color:var(--gray)}
+.resend a{color:var(--coral);font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo">
+        <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#E85D3A"/><polygon points="13,9 13,23 24,16" fill="white"/></svg>
+        <span>VideoByte</span>
+    </div>
+
+    <!-- Register Panel -->
+    <div id="panelRegister" class="panel active">
+        <p class="subtitle">Create your free account</p>
+        <div id="errReg" class="err"></div>
+        <div class="field">
+            <label>Full Name</label>
+            <input type="text" id="suName" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="field">
+            <label>Email Address</label>
+            <input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" id="suPass" placeholder="At least 8 characters" autocomplete="new-password">
+        </div>
+        <button class="btn btn-coral" id="regBtn" onclick="doRegister()">Create Account</button>
+        <div class="links">Already have an account? <a href="login.html">Sign In</a></div>
+    </div>
+
+    <!-- Verify OTP Panel -->
+    <div id="panelVerify" class="panel">
+        <p class="subtitle">Enter verification code</p>
+        <p style="text-align:center;font-size:13px;color:var(--gray);margin-bottom:20px">We sent a 6-digit code to <b id="verifyEmail"></b></p>
+        <div id="errVerify" class="err"></div>
+        <div class="field">
+            <input type="text" id="vCode" class="otp-input" placeholder="000000" maxlength="6" autocomplete="one-time-code">
+        </div>
+        <button class="btn btn-coral" id="verifyBtn" onclick="doVerify()">Verify</button>
+        <div class="resend">Didn't receive it? <a onclick="doResend()">Resend Code</a></div>
+    </div>
+
+    <!-- Forgot Password Panel -->
+    <div id="panelForgot" class="panel">
+        <p class="subtitle">Reset your password</p>
+        <div id="errForgot" class="err"></div>
+        <div id="okForgot" class="ok"></div>
+        <div class="field">
+            <label>Email Address</label>
+            <input type="email" id="fEmail" placeholder="you@example.com">
+        </div>
+        <button class="btn btn-coral" id="forgotBtn" onclick="doForgot()">Send Reset Code</button>
+        <div class="links" style="margin-top:12px"><a href="#" onclick="showPanel('register');return false">← Back to Sign Up</a> &nbsp;·&nbsp; <a href="login.html">Sign In</a></div>
+    </div>
+
+    <!-- Reset Password Panel -->
+    <div id="panelReset" class="panel">
+        <p class="subtitle">Set new password</p>
+        <p style="text-align:center;font-size:13px;color:var(--gray);margin-bottom:20px">Enter the code sent to <b id="resetEmail"></b></p>
+        <div id="errReset" class="err"></div>
+        <div class="field">
+            <input type="text" id="rCode" class="otp-input" placeholder="000000" maxlength="6">
+        </div>
+        <div class="field">
+            <label>New Password</label>
+            <input type="password" id="rPass" placeholder="At least 8 characters">
+        </div>
+        <button class="btn btn-coral" id="resetBtn" onclick="doReset()">Reset Password</button>
+    </div>
+</div>
+
+<script>
+var pendingEmail='';
+
+function showPanel(name){
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+    document.getElementById('panel'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('active');
+}
+function showErr(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
+function hideErr(id){document.getElementById(id).style.display='none';}
+
+function post(action,data){
+    return fetch('auth.php?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)}).then(function(r){return r.json();});
+}
+
+function doRegister(){
+    hideErr('errReg');
+    var name=document.getElementById('suName').value.trim();
+    var email=document.getElementById('suEmail').value.trim();
+    var pass=document.getElementById('suPass').value;
+    if(!name||!email||!pass){showErr('errReg','All fields are required.');return;}
+    if(pass.length<8){showErr('errReg','Password must be at least 8 characters.');return;}
+    var btn=document.getElementById('regBtn');btn.disabled=true;btn.textContent='Creating…';
+    post('register',{name:name,email:email,password:pass}).then(function(d){
+        if(d.ok){
+            pendingEmail=email;
+            document.getElementById('verifyEmail').textContent=email;
+            showPanel('verify');
+        } else {
+            showErr('errReg',d.message||'Registration failed.');
+        }
+        btn.disabled=false;btn.textContent='Create Account';
+    }).catch(function(){showErr('errReg','Network error.');btn.disabled=false;btn.textContent='Create Account';});
+}
+
+function doVerify(){
+    hideErr('errVerify');
+    var code=document.getElementById('vCode').value.trim();
+    if(!code){showErr('errVerify','Enter the 6-digit code.');return;}
+    var btn=document.getElementById('verifyBtn');btn.disabled=true;btn.textContent='Verifying…';
+    post('verify',{email:pendingEmail,otp:code}).then(function(d){
+        if(d.ok){
+            localStorage.setItem('vb_auth',JSON.stringify({email:d.user.email,name:d.user.name,role:d.user.role,token:d.token}));
+            window.location.href=d.user.role==='admin'?'admin.html':'user.html';
+        } else {
+            showErr('errVerify',d.message||'Invalid code.');
+            btn.disabled=false;btn.textContent='Verify';
+        }
+    }).catch(function(){showErr('errVerify','Network error.');btn.disabled=false;btn.textContent='Verify';});
+}
+
+function doResend(){
+    post('resend',{email:pendingEmail}).then(function(){alert('New code sent!');});
+}
+
+function doForgot(){
+    hideErr('errForgot');
+    var email=document.getElementById('fEmail').value.trim();
+    if(!email){showErr('errForgot','Email required.');return;}
+    var btn=document.getElementById('forgotBtn');btn.disabled=true;btn.textContent='Sending…';
+    post('forgot',{email:email}).then(function(d){
+        pendingEmail=email;
+        document.getElementById('resetEmail').textContent=email;
+        showPanel('reset');
+        btn.disabled=false;btn.textContent='Send Reset Code';
+    }).catch(function(){showErr('errForgot','Network error.');btn.disabled=false;btn.textContent='Send Reset Code';});
+}
+
+function doReset(){
+    hideErr('errReset');
+    var code=document.getElementById('rCode').value.trim();
+    var pass=document.getElementById('rPass').value;
+    if(!code||!pass){showErr('errReset','All fields required.');return;}
+    if(pass.length<8){showErr('errReset','Password must be at least 8 characters.');return;}
+    var btn=document.getElementById('resetBtn');btn.disabled=true;btn.textContent='Resetting…';
+    post('reset',{email:pendingEmail,otp:code,password:pass}).then(function(d){
+        if(d.ok){
+            alert('Password reset! Please sign in.');
+            window.location.href='login.html';
+        } else {
+            showErr('errReset',d.message||'Reset failed.');
+            btn.disabled=false;btn.textContent='Reset Password';
+        }
+    }).catch(function(){showErr('errReset','Network error.');btn.disabled=false;btn.textContent='Reset Password';});
+}
+
+// Handle URL params
+(function(){
+    var params=new URLSearchParams(location.search);
+    if(params.get('verify')){pendingEmail=params.get('verify');document.getElementById('verifyEmail').textContent=pendingEmail;showPanel('verify');}
+    if(location.hash==='#forgot')showPanel('forgot');
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — VideoByte</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--dark:#1C1C28;--coral:#E85D3A;--gray:#6B7280;--light-gray:#E5E7EB;--white:#fff;--green:#059669;--blue:#2563EB;--purple:#7C3AED;--sidebar:260px}
+body{font-family:'Inter',sans-serif;background:#F9FAFB;-webkit-font-smoothing:antialiased}
+.auth-loading{display:flex;align-items:center;justify-content:center;min-height:100vh;font-size:14px;color:var(--gray)}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:var(--dark);color:#fff;overflow-y:auto;z-index:50;display:flex;flex-direction:column}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 20px 6px;font-weight:800;font-size:18px}
+.sidebar-logo svg{width:30px;height:30px}
+.sidebar-role{padding:2px 20px 14px;font-size:11px;color:rgba(255,255,255,.4)}
+.sidebar-role span{background:var(--coral);color:#fff;padding:2px 10px;border-radius:6px;font-weight:700}
+.nav-section{padding:4px 12px 0}
+.nav-section-title{font-size:10px;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.35);padding:12px 8px 6px;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;transition:all .15s;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:var(--coral);color:#fff}
+.nav-item .icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.badge-count{margin-left:auto;background:rgba(255,255,255,.15);padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.sidebar-footer{margin-top:auto;padding:16px 20px;font-size:11px;color:rgba(255,255,255,.3);text-align:center}
+.main{margin-left:var(--sidebar);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:var(--white);border-bottom:1px solid #F1F5F9;position:sticky;top:0;z-index:40}
+.topbar h2{font-size:18px;font-weight:800;color:var(--dark)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.user-badge{font-size:12px;font-weight:600;color:var(--gray);display:flex;align-items:center;gap:6px}
+.role-dot{width:8px;height:8px;border-radius:50%;background:var(--coral)}
+.btn-logout{padding:8px 16px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:none;color:var(--dark)}
+.btn-logout:hover{border-color:var(--coral);color:var(--coral)}
+.content{padding:24px 28px}
+.section-panel{display:none}
+.section-panel.active{display:block}
+.card{background:var(--white);border-radius:14px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:20px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--dark)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{border-radius:14px;padding:20px;color:#fff}
+.stat-card .label{font-size:12px;font-weight:600;opacity:.85}
+.stat-card .value{font-size:28px;font-weight:800;margin-top:4px}
+.stat-card.coral{background:linear-gradient(135deg,#E85D3A,#f0875f)}
+.stat-card.green{background:linear-gradient(135deg,#059669,#34D399)}
+.stat-card.blue{background:linear-gradient(135deg,#2563EB,#60A5FA)}
+.stat-card.purple{background:linear-gradient(135deg,#7C3AED,#A78BFA)}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);padding:10px 12px;border-bottom:2px solid #F1F5F9;letter-spacing:.5px}
+.table td{padding:12px;border-bottom:1px solid #F1F5F9;color:#374151}
+.btn-sm{padding:10px 20px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-coral{background:var(--coral);color:#fff}
+.btn-coral:hover{background:#D04F30}
+.btn-coral:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline-sm{background:none;border:1.5px solid var(--light-gray);color:var(--dark);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+select,input[type="text"],input[type="email"],input[type="password"],input[type="datetime-local"],textarea{padding:10px 12px;border:1.5px solid var(--light-gray);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .2s}
+select:focus,input:focus,textarea:focus{border-color:var(--coral)}
+textarea{resize:vertical;min-height:80px}
+.drop-zone{border:2px dashed var(--light-gray);border-radius:14px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;background:#FAFBFC}
+.drop-zone:hover{border-color:var(--coral);background:#FEF7F5}
+.platform-tab{padding:10px 18px;border:1.5px solid var(--light-gray);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:var(--white);display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.platform-tab.active{background:var(--coral);color:#fff;border-color:var(--coral)}
+.platform-content{display:none}
+.progress-bar{height:10px;background:var(--light-gray);border-radius:6px;overflow:hidden;margin:12px 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--coral),#f0875f);transition:width .3s;border-radius:6px}
+.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase}
+.badge-green{background:#ECFDF5;color:#059669}
+.badge-blue{background:#EFF6FF;color:#2563EB}
+.badge-red{background:#FEF2F2;color:#991B1B}
+.badge-yellow{background:#FFFBEB;color:#B45309}
+.ch-card{display:flex;gap:16px;padding:18px;border:1px solid #F1F5F9;border-radius:14px;margin-bottom:12px;align-items:center}
+.ch-card img{width:56px;height:56px;border-radius:50%;object-fit:cover}
+.ch-info{flex:1}
+.ch-info h4{font-size:14px;font-weight:700}
+.ch-stats{display:flex;gap:20px;font-size:12px;color:var(--gray);margin-top:4px}
+.ch-stats span{font-weight:700;color:var(--dark)}
+.chart-bar{display:flex;align-items:flex-end;gap:3px;height:140px;padding-top:10px}
+.chart-bar .bar{flex:1;background:linear-gradient(to top,var(--coral),#f0875f);border-radius:4px 4px 0 0;min-width:6px;transition:height .3s}
+.quota-bar{height:14px;background:var(--light-gray);border-radius:8px;overflow:hidden}
+.quota-fill{height:100%;border-radius:8px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow:auto;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;margin-bottom:6px}
+@media(max-width:1024px){.sidebar{width:64px}.sidebar-logo span,.nav-section-title,.nav-item em,.sidebar-footer,.sidebar-role,.badge-count{display:none}.main{margin-left:64px}.nav-item{justify-content:center;padding:12px}}
+</style>
+<script>fetch('auth.php?action=me',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d||!d.user){location.replace('login.html');}else if(d.user.role!=='admin'){location.replace('user.html');}else{document.getElementById('app').style.display='block';document.querySelector('.auth-loading').style.display='none';window._user=d.user;initAdmin();}}).catch(function(){location.replace('login.html');});</script>
+</head>
+<body>
+<div class="auth-loading">Loading…</div>
+
+<div id="app" style="display:none">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#E85D3A"/><polygon points="13,9 13,23 24,16" fill="white"/></svg>
+            <span>VideoByte</span>
+        </div>
+        <div class="sidebar-role"><span>Master Admin</span></div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Overview</div>
+            <a class="nav-item active" data-section="dashboard"><span class="icon">📊</span><em>Dashboard</em></a>
+            <a class="nav-item" data-section="users"><span class="icon">👥</span><em>User Management</em><span class="badge-count" id="userCountBadge">&mdash;</span></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">▶ YouTube</div>
+            <a class="nav-item" data-section="youtube-connect"><span class="icon">🔗</span><em>Connect Channels</em></a>
+            <a class="nav-item" data-section="uploads" data-platform="youtube"><span class="icon">📤</span><em>Upload Video</em></a>
+            <a class="nav-item" data-section="uploads" data-platform="shorts"><span class="icon">📱</span><em>Upload Shorts</em></a>
+            <a class="nav-item" data-section="analytics"><span class="icon">📈</span><em>Analytics</em></a>
+            <a class="nav-item" data-section="all-videos"><span class="icon">🎬</span><em>All Videos</em></a>
+            <a class="nav-item" data-section="all-channels"><span class="icon">📺</span><em>Channels</em></a>
+            <a class="nav-item" data-section="queue"><span class="icon">📋</span><em>Upload Queue</em></a>
+            <a class="nav-item" data-section="history"><span class="icon">🕐</span><em>Upload History</em></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Facebook</div>
+            <a class="nav-item" data-section="uploads" data-platform="facebook"><span class="icon">f</span><em>Publish to Facebook</em></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Instagram</div>
+            <a class="nav-item" data-section="uploads" data-platform="instagram"><span class="icon">📷</span><em>Publish to Instagram</em></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">System</div>
+            <a class="nav-item" data-section="api-quota"><span class="icon">⚙️</span><em>API & Quota</em></a>
+            <a class="nav-item" data-section="settings"><span class="icon">🔧</span><em>Settings</em></a>
+            <a class="nav-item" data-section="logs"><span class="icon">📄</span><em>System Logs</em></a>
+        </div>
+
+        <div class="sidebar-footer">&copy; 2024 VideoByte<br>Airbyte Technologies</div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <h2 id="pageTitle">Dashboard</h2>
+            <div class="topbar-right">
+                <div class="user-badge"><span class="role-dot"></span><span id="userBadge">Master Admin</span></div>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Dashboard -->
+            <div class="section-panel active" id="sec-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card coral"><div class="label">Total Users</div><div class="value" id="statUsers">&mdash;</div></div>
+                    <div class="stat-card green"><div class="label">Connected Channels</div><div class="value" id="statChannels">&mdash;</div></div>
+                    <div class="stat-card blue"><div class="label">Total Videos</div><div class="value" id="totalVideos">&mdash;</div></div>
+                    <div class="stat-card purple"><div class="label">Total Subscribers</div><div class="value" id="totalSubs">&mdash;</div></div>
+                </div>
+                <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+                    <div class="card">
+                        <div class="card-title">Views (Last 28 Days)</div>
+                        <div class="chart-bar" id="viewsChart"><div style="color:var(--gray);font-size:13px;padding:20px">Connect a YouTube channel to see analytics</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">API Quota Usage</div>
+                        <div style="text-align:center;padding:20px 0">
+                            <div style="font-size:36px;font-weight:800" id="quotaPercent">&mdash;</div>
+                            <div style="font-size:13px;color:var(--gray)">of daily limit used</div>
+                            <div class="quota-bar" style="margin-top:16px"><div class="quota-fill" id="quotaBar" style="width:0%;background:linear-gradient(90deg,var(--coral),#F08060)"></div></div>
+                            <div style="font-size:12px;color:var(--gray);margin-top:8px" id="quotaUsed"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Recent Activity</div>
+                    <table class="table"><thead><tr><th>Action</th><th>Details</th><th>Time</th></tr></thead>
+                    <tbody id="recentActivity"><tr><td colspan="3" style="text-align:center;color:var(--gray)">Loading…</td></tr></tbody></table>
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div class="section-panel" id="sec-users">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                        <div class="card-title" style="margin:0">All Users</div>
+                        <button class="btn-sm btn-coral" onclick="showAddUser()">+ Add User</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Channels</th><th>Joined</th><th>Actions</th></tr></thead>
+                        <tbody id="usersBody"><tr><td colspan="7" style="text-align:center;color:var(--gray)">Loading…</td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add User Modal -->
+            <div id="addUserModal" class="modal-overlay">
+                <div class="modal">
+                    <h3>Add New User</h3>
+                    <div class="field"><label>Name</label><input type="text" id="newUserName" style="width:100%"></div>
+                    <div class="field"><label>Email</label><input type="email" id="newUserEmail" style="width:100%"></div>
+                    <div class="field"><label>Password</label><input type="password" id="newUserPass" style="width:100%"></div>
+                    <div class="field"><label>Role</label><select id="newUserRole" style="width:100%"><option value="user">User</option><option value="admin">Admin</option></select></div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn-outline-sm" onclick="closeModal()">Cancel</button><button class="btn-sm btn-coral" onclick="addUser()">Create User</button></div>
+                </div>
+            </div>
+
+            <!-- Edit User Modal -->
+            <div id="editUserModal" class="modal-overlay">
+                <div class="modal">
+                    <h3>Edit User</h3>
+                    <div id="editUserInfo" style="font-size:13px;color:var(--gray);margin-bottom:16px"></div>
+                    <div class="field"><label>Role</label><select id="editUserRole" style="width:100%"><option value="user">User</option><option value="admin">Admin</option></select></div>
+                    <div class="field"><label>Status</label><select id="editUserStatus" style="width:100%"><option value="active">Active</option><option value="suspended">Suspended</option></select></div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end">
+                        <button class="btn-outline-sm" style="color:#991B1B;border-color:#FECACA" onclick="deleteUser()">Delete</button>
+                        <button class="btn-outline-sm" onclick="closeModal()">Cancel</button>
+                        <button class="btn-sm btn-coral" onclick="saveUser()">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YouTube Connect -->
+            <div class="section-panel" id="sec-youtube-connect">
+                <div class="card" style="text-align:center;padding:48px">
+                    <div style="font-size:48px;margin-bottom:16px">🔗</div>
+                    <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">Connect YouTube Channel</h3>
+                    <p style="color:var(--gray);font-size:14px;margin-bottom:24px">Authorize to manage channels, upload videos, and view analytics.</p>
+                    <button class="btn-sm btn-coral" style="padding:14px 32px" onclick="connectYouTube()">Connect with YouTube</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">Connected Channels</div>
+                    <div id="adminChannelsList"><p style="color:var(--gray)">Loading…</p></div>
+                </div>
+            </div>
+
+            <!-- Uploads (multi-platform) -->
+            <div class="section-panel" id="sec-uploads">
+                <div class="card" style="padding:16px 24px">
+                    <div style="font-size:13px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Upload To</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="platform-tab active" data-platform="youtube" onclick="switchPlatform('youtube')">▶ YouTube</button>
+                        <button class="platform-tab" data-platform="shorts" onclick="switchPlatform('shorts')">📱 Shorts</button>
+                        <button class="platform-tab" data-platform="instagram" onclick="switchPlatform('instagram')">📷 Instagram</button>
+                        <button class="platform-tab" data-platform="facebook" onclick="switchPlatform('facebook')">f Facebook</button>
+                    </div>
+                </div>
+                <!-- YouTube -->
+                <div id="platform-youtube" class="platform-content" style="display:block">
+                    <div class="card">
+                        <div class="card-title">Upload Video to YouTube</div>
+                        <div class="drop-zone" onclick="document.getElementById('aYtFile').click()"><div style="font-size:32px">📁</div><p>Click to select video</p><input type="file" id="aYtFile" accept="video/*" style="display:none" onchange="aHandleFile(this.files)"></div>
+                        <div id="aYtForm" style="display:none;margin-top:20px">
+                            <div id="aYtFileName" style="font-size:13px;font-weight:600;margin-bottom:14px"></div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px"><div class="field"><label>Channel</label><select id="aUploadChannel" style="width:100%"><option value="">Select</option></select></div><div class="field"><label>Category</label><select id="aUploadCat" style="width:100%"></select></div></div>
+                            <div class="field"><label>Title</label><input type="text" id="aUploadTitle" style="width:100%"></div>
+                            <div class="field"><label>Description</label><textarea id="aUploadDesc" style="width:100%"></textarea></div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px"><div class="field"><label>Tags</label><input type="text" id="aUploadTags" style="width:100%"></div><div class="field"><label>Privacy</label><select id="aUploadPrivacy" style="width:100%"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select></div></div>
+                            <div class="field"><label>Schedule (IST)</label><input type="datetime-local" id="aUploadSchedule" style="width:200px"></div>
+                            <div class="progress-bar" id="aYtProg" style="display:none"><div class="progress-fill" id="aYtProgFill"></div></div>
+                            <button class="btn-sm btn-coral" id="aYtUploadBtn" onclick="aUploadYT()">Upload</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Shorts -->
+                <div id="platform-shorts" class="platform-content">
+                    <div class="card"><div class="card-title">Upload YouTube Shorts</div><div class="drop-zone" onclick="document.getElementById('aShortsFile').click()"><div style="font-size:32px">📱</div><p>Select vertical video</p><input type="file" id="aShortsFile" accept="video/*" style="display:none" onchange="aShortsFileChange(this.files)"></div>
+                    <div id="aShortsForm" style="display:none;margin-top:20px"><div class="field"><label>Channel</label><select id="aShortsChannel" style="width:100%"><option value="">Select</option></select></div><div class="field"><label>Title</label><input type="text" id="aShortsTitle" style="width:100%"></div><button class="btn-sm btn-coral" onclick="aUploadShorts()">Upload Short</button></div></div>
+                </div>
+                <!-- Instagram -->
+                <div id="platform-instagram" class="platform-content">
+                    <div class="card"><div class="card-title">Publish to Instagram</div><div class="drop-zone" onclick="document.getElementById('aIgFile').click()"><div style="font-size:32px">📷</div><p>Select video for Reels</p><input type="file" id="aIgFile" accept="video/*" style="display:none" onchange="aIgFileChange(this.files)"></div>
+                    <div id="aIgForm" style="display:none;margin-top:20px"><div class="field"><label>Caption</label><textarea id="aIgCaption" style="width:100%"></textarea></div><button class="btn-sm btn-coral" onclick="aUploadIg()">Publish</button></div></div>
+                </div>
+                <!-- Facebook -->
+                <div id="platform-facebook" class="platform-content">
+                    <div class="card"><div class="card-title">Publish to Facebook</div><div class="drop-zone" onclick="document.getElementById('aFbFile').click()"><div style="font-size:32px">f</div><p>Select video</p><input type="file" id="aFbFile" accept="video/*" style="display:none" onchange="aFbFileChange(this.files)"></div>
+                    <div id="aFbForm" style="display:none;margin-top:20px"><div class="field"><label>Page</label><select id="aFbPage" style="width:100%"><option value="">Select</option></select></div><div class="field"><label>Title</label><input type="text" id="aFbTitle" style="width:100%"></div><div class="field"><label>Description</label><textarea id="aFbDesc" style="width:100%"></textarea></div><button class="btn-sm btn-coral" onclick="aUploadFb()">Publish</button></div></div>
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div class="section-panel" id="sec-analytics">
+                <div class="card">
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                        <select id="aAnChannel" onchange="aLoadAnalytics()" style="min-width:200px"><option value="">Select channel</option></select>
+                        <select id="aAnDays" onchange="aLoadAnalytics()"><option value="7">7 Days</option><option value="28" selected>28 Days</option><option value="90">90 Days</option></select>
+                    </div>
+                    <div id="aAnalyticsContent"><p style="color:var(--gray)">Select a channel</p></div>
+                </div>
+            </div>
+
+            <!-- All Videos -->
+            <div class="section-panel" id="sec-all-videos">
+                <div class="card">
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                        <select id="aVidChannel" onchange="aLoadVideos()"><option value="">Select channel</option></select>
+                        <input type="text" id="aVidSearch" placeholder="Search…" oninput="aFilterVideos()" style="flex:1;min-width:160px">
+                    </div>
+                    <table class="table"><thead><tr><th>Thumbnail</th><th>Title</th><th>Views</th><th>Likes</th><th>Privacy</th><th>Date</th></tr></thead>
+                    <tbody id="aVideosBody"><tr><td colspan="6" style="text-align:center;color:var(--gray)">Select a channel</td></tr></tbody></table>
+                </div>
+            </div>
+
+            <!-- All Channels -->
+            <div class="section-panel" id="sec-all-channels">
+                <div class="card">
+                    <div class="card-title">All Connected Channels</div>
+                    <div id="allChannelsList"><p style="color:var(--gray)">Loading…</p></div>
+                </div>
+            </div>
+
+            <!-- Queue -->
+            <div class="section-panel" id="sec-queue">
+                <div class="card">
+                    <div class="card-title">Upload Queue</div>
+                    <table class="table"><thead><tr><th>File</th><th>Title</th><th>Platform</th><th>User</th><th>Status</th><th>Created</th></tr></thead>
+                    <tbody id="queueBody"><tr><td colspan="6" style="text-align:center;color:var(--gray)">Loading…</td></tr></tbody></table>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="section-panel" id="sec-history">
+                <div class="card">
+                    <div class="card-title">Upload History</div>
+                    <table class="table"><thead><tr><th>File</th><th>Platform</th><th>User</th><th>Size</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody id="historyBody"><tr><td colspan="6" style="text-align:center;color:var(--gray)">Loading…</td></tr></tbody></table>
+                </div>
+            </div>
+
+            <!-- API & Quota -->
+            <div class="section-panel" id="sec-api-quota">
+                <div class="card">
+                    <div class="card-title">YouTube API Quota</div>
+                    <div id="quotaDetail" style="text-align:center;padding:32px">
+                        <div style="font-size:48px;font-weight:900" id="quotaPctBig">&mdash;</div>
+                        <div style="color:var(--gray);margin-top:8px">of daily 10,000 units used</div>
+                        <div class="quota-bar" style="max-width:400px;margin:20px auto"><div class="quota-fill" id="quotaBarBig" style="width:0;background:linear-gradient(90deg,var(--coral),#f0875f)"></div></div>
+                        <div style="font-size:13px;color:var(--gray)" id="quotaInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="section-panel" id="sec-settings">
+                <div class="card">
+                    <div class="card-title">System Settings</div>
+                    <p style="color:var(--gray);font-size:13px">Settings will be configurable once API keys are connected. For now, update <code>config.php</code> directly.</p>
+                    <div style="margin-top:20px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F1F5F9"><span style="font-size:13px;font-weight:600">Maintenance Mode</span><span class="badge badge-green">OFF</span></div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F1F5F9"><span style="font-size:13px;font-weight:600">Anti-Spam Delays</span><span class="badge badge-green">ENABLED</span></div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F1F5F9"><span style="font-size:13px;font-weight:600">Max Upload Size</span><span style="font-size:13px;font-weight:700">2 GB</span></div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0"><span style="font-size:13px;font-weight:600">YouTube API Configured</span><span class="badge badge-yellow">NOT SET</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Logs -->
+            <div class="section-panel" id="sec-logs">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                        <div class="card-title" style="margin:0">System Logs</div>
+                        <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="logAutoRefresh" onchange="toggleAutoRefresh()"> Auto-refresh</label>
+                    </div>
+                    <div style="overflow-x:auto;max-height:500px;overflow-y:auto">
+                        <table class="table"><thead><tr><th>Level</th><th>Action</th><th>Details</th><th>IP</th><th>Time</th></tr></thead>
+                        <tbody id="logsBody"><tr><td colspan="5" style="text-align:center;color:var(--gray)">Loading…</td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var allChannels=[], aAllVideos=[], currentEditId=null;
+
+function initAdmin() {
+    document.getElementById('userBadge').textContent = window._user.name;
+    loadStats();
+    loadChannels();
+}
+
+/* Navigation */
+document.querySelectorAll('.nav-item').forEach(function(item){
+    item.addEventListener('click',function(){
+        document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+        this.classList.add('active');
+        var section=this.getAttribute('data-section');
+        document.querySelectorAll('.section-panel').forEach(function(p){p.classList.remove('active');});
+        document.getElementById('sec-'+section).classList.add('active');
+        document.getElementById('pageTitle').textContent=this.querySelector('em').textContent;
+        var plat=this.getAttribute('data-platform');
+        if(plat){switchPlatform(plat);}
+        onSectionLoad(section);
+    });
+});
+
+var loaded={};
+function onSectionLoad(s){
+    if(loaded[s])return;loaded[s]=true;
+    if(s==='users')loadUsers();
+    else if(s==='queue')loadQueue();
+    else if(s==='history')loadHistory();
+    else if(s==='logs')loadLogs();
+    else if(s==='api-quota')loadQuota();
+    else if(s==='all-channels'||s==='youtube-connect')loadChannels();
+}
+
+function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toString();}
+function fmtSize(b){if(b>=1073741824)return(b/1073741824).toFixed(1)+' GB';if(b>=1048576)return(b/1048576).toFixed(0)+' MB';return(b/1024).toFixed(0)+' KB';}
+function esc(s){return(s==null?'':String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* Stats */
+function loadStats(){
+    fetch('api.php?action=stats',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        if(!d.ok)return;
+        var s=d.stats;
+        document.getElementById('statUsers').textContent=s.users;
+        document.getElementById('statChannels').textContent=s.channels;
+        document.getElementById('totalVideos').textContent=fmt(s.videos);
+        document.getElementById('totalSubs').textContent=fmt(s.totalSubs);
+        document.getElementById('userCountBadge').textContent=s.users;
+
+        var pct=s.quotaLimit?Math.round(s.quotaUsed/s.quotaLimit*100):0;
+        document.getElementById('quotaPercent').textContent=pct+'%';
+        document.getElementById('quotaBar').style.width=pct+'%';
+        document.getElementById('quotaUsed').textContent=s.quotaUsed+' / '+s.quotaLimit+' units';
+
+        var ab=document.getElementById('recentActivity');
+        if(s.activity&&s.activity.length){
+            ab.innerHTML=s.activity.map(function(a){return'<tr><td style="font-weight:600">'+esc(a.action)+'</td><td style="font-size:12px;color:var(--gray)">'+esc(a.details)+'</td><td style="font-size:12px;color:var(--gray)">'+new Date(a.created_at).toLocaleString()+'</td></tr>';}).join('');
+        } else {
+            ab.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--gray)">No recent activity</td></tr>';
+        }
+    });
+}
+
+/* Channels */
+function loadChannels(){
+    fetch('api.php?action=channels',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        if(!d.ok)return;
+        allChannels=d.channels||[];
+        var html='';
+        allChannels.forEach(function(c){
+            html+='<div class="ch-card"><img src="'+esc(c.thumbnail)+'" alt=""><div class="ch-info"><h4>'+esc(c.title)+'</h4><p>'+esc(c.owner_name||'')+' · '+esc(c.owner_email||'')+'</p><div class="ch-stats"><div><span>'+fmt(c.subscriberCount)+'</span> subs</div><div><span>'+fmt(c.videoCount)+'</span> videos</div><div><span>'+fmt(c.viewCount)+'</span> views</div></div></div><button class="btn-outline-sm" onclick="disconnectChannel(\''+esc(c.id)+'\')">Disconnect</button></div>';
+        });
+        if(!html)html='<p style="color:var(--gray);text-align:center;padding:20px">No channels connected yet.</p>';
+        document.getElementById('adminChannelsList').innerHTML=html;
+        document.getElementById('allChannelsList').innerHTML=html;
+        populateSelects();
+    });
+}
+
+function populateSelects(){
+    ['aUploadChannel','aShortsChannel','aVidChannel','aAnChannel'].forEach(function(id){
+        var sel=document.getElementById(id);if(!sel)return;
+        var v=sel.value;sel.innerHTML='<option value="">Select channel</option>';
+        allChannels.forEach(function(c){sel.innerHTML+='<option value="'+esc(c.id)+'">'+esc(c.title)+'</option>';});
+        sel.value=v;
+    });
+}
+
+function connectYouTube(){fetch('api.php?action=auth_url',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){if(d.ok&&d.url)window.location.href=d.url;else alert(d.message||'API not configured');});}
+function disconnectChannel(id){if(!confirm('Disconnect?'))return;fetch('api.php?action=disconnect&channel_id='+id,{credentials:'same-origin'}).then(function(){loadChannels();});}
+
+/* Platform switching */
+function switchPlatform(p){
+    document.querySelectorAll('.platform-tab').forEach(function(t){t.classList.remove('active');});
+    var tab=document.querySelector('.platform-tab[data-platform="'+p+'"]');if(tab)tab.classList.add('active');
+    document.querySelectorAll('.platform-content').forEach(function(c){c.style.display='none';});
+    var el=document.getElementById('platform-'+p);if(el)el.style.display='block';
+}
+
+/* Upload handlers */
+var aYtFileObj=null,aShortsFileObj=null,aIgFileObj=null,aFbFileObj=null;
+function aHandleFile(files){if(!files.length)return;aYtFileObj=files[0];document.getElementById('aYtForm').style.display='block';document.getElementById('aYtFileName').textContent=files[0].name+' ('+fmtSize(files[0].size)+')';document.getElementById('aUploadTitle').value=files[0].name.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ');aLoadCategories();}
+function aShortsFileChange(files){if(!files.length)return;aShortsFileObj=files[0];document.getElementById('aShortsForm').style.display='block';document.getElementById('aShortsTitle').value=files[0].name.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ')+' #Shorts';}
+function aIgFileChange(files){if(!files.length)return;aIgFileObj=files[0];document.getElementById('aIgForm').style.display='block';}
+function aFbFileChange(files){if(!files.length)return;aFbFileObj=files[0];document.getElementById('aFbForm').style.display='block';}
+
+function aLoadCategories(){fetch('api.php?action=categories',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){var s=document.getElementById('aUploadCat');s.innerHTML='';(d.categories||[]).forEach(function(c){s.innerHTML+='<option value="'+c.id+'">'+esc(c.title)+'</option>';});});}
+
+function aUploadYT(){
+    if(!aYtFileObj){alert('Select file');return;}
+    var ch=document.getElementById('aUploadChannel').value;if(!ch){alert('Select channel');return;}
+    var fd=new FormData();fd.append('video',aYtFileObj);fd.append('channel_id',ch);fd.append('title',document.getElementById('aUploadTitle').value);fd.append('description',document.getElementById('aUploadDesc').value);fd.append('tags',document.getElementById('aUploadTags').value);fd.append('category_id',document.getElementById('aUploadCat').value);fd.append('privacy',document.getElementById('aUploadPrivacy').value);fd.append('scheduled_at',document.getElementById('aUploadSchedule').value);
+    var btn=document.getElementById('aYtUploadBtn');btn.disabled=true;btn.textContent='Uploading…';document.getElementById('aYtProg').style.display='block';
+    var xhr=new XMLHttpRequest();
+    xhr.upload.onprogress=function(e){if(e.lengthComputable)document.getElementById('aYtProgFill').style.width=Math.round(e.loaded/e.total*100)+'%';};
+    xhr.onload=function(){var d=JSON.parse(xhr.responseText);alert(d.ok?'Uploaded!':d.message||'Failed');btn.disabled=false;btn.textContent='Upload';};
+    xhr.open('POST','api.php?action=upload');xhr.withCredentials=true;xhr.send(fd);
+}
+function aUploadShorts(){if(!aShortsFileObj)return;var fd=new FormData();fd.append('video',aShortsFileObj);fd.append('channel_id',document.getElementById('aShortsChannel').value);var t=document.getElementById('aShortsTitle').value;if(t.indexOf('#Shorts')===-1)t+=' #Shorts';fd.append('title',t);fd.append('category_id','22');fd.append('privacy','public');var xhr=new XMLHttpRequest();xhr.onload=function(){alert(JSON.parse(xhr.responseText).ok?'Uploaded!':'Failed');};xhr.open('POST','api.php?action=upload');xhr.withCredentials=true;xhr.send(fd);}
+function aUploadIg(){if(!aIgFileObj)return;var fd=new FormData();fd.append('video',aIgFileObj);fd.append('platform','instagram');fd.append('caption',document.getElementById('aIgCaption').value);var xhr=new XMLHttpRequest();xhr.onload=function(){alert(JSON.parse(xhr.responseText).ok?'Queued!':'Failed');};xhr.open('POST','api.php?action=social_upload');xhr.withCredentials=true;xhr.send(fd);}
+function aUploadFb(){if(!aFbFileObj)return;var fd=new FormData();fd.append('video',aFbFileObj);fd.append('platform','facebook');fd.append('title',document.getElementById('aFbTitle').value);fd.append('description',document.getElementById('aFbDesc').value);fd.append('page_id',document.getElementById('aFbPage').value);var xhr=new XMLHttpRequest();xhr.onload=function(){alert(JSON.parse(xhr.responseText).ok?'Queued!':'Failed');};xhr.open('POST','api.php?action=social_upload');xhr.withCredentials=true;xhr.send(fd);}
+
+/* Videos */
+function aLoadVideos(){
+    var ch=document.getElementById('aVidChannel').value;if(!ch)return;
+    document.getElementById('aVideosBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray)">Loading…</td></tr>';
+    fetch('api.php?action=videos&channel_id='+ch,{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){aAllVideos=d.videos||[];aRenderVideos(aAllVideos);});
+}
+function aRenderVideos(vids){
+    if(!vids.length){document.getElementById('aVideosBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray)">No videos</td></tr>';return;}
+    document.getElementById('aVideosBody').innerHTML=vids.map(function(v){return'<tr><td><img src="'+esc(v.thumbnail)+'" style="width:80px;border-radius:6px"></td><td style="font-weight:600">'+esc(v.title)+'</td><td>'+fmt(v.views||0)+'</td><td>'+fmt(v.likes||0)+'</td><td><span class="badge badge-'+(v.privacy==='public'?'green':'yellow')+'">'+esc(v.privacy)+'</span></td><td style="font-size:12px;color:var(--gray)">'+(v.publishedAt?new Date(v.publishedAt).toLocaleDateString():'')+'</td></tr>';}).join('');
+}
+function aFilterVideos(){var q=document.getElementById('aVidSearch').value.toLowerCase();aRenderVideos(aAllVideos.filter(function(v){return v.title.toLowerCase().indexOf(q)>=0;}));}
+
+/* Analytics */
+function aLoadAnalytics(){
+    var ch=document.getElementById('aAnChannel').value;var days=document.getElementById('aAnDays').value;if(!ch)return;
+    document.getElementById('aAnalyticsContent').innerHTML='<p style="color:var(--gray)">Loading…</p>';
+    fetch('api.php?action=analytics&days='+days+'&channel_id='+ch,{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        if(!d.ok||!d.analytics){document.getElementById('aAnalyticsContent').innerHTML='<p style="color:var(--gray)">No data. Configure YouTube Analytics API.</p>';return;}
+        var html='<div class="stats-grid"><div class="stat-card coral"><div class="label">Views</div><div class="value">&mdash;</div></div><div class="stat-card green"><div class="label">Watch Time</div><div class="value">&mdash;</div></div><div class="stat-card blue"><div class="label">Subscribers</div><div class="value">&mdash;</div></div><div class="stat-card purple"><div class="label">Revenue</div><div class="value">&mdash;</div></div></div>';
+        document.getElementById('aAnalyticsContent').innerHTML=html;
+    });
+}
+
+/* Users */
+function loadUsers(){
+    fetch('auth.php?action=admin_users',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        var users=d.users||[];
+        document.getElementById('userCountBadge').textContent=users.length;
+        if(!users.length){document.getElementById('usersBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray)">No users</td></tr>';return;}
+        document.getElementById('usersBody').innerHTML=users.map(function(u){
+            var sBadge=u.status==='active'?'green':u.status==='suspended'?'red':'yellow';
+            var rBadge=u.role==='admin'?'purple':'blue';
+            return'<tr><td style="font-weight:600">'+esc(u.name)+'</td><td>'+esc(u.email)+'</td><td><span class="badge badge-'+rBadge+'">'+esc(u.role)+'</span></td><td><span class="badge badge-'+sBadge+'">'+esc(u.status)+'</span></td><td>'+u.channels+'</td><td style="font-size:12px;color:var(--gray)">'+new Date(u.created_at).toLocaleDateString()+'</td><td><button class="btn-outline-sm" style="padding:6px 12px;font-size:12px" onclick="editUser('+u.id+',\''+esc(u.name)+'\',\''+esc(u.email)+'\',\''+esc(u.role)+'\',\''+esc(u.status)+'\')">Edit</button></td></tr>';
+        }).join('');
+    });
+}
+function showAddUser(){document.getElementById('addUserModal').classList.add('show');}
+function closeModal(){document.querySelectorAll('.modal-overlay').forEach(function(m){m.classList.remove('show');});}
+function addUser(){
+    var name=document.getElementById('newUserName').value.trim();var email=document.getElementById('newUserEmail').value.trim();var pass=document.getElementById('newUserPass').value;var role=document.getElementById('newUserRole').value;
+    if(!name||!email||!pass){alert('All fields required');return;}
+    fetch('auth.php?action=admin_create_user',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({name:name,email:email,password:pass,role:role})}).then(function(r){return r.json();}).then(function(d){if(d.ok){closeModal();loadUsers();loadStats();}else alert(d.message||'Failed');});
+}
+function editUser(id,name,email,role,status){
+    currentEditId=id;document.getElementById('editUserInfo').textContent=name+' ('+email+')';document.getElementById('editUserRole').value=role;document.getElementById('editUserStatus').value=status;document.getElementById('editUserModal').classList.add('show');
+}
+function saveUser(){
+    fetch('auth.php?action=admin_user_update',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({id:currentEditId,role:document.getElementById('editUserRole').value,status:document.getElementById('editUserStatus').value})}).then(function(r){return r.json();}).then(function(d){if(d.ok){closeModal();loadUsers();}else alert(d.message||'Failed');});
+}
+function deleteUser(){
+    if(!confirm('Delete this user? This cannot be undone.'))return;
+    fetch('auth.php?action=admin_user_delete',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({id:currentEditId})}).then(function(r){return r.json();}).then(function(d){if(d.ok){closeModal();loadUsers();loadStats();}else alert(d.message||'Failed');});
+}
+
+/* Queue */
+function loadQueue(){
+    fetch('api.php?action=queue',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        var q=d.queue||[];
+        if(!q.length){document.getElementById('queueBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray)">Queue is empty</td></tr>';return;}
+        document.getElementById('queueBody').innerHTML=q.map(function(r){return'<tr><td>'+esc(r.filename)+'</td><td>'+esc(r.title)+'</td><td>'+esc(r.platform)+'</td><td>'+esc(r.user_name||'')+'</td><td><span class="badge badge-yellow">'+esc(r.status)+'</span></td><td style="font-size:12px;color:var(--gray)">'+new Date(r.created_at).toLocaleString()+'</td></tr>';}).join('');
+    });
+}
+
+/* History */
+function loadHistory(){
+    fetch('api.php?action=history',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        var h=d.history||[];
+        if(!h.length){document.getElementById('historyBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray)">No uploads</td></tr>';return;}
+        document.getElementById('historyBody').innerHTML=h.map(function(r){var b=r.status==='completed'?'green':r.status==='failed'?'red':'yellow';return'<tr><td>'+esc(r.filename)+'</td><td>'+esc(r.platform)+'</td><td>'+esc(r.user_name||'')+'</td><td>'+fmtSize(r.file_size||0)+'</td><td><span class="badge badge-'+b+'">'+esc(r.status)+'</span></td><td style="font-size:12px;color:var(--gray)">'+new Date(r.created_at).toLocaleString()+'</td></tr>';}).join('');
+    });
+}
+
+/* Quota */
+function loadQuota(){
+    fetch('api.php?action=stats',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        if(!d.ok)return;var s=d.stats;
+        var pct=s.quotaLimit?Math.round(s.quotaUsed/s.quotaLimit*100):0;
+        document.getElementById('quotaPctBig').textContent=pct+'%';
+        document.getElementById('quotaBarBig').style.width=pct+'%';
+        document.getElementById('quotaInfo').textContent=s.quotaUsed+' of '+s.quotaLimit+' units used today. Resets at midnight Pacific Time.';
+    });
+}
+
+/* Logs */
+var logInterval=null;
+function loadLogs(){
+    fetch('api.php?action=logs',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+        var logs=d.logs||[];
+        if(!logs.length){document.getElementById('logsBody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--gray)">No logs</td></tr>';return;}
+        document.getElementById('logsBody').innerHTML=logs.map(function(l){
+            var badge=l.level==='error'?'red':l.level==='warn'?'yellow':'blue';
+            return'<tr><td><span class="badge badge-'+badge+'">'+esc(l.level)+'</span></td><td style="font-weight:600">'+esc(l.action)+'</td><td style="font-size:12px;color:var(--gray);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.details)+'</td><td style="font-size:12px;color:var(--gray)">'+esc(l.ip_address)+'</td><td style="font-size:12px;color:var(--gray)">'+new Date(l.created_at).toLocaleString()+'</td></tr>';
+        }).join('');
+    });
+}
+function toggleAutoRefresh(){
+    if(document.getElementById('logAutoRefresh').checked){logInterval=setInterval(loadLogs,5000);}
+    else{clearInterval(logInterval);}
+}
+
+/* Logout */
+function logout(){fetch('auth.php?action=logout',{credentials:'same-origin'}).finally(function(){localStorage.removeItem('vb_auth');window.location.href='login.html';});}
+</script>
+
+</body>
+</html>
