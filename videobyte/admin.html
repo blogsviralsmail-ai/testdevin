@@ -828,7 +828,7 @@
                         <thead><tr><th>Setting</th><th>Value</th></tr></thead>
                         <tbody>
                             <tr><td>Client ID</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">426558040465-t43pt...apps.googleusercontent.com</td></tr>
-                            <tr><td>Redirect URI</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">https://videobyte.in/yt_callback.php</td></tr>
+                            <tr><td>Redirect URI</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">/yt_callback.php</td></tr>
                             <tr><td>Scopes</td><td><span class="badge badge-blue">youtube</span> <span class="badge badge-blue">youtube.upload</span> <span class="badge badge-blue">youtube.readonly</span> <span class="badge badge-blue">yt-analytics.readonly</span></td></tr>
                             <tr><td>Verification Status</td><td><span class="badge badge-green">Verified</span></td></tr>
                         </tbody>
@@ -1060,7 +1060,7 @@
                 btn.disabled = false; btn.textContent = 'Upload Short';
             };
             xhr.onerror = function() { alert('Upload failed. Check connection.'); btn.disabled = false; btn.textContent = 'Upload Short'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=upload');
+            xhr.open('POST', '/api.php?action=upload');
             xhr.send(formData);
         }
 
@@ -1111,7 +1111,7 @@
                 btn.disabled = false; btn.textContent = 'Upload to Instagram';
             };
             xhr.onerror = function() { alert('Upload failed. Check connection.'); btn.disabled = false; btn.textContent = 'Upload to Instagram'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=social_upload');
+            xhr.open('POST', '/api.php?action=social_upload');
             xhr.send(formData);
         }
 
@@ -1162,7 +1162,7 @@
                 btn.disabled = false; btn.textContent = 'Upload to TikTok';
             };
             xhr.onerror = function() { alert('Upload failed. Check connection.'); btn.disabled = false; btn.textContent = 'Upload to TikTok'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=social_upload');
+            xhr.open('POST', '/api.php?action=social_upload');
             xhr.send(formData);
         }
 
@@ -1217,13 +1217,13 @@
                 btn.disabled = false; btn.textContent = 'Upload to Facebook';
             };
             xhr.onerror = function() { alert('Upload failed. Check connection.'); btn.disabled = false; btn.textContent = 'Upload to Facebook'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=social_upload');
+            xhr.open('POST', '/api.php?action=social_upload');
             xhr.send(formData);
         }
 
         // Load dashboard stats from API
         function loadStats() {
-            fetch('https://videobyte.in/api.php?action=stats')
+            fetch('/api.php?action=stats')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     document.getElementById('totalVideos').textContent = fmt(data.total_videos || 0);
@@ -1235,7 +1235,7 @@
 
         // Load channels from API
         function loadChannels() {
-            fetch('https://videobyte.in/api.php?action=channels')
+            fetch('/api.php?action=channels')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (!data.channels) return;
@@ -1333,7 +1333,7 @@
         function vbChName(id) { var c = allChannels.find(function(x){return x.id===id;}); return c ? c.title : ''; }
         function loadVideos(channelId) {
             loadingVideos();
-            fetch('https://videobyte.in/api.php?action=videos&channel_id=' + channelId, {credentials:'same-origin'})
+            fetch('/api.php?action=videos&channel_id=' + channelId, {credentials:'same-origin'})
                 .then(function(r){return r.json()})
                 .then(function(data) { var vs = (data.videos||[]).map(function(v){ v.channel_title = vbChName(channelId); return v; }); renderVideos(vs); })
                 .catch(function(e) { console.error('Videos load error:', e); renderVideos([]); });
@@ -1342,7 +1342,7 @@
             if (!allChannels.length) { renderVideos([]); return; }
             loadingVideos();
             Promise.all(allChannels.map(function(c){
-                return fetch('https://videobyte.in/api.php?action=videos&channel_id=' + c.id, {credentials:'same-origin'})
+                return fetch('/api.php?action=videos&channel_id=' + c.id, {credentials:'same-origin'})
                     .then(function(r){return r.json();})
                     .then(function(d){ return (d.videos||[]).map(function(v){ v.channel_title = c.title; return v; }); })
                     .catch(function(){ return []; });
@@ -1385,7 +1385,7 @@
             var days = parseInt(document.getElementById('analyticsDaysSelect') ? document.getElementById('analyticsDaysSelect').value : 28) || 28;
             var lblMap={7:'(7d)',28:'(28d)',90:'(90d)',180:'(6mo)',365:'(12mo)'};
             var lblEl=document.getElementById('anPeriodLbl'); if(lblEl) lblEl.textContent=lblMap[days]||('('+days+'d)');
-            fetch('https://videobyte.in/api.php?action=analytics&days=' + days + '&channel_id=' + channelId)
+            fetch('/api.php?action=analytics&days=' + days + '&channel_id=' + channelId)
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     var daily = data.daily || data.analytics || {};
@@ -1523,7 +1523,7 @@
 
         // YouTube Connect
         function connectYouTube(type) {
-            fetch('https://videobyte.in/api.php?action=auth_url')
+            fetch('/api.php?action=auth_url')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (data.url) window.location.href = data.url;
@@ -1534,7 +1534,7 @@
 
         function disconnectChannel(channelId) {
             if (!confirm('Are you sure you want to disconnect this channel?')) return;
-            fetch('https://videobyte.in/api.php?action=disconnect&channel_id=' + channelId)
+            fetch('/api.php?action=disconnect&channel_id=' + channelId)
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (data.success) {
@@ -1636,13 +1636,13 @@
                 btn.textContent = 'Upload to YouTube';
                 document.getElementById('uploadProgress').style.display = 'none';
             };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=upload');
+            xhr.open('POST', '/api.php?action=upload');
             xhr.send(formData);
         }
 
         // Load upload queue
         function loadQueue() {
-            fetch('https://videobyte.in/api.php?action=queue')
+            fetch('/api.php?action=queue')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     var items = (data.queue || []).concat(data.pending_files || []);
@@ -1664,7 +1664,7 @@
 
         // Load upload history
         function loadHistory() {
-            fetch('https://videobyte.in/api.php?action=history')
+            fetch('/api.php?action=history')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (!data.history || data.history.length === 0) {
@@ -1693,7 +1693,7 @@
 
         // Load system logs
         function loadLogs() {
-            fetch('https://videobyte.in/api.php?action=logs')
+            fetch('/api.php?action=logs')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (!data.logs || data.logs.length === 0) {
@@ -1816,13 +1816,13 @@
 
         // ---- Facebook / Instagram connection ----
         function connectFacebook() {
-            fetch('https://videobyte.in/api.php?action=fb_auth_url')
+            fetch('/api.php?action=fb_auth_url')
                 .then(function(r){return r.json()})
                 .then(function(d){ if(d.url) window.location.href = d.url; else alert('Could not start Facebook connect.'); })
                 .catch(function(){ alert('Could not start Facebook connect.'); });
         }
         function loadFbAccounts() {
-            fetch('https://videobyte.in/api.php?action=fb_accounts')
+            fetch('/api.php?action=fb_accounts')
                 .then(function(r){return r.json()})
                 .then(function(d){
                     var pages = d.pages || [];
@@ -1849,7 +1849,7 @@
         // ===== Connected accounts management (FB pages + Instagram) =====
         function _esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
         function loadConnections(){
-            fetch('https://videobyte.in/api.php?action=fb_accounts',{credentials:'same-origin'})
+            fetch('/api.php?action=fb_accounts',{credentials:'same-origin'})
                 .then(function(r){return r.json();}).then(function(d){
                     var pages=d.pages||[];
                     var c=document.getElementById('fbPagesCount'); if(c) c.textContent=pages.length?('('+pages.length+')'):'';
@@ -1863,7 +1863,7 @@
         }
         function renderIgList(pages){
             pages = pages || [];
-            fetch('https://videobyte.in/api.php?action=ig_accounts',{credentials:'same-origin'})
+            fetch('/api.php?action=ig_accounts',{credentials:'same-origin'})
                 .then(function(r){return r.json();}).then(function(d){
                     var direct=(d.accounts||[]).map(function(a){return {id:a.id, username:a.username, via:null, direct:true};});
                     var viaPage=pages.filter(function(p){return p.instagram;}).map(function(p){return {id:p.instagram.id, username:p.instagram.username, via:p.name, direct:false};});
@@ -1877,8 +1877,8 @@
                     }).join('') : '<div style="color:var(--gray);padding:12px">No Instagram account connected.</div>';
                 }).catch(function(e){ console.error('renderIgList', e); });
         }
-        function disconnectFbPage(pid){ if(!confirm('Disconnect this Facebook Page?'))return; var f=new FormData(); f.append('page_id',pid); fetch('https://videobyte.in/api.php?action=fb_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); loadFbAccounts(); }); }
-        function disconnectIg(iid){ if(!confirm('Disconnect this Instagram account?'))return; var f=new FormData(); f.append('ig_id',iid); fetch('https://videobyte.in/api.php?action=ig_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); }); }
+        function disconnectFbPage(pid){ if(!confirm('Disconnect this Facebook Page?'))return; var f=new FormData(); f.append('page_id',pid); fetch('/api.php?action=fb_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); loadFbAccounts(); }); }
+        function disconnectIg(iid){ if(!confirm('Disconnect this Instagram account?'))return; var f=new FormData(); f.append('ig_id',iid); fetch('/api.php?action=ig_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); }); }
         function connectIgDirect(){ window.location.href='/instagram_login.php'; }
 
         // handle redirect back from Facebook / Instagram OAuth

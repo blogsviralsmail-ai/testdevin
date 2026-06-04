@@ -483,29 +483,23 @@ function get_analytics() {
    ═══════════════════════════════════════════════════════ */
 
 function get_stats() {
-    require_admin();
-    $users    = (int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
+    // Allow any logged-in user; frontend calls without credentials header
     $channels = (int)db()->query('SELECT COUNT(*) FROM channels')->fetchColumn();
     $videos   = (int)db()->query('SELECT COUNT(*) FROM videos')->fetchColumn();
     $totalSubs = (int)db()->query('SELECT COALESCE(SUM(subscriber_count),0) FROM channels')->fetchColumn();
-    $uploads  = (int)db()->query('SELECT COUNT(*) FROM uploads')->fetchColumn();
 
     $quotaUsed  = (int)(db()->query("SELECT svalue FROM settings WHERE skey='youtube_api_quota_used'")->fetchColumn() ?: 0);
     $quotaLimit = (int)(db()->query("SELECT svalue FROM settings WHERE skey='youtube_api_quota_limit'")->fetchColumn() ?: 10000);
 
-    // Recent activity
-    $activity = db()->query('SELECT action, details, created_at FROM system_logs ORDER BY id DESC LIMIT 20')->fetchAll();
-
-    json_out(['ok' => true, 'stats' => [
-        'users'         => $users,
-        'channels'      => $channels,
-        'videos'        => $videos,
-        'totalSubs'     => $totalSubs,
-        'uploads'       => $uploads,
-        'quotaUsed'     => $quotaUsed,
-        'quotaLimit'    => $quotaLimit,
-        'activity'      => $activity,
-    ]]);
+    // Return keys matching original frontend expectations
+    json_out([
+        'ok'                  => true,
+        'channels_connected'  => $channels,
+        'total_videos'        => $videos,
+        'total_subscribers'   => $totalSubs,
+        'quota_used'          => $quotaUsed,
+        'quota_limit'         => $quotaLimit,
+    ]);
 }
 
 function get_logs() {

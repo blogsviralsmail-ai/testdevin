@@ -869,7 +869,7 @@
 
         // Load only user's channels
         function loadMyChannels() {
-            fetch('https://videobyte.in/api.php?action=channels')
+            fetch('/api.php?action=channels')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (!data.channels) return;
@@ -935,7 +935,7 @@
         }
 
         function connectYouTube() {
-            fetch('https://videobyte.in/api.php?action=auth_url')
+            fetch('/api.php?action=auth_url')
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (data.url) window.location.href = data.url;
@@ -948,7 +948,7 @@
         var evCategories = null;
         function evEsc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
         function loadMyVideos(channelId) {
-            fetch('https://videobyte.in/api.php?action=videos&channel_id=' + channelId, {credentials:'same-origin'})
+            fetch('/api.php?action=videos&channel_id=' + channelId, {credentials:'same-origin'})
                 .then(function(r){return r.json()})
                 .then(function(data) {
                     if (!data.videos) return;
@@ -968,7 +968,7 @@
         }
         function loadCategories(cb){
             if(evCategories){ cb(evCategories); return; }
-            fetch('https://videobyte.in/api.php?action=categories', {credentials:'same-origin'})
+            fetch('/api.php?action=categories', {credentials:'same-origin'})
                 .then(function(r){return r.json();}).then(function(d){ evCategories=d.categories||[]; cb(evCategories); })
                 .catch(function(){ evCategories=[]; cb([]); });
         }
@@ -1009,7 +1009,7 @@
             if(thumbFile && thumbFile.size > 2*1024*1024){ err.textContent='Thumbnail must be under 2MB.'; err.style.display='block'; return; }
             var btn=document.getElementById('evSaveBtn'); btn.disabled=true; btn.textContent='Saving…';
             function done(msg, isErr){ btn.disabled=false; btn.textContent='Save changes'; var box=isErr?err:ok; box.textContent=msg; box.style.display='block'; if(!isErr){ loadMyVideos(ch); setTimeout(closeEditVideo,1300); } }
-            fetch('https://videobyte.in/api.php?action=update_video', {method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)})
+            fetch('/api.php?action=update_video', {method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)})
                 .then(function(r){return r.json();})
                 .then(function(d){
                     if(!d.ok){ done(d.error||'Update failed.', true); return; }
@@ -1017,7 +1017,7 @@
                     // metadata saved → now upload the thumbnail
                     btn.textContent='Uploading thumbnail…';
                     var fd=new FormData(); fd.append('video_id',id); fd.append('channel_id',ch); fd.append('thumbnail',thumbFile);
-                    fetch('https://videobyte.in/api.php?action=set_thumbnail', {method:'POST',credentials:'same-origin',body:fd})
+                    fetch('/api.php?action=set_thumbnail', {method:'POST',credentials:'same-origin',body:fd})
                         .then(function(r){return r.json();})
                         .then(function(td){
                             if(td.ok){ done('Saved — details + thumbnail updated on YouTube.', false); }
@@ -1052,7 +1052,7 @@
             if (channelId === '__all__') return loadAllAnalytics();
             if (!channelId || channelId === 'Loading channels...') return;
             var days = analyticsDays(); setPeriodLabel(days);
-            fetch('https://videobyte.in/api.php?action=analytics&days=' + days + '&channel_id=' + channelId, {credentials:'same-origin'})
+            fetch('/api.php?action=analytics&days=' + days + '&channel_id=' + channelId, {credentials:'same-origin'})
                 .then(function(r){return r.json()})
                 .then(function(data){ renderAnalytics(data); })
                 .catch(function(e) { console.error('Analytics error:', e); });
@@ -1063,7 +1063,7 @@
             var ids=[].slice.call(sel?sel.options:[]).map(function(o){return o.value;}).filter(function(v){return v && v!=='__all__' && v!=='Loading channels...';});
             if(!ids.length) return;
             document.getElementById('anTopVideos').innerHTML='Loading all channels…';
-            Promise.all(ids.map(function(id){ return fetch('https://videobyte.in/api.php?action=analytics&days='+days+'&channel_id='+id, {credentials:'same-origin'}).then(function(r){return r.json();}).catch(function(){return null;}); }))
+            Promise.all(ids.map(function(id){ return fetch('/api.php?action=analytics&days='+days+'&channel_id='+id, {credentials:'same-origin'}).then(function(r){return r.json();}).catch(function(){return null;}); }))
                 .then(function(list){ renderAnalytics(aggregateAnalytics(list.filter(Boolean))); })
                 .catch(function(e){ console.error('All-analytics error:', e); });
         }
@@ -1312,7 +1312,7 @@
                 btn.disabled = false; btn.textContent = 'Upload to YouTube';
                 statusEl.textContent = 'Failed'; alert('Upload failed. Check your connection and try again.');
             };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=upload');
+            xhr.open('POST', '/api.php?action=upload');
             xhr.send(fd);
         }
 
@@ -1385,7 +1385,7 @@
                 btn.disabled = false; btn.textContent = 'Upload Short';
             };
             xhr.onerror = function() { alert('Upload failed.'); btn.disabled = false; btn.textContent = 'Upload Short'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=upload');
+            xhr.open('POST', '/api.php?action=upload');
             xhr.send(formData);
         }
 
@@ -1431,7 +1431,7 @@
                 btn.disabled = false; btn.textContent = 'Upload to Instagram';
             };
             xhr.onerror = function() { alert('Upload failed.'); btn.disabled = false; btn.textContent = 'Upload to Instagram'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=social_upload');
+            xhr.open('POST', '/api.php?action=social_upload');
             xhr.send(formData);
         }
 
@@ -1476,7 +1476,7 @@
                 btn.disabled = false; btn.textContent = 'Upload to TikTok';
             };
             xhr.onerror = function() { alert('Upload failed.'); btn.disabled = false; btn.textContent = 'Upload to TikTok'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=social_upload');
+            xhr.open('POST', '/api.php?action=social_upload');
             xhr.send(formData);
         }
 
@@ -1524,7 +1524,7 @@
                 btn.disabled = false; btn.textContent = 'Upload to Facebook';
             };
             xhr.onerror = function() { alert('Upload failed.'); btn.disabled = false; btn.textContent = 'Upload to Facebook'; };
-            xhr.open('POST', 'https://videobyte.in/api.php?action=social_upload');
+            xhr.open('POST', '/api.php?action=social_upload');
             xhr.send(formData);
         }
 
@@ -1644,7 +1644,7 @@
     if(p==='facebook'){ if(typeof connectFacebook==='function')connectFacebook(); else fbConnect(); }
     else { if(typeof connectYouTube==='function')connectYouTube(); else goTo('youtube-connect'); }
   };
-  function fbConnect(){ fetch('https://videobyte.in/api.php?action=fb_auth_url').then(function(r){return r.json();}).then(function(d){ if(d.url)window.location.href=d.url; else alert('Failed to get Facebook OAuth URL'); }).catch(function(){ alert('Connection error'); }); }
+  function fbConnect(){ fetch('/api.php?action=fb_auth_url').then(function(r){return r.json();}).then(function(d){ if(d.url)window.location.href=d.url; else alert('Failed to get Facebook OAuth URL'); }).catch(function(){ alert('Connection error'); }); }
   window.closeGoLive=function(){ document.getElementById('goLiveModal').style.display='none'; };
   window.startLive=function(){
     var modal=document.getElementById('goLiveModal'), vid=parseInt(modal.dataset.vid,10);
@@ -1681,14 +1681,14 @@
         // ===== Facebook / Instagram connections (per-user) — ported from admin =====
         function _esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
         function connectFacebook(){
-            fetch('https://videobyte.in/api.php?action=fb_auth_url',{credentials:'same-origin'})
+            fetch('/api.php?action=fb_auth_url',{credentials:'same-origin'})
                 .then(function(r){return r.json();})
                 .then(function(d){ if(d.url) window.location.href=d.url; else alert('Could not start Facebook connect.'); })
                 .catch(function(){ alert('Could not start Facebook connect.'); });
         }
         function connectIgDirect(){ window.location.href='/instagram_login.php'; }
         function loadConnections(){
-            fetch('https://videobyte.in/api.php?action=fb_accounts',{credentials:'same-origin'})
+            fetch('/api.php?action=fb_accounts',{credentials:'same-origin'})
                 .then(function(r){return r.json();}).then(function(d){
                     var pages=d.pages||[];
                     var c=document.getElementById('fbPagesCount'); if(c) c.textContent=pages.length?('('+pages.length+')'):'';
@@ -1702,7 +1702,7 @@
         }
         function renderIgList(pages){
             pages = pages || [];
-            fetch('https://videobyte.in/api.php?action=ig_accounts',{credentials:'same-origin'})
+            fetch('/api.php?action=ig_accounts',{credentials:'same-origin'})
                 .then(function(r){return r.json();}).then(function(d){
                     var direct=(d.accounts||[]).map(function(a){return {id:a.id, username:a.username, via:null, direct:true};});
                     var viaPage=pages.filter(function(p){return p.instagram;}).map(function(p){return {id:p.instagram.id, username:p.instagram.username, via:p.name, direct:false};});
@@ -1716,8 +1716,8 @@
                     }).join('') : '<div style="color:var(--gray);padding:12px">No Instagram account connected.</div>';
                 }).catch(function(e){ console.error('renderIgList', e); });
         }
-        function disconnectFbPage(pid){ if(!confirm('Disconnect this Facebook Page?'))return; var f=new FormData(); f.append('page_id',pid); fetch('https://videobyte.in/api.php?action=fb_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); }); }
-        function disconnectIg(iid){ if(!confirm('Disconnect this Instagram account?'))return; var f=new FormData(); f.append('ig_id',iid); fetch('https://videobyte.in/api.php?action=ig_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); }); }
+        function disconnectFbPage(pid){ if(!confirm('Disconnect this Facebook Page?'))return; var f=new FormData(); f.append('page_id',pid); fetch('/api.php?action=fb_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); }); }
+        function disconnectIg(iid){ if(!confirm('Disconnect this Instagram account?'))return; var f=new FormData(); f.append('ig_id',iid); fetch('/api.php?action=ig_disconnect',{method:'POST',credentials:'same-origin',body:f}).then(function(r){return r.json();}).then(function(){ loadConnections(); }); }
         // redirect-back from FB/IG OAuth
         (function(){
             var qs = new URLSearchParams(window.location.search);
@@ -1730,7 +1730,7 @@
 
             // ===== populate Upload-tab FB/IG account dropdowns (per-user) =====
         function loadFbAccounts(){
-            fetch('https://videobyte.in/api.php?action=fb_accounts',{credentials:'same-origin'})
+            fetch('/api.php?action=fb_accounts',{credentials:'same-origin'})
                 .then(function(r){return r.json();})
                 .then(function(d){
                     var pages=d.pages||[];
@@ -1739,7 +1739,7 @@
                     var igSel=document.getElementById('instaAccountSelect');
                     if(igSel){
                         var viaOpts=pages.filter(function(p){return p.instagram;}).map(function(p){return '<option value="'+p.instagram.id+'">@'+_esc(p.instagram.username||p.name)+' (via '+_esc(p.name)+')</option>';});
-                        fetch('https://videobyte.in/api.php?action=ig_accounts',{credentials:'same-origin'})
+                        fetch('/api.php?action=ig_accounts',{credentials:'same-origin'})
                             .then(function(r){return r.json();})
                             .then(function(ig){
                                 var directOpts=(ig.accounts||[]).map(function(a){return '<option value="'+a.id+'">@'+_esc(a.username||a.id)+' (direct)</option>';});
