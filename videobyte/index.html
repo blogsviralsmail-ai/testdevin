@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KKHS Media — Automated Social Media Publishing Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--cream:#F5F0E8;
+--dark:#1A1A2E;
+--coral:#E85D3A;
+--text:#2D2D3A;
+--muted:#6B6B7B;
+--border:#E0DCD4;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Playfair Display',serif;font-weight:800;line-height:1.1}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase}
+
+/* Header */
+header{position:sticky;top:0;z-index:100;background:var(--cream);border-bottom:1px solid var(--border);padding:1rem 0}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+.logo svg{width:32px;height:32px}
+.logo-text{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:var(--dark);letter-spacing:-.02em;line-height:1}
+.logo-text span{display:block;font-family:'JetBrains Mono',monospace;font-size:.48rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:400;margin-top:1px}
+nav{display:flex;align-items:center;gap:2rem}
+nav a{text-decoration:none;font-size:.85rem;color:var(--muted);font-weight:500;transition:color .2s}
+nav a:hover{color:var(--dark)}
+nav a.active{color:var(--coral)}
+.nav-cta{background:var(--dark);color:#fff;padding:.6rem 1.4rem;border-radius:4px;font-size:.8rem;font-weight:600;transition:background .2s}
+.nav-cta:hover{background:#2a2a40;color:#fff}
+
+/* Hero */
+.hero{max-width:1200px;margin:0 auto;padding:6rem 2rem 4rem;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.hero h1{font-size:clamp(2.4rem,5vw,3.6rem);color:var(--dark)}
+.hero h1 em{color:var(--coral);font-style:italic;font-weight:700}
+.hero p{margin-top:1.5rem;font-size:1.05rem;color:var(--muted);max-width:480px;line-height:1.7}
+.hero-cta{display:inline-flex;align-items:center;gap:.6rem;margin-top:2.5rem;background:var(--dark);color:#fff;padding:.9rem 2rem;text-decoration:none;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;transition:background .2s}
+.hero-cta:hover{background:#2a2a40}
+.hero-cta::before{content:'◆';color:var(--coral);font-size:.6rem}
+.hero-sub{margin-top:1rem;font-size:.75rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.hero-visual{background:var(--dark);border-radius:8px;padding:2.5rem;position:relative;min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hero-visual .brand-display{display:flex;align-items:center;gap:.8rem;border:2px solid var(--coral);padding:1rem 2rem;border-radius:4px}
+.hero-visual .brand-display svg{width:36px;height:36px}
+.hero-visual .brand-display span{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:#fff}
+.hero-visual .brand-sub{color:rgba(255,255,255,.6);font-size:.72rem;margin-top:1rem;letter-spacing:.1em;text-transform:uppercase}
+.hero-visual .flow-arrows{margin:1.5rem 0;color:var(--coral);font-size:1.2rem;letter-spacing:.4rem}
+.hero-visual .platforms{display:flex;gap:.8rem;margin-top:.5rem;flex-wrap:wrap;justify-content:center}
+.hero-visual .platform-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:.6rem 1rem;border-radius:4px;color:rgba(255,255,255,.8);font-size:.65rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em}
+
+/* Sections */
+.section-dark{background:var(--dark);color:#fff;padding:6rem 0}
+.section-light{background:var(--cream);padding:6rem 0}
+.section-inner{max-width:1200px;margin:0 auto;padding:0 2rem}
+.section-label{display:flex;align-items:center;gap:1rem;margin-bottom:2rem}
+.section-label::before{content:'';width:2.5rem;height:2px;background:currentColor}
+.section-label span{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.section-dark .section-label span{color:rgba(255,255,255,.5)}
+.section-header{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-bottom:4rem;align-items:end}
+.section-header h2{font-size:clamp(2rem,4vw,2.8rem);color:inherit}
+.section-header h2 em{color:var(--coral);font-style:italic}
+.section-header p{font-size:1rem;color:var(--muted);line-height:1.7}
+.section-dark .section-header p{color:rgba(255,255,255,.6)}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid rgba(255,255,255,.1)}
+.step{padding:2.5rem 2rem;border-right:1px solid rgba(255,255,255,.1)}
+.step:last-child{border-right:none}
+.step-num{font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:900;font-style:italic;color:var(--coral);line-height:1;margin-bottom:1rem}
+.step h3{font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;margin-bottom:.8rem;color:#fff}
+.step p{font-size:.88rem;color:rgba(255,255,255,.55);line-height:1.6}
+
+/* Features Grid */
+.features-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border)}
+.feature-card{padding:2.5rem;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.feature-card:nth-child(2n){border-right:none}
+.feature-card:nth-last-child(-n+2){border-bottom:none}
+.feature-label{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--coral);margin-bottom:.6rem}
+.feature-card h3{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;margin-bottom:.8rem;color:var(--dark)}
+.feature-card p{font-size:.88rem;color:var(--muted);line-height:1.6}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.1);margin-top:3rem}
+.stat{padding:2rem 1.5rem;border-right:1px solid rgba(255,255,255,.1)}
+.stat:last-child{border-right:none}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.5rem}
+.stat-num{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:900;font-style:italic;color:var(--coral);line-height:1}
+.stat-num span{font-size:1.8rem}
+.stat-desc{font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.5rem}
+
+/* Pricing */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--border)}
+.price-card{padding:2.5rem;border-right:1px solid var(--border);position:relative}
+.price-card:last-child{border-right:none}
+.price-card.featured{background:#fff}
+.price-badge{position:absolute;top:1.2rem;right:1.2rem;font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--coral);border:1px solid var(--coral);padding:.2rem .6rem;border-radius:2px}
+.price-card h3{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+.price-amount{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--dark);margin:.8rem 0}
+.price-amount span{font-size:.85rem;font-family:'Inter',sans-serif;font-weight:400;color:var(--muted)}
+.price-list{list-style:none;margin:1.5rem 0}
+.price-list li{font-size:.85rem;color:var(--muted);padding:.4rem 0;border-bottom:1px solid var(--border)}
+.price-list li:last-child{border-bottom:none}
+.price-list li::before{content:'—';margin-right:.6rem;color:var(--coral)}
+.price-cta{display:block;text-align:center;padding:.8rem;text-decoration:none;font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:1.5rem;transition:all .2s}
+.price-cta.primary{background:var(--dark);color:#fff}
+.price-cta.primary:hover{background:#2a2a40}
+.price-cta.secondary{border:1px solid var(--border);color:var(--dark)}
+.price-cta.secondary:hover{border-color:var(--dark)}
+
+/* Platforms Section */
+.platforms-row{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-top:2rem}
+.platform-pill{background:#fff;border:1px solid var(--border);padding:.5rem 1.2rem;border-radius:20px;font-size:.78rem;font-weight:500;color:var(--text)}
+
+/* Footer */
+footer{background:var(--dark);color:rgba(255,255,255,.6);padding:4rem 0 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;padding:0 2rem;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem}
+.footer-brand .logo-text{color:#fff;font-size:1.1rem}
+.footer-brand .logo-text span{color:rgba(255,255,255,.4)}
+.footer-brand p{margin-top:1rem;font-size:.82rem;max-width:300px;line-height:1.7}
+footer h4{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:1rem}
+footer a{display:block;color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem;padding:.3rem 0;transition:color .2s}
+footer a:hover{color:#fff}
+.footer-bottom{max-width:1200px;margin:0 auto;padding:2rem 2rem 0;border-top:1px solid rgba(255,255,255,.08);margin-top:3rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-bottom-left{font-size:.72rem;color:rgba(255,255,255,.3)}
+.footer-bottom-right{font-size:.72rem;color:rgba(255,255,255,.4)}
+.footer-bottom-right .heart{color:var(--coral)}
+
+/* Responsive */
+@media(max-width:768px){
+.hero{grid-template-columns:1fr;gap:2rem;padding:3rem 1.5rem}
+.hero-visual{min-height:240px}
+.section-header{grid-template-columns:1fr}
+.steps{grid-template-columns:1fr}
+.step{border-right:none;border-bottom:1px solid rgba(255,255,255,.1)}
+.features-grid{grid-template-columns:1fr}
+.feature-card{border-right:none}
+.stats-grid{grid-template-columns:repeat(2,1fr)}
+.pricing-grid{grid-template-columns:1fr}
+.price-card{border-right:none;border-bottom:1px solid var(--border)}
+.footer-inner{grid-template-columns:1fr}
+.footer-company{grid-template-columns:1fr !important}
+nav{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+<div class="header-inner">
+<a href="/" class="logo">
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="1" y="1" width="30" height="30" rx="6" stroke="#E85D3A" stroke-width="2"/>
+<path d="M12 9L12 23L24 16L12 9Z" fill="#1A1A2E"/>
+<rect x="7" y="14" width="3" height="8" rx="1" fill="#E85D3A"/>
+</svg>
+<div class="logo-text">KKHS MEDIA<span>publishing platform</span></div>
+</a>
+<nav>
+<a href="#how" class="active">How it works</a>
+<a href="#features">Features</a>
+<a href="#platforms">Platforms</a>
+<a href="#pricing">Pricing</a>
+<a href="login.html" class="nav-cta">Get started</a>
+</nav>
+</div>
+</header>
+
+<section class="hero">
+<div>
+<h1>The <em>automation layer</em> for social media publishing</h1>
+<p>KKHS Media powers creators and agencies who publish across YouTube, Instagram, TikTok, and Facebook at scale. Connect all your channels, schedule in IST, bulk upload — we absorb every API change, quota limit, and platform quirk so you ship content, not plumbing.</p>
+<a href="login.html" class="hero-cta">Start free →</a>
+<div class="hero-sub">Self-serve to 500 videos/mo · No credit card required</div>
+</div>
+<div class="hero-visual">
+<div class="brand-display">
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="30" height="30" rx="6" stroke="#E85D3A" stroke-width="2"/><path d="M12 9L12 23L24 16L12 9Z" fill="#fff"/><rect x="7" y="14" width="3" height="8" rx="1" fill="#E85D3A"/></svg>
+<span>KKHS MEDIA</span>
+</div>
+<div class="brand-sub">One dashboard. Every platform. All your channels.</div>
+<div class="flow-arrows">↓ ↓ ↓ ↓ ↓</div>
+<div class="platforms">
+<div class="platform-box">YouTube</div>
+<div class="platform-box">Instagram</div>
+<div class="platform-box">TikTok</div>
+<div class="platform-box">Facebook</div>
+<div class="platform-box">Shorts</div>
+</div>
+</div>
+</section>
+
+<section class="section-dark" id="how">
+<div class="section-inner">
+<div class="section-label"><span>01 · How it works</span></div>
+<div class="section-header">
+<h2>Three steps. Zero headaches.</h2>
+<p>One dashboard in front of every social platform. You create content; we handle the publishing, scheduling, and compliance — across all your accounts.</p>
+</div>
+<div class="steps">
+<div class="step">
+<div class="step-num">01</div>
+<h3>Connect</h3>
+<p>Link YouTube, Instagram, TikTok, and Facebook accounts via OAuth. Add unlimited channels from multiple accounts in three clicks — we manage tokens, scopes, and the refresh dance.</p>
+</div>
+<div class="step">
+<div class="step-num">02</div>
+<h3>Upload & Schedule</h3>
+<p>Drag and drop videos, set titles, descriptions, tags, and schedule time in IST. Bulk import via CSV. We auto-convert timezones and handle chunked resumable uploads with anti-spam protection.</p>
+</div>
+<div class="step">
+<div class="step-num">03</div>
+<h3>Publish & Monitor</h3>
+<p>Videos go live on schedule across all platforms simultaneously. Real-time analytics, upload logs, error handling with auto-retry, and quota management — all in one clean interface.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section-light" id="features">
+<div class="section-inner">
+<div class="section-label"><span>02 · Built for</span></div>
+<div class="section-header">
+<h2>Creators who'd rather <em>ship content</em> than manage uploads</h2>
+<p>Stop juggling platform dashboards across five accounts. Every channel, every upload, every schedule — one platform handles the entire workflow.</p>
+</div>
+<div class="features-grid">
+<div class="feature-card">
+<div class="feature-label">Multi-Platform</div>
+<h3>YouTube, Reels, Shorts, TikTok</h3>
+<p>Publish to YouTube long-form, Shorts, Instagram Reels, TikTok, and Facebook Videos from a single dashboard. One upload, every platform — native format, native captions.</p>
+</div>
+<div class="feature-card">
+<div class="feature-label">Analytics</div>
+<h3>Full cross-platform analytics</h3>
+<p>Views, watch time, subscribers, revenue, engagement rate — aggregated across all platforms. Track what's working without opening five different dashboards.</p>
+</div>
+<div class="feature-card">
+<div class="feature-label">Scheduling</div>
+<h3>IST-native smart scheduling</h3>
+<p>Set publish times in Indian Standard Time. Auto-converts to UTC for each platform's API. Schedule days, weeks, or months in advance with bulk CSV import. Peak-time suggestions built in.</p>
+</div>
+<div class="feature-card">
+<div class="feature-label">Protection</div>
+<h3>Anti-spam & quota guard</h3>
+<p>Built-in random delays between uploads prevent API throttling and account flags. Automatic retry on quota exceeded errors. Rate limiting per platform. Your accounts stay safe.</p>
+</div>
+<div class="feature-card">
+<div class="feature-label">Team</div>
+<h3>Multi-user collaboration</h3>
+<p>Invite team members, assign roles, set approval workflows. Agency-grade access controls — manage client channels without sharing passwords. Full audit trail.</p>
+</div>
+<div class="feature-card">
+<div class="feature-label">Automation</div>
+<h3>Set it and forget it</h3>
+<p>Create publishing series that run on autopilot. Upload a batch of videos once, set the cadence — KKHS Media publishes them on schedule while you sleep. Forever.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section-dark" id="platforms">
+<div class="section-inner">
+<div class="section-label"><span>03 · Platforms</span></div>
+<div class="section-header">
+<h2>Every platform. <em>One API.</em></h2>
+<p>We handle the integration complexity for each platform's ever-changing API, upload requirements, and quota systems.</p>
+</div>
+<div class="stats-grid">
+<div class="stat">
+<div class="stat-label">01 · Videos</div>
+<div class="stat-num">50K<span>+</span></div>
+<div class="stat-desc">Videos published through the platform</div>
+</div>
+<div class="stat">
+<div class="stat-label">02 · Creators</div>
+<div class="stat-num">2K<span>+</span></div>
+<div class="stat-desc">Active creators and agencies</div>
+</div>
+<div class="stat">
+<div class="stat-label">03 · Uptime</div>
+<div class="stat-num">99.9<span>%</span></div>
+<div class="stat-desc">Platform reliability guaranteed</div>
+</div>
+<div class="stat">
+<div class="stat-label">04 · Platforms</div>
+<div class="stat-num">5<span>+</span></div>
+<div class="stat-desc">Social platforms supported</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section-light" id="pricing">
+<div class="section-inner">
+<div class="section-label"><span>04 · Pricing</span></div>
+<div class="section-header">
+<h2>Simple, transparent pricing</h2>
+<p>Start free, upgrade as you scale. No hidden fees, no per-video charges.</p>
+</div>
+<div class="pricing-grid">
+<div class="price-card">
+<h3>Starter</h3>
+<div class="price-amount">Free<span></span></div>
+<ul class="price-list">
+<li>2 Social Accounts</li>
+<li>10 Uploads / Month</li>
+<li>Basic Analytics</li>
+<li>Manual Scheduling</li>
+<li>Community Support</li>
+</ul>
+<a href="login.html" class="price-cta secondary">Get started</a>
+</div>
+<div class="price-card featured">
+<div class="price-badge">Popular</div>
+<h3>Pro</h3>
+<div class="price-amount">$19<span> / month</span></div>
+<ul class="price-list">
+<li>Unlimited Accounts</li>
+<li>Unlimited Uploads</li>
+<li>Full Analytics & Revenue</li>
+<li>Smart Anti-Spam</li>
+<li>CSV Bulk Import</li>
+<li>Cross-Platform Publishing</li>
+<li>Priority Support</li>
+</ul>
+<a href="login.html" class="price-cta primary">Start free trial</a>
+</div>
+<div class="price-card">
+<h3>Enterprise</h3>
+<div class="price-amount">Custom<span></span></div>
+<ul class="price-list">
+<li>Everything in Pro</li>
+<li>API Access</li>
+<li>White Label Option</li>
+<li>Custom Integrations</li>
+<li>Dedicated Account Manager</li>
+<li>SLA Guarantee</li>
+</ul>
+<a href="login.html" class="price-cta secondary">Contact sales</a>
+</div>
+</div>
+</div>
+</section>
+
+<footer>
+<div class="footer-inner">
+<div class="footer-brand">
+<div class="logo" style="margin-bottom:.5rem">
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28"><rect x="1" y="1" width="30" height="30" rx="6" stroke="#E85D3A" stroke-width="2"/><path d="M12 9L12 23L24 16L12 9Z" fill="#fff"/><rect x="7" y="14" width="3" height="8" rx="1" fill="#E85D3A"/></svg>
+<div class="logo-text">KKHS MEDIA<span>publishing platform</span></div>
+</div>
+<p>The automated social media publishing platform for creators, agencies, and teams managing multiple channels at scale. Publish to YouTube, Instagram, TikTok, Facebook, and more from one dashboard.</p>
+</div>
+<div>
+<h4>Product</h4>
+<a href="#how">How it works</a>
+<a href="#features">Features</a>
+<a href="#platforms">Platforms</a>
+<a href="#pricing">Pricing</a>
+<a href="login.html">Dashboard</a>
+</div>
+<div>
+<h4>Platforms</h4>
+<a href="#">YouTube</a>
+<a href="#">Instagram Reels</a>
+<a href="#">TikTok</a>
+<a href="#">Facebook</a>
+<a href="#">YouTube Shorts</a>
+</div>
+<div>
+<h4>Legal</h4>
+<a href="privacy.html">Privacy Policy</a>
+<a href="terms.html">Terms of Service</a>
+<a href="/cdn-cgi/l/email-protection#4a3a2b3d2b240a2b233828333e2f3e2f2922242526252d232f3964292527">Support</a>
+</div>
+</div>
+<div class="footer-company" style="max-width:1200px;margin:2rem auto 0;padding:1.5rem 2rem;border-top:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:1fr 1fr;gap:2rem">
+<div>
+<h4 style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.8rem">Company Details</h4>
+<p style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.8;margin:0">
+<strong style="color:rgba(255,255,255,.85)">KKHS Media Private Limited</strong><br>
+CIN: U72900RJ2021PTC076553<br>
+GSTIN: 08AAWCA6103H1ZI<br>
+Registration Type: Regular
+</p>
+</div>
+<div>
+<h4 style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.8rem">Registered Office</h4>
+<p style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.8;margin:0">
+Shop No. SF 13, 14, 23, Krishna Kunj Shop<br>
+Shekhawat Marg, Jhotwara<br>
+Jaipur, Rajasthan — 302012, India<br>
+Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="80f0e1f7e1eec0e1e9f2e2f9f4e5f4e5e3e8eeefecefe7e9e5f3aee3efed">[email&#160;protected]</a>
+</p>
+</div>
+</div>
+<div class="footer-bottom">
+<div class="footer-bottom-left">
+&copy; 2024 KKHS Media · A product of <strong style="color:rgba(255,255,255,.7)">KKHS Media Pvt Ltd</strong>
+</div>
+<div class="footer-bottom-right">
+Developed with <span class="heart">&#9829;</span> in India
+</div>
+</div>
+</footer>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>
