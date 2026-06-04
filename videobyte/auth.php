@@ -193,6 +193,7 @@ function admin_users() {
         $stmt = db()->prepare('SELECT COUNT(*) FROM channels WHERE user_id = ?');
         $stmt->execute([$r['id']]);
         $r['channels'] = (int)$stmt->fetchColumn();
+        $r['connections'] = $r['channels'];
     }
     json_out(['ok' => true, 'users' => $rows]);
 }

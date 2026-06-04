@@ -483,20 +483,21 @@ function get_analytics() {
    ═══════════════════════════════════════════════════════ */
 
 function get_stats() {
-    // Allow any logged-in user; frontend calls without credentials header
+    // Allow any visitor; frontend calls without credentials header
     $channels = (int)db()->query('SELECT COUNT(*) FROM channels')->fetchColumn();
     $videos   = (int)db()->query('SELECT COUNT(*) FROM videos')->fetchColumn();
     $totalSubs = (int)db()->query('SELECT COALESCE(SUM(subscriber_count),0) FROM channels')->fetchColumn();
+    $totalUsers = (int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
 
     $quotaUsed  = (int)(db()->query("SELECT svalue FROM settings WHERE skey='youtube_api_quota_used'")->fetchColumn() ?: 0);
     $quotaLimit = (int)(db()->query("SELECT svalue FROM settings WHERE skey='youtube_api_quota_limit'")->fetchColumn() ?: 10000);
 
-    // Return keys matching original frontend expectations
     json_out([
         'ok'                  => true,
         'channels_connected'  => $channels,
         'total_videos'        => $videos,
         'total_subscribers'   => $totalSubs,
+        'total_users'         => $totalUsers,
         'quota_used'          => $quotaUsed,
         'quota_limit'         => $quotaLimit,
     ]);
@@ -505,7 +506,20 @@ function get_stats() {
 function get_logs() {
     require_admin();
     $rows = db()->query('SELECT * FROM system_logs ORDER BY id DESC LIMIT 200')->fetchAll();
-    json_out(['ok' => true, 'logs' => $rows]);
+    // Frontend expects logs as formatted strings, not objects
+    $formatted = [];
+    foreach ($rows as $r) {
+        $ts = $r['created_at'] ?? '';
+        $level = strtoupper($r['level'] ?? 'info');
+        $action = $r['action'] ?? '';
+        $details = $r['details'] ?? '';
+        $ip = $r['ip_address'] ?? '';
+        $line = "[$ts] $level | $action";
+        if ($details) $line .= " — $details";
+        if ($ip) $line .= " (IP: $ip)";
+        $formatted[] = $line;
+    }
+    json_out(['ok' => true, 'logs' => $formatted]);
 }
 
 /* ═══════════════════════════════════════════════════════

@@ -828,7 +828,7 @@
                         <thead><tr><th>Setting</th><th>Value</th></tr></thead>
                         <tbody>
                             <tr><td>Client ID</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">426558040465-t43pt...apps.googleusercontent.com</td></tr>
-                            <tr><td>Redirect URI</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">/yt_callback.php</td></tr>
+                            <tr><td>Redirect URI</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">https://ytauto.kkhsmedia.com/yt_callback.php</td></tr>
                             <tr><td>Scopes</td><td><span class="badge badge-blue">youtube</span> <span class="badge badge-blue">youtube.upload</span> <span class="badge badge-blue">youtube.readonly</span> <span class="badge badge-blue">yt-analytics.readonly</span></td></tr>
                             <tr><td>Verification Status</td><td><span class="badge badge-green">Verified</span></td></tr>
                         </tbody>
@@ -1229,6 +1229,13 @@
                     document.getElementById('totalVideos').textContent = fmt(data.total_videos || 0);
                     document.getElementById('totalSubs').textContent = fmt(data.total_subscribers || 0);
                     document.getElementById('statChannels').textContent = data.channels_connected || 0;
+                    if (data.total_users !== undefined) { var el = document.getElementById('statUsers'); if(el) el.textContent = data.total_users; }
+                    if (data.quota_used !== undefined && data.quota_limit) {
+                        var pct = ((data.quota_used / data.quota_limit) * 100).toFixed(1);
+                        var qp = document.getElementById('quotaPercent'); if(qp) qp.textContent = pct + '%';
+                        var qb = document.getElementById('quotaBar'); if(qb) qb.style.width = pct + '%';
+                        var qu = document.getElementById('quotaUsed'); if(qu) qu.textContent = data.quota_used + ' / ' + data.quota_limit.toLocaleString() + ' units used';
+                    }
                 })
                 .catch(function(e) { console.error('Stats error:', e); });
         }
@@ -1904,10 +1911,12 @@
             fetch('auth.php?action=logout', {credentials:'same-origin'}).finally(function(){ localStorage.removeItem('vb_auth'); window.location.href='login.html'; });
         }
 
-        // Init — load only dashboard stats on start, rest loads on section click
+        // Init — load dashboard data on start
         loadStats();
         loadFbAccounts();
         loadConnections();
+        loadUsersList();
+        loadHistory();
         loadedSections['dashboard'] = true;
     </script>
 </body>
