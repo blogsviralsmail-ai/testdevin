@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard — VideoByte</title>
+    <title>Dashboard — KKHS Media</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E85D3A'/><polygon points='13,9 13,23 24,16' fill='white'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -154,7 +154,7 @@
     <aside class="sidebar">
         <div class="sidebar-logo">
             <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#E85D3A"/><polygon points="13,9 13,23 24,16" fill="white"/></svg>
-            <span>VideoByte</span>
+            <span>KKHS Media</span>
         </div>
         <div class="sidebar-role"><span>User Panel</span></div>
         <div class="nav-section">
@@ -180,7 +180,7 @@
             <a class="nav-item" data-section="profile"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4-4v2"/><circle cx="12" cy="7" r="4"/></svg></span><em>My Profile</em></a>
         </div>
         <div class="sidebar-footer">
-            <div class="sidebar-footer-text">&copy; 2024 VideoByte<br>Airbyte Technologies</div>
+            <div class="sidebar-footer-text">&copy; 2024 KKHS Media</div>
         </div>
     </aside>
 
@@ -834,9 +834,9 @@
 
         // User-specific channel assignments
         var userChannelMap = {
-            'user1@videobyte.in': ['UC_YK8RC3VADjU8ffp44Lrww', 'UCDMrBtZXCbkqbXqiDRDO-sw'],
-            'user2@videobyte.in': ['UCotWyrNW8g6dpy6dO9WpJAQ'],
-            'user3@videobyte.in': ['UCneFm6S_i7-ccpriZww10rw']
+            'user1@kkhsmedia.com': ['UC_YK8RC3VADjU8ffp44Lrww', 'UCDMrBtZXCbkqbXqiDRDO-sw'],
+            'user2@kkhsmedia.com': ['UCotWyrNW8g6dpy6dO9WpJAQ'],
+            'user3@kkhsmedia.com': ['UCneFm6S_i7-ccpriZww10rw']
         };
         var myChannelIds = userChannelMap[auth.email] || [];
 
@@ -1617,7 +1617,7 @@
     var v=liveVideosData.filter(function(x){return x.id===vid;})[0]||{};
     document.getElementById('glVideoName').textContent=v.orig_name||('Video #'+vid);
     document.getElementById('goLiveModal').dataset.vid=vid;
-    document.getElementById('glTitle').value=(v.orig_name||'VideoByte Live').replace(/\.[^.]+$/,'');
+    document.getElementById('glTitle').value=(v.orig_name||'KKHS Media Live').replace(/\.[^.]+$/,'');
     document.getElementById('glErr').style.display='none';
     document.getElementById('glKey').value='';
     document.getElementById('glPlatform').value='youtube';

@@ -1,4 +1,4 @@
--- VideoByte Database Schema
+-- KKHS Media Database Schema
 -- Run: mysql -u root < schema.sql
 
 CREATE DATABASE IF NOT EXISTS videobyte_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -193,11 +193,11 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Default admin user (password: Admin@123)
 INSERT IGNORE INTO users (name, email, password, role, status) VALUES
-('Admin', 'admin@videobyte.in', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'active');
+('Admin', 'admin@kkhsmedia.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'active');
 
 -- Default settings
 INSERT IGNORE INTO settings (skey, svalue) VALUES
-('site_name', 'VideoByte'),
+('site_name', 'KKHS Media'),
 ('youtube_api_quota_limit', '10000'),
 ('youtube_api_quota_used', '0'),
 ('anti_spam_delay_min', '30'),

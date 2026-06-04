@@ -1,6 +1,6 @@
 <?php
 /**
- * VideoByte — Configuration
+ * KKHS Media — Configuration
  * Update these values for your server environment.
  */
 
@@ -11,7 +11,7 @@ define('DB_USER', 'videobyte_user');
 define('DB_PASS', 'VideoByte@2025');
 
 // App
-define('APP_NAME', 'VideoByte');
+define('APP_NAME', 'KKHS Media');
 define('APP_URL', 'http://localhost');          // change in production
 define('JWT_SECRET', 'CHANGE_ME_to_random_64_chars');
 
@@ -20,8 +20,8 @@ define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
 define('SMTP_USER', '');   // your@gmail.com
 define('SMTP_PASS', '');   // app-password
-define('SMTP_FROM', 'noreply@videobyte.in');
-define('SMTP_FROM_NAME', 'VideoByte');
+define('SMTP_FROM', 'noreply@kkhsmedia.com');
+define('SMTP_FROM_NAME', 'KKHS Media');
 
 // Google / YouTube OAuth
 define('GOOGLE_CLIENT_ID', '');
