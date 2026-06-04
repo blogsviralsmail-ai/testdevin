@@ -3,198 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sign Up — VideoByte</title>
+<title>Create Account — VideoByte</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E85D3A'/><polygon points='13,9 13,23 24,16' fill='white'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--coral:#E85D3A;--dark:#1C1C28;--gray:#6B7280}
-body{font-family:'Inter',sans-serif;background:#F9FAFB;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-.card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
-.logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px}
-.logo svg{width:36px;height:36px}
-.logo span{font-size:22px;font-weight:800;color:var(--dark)}
-.subtitle{text-align:center;color:var(--gray);font-size:14px;margin-bottom:32px}
-label{display:block;font-size:12px;font-weight:600;color:var(--dark);margin-bottom:6px}
-input{width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .2s;box-sizing:border-box}
-input:focus{border-color:var(--coral)}
-.field{margin-bottom:18px}
-.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
-.btn-coral{background:var(--coral);color:#fff}
-.btn-coral:hover{background:#D04F30}
-.btn-coral:disabled{opacity:.5;cursor:not-allowed}
-.btn-outline{background:transparent;border:1.5px solid #E5E7EB;color:var(--dark);font-size:14px;padding:12px}
-.links{text-align:center;margin-top:20px;font-size:13px;color:var(--gray)}
-.links a{color:var(--coral);font-weight:600}
-.err{display:none;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px}
-.ok{display:none;background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px}
-.panel{display:none}
-.panel.active{display:block}
-.otp-input{text-align:center;font-size:24px;letter-spacing:8px;font-weight:700}
-.resend{text-align:center;margin-top:12px;font-size:12px;color:var(--gray)}
-.resend a{color:var(--coral);font-weight:600;cursor:pointer}
+:root{--coral:#E85D3A;--dark:#0F172A;--gray:#64748B;--light:#F1F5F9}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1C1C28,#252536);padding:20px}
+.card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:6px}
+.logo{width:38px;height:38px;border-radius:9px;background:var(--coral);display:flex;align-items:center;justify-content:center}
+.brand b{font-size:20px;font-weight:800;color:var(--dark)}
+h1{font-size:23px;font-weight:800;text-align:center;color:var(--dark);margin-top:14px}
+.sub{text-align:center;color:var(--gray);font-size:14px;margin:6px 0 24px}
+label{display:block;font-size:13px;font-weight:600;color:var(--dark);margin-bottom:6px}
+.fg{margin-bottom:16px}
+input{width:100%;padding:12px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:15px;color:var(--dark);transition:border .2s}
+input:focus{outline:none;border-color:var(--coral)}
+.btn{width:100%;padding:13px;background:var(--coral);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.92}.btn:disabled{opacity:.6;cursor:not-allowed}
+.msg{padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;display:none}
+.err{background:#FEF2F2;color:#991B1B;border:1px solid #FECACA}
+.ok{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0}
+.foot{text-align:center;margin-top:18px;font-size:14px;color:var(--gray)}
+.foot a{color:var(--coral);font-weight:700;text-decoration:none}
+.otp{text-align:center;font-size:26px;letter-spacing:10px;font-weight:800}
+.hint{font-size:12px;color:var(--gray);margin-top:6px}
+.legal{text-align:center;margin-top:20px;font-size:11px;color:#94A3B8}
+.legal a{color:#94A3B8}
 </style>
 </head>
 <body>
-
 <div class="card">
-    <div class="logo">
-        <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#E85D3A"/><polygon points="13,9 13,23 24,16" fill="white"/></svg>
-        <span>VideoByte</span>
-    </div>
+    <div class="brand"><div class="logo"><svg width="18" height="18" viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12" fill="white"/></svg></div><b>VideoByte</b></div>
+    <h1 id="title">Create your account</h1>
+    <div class="sub" id="subtitle">Publish to YouTube, Facebook &amp; Instagram from one place.</div>
+    <div class="msg err" id="err"></div>
+    <div class="msg ok" id="ok"></div>
 
-    <!-- Register Panel -->
-    <div id="panelRegister" class="panel active">
-        <p class="subtitle">Create your free account</p>
-        <div id="errReg" class="err"></div>
-        <div class="field">
-            <label>Full Name</label>
-            <input type="text" id="suName" placeholder="Your name" autocomplete="name">
+    <!-- SIGNUP -->
+    <form id="formSignup" onsubmit="doSignup(event)">
+        <div class="fg"><label>Full name</label><input id="suName" type="text" placeholder="Your name" required></div>
+        <div class="fg"><label>Email</label><input id="suEmail" type="email" placeholder="you@example.com" required></div>
+        <div class="fg"><label>Password</label><input id="suPass" type="password" placeholder="At least 8 characters" required><div class="hint">Use 8+ characters.</div></div>
+        <button class="btn" id="suBtn" type="submit">Create account</button>
+        <div style="display:flex;align-items:center;gap:12px;margin:18px 0;color:#94A3B8;font-size:12px;font-weight:600">
+            <div style="flex:1;height:1px;background:#E2E8F0"></div>OR<div style="flex:1;height:1px;background:#E2E8F0"></div>
         </div>
-        <div class="field">
-            <label>Email Address</label>
-            <input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="field">
-            <label>Password</label>
-            <input type="password" id="suPass" placeholder="At least 8 characters" autocomplete="new-password">
-        </div>
-        <button class="btn btn-coral" id="regBtn" onclick="doRegister()">Create Account</button>
-        <div class="links">Already have an account? <a href="login.html">Sign In</a></div>
-    </div>
+        <a href="/google_login.php" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border:1.5px solid #E2E8F0;border-radius:10px;background:#fff;color:#1E293B;font-weight:600;font-size:14px;text-decoration:none;box-sizing:border-box" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571.001-.001.002-.001.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+            Continue with Google
+        </a>
+        <div class="foot">Already have an account? <a href="login.html">Sign in</a></div>
+    </form>
 
-    <!-- Verify OTP Panel -->
-    <div id="panelVerify" class="panel">
-        <p class="subtitle">Enter verification code</p>
-        <p style="text-align:center;font-size:13px;color:var(--gray);margin-bottom:20px">We sent a 6-digit code to <b id="verifyEmail"></b></p>
-        <div id="errVerify" class="err"></div>
-        <div class="field">
-            <input type="text" id="vCode" class="otp-input" placeholder="000000" maxlength="6" autocomplete="one-time-code">
-        </div>
-        <button class="btn btn-coral" id="verifyBtn" onclick="doVerify()">Verify</button>
-        <div class="resend">Didn't receive it? <a onclick="doResend()">Resend Code</a></div>
-    </div>
+    <!-- VERIFY -->
+    <form id="formVerify" onsubmit="doVerify(event)" style="display:none">
+        <div class="fg"><label>Enter the 6-digit code sent to your email</label><input id="vCode" class="otp" inputmode="numeric" maxlength="6" placeholder="000000" required></div>
+        <button class="btn" id="vBtn" type="submit">Verify &amp; continue</button>
+        <div class="foot"><a href="#" onclick="resend(event)">Resend code</a> &middot; <a href="login.html">Back to sign in</a></div>
+    </form>
 
-    <!-- Forgot Password Panel -->
-    <div id="panelForgot" class="panel">
-        <p class="subtitle">Reset your password</p>
-        <div id="errForgot" class="err"></div>
-        <div id="okForgot" class="ok"></div>
-        <div class="field">
-            <label>Email Address</label>
-            <input type="email" id="fEmail" placeholder="you@example.com">
-        </div>
-        <button class="btn btn-coral" id="forgotBtn" onclick="doForgot()">Send Reset Code</button>
-        <div class="links" style="margin-top:12px"><a href="#" onclick="showPanel('register');return false">← Back to Sign Up</a> &nbsp;·&nbsp; <a href="login.html">Sign In</a></div>
-    </div>
+    <!-- FORGOT step 1: email -->
+    <form id="formForgot" onsubmit="doForgot(event)" style="display:none">
+        <div class="fg"><label>Email</label><input id="fEmail" type="email" placeholder="you@example.com" required></div>
+        <button class="btn" id="fBtn" type="submit">Send reset code</button>
+        <div class="foot"><a href="login.html">Back to sign in</a></div>
+    </form>
 
-    <!-- Reset Password Panel -->
-    <div id="panelReset" class="panel">
-        <p class="subtitle">Set new password</p>
-        <p style="text-align:center;font-size:13px;color:var(--gray);margin-bottom:20px">Enter the code sent to <b id="resetEmail"></b></p>
-        <div id="errReset" class="err"></div>
-        <div class="field">
-            <input type="text" id="rCode" class="otp-input" placeholder="000000" maxlength="6">
-        </div>
-        <div class="field">
-            <label>New Password</label>
-            <input type="password" id="rPass" placeholder="At least 8 characters">
-        </div>
-        <button class="btn btn-coral" id="resetBtn" onclick="doReset()">Reset Password</button>
-    </div>
+    <!-- RESET step 2: code + new password -->
+    <form id="formReset" onsubmit="doReset(event)" style="display:none">
+        <div class="fg"><label>Reset code</label><input id="rCode" class="otp" inputmode="numeric" maxlength="6" placeholder="000000" required></div>
+        <div class="fg"><label>New password</label><input id="rPass" type="password" placeholder="At least 8 characters" required></div>
+        <button class="btn" id="rBtn" type="submit">Reset password</button>
+        <div class="foot"><a href="login.html">Back to sign in</a></div>
+    </form>
+
+    <div class="legal">By continuing you agree to our <a href="terms.html">Terms</a> &amp; <a href="privacy-policy.html">Privacy Policy</a>.</div>
 </div>
 
 <script>
-var pendingEmail='';
+var qs = new URLSearchParams(location.search);
+var mode = qs.get('mode') || 'signup';
+var pendingEmail = qs.get('email') || '';
 
-function showPanel(name){
-    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
-    document.getElementById('panel'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('active');
+function show(id){ ['formSignup','formVerify','formForgot','formReset'].forEach(function(f){document.getElementById(f).style.display='none'}); document.getElementById(id).style.display='block'; }
+function setHead(t,s){ document.getElementById('title').textContent=t; document.getElementById('subtitle').textContent=s; }
+function err(m){ var e=document.getElementById('err'); e.textContent=m; e.style.display='block'; document.getElementById('ok').style.display='none'; }
+function ok(m){ var e=document.getElementById('ok'); e.textContent=m; e.style.display='block'; document.getElementById('err').style.display='none'; }
+function clr(){ document.getElementById('err').style.display='none'; document.getElementById('ok').style.display='none'; }
+function dest(role){ return role==='admin'?'admin.html':'user.html'; }
+function post(action, body){ return fetch('auth.php?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)}).then(function(r){return r.json();}); }
+
+if (mode==='verify'){ show('formVerify'); setHead('Verify your email','Code sent to '+pendingEmail); }
+else if (mode==='forgot'){ show('formForgot'); setHead('Reset password','We\'ll email you a reset code.'); }
+else { show('formSignup'); }
+
+function doSignup(e){ e.preventDefault(); clr();
+    var b=document.getElementById('suBtn'); b.disabled=true; b.textContent='Creating...';
+    pendingEmail=document.getElementById('suEmail').value.trim().toLowerCase();
+    post('register',{name:document.getElementById('suName').value.trim(),email:pendingEmail,password:document.getElementById('suPass').value})
+    .then(function(d){ b.disabled=false; b.textContent='Create account';
+        if(d.ok){ show('formVerify'); setHead('Verify your email','Code sent to '+pendingEmail); ok('Verification code sent to '+pendingEmail); }
+        else err(d.message||'Could not create account.');
+    }).catch(function(){ b.disabled=false; b.textContent='Create account'; err('Connection error.'); });
 }
-function showErr(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
-function hideErr(id){document.getElementById(id).style.display='none';}
-
-function post(action,data){
-    return fetch('auth.php?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)}).then(function(r){return r.json();});
+function doVerify(e){ e.preventDefault(); clr();
+    var b=document.getElementById('vBtn'); b.disabled=true; b.textContent='Verifying...';
+    post('verify',{email:pendingEmail,otp:document.getElementById('vCode').value.trim()})
+    .then(function(d){ if(d.ok&&d.token){ localStorage.setItem('vb_auth',JSON.stringify({email:d.user.email,name:d.user.name,role:d.user.role,token:d.token})); location.href=dest(d.user.role); } else { b.disabled=false; b.textContent='Verify & continue'; err(d.message||'Invalid code.'); } })
+    .catch(function(){ b.disabled=false; b.textContent='Verify & continue'; err('Connection error.'); });
 }
-
-function doRegister(){
-    hideErr('errReg');
-    var name=document.getElementById('suName').value.trim();
-    var email=document.getElementById('suEmail').value.trim();
-    var pass=document.getElementById('suPass').value;
-    if(!name||!email||!pass){showErr('errReg','All fields are required.');return;}
-    if(pass.length<8){showErr('errReg','Password must be at least 8 characters.');return;}
-    var btn=document.getElementById('regBtn');btn.disabled=true;btn.textContent='Creating…';
-    post('register',{name:name,email:email,password:pass}).then(function(d){
-        if(d.ok){
-            pendingEmail=email;
-            document.getElementById('verifyEmail').textContent=email;
-            showPanel('verify');
-        } else {
-            showErr('errReg',d.message||'Registration failed.');
-        }
-        btn.disabled=false;btn.textContent='Create Account';
-    }).catch(function(){showErr('errReg','Network error.');btn.disabled=false;btn.textContent='Create Account';});
+function resend(e){ e.preventDefault(); clr(); post('resend',{email:pendingEmail}).then(function(){ ok('A new code was sent to '+pendingEmail); }); }
+function doForgot(e){ e.preventDefault(); clr();
+    var b=document.getElementById('fBtn'); b.disabled=true; b.textContent='Sending...';
+    pendingEmail=document.getElementById('fEmail').value.trim().toLowerCase();
+    post('forgot',{email:pendingEmail}).then(function(d){ b.disabled=false; b.textContent='Send reset code'; show('formReset'); setHead('Reset password','Enter the code sent to '+pendingEmail); ok(d.message||'If registered, a code was sent.'); })
+    .catch(function(){ b.disabled=false; b.textContent='Send reset code'; err('Connection error.'); });
 }
-
-function doVerify(){
-    hideErr('errVerify');
-    var code=document.getElementById('vCode').value.trim();
-    if(!code){showErr('errVerify','Enter the 6-digit code.');return;}
-    var btn=document.getElementById('verifyBtn');btn.disabled=true;btn.textContent='Verifying…';
-    post('verify',{email:pendingEmail,otp:code}).then(function(d){
-        if(d.ok){
-            localStorage.setItem('vb_auth',JSON.stringify({email:d.user.email,name:d.user.name,role:d.user.role,token:d.token}));
-            window.location.href=d.user.role==='admin'?'admin.html':'user.html';
-        } else {
-            showErr('errVerify',d.message||'Invalid code.');
-            btn.disabled=false;btn.textContent='Verify';
-        }
-    }).catch(function(){showErr('errVerify','Network error.');btn.disabled=false;btn.textContent='Verify';});
+function doReset(e){ e.preventDefault(); clr();
+    var b=document.getElementById('rBtn'); b.disabled=true; b.textContent='Resetting...';
+    post('reset',{email:pendingEmail,otp:document.getElementById('rCode').value.trim(),password:document.getElementById('rPass').value})
+    .then(function(d){ b.disabled=false; b.textContent='Reset password'; if(d.ok){ ok('Password reset! Redirecting to sign in...'); setTimeout(function(){location.href='login.html';},1500); } else err(d.message||'Could not reset.'); })
+    .catch(function(){ b.disabled=false; b.textContent='Reset password'; err('Connection error.'); });
 }
-
-function doResend(){
-    post('resend',{email:pendingEmail}).then(function(){alert('New code sent!');});
-}
-
-function doForgot(){
-    hideErr('errForgot');
-    var email=document.getElementById('fEmail').value.trim();
-    if(!email){showErr('errForgot','Email required.');return;}
-    var btn=document.getElementById('forgotBtn');btn.disabled=true;btn.textContent='Sending…';
-    post('forgot',{email:email}).then(function(d){
-        pendingEmail=email;
-        document.getElementById('resetEmail').textContent=email;
-        showPanel('reset');
-        btn.disabled=false;btn.textContent='Send Reset Code';
-    }).catch(function(){showErr('errForgot','Network error.');btn.disabled=false;btn.textContent='Send Reset Code';});
-}
-
-function doReset(){
-    hideErr('errReset');
-    var code=document.getElementById('rCode').value.trim();
-    var pass=document.getElementById('rPass').value;
-    if(!code||!pass){showErr('errReset','All fields required.');return;}
-    if(pass.length<8){showErr('errReset','Password must be at least 8 characters.');return;}
-    var btn=document.getElementById('resetBtn');btn.disabled=true;btn.textContent='Resetting…';
-    post('reset',{email:pendingEmail,otp:code,password:pass}).then(function(d){
-        if(d.ok){
-            alert('Password reset! Please sign in.');
-            window.location.href='login.html';
-        } else {
-            showErr('errReset',d.message||'Reset failed.');
-            btn.disabled=false;btn.textContent='Reset Password';
-        }
-    }).catch(function(){showErr('errReset','Network error.');btn.disabled=false;btn.textContent='Reset Password';});
-}
-
-// Handle URL params
-(function(){
-    var params=new URLSearchParams(location.search);
-    if(params.get('verify')){pendingEmail=params.get('verify');document.getElementById('verifyEmail').textContent=pendingEmail;showPanel('verify');}
-    if(location.hash==='#forgot')showPanel('forgot');
-})();
 </script>
-
 </body>
 </html>

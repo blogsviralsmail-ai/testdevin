@@ -137,3 +137,32 @@ function send_otp_email($to, $otp) {
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     return @mail($to, $subject, $body, $headers);
 }
+
+// HTTP helpers (shared across PHP files)
+if (!function_exists('http_get')) {
+    function http_get($url, $token = '') {
+        $ch = curl_init($url);
+        $h = ['Accept: application/json'];
+        if ($token) $h[] = "Authorization: Bearer $token";
+        curl_setopt_array($ch, [CURLOPT_HTTPHEADER => $h, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30]);
+        $r = curl_exec($ch); curl_close($ch);
+        return $r;
+    }
+}
+if (!function_exists('http_post')) {
+    function http_post($url, $data) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => http_build_query($data), CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30]);
+        $r = curl_exec($ch); curl_close($ch);
+        return $r;
+    }
+}
+if (!function_exists('log_action')) {
+    function log_action($level, $action, $details = '', $user_id = null) {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        try {
+            db()->prepare('INSERT INTO system_logs (level, action, details, user_id, ip_address) VALUES (?,?,?,?,?)')
+                 ->execute([$level, $action, $details, $user_id, $ip]);
+        } catch (Exception $e) {}
+    }
+}
