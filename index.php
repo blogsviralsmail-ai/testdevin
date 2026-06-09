@@ -51,8 +51,10 @@ $meta_keywords = getSetting('meta_keywords', 'tiles, sanitaryware, bathroom fitt
     <title><?php echo htmlspecialchars($meta_title); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($meta_description); ?>">
     <meta name="keywords" content="<?php echo htmlspecialchars($meta_keywords); ?>">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -129,7 +131,7 @@ $meta_keywords = getSetting('meta_keywords', 'tiles, sanitaryware, bathroom fitt
             <div class="categories-grid">
                 <?php while($cat = $categories->fetch_assoc()): ?>
                 <a href="products.php?category=<?php echo $cat['slug']; ?>" class="category-card">
-                    <img src="<?php echo $cat['image'] ?: 'https://via.placeholder.com/400x300'; ?>" alt="<?php echo $cat['name']; ?>">
+                    <img src="<?php echo $cat['image'] ?: 'https://via.placeholder.com/400x300'; ?>" alt="<?php echo $cat['name']; ?>" loading="lazy">
                     <h3><?php echo $cat['name']; ?></h3>
                 </a>
                 <?php endwhile; ?>

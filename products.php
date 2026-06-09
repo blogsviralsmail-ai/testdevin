@@ -209,7 +209,7 @@ if ($cat_filter) {
                         <?php if($products->num_rows > 0): ?>
                             <?php while($product = $products->fetch_assoc()): ?>
                             <div class="product-card">
-                                <img src="<?php echo $product['image'] ?: 'https://via.placeholder.com/400x300'; ?>" alt="<?php echo $product['name']; ?>">
+                                <img src="<?php echo $product['image'] ?: 'https://via.placeholder.com/400x300'; ?>" alt="<?php echo $product['name']; ?>" loading="lazy">
                                 <div class="product-info">
                                     <h4><?php echo $product['name']; ?></h4>
                                     <p><?php echo $product['category_name']; ?></p>

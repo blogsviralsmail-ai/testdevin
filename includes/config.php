@@ -11,6 +11,9 @@ define('SITE_NAME', 'JP Tiles');
 define('SITE_TAGLINE', '#1 Trusted Brand Since 2013');
 
 // Session Configuration
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_strict_mode', 1);
 session_start();
 
 // Database Connection (mysqli)
@@ -98,21 +101,23 @@ function formatCurrency($amount) {
     return number_format($amount, 2);
 }
 
-// Get Site Settings
+// Get Site Settings (cached - loads all settings once, avoids repeated DB calls)
 function getSetting($key, $default = '') {
-    $conn = getDBConnection();
-    $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
-    $stmt->bind_param("s", $key);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($row = $result->fetch_assoc()) {
-        $stmt->close();
+    static $settings_cache = null;
+    
+    if ($settings_cache === null) {
+        $settings_cache = [];
+        $conn = getDBConnection();
+        $result = $conn->query("SELECT setting_key, setting_value FROM settings");
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $settings_cache[$row['setting_key']] = $row['setting_value'];
+            }
+        }
         $conn->close();
-        return $row['setting_value'];
     }
-    $stmt->close();
-    $conn->close();
-    return $default;
+    
+    return isset($settings_cache[$key]) ? $settings_cache[$key] : $default;
 }
 
 // Update Site Setting
