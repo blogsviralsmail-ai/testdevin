@@ -1,0 +1,25 @@
+# API Directory - Block dangerous debug/test/fix files
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Block all debug, test, fix, reset, create_test, audit, investigate files
+    RewriteRule ^debug[_-].*\.php$ - [F,L]
+    RewriteRule ^fix[_-].*\.php$ - [F,L]
+    RewriteRule ^test[_-].*\.php$ - [F,L]
+    RewriteRule ^reset[_-].*\.php$ - [F,L]
+    RewriteRule ^create[_-].*\.php$ - [F,L]
+    RewriteRule ^check[_-].*\.php$ - [F,L]
+    RewriteRule ^investigate.*\.php$ - [F,L]
+    RewriteRule ^fresh-audit.*\.php$ - [F,L]
+    RewriteRule ^clear_dummy.*\.php$ - [F,L]
+    RewriteRule ^cleanup.*\.php$ - [F,L]
+    RewriteRule ^delete_stuck.*\.php$ - [F,L]
+    RewriteRule ^setup_missing.*\.php$ - [F,L]
+    RewriteRule ^get-file\.php$ - [F,L]
+    RewriteRule ^get-customers-file\.php$ - [F,L]
+    RewriteRule ^add-tier\.php$ - [F,L]
+    RewriteRule ^pending-visits-new\.php$ - [F,L]
+</IfModule>
+
+# Block direct PHP error display
+php_flag display_errors Off

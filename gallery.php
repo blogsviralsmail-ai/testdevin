@@ -100,7 +100,7 @@ $categories = $conn->query("SELECT DISTINCT category FROM gallery WHERE status =
             <div class="gallery-grid">
                 <?php while($img = $gallery->fetch_assoc()): ?>
                 <div class="gallery-item" data-category="<?php echo strtolower(str_replace(' ', '-', $img['category'])); ?>">
-                    <img src="<?php echo $img['image']; ?>" alt="<?php echo $img['title']; ?>">
+                    <img src="<?php echo $img['image']; ?>" alt="<?php echo $img['title']; ?>" loading="lazy">
                     <div class="gallery-overlay">
                         <div class="gallery-info">
                             <?php if ($img['title']): ?>

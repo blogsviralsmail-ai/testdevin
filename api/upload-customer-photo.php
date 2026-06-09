@@ -20,6 +20,12 @@ if (!isset($_FILES["photo"]) || $_FILES["photo"]["error"] !== UPLOAD_ERR_OK) {
     exit;
 }
 
+// Limit file size to 2MB
+if ($_FILES["photo"]["size"] > 2 * 1024 * 1024) {
+    echo json_encode(["success" => false, "message" => "File too large. Maximum 2MB allowed."]);
+    exit;
+}
+
 // Check if customer exists using PDO
 $stmt = $pdo->prepare("SELECT id FROM masons WHERE id = ?");
 $stmt->execute([$customer_id]);
