@@ -344,8 +344,48 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(124,110,240,0.1);
         }
-        .video-link:hover { color: #9b8fff; text-decoration: underline; }
+        .video-link:hover { color: #9b8fff; background: rgba(124,110,240,0.2); }
+        .btn-check-status {
+            background: rgba(41,182,246,0.15);
+            color: #29b6f6;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-check-status:hover { background: rgba(41,182,246,0.3); }
+        .btn-local-dl {
+            background: rgba(102,187,106,0.15);
+            color: #66bb6a;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+        }
+        .btn-local-dl:hover { background: rgba(102,187,106,0.3); }
+        .action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+        .downloads-link {
+            color: #7c6ef0;
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .downloads-link:hover { color: #9b8fff; }
 
         .prompt-text {
             max-width: 400px;
@@ -426,8 +466,9 @@
     <div class="logo">
         <i class="fas fa-video"></i>
         <span>Seedance Video Generator</span>
-        <span class="version">v1.0.0</span>
+        <span class="version">v2.0.0</span>
     </div>
+    <a href="/download" class="downloads-link" target="_blank"><i class="fas fa-folder-open"></i> Downloads</a>
 </div>
 
 <div class="container">
@@ -582,7 +623,7 @@
                         <th style="width: 40px;">#</th>
                         <th>Prompt</th>
                         <th style="width: 120px;">Status</th>
-                        <th style="width: 140px;">Info / Path</th>
+                        <th style="width: 220px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="jobsBody"></tbody>
@@ -645,7 +686,7 @@ function updateJobRow(index, data) {
     if (!row) return;
 
     const statusCell = row.querySelector(".status-cell");
-    const infoCell = row.querySelector(".info-cell");
+    const actionCell = row.querySelector(".action-cell");
 
     let statusHtml = "";
     switch (data.status) {
@@ -656,10 +697,10 @@ function updateJobRow(index, data) {
             statusHtml = '<span class="status-pill status-generating"><i class="fas fa-spinner fa-spin"></i> Generating</span>';
             break;
         case "done":
-            statusHtml = '<span class="status-pill status-done"><i class="fas fa-check"></i> Done</span>';
+            statusHtml = '<span class="status-pill status-done"><i class="fas fa-check-circle"></i> Complete</span>';
             break;
         case "failed":
-            statusHtml = '<span class="status-pill status-failed"><i class="fas fa-times"></i> Failed</span>';
+            statusHtml = '<span class="status-pill status-failed"><i class="fas fa-times-circle"></i> Failed</span>';
             break;
         case "cancelled":
             statusHtml = '<span class="status-pill status-cancelled"><i class="fas fa-ban"></i> Cancelled</span>';
@@ -667,12 +708,53 @@ function updateJobRow(index, data) {
     }
     statusCell.innerHTML = statusHtml;
 
+    let actionsHtml = '<div class="action-btns">';
     if (data.status === "done" && data.video_url) {
-        infoCell.innerHTML = `<a href="${data.video_url}" target="_blank" class="video-link"><i class="fas fa-download"></i> Download</a>`;
+        actionsHtml += `<a href="${data.video_url}" target="_blank" class="video-link"><i class="fas fa-external-link-alt"></i> Open</a>`;
+        if (data.local_file) {
+            actionsHtml += `<a href="/downloads/${data.local_file}" download class="btn-local-dl"><i class="fas fa-download"></i> Download</a>`;
+        } else {
+            actionsHtml += `<a href="${data.video_url}" download class="btn-local-dl"><i class="fas fa-download"></i> Save</a>`;
+        }
     } else if (data.status === "failed" && data.error) {
-        infoCell.innerHTML = `<span style="color: #ef5350; font-size: 11px;" title="${escapeHtml(data.error)}">${escapeHtml(data.error.substring(0, 40))}...</span>`;
-    } else if (data.generation_id) {
-        infoCell.innerHTML = `<span style="color: #666; font-size: 11px;">${data.generation_id.substring(0, 16)}...</span>`;
+        actionsHtml += `<span style="color:#ef5350;font-size:11px;" title="${escapeHtml(data.error)}">${escapeHtml(data.error.substring(0, 30))}</span>`;
+    }
+    if (data.generation_id && (data.status === "generating" || data.status === "done" || data.status === "failed")) {
+        actionsHtml += `<button class="btn-check-status" onclick="checkStatus('${data.generation_id}', ${index})"><i class="fas fa-sync-alt"></i> Check</button>`;
+    }
+    actionsHtml += '</div>';
+    actionCell.innerHTML = actionsHtml;
+}
+
+async function checkStatus(generationId, index) {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey) { alert('Enter API key first!'); return; }
+
+    addLogEntry(`Checking status for generation ${generationId.substring(0,16)}...`, 'info');
+
+    const formData = new FormData();
+    formData.append('api_key', apiKey);
+    formData.append('generation_id', generationId);
+
+    try {
+        const resp = await fetch('/api/check-status', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (data.success) {
+            addLogEntry(`[${index+1}] Status: ${data.status}${data.video_url ? ' - Video URL available!' : ''}`, data.status === 'COMPLETE' ? 'success' : 'info');
+            if (data.status === 'COMPLETE' && data.video_url) {
+                const key = `${currentSessionId}_${index}`;
+                if (jobData[key]) {
+                    jobData[key].status = 'done';
+                    jobData[key].video_url = data.video_url;
+                }
+                updateJobRow(index, { status: 'done', video_url: data.video_url, generation_id: generationId });
+                updateStats();
+            }
+        } else {
+            addLogEntry(`[${index+1}] Check failed: ${data.error}`, 'error');
+        }
+    } catch(err) {
+        addLogEntry(`Check error: ${err.message}`, 'error');
     }
 }
 
@@ -825,7 +907,7 @@ async function startGeneration() {
             <td>${i + 1}</td>
             <td class="prompt-text" title="${escapeHtml(p.trim())}">${escapeHtml(p.trim())}</td>
             <td class="status-cell"><span class="status-pill status-queued"><i class="fas fa-clock"></i> Queued</span></td>
-            <td class="info-cell">-</td>
+            <td class="action-cell"><div class="action-btns">-</div></td>
         `;
         document.getElementById("jobsBody").appendChild(tr);
     });
