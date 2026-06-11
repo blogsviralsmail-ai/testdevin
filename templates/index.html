@@ -124,37 +124,43 @@
         .setting-control input:focus { outline: none; border-color: #7c6ef0; }
         .setting-control select { cursor: pointer; }
 
-        /* Reference Image */
+        /* Reference Images Grid */
         .ref-image-section { margin-bottom: 20px; }
-        .ref-image-area {
+        .ref-images-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .ref-image-slot {
             border: 2px dashed #2a2b4a;
-            border-radius: 8px;
-            padding: 20px;
+            border-radius: 6px;
+            padding: 8px 4px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .ref-image-area:hover { border-color: #7c6ef0; background: rgba(124, 110, 240, 0.05); }
-        .ref-image-area.has-image { border-color: #4caf50; border-style: solid; }
-        .ref-image-area i { font-size: 28px; color: #555; margin-bottom: 8px; }
-        .ref-image-area p { font-size: 12px; color: #666; }
-        .ref-image-area img {
-            max-width: 100%;
-            max-height: 120px;
-            border-radius: 4px;
-        }
+        .ref-image-slot:hover { border-color: #7c6ef0; background: rgba(124, 110, 240, 0.05); }
+        .ref-image-slot.has-image { border-color: #4caf50; border-style: solid; }
+        .ref-image-slot.uploading { border-color: #f0c040; }
+        .slot-placeholder { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .slot-placeholder i { font-size: 18px; color: #555; }
+        .slot-placeholder span { font-size: 9px; color: #666; }
+        .slot-preview { max-width: 100%; max-height: 65px; border-radius: 3px; object-fit: cover; }
         .ref-image-input { display: none; }
         .ref-image-info {
-            margin-top: 8px;
+            margin-top: 6px;
             font-size: 11px;
             color: #4caf50;
             display: none;
         }
         .ref-image-info.show { display: block; }
-        .image-mode-row {
-            margin-top: 8px;
-        }
+        .image-mode-row { margin-top: 8px; }
         .image-mode-row select {
             width: 100%;
             background: #1a1b3a;
@@ -164,21 +170,21 @@
             padding: 6px 10px;
             font-size: 12px;
         }
-        .btn-remove-image {
+        .btn-remove-slot {
             position: absolute;
-            top: 6px;
-            right: 6px;
+            top: 3px;
+            right: 3px;
             background: #e53935;
             border: none;
             color: #fff;
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             cursor: pointer;
             font-size: 11px;
             display: none;
         }
-        .ref-image-area.has-image .btn-remove-image { display: flex; align-items: center; justify-content: center; }
+        .ref-image-slot.has-image .btn-remove-slot { display: flex; align-items: center; justify-content: center; }
 
         /* Prompts */
         .prompts-section { margin-bottom: 16px; }
@@ -386,6 +392,10 @@
             gap: 6px;
         }
         .downloads-link:hover { color: #9b8fff; }
+        .nav-links { display:flex; gap:16px; align-items:center; }
+        .nav-links a { color:#7c6ef0; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:6px; }
+        .nav-links a:hover { color:#9b8fff; }
+        .user-badge { color:#888; font-size:12px; padding:4px 10px; background:rgba(124,110,240,0.1); border-radius:4px; }
 
         .prompt-text {
             max-width: 400px;
@@ -468,7 +478,10 @@
         <span>Seedance Video Generator</span>
         <span class="version">v2.0.0</span>
     </div>
-    <a href="/download" class="downloads-link" target="_blank"><i class="fas fa-folder-open"></i> Downloads</a>
+    <div class="nav-links">
+        <a href="/download"><i class="fas fa-folder-open"></i> Downloads</a>
+        <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
 </div>
 
 <div class="container">
@@ -555,28 +568,48 @@
             </div>
         </div>
 
-        <!-- Reference Image -->
+        <!-- Reference Images (Multiple) -->
         <div class="ref-image-section">
-            <div class="section-title"><i class="fas fa-image"></i> Reference Image (Optional)</div>
-            <div class="ref-image-area" id="refImageArea" onclick="document.getElementById('refImageInput').click()">
-                <button class="btn-remove-image" id="btnRemoveImage" onclick="event.stopPropagation(); removeRefImage();">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div id="refImagePlaceholder">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <p>Click to upload reference image</p>
-                    <p style="font-size: 10px; color: #444; margin-top: 4px;">PNG, JPG, JPEG, WEBP</p>
+            <div class="section-title"><i class="fas fa-images"></i> Reference Images (Optional - Multiple Angles)</div>
+            <div class="ref-images-grid" id="refImagesGrid">
+                <div class="ref-image-slot" id="slot0" onclick="document.getElementById('refInput0').click()">
+                    <div class="slot-placeholder"><i class="fas fa-plus"></i><span>Image 1</span></div>
+                    <img class="slot-preview" style="display:none;">
+                    <button class="btn-remove-slot" onclick="event.stopPropagation(); removeSlotImage(0);"><i class="fas fa-times"></i></button>
                 </div>
-                <img id="refImagePreview" style="display: none;">
+                <div class="ref-image-slot" id="slot1" onclick="document.getElementById('refInput1').click()">
+                    <div class="slot-placeholder"><i class="fas fa-plus"></i><span>Image 2</span></div>
+                    <img class="slot-preview" style="display:none;">
+                    <button class="btn-remove-slot" onclick="event.stopPropagation(); removeSlotImage(1);"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="ref-image-slot" id="slot2" onclick="document.getElementById('refInput2').click()">
+                    <div class="slot-placeholder"><i class="fas fa-plus"></i><span>Image 3</span></div>
+                    <img class="slot-preview" style="display:none;">
+                    <button class="btn-remove-slot" onclick="event.stopPropagation(); removeSlotImage(2);"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="ref-image-slot" id="slot3" onclick="document.getElementById('refInput3').click()">
+                    <div class="slot-placeholder"><i class="fas fa-plus"></i><span>Image 4</span></div>
+                    <img class="slot-preview" style="display:none;">
+                    <button class="btn-remove-slot" onclick="event.stopPropagation(); removeSlotImage(3);"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="ref-image-slot" id="slot4" onclick="document.getElementById('refInput4').click()">
+                    <div class="slot-placeholder"><i class="fas fa-plus"></i><span>Image 5</span></div>
+                    <img class="slot-preview" style="display:none;">
+                    <button class="btn-remove-slot" onclick="event.stopPropagation(); removeSlotImage(4);"><i class="fas fa-times"></i></button>
+                </div>
             </div>
-            <input type="file" class="ref-image-input" id="refImageInput" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleRefImage(this)">
+            <input type="file" class="ref-image-input" id="refInput0" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleSlotImage(0, this)">
+            <input type="file" class="ref-image-input" id="refInput1" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleSlotImage(1, this)">
+            <input type="file" class="ref-image-input" id="refInput2" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleSlotImage(2, this)">
+            <input type="file" class="ref-image-input" id="refInput3" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleSlotImage(3, this)">
+            <input type="file" class="ref-image-input" id="refInput4" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleSlotImage(4, this)">
             <div class="ref-image-info" id="refImageInfo">
-                <i class="fas fa-check-circle"></i> Image uploaded: <span id="refImageId"></span>
+                <i class="fas fa-check-circle"></i> <span id="refImageCount">0</span> image(s) uploaded
             </div>
             <div class="image-mode-row">
                 <select id="imageMode">
-                    <option value="start_frame">Start Frame (Image to Video)</option>
-                    <option value="image_reference">Style Reference</option>
+                    <option value="start_frame">Start Frame (Image to Video) - uses 1st image</option>
+                    <option value="image_reference">Style/Character Reference (all images)</option>
                 </select>
             </div>
         </div>
@@ -645,7 +678,7 @@
 let currentSessionId = null;
 let ws = null;
 let jobData = {};
-let uploadedImageId = "";
+let uploadedImageIds = ["", "", "", "", ""];
 
 // WebSocket connection
 function connectWS() {
@@ -732,22 +765,32 @@ async function checkStatus(generationId, index) {
 
     addLogEntry(`Checking status for generation ${generationId.substring(0,16)}...`, 'info');
 
+    // Get prompt text from the row
+    const row = document.getElementById(`job-row-${index}`);
+    const promptText = row ? (row.querySelector('.prompt-text')?.textContent || 'video') : 'video';
+
     const formData = new FormData();
     formData.append('api_key', apiKey);
     formData.append('generation_id', generationId);
+    formData.append('prompt', promptText);
+    formData.append('index', index);
 
     try {
         const resp = await fetch('/api/check-status', { method: 'POST', body: formData });
         const data = await resp.json();
         if (data.success) {
-            addLogEntry(`[${index+1}] Status: ${data.status}${data.video_url ? ' - Video URL available!' : ''}`, data.status === 'COMPLETE' ? 'success' : 'info');
+            let msg = `[${index+1}] Status: ${data.status}`;
+            if (data.video_url) msg += ' - Video ready!';
+            if (data.local_file) msg += ` - Saved: ${data.local_file}`;
+            addLogEntry(msg, data.status === 'COMPLETE' ? 'success' : 'info');
             if (data.status === 'COMPLETE' && data.video_url) {
                 const key = `${currentSessionId}_${index}`;
                 if (jobData[key]) {
                     jobData[key].status = 'done';
                     jobData[key].video_url = data.video_url;
+                    jobData[key].local_file = data.local_file;
                 }
-                updateJobRow(index, { status: 'done', video_url: data.video_url, generation_id: generationId });
+                updateJobRow(index, { status: 'done', video_url: data.video_url, local_file: data.local_file, generation_id: generationId });
                 updateStats();
             }
         } else {
@@ -808,8 +851,8 @@ function clearLog() {
     document.getElementById("logBody").innerHTML = "";
 }
 
-// Reference Image
-async function handleRefImage(input) {
+// Reference Images (Multiple)
+async function handleSlotImage(slotIdx, input) {
     const file = input.files[0];
     if (!file) return;
 
@@ -820,9 +863,9 @@ async function handleRefImage(input) {
         return;
     }
 
-    const preview = document.getElementById("refImagePreview");
-    const placeholder = document.getElementById("refImagePlaceholder");
-    const area = document.getElementById("refImageArea");
+    const slot = document.getElementById("slot" + slotIdx);
+    const preview = slot.querySelector(".slot-preview");
+    const placeholder = slot.querySelector(".slot-placeholder");
 
     // Show preview
     const reader = new FileReader();
@@ -830,12 +873,11 @@ async function handleRefImage(input) {
         preview.src = e.target.result;
         preview.style.display = "block";
         placeholder.style.display = "none";
-        area.classList.add("has-image");
+        slot.classList.add("uploading");
     };
     reader.readAsDataURL(file);
 
-    // Upload to Leonardo
-    addLogEntry("Uploading reference image...", "info");
+    addLogEntry(`Uploading image ${slotIdx + 1}...`, "info");
     const formData = new FormData();
     formData.append("api_key", apiKey);
     formData.append("file", file);
@@ -844,27 +886,41 @@ async function handleRefImage(input) {
         const resp = await fetch("/api/upload-image", { method: "POST", body: formData });
         const data = await resp.json();
         if (data.success) {
-            uploadedImageId = data.image_id;
-            document.getElementById("refImageId").textContent = data.image_id;
-            document.getElementById("refImageInfo").classList.add("show");
-            addLogEntry(`Image uploaded successfully! ID: ${data.image_id}`, "success");
+            uploadedImageIds[slotIdx] = data.image_id;
+            slot.classList.remove("uploading");
+            slot.classList.add("has-image");
+            slot.querySelector(".btn-remove-slot").style.display = "block";
+            updateImageCount();
+            addLogEntry(`Image ${slotIdx + 1} uploaded! ID: ${data.image_id}`, "success");
         } else {
-            addLogEntry(`Image upload failed: ${data.error}`, "error");
-            removeRefImage();
+            addLogEntry(`Image ${slotIdx + 1} upload failed: ${data.error}`, "error");
+            removeSlotImage(slotIdx);
         }
     } catch (err) {
-        addLogEntry(`Image upload error: ${err.message}`, "error");
-        removeRefImage();
+        addLogEntry(`Image ${slotIdx + 1} upload error: ${err.message}`, "error");
+        removeSlotImage(slotIdx);
     }
 }
 
-function removeRefImage() {
-    uploadedImageId = "";
-    document.getElementById("refImagePreview").style.display = "none";
-    document.getElementById("refImagePlaceholder").style.display = "block";
-    document.getElementById("refImageArea").classList.remove("has-image");
-    document.getElementById("refImageInfo").classList.remove("show");
-    document.getElementById("refImageInput").value = "";
+function removeSlotImage(slotIdx) {
+    uploadedImageIds[slotIdx] = "";
+    const slot = document.getElementById("slot" + slotIdx);
+    slot.querySelector(".slot-preview").style.display = "none";
+    slot.querySelector(".slot-placeholder").style.display = "flex";
+    slot.classList.remove("has-image", "uploading");
+    slot.querySelector(".btn-remove-slot").style.display = "none";
+    document.getElementById("refInput" + slotIdx).value = "";
+    updateImageCount();
+}
+
+function updateImageCount() {
+    const count = uploadedImageIds.filter(id => id).length;
+    document.getElementById("refImageCount").textContent = count;
+    if (count > 0) {
+        document.getElementById("refImageInfo").classList.add("show");
+    } else {
+        document.getElementById("refImageInfo").classList.remove("show");
+    }
 }
 
 // Prompt counting
@@ -923,7 +979,7 @@ async function startGeneration() {
     formData.append("resolution", resolution);
     formData.append("ratio", ratio);
     formData.append("parallel", parallel);
-    formData.append("image_id", uploadedImageId);
+    formData.append("image_ids", uploadedImageIds.filter(id => id).join(","));
     formData.append("image_mode", imageMode);
     formData.append("prompt_enhance", promptEnhance);
 
