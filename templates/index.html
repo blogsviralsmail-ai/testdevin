@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seedance Video Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0b1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #12132d 0%, #1a1b3a 100%);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #2a2b4a;
+        }
+        .header .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .header .logo i { color: #7c6ef0; font-size: 22px; }
+        .header .version {
+            background: #2a2b4a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #888;
+        }
+
+        /* Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: calc(100vh - 52px);
+        }
+
+        /* Left Panel */
+        .left-panel {
+            background: #10112a;
+            border-right: 1px solid #2a2b4a;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title i { color: #7c6ef0; }
+
+        /* API Key */
+        .api-key-section { margin-bottom: 20px; }
+        .api-key-input {
+            width: 100%;
+            background: #1a1b3a;
+            border: 1px solid #2a2b4a;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #e0e0e0;
+            font-size: 13px;
+            font-family: monospace;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .api-key-input:focus { outline: none; border-color: #7c6ef0; }
+        .btn-refresh {
+            margin-top: 6px;
+            background: #1a1b3a;
+            border: 1px solid #2a2b4a;
+            color: #aaa;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-refresh:hover { border-color: #7c6ef0; color: #fff; }
+
+        /* Settings */
+        .settings-section { margin-bottom: 20px; }
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .setting-label {
+            font-size: 13px;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .setting-control select,
+        .setting-control input {
+            background: #1a1b3a;
+            border: 1px solid #2a2b4a;
+            border-radius: 4px;
+            color: #e0e0e0;
+            padding: 6px 10px;
+            font-size: 13px;
+            width: 160px;
+        }
+        .setting-control select:focus,
+        .setting-control input:focus { outline: none; border-color: #7c6ef0; }
+        .setting-control select { cursor: pointer; }
+
+        /* Reference Image */
+        .ref-image-section { margin-bottom: 20px; }
+        .ref-image-area {
+            border: 2px dashed #2a2b4a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .ref-image-area:hover { border-color: #7c6ef0; background: rgba(124, 110, 240, 0.05); }
+        .ref-image-area.has-image { border-color: #4caf50; border-style: solid; }
+        .ref-image-area i { font-size: 28px; color: #555; margin-bottom: 8px; }
+        .ref-image-area p { font-size: 12px; color: #666; }
+        .ref-image-area img {
+            max-width: 100%;
+            max-height: 120px;
+            border-radius: 4px;
+        }
+        .ref-image-input { display: none; }
+        .ref-image-info {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #4caf50;
+            display: none;
+        }
+        .ref-image-info.show { display: block; }
+        .image-mode-row {
+            margin-top: 8px;
+        }
+        .image-mode-row select {
+            width: 100%;
+            background: #1a1b3a;
+            border: 1px solid #2a2b4a;
+            border-radius: 4px;
+            color: #e0e0e0;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .btn-remove-image {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #e53935;
+            border: none;
+            color: #fff;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 11px;
+            display: none;
+        }
+        .ref-image-area.has-image .btn-remove-image { display: flex; align-items: center; justify-content: center; }
+
+        /* Prompts */
+        .prompts-section { margin-bottom: 16px; }
+        .prompts-textarea {
+            width: 100%;
+            background: #1a1b3a;
+            border: 1px solid #2a2b4a;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 180px;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+        .prompts-textarea::placeholder { color: #444; }
+        .prompts-textarea:focus { outline: none; border-color: #7c6ef0; }
+        .prompt-count {
+            text-align: right;
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            position: sticky;
+            bottom: 0;
+            background: #10112a;
+            padding: 12px 0;
+        }
+        .btn-start {
+            flex: 1;
+            background: linear-gradient(135deg, #7c6ef0, #6054d0);
+            border: none;
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-start:hover { background: linear-gradient(135deg, #8b7ff0, #7068e0); transform: translateY(-1px); }
+        .btn-start:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-stop {
+            flex: 1;
+            background: #e53935;
+            border: none;
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-stop:hover { background: #f44336; }
+
+        /* Right Panel */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            padding: 12px 20px;
+            background: #12132d;
+            border-bottom: 1px solid #2a2b4a;
+            flex-wrap: wrap;
+        }
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #1a1b3a;
+        }
+        .stat-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .dot-total { background: #7c6ef0; }
+        .dot-queued { background: #ffa726; }
+        .dot-generating { background: #29b6f6; animation: pulse 1.5s infinite; }
+        .dot-done { background: #66bb6a; }
+        .dot-failed { background: #ef5350; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Job Table */
+        .jobs-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .jobs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .jobs-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .jobs-table th {
+            background: #12132d;
+            padding: 10px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            border-bottom: 1px solid #2a2b4a;
+        }
+        .jobs-table td {
+            padding: 10px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid #1a1b3a;
+            vertical-align: middle;
+        }
+        .jobs-table tr:hover td { background: rgba(124, 110, 240, 0.03); }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-queued { background: rgba(255, 167, 38, 0.15); color: #ffa726; }
+        .status-generating { background: rgba(41, 182, 246, 0.15); color: #29b6f6; }
+        .status-done { background: rgba(102, 187, 106, 0.15); color: #66bb6a; }
+        .status-failed { background: rgba(239, 83, 80, 0.15); color: #ef5350; }
+        .status-cancelled { background: rgba(158, 158, 158, 0.15); color: #9e9e9e; }
+
+        .video-link {
+            color: #7c6ef0;
+            text-decoration: none;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .video-link:hover { color: #9b8fff; text-decoration: underline; }
+
+        .prompt-text {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #444;
+        }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 14px; }
+
+        /* Log Output */
+        .log-section {
+            background: #0d0e20;
+            border-top: 1px solid #2a2b4a;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 16px;
+            background: #12132d;
+            border-bottom: 1px solid #1a1b3a;
+        }
+        .log-header span {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+        }
+        .log-clear {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .log-clear:hover { color: #aaa; }
+        .log-body {
+            padding: 8px 16px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+        .log-entry { color: #666; }
+        .log-entry.error { color: #ef5350; }
+        .log-entry.success { color: #66bb6a; }
+        .log-entry.info { color: #29b6f6; }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            .container { grid-template-columns: 1fr; }
+            .left-panel { max-height: 50vh; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2b4a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a3b5a; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo">
+        <i class="fas fa-video"></i>
+        <span>Seedance Video Generator</span>
+        <span class="version">v1.0.0</span>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Left Panel -->
+    <div class="left-panel">
+        <!-- API Keys -->
+        <div class="api-key-section">
+            <div class="section-title"><i class="fas fa-key"></i> API KEY</div>
+            <textarea class="api-key-input" id="apiKey" placeholder="Paste your Leonardo AI API key here..." rows="2"></textarea>
+        </div>
+
+        <!-- Settings -->
+        <div class="settings-section">
+            <div class="section-title"><i class="fas fa-cog"></i> Settings</div>
+
+            <div class="setting-row">
+                <span class="setting-label">Model</span>
+                <div class="setting-control">
+                    <select id="model">
+                        <option value="seedance-2.0">Seedance 2.0</option>
+                        <option value="seedance-2.0-fast">Seedance 2.0 Fast</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Duration</span>
+                <div class="setting-control">
+                    <select id="duration">
+                        <option value="4">4s</option>
+                        <option value="5">5s</option>
+                        <option value="6">6s</option>
+                        <option value="7">7s</option>
+                        <option value="8" selected>8s</option>
+                        <option value="9">9s</option>
+                        <option value="10">10s</option>
+                        <option value="11">11s</option>
+                        <option value="12">12s</option>
+                        <option value="13">13s</option>
+                        <option value="14">14s</option>
+                        <option value="15">15s</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Resolution</span>
+                <div class="setting-control">
+                    <select id="resolution">
+                        <option value="720p" selected>720p (HD)</option>
+                        <option value="1080p">1080p (Full HD)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Ratio</span>
+                <div class="setting-control">
+                    <select id="ratio">
+                        <option value="16:9" selected>16:9</option>
+                        <option value="9:16">9:16</option>
+                        <option value="1:1">1:1</option>
+                        <option value="4:3">4:3</option>
+                        <option value="3:4">3:4</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Parallel</span>
+                <div class="setting-control">
+                    <input type="number" id="parallel" value="10" min="1" max="100">
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">Prompt Enhance</span>
+                <div class="setting-control">
+                    <select id="promptEnhance">
+                        <option value="OFF" selected>OFF</option>
+                        <option value="ON">ON</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reference Image -->
+        <div class="ref-image-section">
+            <div class="section-title"><i class="fas fa-image"></i> Reference Image (Optional)</div>
+            <div class="ref-image-area" id="refImageArea" onclick="document.getElementById('refImageInput').click()">
+                <button class="btn-remove-image" id="btnRemoveImage" onclick="event.stopPropagation(); removeRefImage();">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div id="refImagePlaceholder">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Click to upload reference image</p>
+                    <p style="font-size: 10px; color: #444; margin-top: 4px;">PNG, JPG, JPEG, WEBP</p>
+                </div>
+                <img id="refImagePreview" style="display: none;">
+            </div>
+            <input type="file" class="ref-image-input" id="refImageInput" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleRefImage(this)">
+            <div class="ref-image-info" id="refImageInfo">
+                <i class="fas fa-check-circle"></i> Image uploaded: <span id="refImageId"></span>
+            </div>
+            <div class="image-mode-row">
+                <select id="imageMode">
+                    <option value="start_frame">Start Frame (Image to Video)</option>
+                    <option value="image_reference">Style Reference</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Prompts -->
+        <div class="prompts-section">
+            <div class="section-title"><i class="fas fa-list"></i> Prompts <span id="promptCount" style="color: #7c6ef0;">0</span></div>
+            <textarea class="prompts-textarea" id="prompts" placeholder="A koala plays with a cat in a sunny garden&#10;Aerial shot of waves crashing on a rocky coast at sunset&#10;&#10;One prompt per line..."></textarea>
+            <div class="prompt-count"><span id="promptCountBottom">0</span> prompts</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-group">
+            <button class="btn-start" id="btnStart" onclick="startGeneration()">
+                <i class="fas fa-play"></i> Start Generation
+            </button>
+            <button class="btn-stop" id="btnStop" onclick="stopGeneration()" style="display: none;">
+                <i class="fas fa-stop"></i> Stop
+            </button>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-badge"><span class="dot dot-total"></span> Total <strong id="statTotal">0</strong></div>
+            <div class="stat-badge"><span class="dot dot-queued"></span> Queued <strong id="statQueued">0</strong></div>
+            <div class="stat-badge"><span class="dot dot-generating"></span> Generating <strong id="statGenerating">0</strong></div>
+            <div class="stat-badge"><span class="dot dot-done"></span> Done <strong id="statDone">0</strong></div>
+            <div class="stat-badge"><span class="dot dot-failed"></span> Failed <strong id="statFailed">0</strong></div>
+        </div>
+
+        <!-- Jobs Table -->
+        <div class="jobs-area" id="jobsArea">
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-film"></i>
+                <p>No generations yet</p>
+                <p style="font-size: 12px; margin-top: 6px;">Add prompts and click Start to begin</p>
+            </div>
+            <table class="jobs-table" id="jobsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Prompt</th>
+                        <th style="width: 120px;">Status</th>
+                        <th style="width: 140px;">Info / Path</th>
+                    </tr>
+                </thead>
+                <tbody id="jobsBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Log Output -->
+        <div class="log-section">
+            <div class="log-header">
+                <span>Log Output</span>
+                <button class="log-clear" onclick="clearLog()">Clear</button>
+            </div>
+            <div class="log-body" id="logBody"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSessionId = null;
+let ws = null;
+let jobData = {};
+let uploadedImageId = "";
+
+// WebSocket connection
+function connectWS() {
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    ws = new WebSocket(`${proto}//${location.host}/ws`);
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        handleWSMessage(msg);
+    };
+
+    ws.onclose = () => {
+        setTimeout(connectWS, 2000);
+    };
+
+    ws.onerror = () => {
+        ws.close();
+    };
+}
+
+function handleWSMessage(msg) {
+    if (msg.type === "status") {
+        const key = `${msg.session}_${msg.index}`;
+        jobData[key] = msg;
+        updateJobRow(msg.index, msg);
+        updateStats();
+        addLog(msg);
+    } else if (msg.type === "batch_complete") {
+        addLogEntry("Batch generation complete!", "success");
+        document.getElementById("btnStart").disabled = false;
+        document.getElementById("btnStop").style.display = "none";
+        document.getElementById("btnStart").style.display = "flex";
+    }
+}
+
+function updateJobRow(index, data) {
+    const row = document.getElementById(`job-row-${index}`);
+    if (!row) return;
+
+    const statusCell = row.querySelector(".status-cell");
+    const infoCell = row.querySelector(".info-cell");
+
+    let statusHtml = "";
+    switch (data.status) {
+        case "queued":
+            statusHtml = '<span class="status-pill status-queued"><i class="fas fa-clock"></i> Queued</span>';
+            break;
+        case "generating":
+            statusHtml = '<span class="status-pill status-generating"><i class="fas fa-spinner fa-spin"></i> Generating</span>';
+            break;
+        case "done":
+            statusHtml = '<span class="status-pill status-done"><i class="fas fa-check"></i> Done</span>';
+            break;
+        case "failed":
+            statusHtml = '<span class="status-pill status-failed"><i class="fas fa-times"></i> Failed</span>';
+            break;
+        case "cancelled":
+            statusHtml = '<span class="status-pill status-cancelled"><i class="fas fa-ban"></i> Cancelled</span>';
+            break;
+    }
+    statusCell.innerHTML = statusHtml;
+
+    if (data.status === "done" && data.video_url) {
+        infoCell.innerHTML = `<a href="${data.video_url}" target="_blank" class="video-link"><i class="fas fa-download"></i> Download</a>`;
+    } else if (data.status === "failed" && data.error) {
+        infoCell.innerHTML = `<span style="color: #ef5350; font-size: 11px;" title="${escapeHtml(data.error)}">${escapeHtml(data.error.substring(0, 40))}...</span>`;
+    } else if (data.generation_id) {
+        infoCell.innerHTML = `<span style="color: #666; font-size: 11px;">${data.generation_id.substring(0, 16)}...</span>`;
+    }
+}
+
+function updateStats() {
+    let total = 0, queued = 0, generating = 0, done = 0, failed = 0;
+    for (const key in jobData) {
+        total++;
+        switch (jobData[key].status) {
+            case "queued": queued++; break;
+            case "generating": generating++; break;
+            case "done": done++; break;
+            case "failed": failed++; break;
+            case "cancelled": failed++; break;
+        }
+    }
+    document.getElementById("statTotal").textContent = total;
+    document.getElementById("statQueued").textContent = queued;
+    document.getElementById("statGenerating").textContent = generating;
+    document.getElementById("statDone").textContent = done;
+    document.getElementById("statFailed").textContent = failed;
+}
+
+function addLog(msg) {
+    let cls = "info";
+    let text = "";
+    if (msg.status === "generating") {
+        text = `[${msg.index + 1}] Generating: ${msg.prompt.substring(0, 60)}...`;
+    } else if (msg.status === "done") {
+        cls = "success";
+        text = `[${msg.index + 1}] Done: ${msg.prompt.substring(0, 40)}`;
+    } else if (msg.status === "failed") {
+        cls = "error";
+        text = `[${msg.index + 1}] Failed: ${msg.error || "Unknown"}`;
+    } else {
+        text = `[${msg.index + 1}] ${msg.status}: ${msg.prompt.substring(0, 50)}`;
+    }
+    addLogEntry(text, cls);
+}
+
+function addLogEntry(text, cls = "info") {
+    const logBody = document.getElementById("logBody");
+    const entry = document.createElement("div");
+    entry.className = `log-entry ${cls}`;
+    const time = new Date().toLocaleTimeString();
+    entry.textContent = `[${time}] ${text}`;
+    logBody.appendChild(entry);
+    logBody.scrollTop = logBody.scrollHeight;
+}
+
+function clearLog() {
+    document.getElementById("logBody").innerHTML = "";
+}
+
+// Reference Image
+async function handleRefImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const apiKey = document.getElementById("apiKey").value.trim();
+    if (!apiKey) {
+        alert("Please enter your API key first!");
+        input.value = "";
+        return;
+    }
+
+    const preview = document.getElementById("refImagePreview");
+    const placeholder = document.getElementById("refImagePlaceholder");
+    const area = document.getElementById("refImageArea");
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        preview.src = e.target.result;
+        preview.style.display = "block";
+        placeholder.style.display = "none";
+        area.classList.add("has-image");
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Leonardo
+    addLogEntry("Uploading reference image...", "info");
+    const formData = new FormData();
+    formData.append("api_key", apiKey);
+    formData.append("file", file);
+
+    try {
+        const resp = await fetch("/api/upload-image", { method: "POST", body: formData });
+        const data = await resp.json();
+        if (data.success) {
+            uploadedImageId = data.image_id;
+            document.getElementById("refImageId").textContent = data.image_id;
+            document.getElementById("refImageInfo").classList.add("show");
+            addLogEntry(`Image uploaded successfully! ID: ${data.image_id}`, "success");
+        } else {
+            addLogEntry(`Image upload failed: ${data.error}`, "error");
+            removeRefImage();
+        }
+    } catch (err) {
+        addLogEntry(`Image upload error: ${err.message}`, "error");
+        removeRefImage();
+    }
+}
+
+function removeRefImage() {
+    uploadedImageId = "";
+    document.getElementById("refImagePreview").style.display = "none";
+    document.getElementById("refImagePlaceholder").style.display = "block";
+    document.getElementById("refImageArea").classList.remove("has-image");
+    document.getElementById("refImageInfo").classList.remove("show");
+    document.getElementById("refImageInput").value = "";
+}
+
+// Prompt counting
+document.getElementById("prompts").addEventListener("input", updatePromptCount);
+function updatePromptCount() {
+    const text = document.getElementById("prompts").value.trim();
+    const count = text ? text.split("\n").filter(l => l.trim()).length : 0;
+    document.getElementById("promptCount").textContent = count;
+    document.getElementById("promptCountBottom").textContent = count;
+}
+
+// Start Generation
+async function startGeneration() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    if (!apiKey) { alert("Please enter your API key!"); return; }
+
+    const prompts = document.getElementById("prompts").value.trim();
+    if (!prompts) { alert("Please enter at least one prompt!"); return; }
+
+    const model = document.getElementById("model").value;
+    const duration = document.getElementById("duration").value;
+    const resolution = document.getElementById("resolution").value;
+    const ratio = document.getElementById("ratio").value;
+    const parallel = document.getElementById("parallel").value;
+    const imageMode = document.getElementById("imageMode").value;
+    const promptEnhance = document.getElementById("promptEnhance").value;
+
+    // Clear previous state
+    jobData = {};
+    document.getElementById("jobsBody").innerHTML = "";
+    document.getElementById("emptyState").style.display = "none";
+    document.getElementById("jobsTable").style.display = "table";
+
+    // Create rows
+    const promptList = prompts.split("\n").filter(l => l.trim());
+    promptList.forEach((p, i) => {
+        const tr = document.createElement("tr");
+        tr.id = `job-row-${i}`;
+        tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td class="prompt-text" title="${escapeHtml(p.trim())}">${escapeHtml(p.trim())}</td>
+            <td class="status-cell"><span class="status-pill status-queued"><i class="fas fa-clock"></i> Queued</span></td>
+            <td class="info-cell">-</td>
+        `;
+        document.getElementById("jobsBody").appendChild(tr);
+    });
+
+    updateStats();
+
+    // Send request
+    const formData = new FormData();
+    formData.append("api_key", apiKey);
+    formData.append("prompts", prompts);
+    formData.append("model", model);
+    formData.append("duration", duration);
+    formData.append("resolution", resolution);
+    formData.append("ratio", ratio);
+    formData.append("parallel", parallel);
+    formData.append("image_id", uploadedImageId);
+    formData.append("image_mode", imageMode);
+    formData.append("prompt_enhance", promptEnhance);
+
+    document.getElementById("btnStart").disabled = true;
+    document.getElementById("btnStop").style.display = "flex";
+
+    try {
+        const resp = await fetch("/api/start-generation", { method: "POST", body: formData });
+        const data = await resp.json();
+        if (data.success) {
+            currentSessionId = data.session_id;
+            addLogEntry(`Generation started! Session: ${data.session_id}, Total: ${data.total} prompts`, "success");
+        } else {
+            addLogEntry(`Failed to start: ${data.error}`, "error");
+            document.getElementById("btnStart").disabled = false;
+            document.getElementById("btnStop").style.display = "none";
+        }
+    } catch (err) {
+        addLogEntry(`Error: ${err.message}`, "error");
+        document.getElementById("btnStart").disabled = false;
+        document.getElementById("btnStop").style.display = "none";
+    }
+}
+
+async function stopGeneration() {
+    if (!currentSessionId) return;
+
+    const formData = new FormData();
+    formData.append("session_id", currentSessionId);
+
+    try {
+        await fetch("/api/stop-generation", { method: "POST", body: formData });
+        addLogEntry("Generation stopped!", "error");
+    } catch (err) {
+        addLogEntry(`Stop error: ${err.message}`, "error");
+    }
+
+    document.getElementById("btnStart").disabled = false;
+    document.getElementById("btnStop").style.display = "none";
+    document.getElementById("btnStart").style.display = "flex";
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Save/Load API key
+function saveApiKey() {
+    const key = document.getElementById("apiKey").value.trim();
+    if (key) localStorage.setItem("seedance_api_key", key);
+}
+function loadApiKey() {
+    const key = localStorage.getItem("seedance_api_key");
+    if (key) document.getElementById("apiKey").value = key;
+}
+document.getElementById("apiKey").addEventListener("change", saveApiKey);
+
+// Init
+window.addEventListener("load", () => {
+    loadApiKey();
+    connectWS();
+    updatePromptCount();
+});
+</script>
+
+</body>
+</html>
