@@ -63,12 +63,34 @@ import com.kkhsmedia.callpro.ui.notes.NoteEditorDialog
 import com.kkhsmedia.callpro.ui.notes.NotesScreen
 import com.kkhsmedia.callpro.ui.settings.SettingsScreen
 import com.kkhsmedia.callpro.ui.theme.CallProTheme
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val authenticated = intent.getBooleanExtra("authenticated", false)
+        if (!authenticated) {
+            val preferencesManager = com.kkhsmedia.callpro.util.PreferencesManager(this)
+            lifecycleScope.launch {
+                val isLockEnabled = preferencesManager.appLockEnabled.first()
+                val pin = preferencesManager.appLockPin.first()
+                if (isLockEnabled && pin.isNotBlank()) {
+                    startActivity(Intent(this@MainActivity, com.kkhsmedia.callpro.ui.lock.AppLockActivity::class.java))
+                    finish()
+                    return@launch
+                }
+                showMainContent()
+            }
+        } else {
+            showMainContent()
+        }
+    }
+
+    private fun showMainContent() {
         setContent {
             val vm: MainViewModel = viewModel()
             val isDarkMode by vm.isDarkMode.collectAsState()
@@ -148,9 +170,12 @@ fun MainApp(vm: MainViewModel) {
                     data.callLogs.forEach { log ->
                         vm.addCallLog(log.number, log.type, log.date, log.duration)
                     }
+                    if (data.notes.isNotEmpty()) {
+                        vm.restoreNotes(data.notes)
+                    }
                     Toast.makeText(
                         context,
-                        "Restored ${data.callLogs.size} call logs",
+                        "Restored ${data.callLogs.size} call logs and ${data.notes.size} notes",
                         Toast.LENGTH_SHORT
                     ).show()
                     vm.loadCallLogs()

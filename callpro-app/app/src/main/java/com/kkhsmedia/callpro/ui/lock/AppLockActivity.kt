@@ -36,7 +36,9 @@ class AppLockActivity : ComponentActivity() {
     }
 
     private fun proceed() {
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            putExtra("authenticated", true)
+        })
         finish()
     }
 }

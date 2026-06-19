@@ -180,6 +180,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { preferencesManager.setAppLockPin(pin) }
     }
 
+    fun restoreNotes(notes: List<CallNote>) {
+        viewModelScope.launch {
+            notes.forEach { note ->
+                noteDao.insertNote(note)
+            }
+        }
+    }
+
     fun clearStatusMessage() {
         _statusMessage.value = null
     }
