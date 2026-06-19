@@ -144,7 +144,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Call Pro",
+                    text = "CallPro",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )

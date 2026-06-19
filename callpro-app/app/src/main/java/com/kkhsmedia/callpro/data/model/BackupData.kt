@@ -2,7 +2,7 @@ package com.kkhsmedia.callpro.data.model
 
 data class BackupData(
     val version: Int = 1,
-    val appName: String = "Call Pro By KKHS Media",
+    val appName: String = "CallPro: Call Log Editor, Backup & Dialer",
     val createdAt: Long = System.currentTimeMillis(),
     val callLogs: List<CallLogEntry>,
     val notes: List<CallNote>

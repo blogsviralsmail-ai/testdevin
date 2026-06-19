@@ -245,7 +245,7 @@ fun MainApp(vm: MainViewModel) {
                 TopAppBar(
                     title = {
                         Text(
-                            text = if (currentScreen == Screen.Dialer) "Call Pro"
+                            text = if (currentScreen == Screen.Dialer) "CallPro"
                             else tabs[selectedTab].title,
                             fontWeight = FontWeight.Bold
                         )

@@ -69,7 +69,7 @@ fun AppLockScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Call Pro By KKHS Media",
+            text = "CallPro",
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
