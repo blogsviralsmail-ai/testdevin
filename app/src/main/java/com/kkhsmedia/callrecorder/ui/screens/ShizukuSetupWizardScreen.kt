@@ -167,6 +167,7 @@ fun ShizukuSetupWizardScreen(
     var currentStep by remember { mutableIntStateOf(0) }
     var pairingCode by remember { mutableStateOf("") }
     var pairingPort by remember { mutableStateOf("") }
+    var pairingHost by remember { mutableStateOf("127.0.0.1") }
     var statusMessage by remember { mutableStateOf("") }
     var isPairing by remember { mutableStateOf(false) }
     var pairingDone by remember { mutableStateOf(false) }
@@ -287,14 +288,23 @@ fun ShizukuSetupWizardScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
-                            OutlinedTextField(
-                                value = pairingPort,
-                                onValueChange = { pairingPort = it.filter { c -> c.isDigit() }.take(5) },
-                                label = { Text(strings["pairing_port"] ?: "Pairing Port") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = pairingHost,
+                                    onValueChange = { pairingHost = it },
+                                    label = { Text("IP Address") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = pairingPort,
+                                    onValueChange = { pairingPort = it.filter { c -> c.isDigit() }.take(5) },
+                                    label = { Text(strings["pairing_port"] ?: "Port") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                            }
 
                             if (statusMessage.isNotEmpty()) {
                                 Text(
@@ -318,8 +328,9 @@ fun ShizukuSetupWizardScreen(
                                         scope.launch {
                                             val manager = AdbPairingManager(context)
                                             val port = pairingPort.toIntOrNull() ?: 0
-                                            val success = manager.pair("127.0.0.1", port, pairingCode)
-                                            if (success) {
+                                            val host = pairingHost.ifBlank { "127.0.0.1" }
+                                            val result = manager.pairWithDetails(host, port, pairingCode)
+                                            if (result.success) {
                                                 statusMessage = strings["pairing_success"] ?: "Success!"
                                                 pairingDone = true
                                                 delay(1000)
@@ -333,7 +344,8 @@ fun ShizukuSetupWizardScreen(
                                                     currentStep = 2
                                                 }
                                             } else {
-                                                statusMessage = strings["pairing_fail"] ?: "Pairing failed."
+                                                statusMessage = (strings["pairing_fail"] ?: "Pairing failed.") +
+                                                    if (result.errorDetail.isNotEmpty()) "\n(${result.errorDetail})" else ""
                                             }
                                             isPairing = false
                                         }

@@ -12,12 +12,14 @@ import io.github.muntashirakon.adb.AbsAdbConnectionManager
 import io.github.muntashirakon.adb.AdbStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.conscrypt.Conscrypt
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.math.BigInteger
 import java.security.KeyPairGenerator
 import java.security.PrivateKey
+import java.security.Security
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
 import java.util.Date
@@ -38,9 +40,24 @@ class AppAdbConnectionManager private constructor(
     companion object {
         private const val TAG = "SCR:AppAdbConnMgr"
         private var instance: AppAdbConnectionManager? = null
+        private var initDone = false
+
+        @Synchronized
+        fun initConscrypt() {
+            if (!initDone) {
+                try {
+                    Security.insertProviderAt(Conscrypt.newProvider(), 1)
+                    AppLogger.i(TAG, "Conscrypt provider initialized successfully")
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "Conscrypt init failed, using default provider", e)
+                }
+                initDone = true
+            }
+        }
 
         @Synchronized
         fun getInstance(context: Context): AppAdbConnectionManager {
+            initConscrypt()
             if (instance == null) {
                 val keyFile = File(context.filesDir, "adb_rsa_key")
                 val certFile = File(context.filesDir, "adb_rsa_cert")
@@ -59,21 +76,26 @@ class AppAdbConnectionManager private constructor(
                     val privateKey = keyFactory.generatePrivate(keySpec)
                     val certFactory = java.security.cert.CertificateFactory.getInstance("X.509")
                     val cert = certFactory.generateCertificate(certFile.inputStream()) as X509Certificate
+                    AppLogger.i(TAG, "Loaded saved ADB keys successfully")
                     return Pair(privateKey, cert)
                 } catch (e: Exception) {
                     AppLogger.w(TAG, "Failed to load saved keys, regenerating", e)
+                    keyFile.delete()
+                    certFile.delete()
                 }
             }
 
+            AppLogger.i(TAG, "Generating new RSA key pair for ADB auth...")
             val kpg = KeyPairGenerator.getInstance("RSA")
             kpg.initialize(2048)
             val keyPair = kpg.generateKeyPair()
             val cert = generateSelfSignedCert(keyPair)
+            AppLogger.i(TAG, "Certificate generated: subject=${cert.subjectDN}")
 
-            // Save for reuse
             try {
                 keyFile.writeBytes(keyPair.private.encoded)
                 certFile.writeBytes(cert.encoded)
+                AppLogger.i(TAG, "ADB keys saved to disk")
             } catch (e: Exception) {
                 AppLogger.w(TAG, "Failed to persist ADB keys", e)
             }
@@ -86,11 +108,12 @@ class AppAdbConnectionManager private constructor(
             val now = Date()
             val until = Date(now.time + 25L * 365 * 24 * 60 * 60 * 1000)
             val serial = BigInteger.valueOf(System.currentTimeMillis())
-            val subject = "CN=APP Call Recorder"
+            val subject = "CN=adb"
 
             // Use sun.security (available on Android runtime)
-            val x509Info = Class.forName("sun.security.x509.X509CertInfo").getDeclaredConstructor().newInstance()
-            val setInfo = x509Info.javaClass.getMethod("set", String::class.java, Any::class.java)
+            val x509InfoClass = Class.forName("sun.security.x509.X509CertInfo")
+            val x509Info = x509InfoClass.getDeclaredConstructor().newInstance()
+            val setInfo = x509InfoClass.getMethod("set", String::class.java, Any::class.java)
 
             val certValidity = Class.forName("sun.security.x509.CertificateValidity")
                 .getDeclaredConstructor(Date::class.java, Date::class.java)
@@ -133,7 +156,7 @@ class AppAdbConnectionManager private constructor(
             setInfo.invoke(x509Info, "algorithmID", certAlgId)
 
             val x509ImplClass = Class.forName("sun.security.x509.X509CertImpl")
-            val certImpl = x509ImplClass.getDeclaredConstructor(x509Info.javaClass).newInstance(x509Info)
+            val certImpl = x509ImplClass.getDeclaredConstructor(x509InfoClass).newInstance(x509Info)
             x509ImplClass.getMethod("sign", PrivateKey::class.java, String::class.java)
                 .invoke(certImpl, keyPair.private, "SHA256withRSA")
 
@@ -156,17 +179,23 @@ class AdbPairingManager(private val context: Context) {
         AppAdbConnectionManager.getInstance(context)
     }
 
+    /** Result of a pairing attempt with details. */
+    data class PairResult(val success: Boolean, val errorDetail: String = "")
+
     /**
      * Pairs with the device's wireless debugging.
+     * Returns detailed result including error message on failure.
      */
-    suspend fun pair(host: String, port: Int, pairingCode: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun pairWithDetails(host: String, port: Int, pairingCode: String): PairResult = withContext(Dispatchers.IO) {
         try {
+            AppLogger.i(TAG, "Attempting ADB pairing to $host:$port")
             val result = connectionManager.pair(host, port, pairingCode)
             AppLogger.i(TAG, "ADB pairing result: $result")
-            result
+            PairResult(result, if (!result) "Pairing returned false - code may have expired" else "")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "ADB pairing failed", e)
-            false
+            val msg = "${e.javaClass.simpleName}: ${e.message ?: "unknown"}"
+            AppLogger.e(TAG, "ADB pairing failed: $msg", e)
+            PairResult(false, msg)
         }
     }
 
@@ -176,11 +205,27 @@ class AdbPairingManager(private val context: Context) {
     suspend fun autoConnect(): Boolean = withContext(Dispatchers.IO) {
         try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return@withContext false
+            AppLogger.i(TAG, "Attempting ADB auto-connect via mDNS...")
             val result = connectionManager.autoConnect(context, 15000)
             AppLogger.i(TAG, "ADB auto-connect result: $result")
             result
         } catch (e: Exception) {
             AppLogger.e(TAG, "ADB auto-connect failed", e)
+            false
+        }
+    }
+
+    /**
+     * Connects to a specific ADB host:port.
+     */
+    suspend fun connect(host: String, port: Int): Boolean = withContext(Dispatchers.IO) {
+        try {
+            AppLogger.i(TAG, "Connecting to ADB at $host:$port")
+            val result = connectionManager.connect(host, port)
+            AppLogger.i(TAG, "ADB connect result: $result")
+            result
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "ADB connect failed", e)
             false
         }
     }
@@ -196,6 +241,7 @@ class AdbPairingManager(private val context: Context) {
             }
 
             val startCommand = "sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh"
+            AppLogger.i(TAG, "Running: $startCommand")
             val stream: AdbStream = connectionManager.openStream("shell:$startCommand")
             val reader = BufferedReader(InputStreamReader(stream.openInputStream()))
             val output = StringBuilder()
