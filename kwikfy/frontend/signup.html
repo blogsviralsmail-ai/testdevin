@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create your Kwikfy account</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%236366F1'/><path d='M9 22V10l7 6 7-6v12' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e1b4b,#312e81);padding:20px}
+.card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:6px}
+.ic{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:20px}
+.brand b{font-size:21px;font-weight:900;color:#0F172A}
+h1{font-size:23px;font-weight:800;text-align:center;color:#0F172A;margin-top:14px}
+.sub{text-align:center;color:#64748B;font-size:14px;margin:6px 0 24px}
+label{display:block;font-size:13px;font-weight:600;color:#0F172A;margin-bottom:6px}
+.fg{margin-bottom:15px}
+input{width:100%;padding:12px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:15px}
+input:focus{outline:none;border-color:#6366F1}
+.btn{width:100%;padding:13px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.6}
+.msg{padding:10px 14px;border-radius:9px;font-size:13px;margin-bottom:14px;display:none;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA}
+.foot{text-align:center;margin-top:16px;font-size:14px;color:#64748B}
+.foot a{color:#6366F1;font-weight:700;text-decoration:none}</style></head>
+<body><div class="card">
+<div class="brand"><div class="ic">K</div><b>Kwikfy</b></div>
+<h1>Create your account</h1><div class="sub">Start managing your store in minutes — free.</div>
+<div class="msg" id="err"></div>
+<form onsubmit="doSignup(event)">
+<div class="fg"><label>Business / Your name</label><input id="name" placeholder="Acme Store" required></div>
+<div class="fg"><label>Email</label><input id="email" type="email" placeholder="you@store.com" required></div>
+<div class="fg"><label>Password</label><input id="pass" type="password" placeholder="At least 6 characters" required></div>
+<button class="btn" id="btn" type="submit">Create account →</button>
+</form>
+<div class="foot">Already have an account? <a href="/login">Sign in</a></div>
+</div>
+<script>
+function doSignup(e){e.preventDefault();var b=document.getElementById('btn'),er=document.getElementById('err');er.style.display='none';b.disabled=true;b.textContent='Creating...';
+fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('name').value,email:document.getElementById('email').value,password:document.getElementById('pass').value})})
+.then(function(r){return r.json().then(function(d){return{s:r.status,d:d}})})
+.then(function(x){if(x.s===200&&x.d.access_token){localStorage.setItem('token',x.d.access_token);localStorage.setItem('username',x.d.username);localStorage.setItem('role',x.d.role||'admin');location.href='/dashboard';}else{er.textContent=x.d.detail||'Could not create account';er.style.display='block';b.disabled=false;b.textContent='Create account →';}})
+.catch(function(){er.textContent='Connection error';er.style.display='block';b.disabled=false;b.textContent='Create account →';});}
+</script></body></html>
