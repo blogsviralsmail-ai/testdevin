@@ -1,6 +1,7 @@
 package com.kkhsmedia.callpro.ui
 
 import android.Manifest
+import android.app.Activity
 import android.app.role.RoleManager
 import android.content.Intent
 import android.net.Uri
@@ -131,8 +132,16 @@ fun MainApp(vm: MainViewModel) {
     val editCount by vm.editCount.collectAsState()
     val isPremium by vm.isPremium.collectAsState()
     val remainingFreeEdits by vm.remainingFreeEdits.collectAsState()
+    val purchaseState by vm.billingManager.purchaseState.collectAsState()
 
     var showLimitDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isPremium) {
+        if (isPremium && currentScreen is Screen.Paywall) {
+            currentScreen = Screen.History
+            selectedTab = 1
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -421,9 +430,10 @@ fun MainApp(vm: MainViewModel) {
                 Screen.Paywall -> PaywallScreen(
                     editCount = editCount,
                     onSubscribe = { planType ->
-                        vm.subscribePlan(planType)
-                        currentScreen = Screen.History
-                        selectedTab = 1
+                        val activity = context as? Activity
+                        if (activity != null) {
+                            vm.launchPurchase(activity, planType)
+                        }
                     },
                     onDismiss = {
                         currentScreen = Screen.History

@@ -1,8 +1,11 @@
 package com.kkhsmedia.callpro.ui
 
+import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.kkhsmedia.callpro.billing.BillingManager
+import com.kkhsmedia.callpro.billing.PurchaseState
 import com.kkhsmedia.callpro.data.database.AppDatabase
 import com.kkhsmedia.callpro.data.model.CallAnalytics
 import com.kkhsmedia.callpro.data.model.CallLogEntry
@@ -28,6 +31,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getInstance(application)
     private val noteDao = database.callNoteDao()
     val preferencesManager = PreferencesManager(application)
+    val billingManager = BillingManager(application)
 
     private val _callLogs = MutableStateFlow<List<CallLogEntry>>(emptyList())
     val callLogs: StateFlow<List<CallLogEntry>> = _callLogs.asStateFlow()
@@ -74,6 +78,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val deviceId = DeviceFingerprint.getDeviceId(application)
             preferencesManager.saveDeviceId(deviceId)
         }
+        billingManager.startConnection()
+        viewModelScope.launch {
+            billingManager.purchaseState.collect { state ->
+                if (state is PurchaseState.Purchased) {
+                    preferencesManager.setPremium(true, state.planType)
+                    _statusMessage.value = "Premium activated! Enjoy unlimited edits."
+                }
+            }
+        }
     }
 
     suspend fun canEdit(): Boolean = preferencesManager.canEdit()
@@ -82,11 +95,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         preferencesManager.incrementEditCount()
     }
 
-    fun subscribePlan(planType: String) {
-        viewModelScope.launch {
-            preferencesManager.setPremium(true, planType)
-            _statusMessage.value = "Premium activated! Enjoy unlimited edits."
-        }
+    fun launchPurchase(activity: Activity, planType: String) {
+        billingManager.launchPurchaseFlow(activity, planType)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        billingManager.endConnection()
     }
 
     fun loadCallLogs() {

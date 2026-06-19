@@ -88,6 +88,9 @@ dependencies {
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
+    // Google Play Billing
+    implementation("com.android.billingclient:billing-ktx:6.1.0")
+
     // Biometric
     implementation("androidx.biometric:biometric:1.1.0")
 
