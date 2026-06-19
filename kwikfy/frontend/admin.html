@@ -114,7 +114,7 @@ tr:hover td{background:rgba(99,102,241,.05)}
 var TOK=localStorage.getItem('admin_token');
 if(TOK)showDash();else showLogin();
 function showLogin(){document.getElementById('loginWrap').style.display='';document.getElementById('dashWrap').style.display='none';}
-function showDash(){document.getElementById('loginWrap').style.display='none';document.getElementById('dashWrap').style.display='';loadStats();loadUsers();loadAnn();}
+function showDash(){document.getElementById('loginWrap').style.display='none';document.getElementById('dashWrap').style.display='block';loadStats();loadUsers();loadAnn();}
 document.getElementById('loginForm').onsubmit=function(e){
 e.preventDefault();var b=document.getElementById('abtn'),er=document.getElementById('aerr');
 b.disabled=true;b.textContent='Signing in...';er.style.display='none';
