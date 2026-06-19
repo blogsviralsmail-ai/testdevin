@@ -15,6 +15,10 @@ composeBom = "2026.05.01"
 shizuku-api = "13.1.5"
 shizuku-provider = "13.1.5"
 
+# ADB
+libadb = "3.1.1"
+conscrypt = "2.5.3"
+
 # Utility
 aboutlibraries = "14.2.1"
 libphonenumber = "9.0.31"
@@ -48,6 +52,10 @@ shizukuProvider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuk
 # AboutLibraries
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutlibraries" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutlibraries" }
+
+# ADB
+libadb-core = { module = "com.github.MuntashirAkon:libadb-android", version.ref = "libadb" }
+conscrypt-android = { module = "org.conscrypt:conscrypt-android", version.ref = "conscrypt" }
 
 # Libphonenumber
 libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }

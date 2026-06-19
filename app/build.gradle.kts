@@ -259,4 +259,8 @@ dependencies {
     // Shizuku
     implementation(libs.shizukuApi)
     implementation(libs.shizukuProvider)
+
+    // ADB (for built-in wireless pairing - no separate Shizuku app needed)
+    implementation(libs.libadb.core)
+    implementation(libs.conscrypt.android)
 }

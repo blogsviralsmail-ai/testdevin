@@ -12,6 +12,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,12 +23,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.kkhsmedia.callrecorder.integrations.adb.AdbPairingManager
 import com.kkhsmedia.callrecorder.integrations.shizuku.ShizukuConnectionManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
- * A step-by-step wizard that guides users through Shizuku setup.
- * This eliminates confusion for users who don't know what Shizuku is.
+ * A step-by-step wizard that guides users through Shizuku setup
+ * with built-in ADB pairing (no separate Shizuku app needed on Android 11+).
  */
 @Composable
 fun ShizukuSetupWizardScreen(
@@ -35,7 +40,15 @@ fun ShizukuSetupWizardScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var currentStep by remember { mutableIntStateOf(0) }
+    var pairingCode by remember { mutableStateOf("") }
+    var pairingPort by remember { mutableStateOf("") }
+    var connectPort by remember { mutableStateOf("") }
+    var statusMessage by remember { mutableStateOf("") }
+    var isPairing by remember { mutableStateOf(false) }
+    var isConnecting by remember { mutableStateOf(false) }
+    var pairingDone by remember { mutableStateOf(false) }
 
     val isShizukuInstalled = remember(currentStep) {
         ShizukuConnectionManager.getPackageName(context) != null
@@ -47,14 +60,18 @@ fun ShizukuSetupWizardScreen(
         ShizukuConnectionManager.hasPermission(context)
     }
 
-    // Auto-advance steps
-    LaunchedEffect(isShizukuInstalled, isShizukuRunning, hasShizukuPermission) {
-        if (isShizukuInstalled && currentStep == 0) currentStep = 1
-        if (isShizukuRunning && currentStep == 1) currentStep = 2
-        if (hasShizukuPermission && currentStep == 2) {
+    // Auto-advance when Shizuku is already running
+    LaunchedEffect(isShizukuRunning, hasShizukuPermission) {
+        if (isShizukuRunning && hasShizukuPermission) {
             onSetupComplete()
         }
+        if (isShizukuRunning && !hasShizukuPermission) {
+            currentStep = 2
+        }
     }
+
+    // Determine if we can use built-in ADB pairing (Android 11+)
+    val canUseBuiltInPairing = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
     Surface(
         modifier = modifier.navigationBarsPadding().fillMaxSize(),
@@ -68,13 +85,16 @@ fun ShizukuSetupWizardScreen(
         ) {
             // Header
             Text(
-                text = "Shizuku Setup",
+                text = "Setup - One Time Only",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "APP Call Recorder ko calls record karne ke liye Shizuku ki zaroorat hai. Neeche ke steps follow karein:",
+                text = if (canUseBuiltInPairing)
+                    "APP Call Recorder ko setup karne ke liye neeche ke steps follow karein. Ye sirf ek baar karna hai."
+                else
+                    "APP Call Recorder ko Shizuku app ki zaroorat hai. Neeche ke steps follow karein.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -88,67 +108,175 @@ fun ShizukuSetupWizardScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Step 1: Install Shizuku
-                SetupStepCard(
-                    stepNumber = 1,
-                    title = "Shizuku App Install Karein",
-                    description = "Shizuku ek free app hai jo call recording ke liye zaroori permissions deta hai. Play Store se install karein.",
-                    isCompleted = isShizukuInstalled,
-                    isActive = currentStep == 0,
-                    icon = Icons.Default.GetApp,
-                    buttonText = "Install Shizuku",
-                    onButtonClick = {
-                        openShizukuInstallPage(context)
-                    }
-                )
+                if (canUseBuiltInPairing) {
+                    // BUILT-IN APPROACH (Android 11+): No Shizuku app needed
 
-                // Step 2: Start Shizuku
-                SetupStepCard(
-                    stepNumber = 2,
-                    title = "Shizuku Start Karein",
-                    description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        "Shizuku app kholein aur 'Start via Wireless Debugging' option use karein.\n\n" +
-                        "Steps:\n" +
-                        "1. Phone Settings > Developer Options > Wireless Debugging ON karein\n" +
-                        "2. Shizuku app mein 'Start' button dabayein\n" +
-                        "3. Notification se pairing code enter karein"
-                    } else {
-                        "Shizuku app kholein aur computer se ADB command run karein:\n\n" +
-                        "adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh"
-                    },
-                    isCompleted = isShizukuRunning,
-                    isActive = currentStep == 1,
-                    icon = Icons.Default.PlayArrow,
-                    buttonText = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                        "Developer Options Kholein"
-                    else
-                        "Shizuku Kholein",
-                    onButtonClick = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            openDeveloperOptions(context)
-                        } else {
-                            openShizukuApp(context)
+                    // Step 0: Shizuku still needed as service host
+                    if (!isShizukuInstalled) {
+                        SetupStepCard(
+                            stepNumber = 1,
+                            title = "Shizuku App Install Karein",
+                            description = "Shizuku ek chhota sa helper app hai (3MB). Ye background mein kaam karta hai. Install karne ke baad kholne ki zaroorat nahi.",
+                            isCompleted = isShizukuInstalled,
+                            isActive = currentStep == 0 && !isShizukuInstalled,
+                            icon = Icons.Default.GetApp,
+                            buttonText = "Install (Play Store)",
+                            onButtonClick = { openShizukuInstallPage(context) }
+                        )
+                    }
+
+                    // Step 1: Enable Wireless Debugging
+                    SetupStepCard(
+                        stepNumber = if (!isShizukuInstalled) 2 else 1,
+                        title = "Wireless Debugging ON Karein",
+                        description = "Phone Settings > Developer Options > Wireless Debugging enable karein.\n\n" +
+                            "Developer Options nahi dikh raha? Settings > About Phone > Build Number par 7 baar tap karein.",
+                        isCompleted = currentStep > 0 || isShizukuRunning,
+                        isActive = currentStep == 0 && isShizukuInstalled,
+                        icon = Icons.Default.Wifi,
+                        buttonText = "Developer Options Kholein",
+                        onButtonClick = { openDeveloperOptions(context) }
+                    )
+
+                    // Step 2: Enter Pairing Code (Built-in ADB pairing)
+                    SetupStepCard(
+                        stepNumber = if (!isShizukuInstalled) 3 else 2,
+                        title = "Pairing Code Enter Karein",
+                        description = "Wireless Debugging > 'Pair device with pairing code' tap karein.\n" +
+                            "Jo code aur port dikhega wo neeche enter karein:",
+                        isCompleted = pairingDone || isShizukuRunning,
+                        isActive = (currentStep == 0 && isShizukuInstalled) || currentStep == 1,
+                        icon = Icons.Default.Pin,
+                        customContent = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = pairingCode,
+                                    onValueChange = { pairingCode = it.filter { c -> c.isDigit() }.take(6) },
+                                    label = { Text("Pairing Code (6 digit)") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = pairingPort,
+                                    onValueChange = { pairingPort = it.filter { c -> c.isDigit() }.take(5) },
+                                    label = { Text("Pairing Port (e.g. 37429)") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+
+                                if (statusMessage.isNotEmpty()) {
+                                    Text(
+                                        statusMessage,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (statusMessage.contains("Success") || statusMessage.contains("safal"))
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.error
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        if (pairingCode.length == 6 && pairingPort.isNotEmpty()) {
+                                            isPairing = true
+                                            statusMessage = "Pairing ho rahi hai..."
+                                            scope.launch {
+                                                val manager = AdbPairingManager(context)
+                                                val port = pairingPort.toIntOrNull() ?: 0
+                                                val success = manager.pair("127.0.0.1", port, pairingCode)
+                                                if (success) {
+                                                    statusMessage = "✓ Pairing safal! Ab Shizuku start ho raha hai..."
+                                                    pairingDone = true
+                                                    // Now try to auto-connect and start Shizuku
+                                                    delay(1000)
+                                                    val connected = manager.autoConnect()
+                                                    if (connected) {
+                                                        manager.startShizukuServer()
+                                                        delay(3000)
+                                                        currentStep = 2
+                                                    } else {
+                                                        statusMessage = "Pairing done! Ab Shizuku app mein 'Start' karein."
+                                                        currentStep = 2
+                                                    }
+                                                } else {
+                                                    statusMessage = "Pairing fail. Code/Port check karein aur dobara try karein."
+                                                }
+                                                isPairing = false
+                                            }
+                                        } else {
+                                            statusMessage = "6 digit code aur port daalein"
+                                        }
+                                    },
+                                    enabled = !isPairing && pairingCode.length == 6 && pairingPort.isNotEmpty(),
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    if (isPairing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+                                    Text(if (isPairing) "Pairing..." else "Pair & Start")
+                                }
+                            }
                         }
-                    },
-                    secondaryButtonText = "Shizuku App Kholein",
-                    onSecondaryButtonClick = {
-                        openShizukuApp(context)
-                    }
-                )
+                    )
 
-                // Step 3: Grant Permission
-                SetupStepCard(
-                    stepNumber = 3,
-                    title = "Permission Grant Karein",
-                    description = "Shizuku start hone ke baad, APP Call Recorder ko permission dein. 'Allow' button dabayein jab dialog aaye.",
-                    isCompleted = hasShizukuPermission,
-                    isActive = currentStep == 2,
-                    icon = Icons.Default.Security,
-                    buttonText = "Permission Dein",
-                    onButtonClick = {
-                        ShizukuConnectionManager.requestPermission()
-                    }
-                )
+                    // Step 3: Grant Permission
+                    SetupStepCard(
+                        stepNumber = if (!isShizukuInstalled) 4 else 3,
+                        title = "Permission Allow Karein",
+                        description = "Ek popup aayega - 'Allow' button dabayein.",
+                        isCompleted = hasShizukuPermission,
+                        isActive = currentStep == 2 && isShizukuRunning,
+                        icon = Icons.Default.Security,
+                        buttonText = "Permission Dein",
+                        onButtonClick = {
+                            ShizukuConnectionManager.requestPermission()
+                        }
+                    )
+
+                } else {
+                    // FALLBACK (Android 10 and below): Need Shizuku app + PC
+
+                    SetupStepCard(
+                        stepNumber = 1,
+                        title = "Shizuku App Install Karein",
+                        description = "Play Store se Shizuku install karein.",
+                        isCompleted = isShizukuInstalled,
+                        isActive = !isShizukuInstalled,
+                        icon = Icons.Default.GetApp,
+                        buttonText = "Install Shizuku",
+                        onButtonClick = { openShizukuInstallPage(context) }
+                    )
+
+                    SetupStepCard(
+                        stepNumber = 2,
+                        title = "Computer se ADB Command Run Karein",
+                        description = "Computer par ADB install karein aur ye command run karein:\n\n" +
+                            "adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh\n\n" +
+                            "Ya phir Shizuku app kholein aur instructions follow karein.",
+                        isCompleted = isShizukuRunning,
+                        isActive = isShizukuInstalled && !isShizukuRunning,
+                        icon = Icons.Default.Computer,
+                        buttonText = "Shizuku Kholein",
+                        onButtonClick = { openShizukuApp(context) }
+                    )
+
+                    SetupStepCard(
+                        stepNumber = 3,
+                        title = "Permission Allow Karein",
+                        description = "Shizuku start hone ke baad 'Allow' button dabayein.",
+                        isCompleted = hasShizukuPermission,
+                        isActive = isShizukuRunning && !hasShizukuPermission,
+                        icon = Icons.Default.Security,
+                        buttonText = "Permission Dein",
+                        onButtonClick = { ShizukuConnectionManager.requestPermission() }
+                    )
+                }
 
                 // Info card
                 ElevatedCard(
@@ -159,24 +287,21 @@ fun ShizukuSetupWizardScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Zaruri Jaankari",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall
-                            )
+                            Text("Zaruri Jaankari", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "• Shizuku ko phone restart hone par dubara start karna padta hai\n" +
-                            "• App mein 'Manage Shizuku' option ON karein toh app khud start/stop karegi\n" +
-                            "• Ye process bina root ke kaam karta hai\n" +
-                            "• Aapka data safe hai - koi internet permission nahi hai",
+                            if (canUseBuiltInPairing)
+                                "• Ye setup sirf EK BAAR karna hai\n" +
+                                "• Phone restart hone par dobara pairing karni padegi\n" +
+                                "• Settings mein 'Manage Shizuku' ON karein toh auto-start hoga\n" +
+                                "• Koi data ya privacy issue nahi hai - sab local hai"
+                            else
+                                "• Computer se ADB connection lagana padega\n" +
+                                "• Phone restart hone par dobara command run karna padega\n" +
+                                "• Android 11+ mein computer ki zaroorat nahi hoti",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
@@ -193,11 +318,14 @@ fun ShizukuSetupWizardScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
-                    onClick = { currentStep = 0 },
+                    onClick = {
+                        currentStep = 0
+                        statusMessage = ""
+                    },
                     modifier = Modifier.weight(1f),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Text("Refresh Status")
+                    Text("Refresh")
                 }
 
                 Button(
@@ -221,10 +349,9 @@ private fun SetupStepCard(
     isCompleted: Boolean,
     isActive: Boolean,
     icon: ImageVector,
-    buttonText: String,
-    onButtonClick: () -> Unit,
-    secondaryButtonText: String? = null,
-    onSecondaryButtonClick: (() -> Unit)? = null
+    buttonText: String? = null,
+    onButtonClick: (() -> Unit)? = null,
+    customContent: (@Composable () -> Unit)? = null
 ) {
     val containerColor = when {
         isCompleted -> MaterialTheme.colorScheme.surfaceContainerHigh
@@ -234,9 +361,7 @@ private fun SetupStepCard(
 
     ElevatedCard(
         colors = CardDefaults.elevatedCardColors(containerColor = containerColor),
-        elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = if (isActive) 4.dp else 1.dp
-        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (isActive) 4.dp else 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -244,78 +369,39 @@ private fun SetupStepCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Step number badge
                 Surface(
                     shape = MaterialTheme.shapes.small,
-                    color = if (isCompleted) MaterialTheme.colorScheme.primary
-                    else if (isActive) MaterialTheme.colorScheme.primary
+                    color = if (isCompleted || isActive) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(28.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         if (isCompleted) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
+                            Icon(Icons.Default.Check, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimary)
                         } else {
-                            Text(
-                                "$stepNumber",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("$stepNumber", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
-
                 Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-
-                Text(
-                    title,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.titleSmall
-                )
-
+                Text(title, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
                 Spacer(modifier = Modifier.weight(1f))
-
                 if (isCompleted) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = "Done",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Icon(Icons.Default.CheckCircle, "Done", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             if (isActive && !isCompleted) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = onButtonClick,
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(buttonText, style = MaterialTheme.typography.labelMedium)
-                    }
 
-                    if (secondaryButtonText != null && onSecondaryButtonClick != null) {
-                        OutlinedButton(
-                            onClick = onSecondaryButtonClick,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(secondaryButtonText, style = MaterialTheme.typography.labelMedium)
-                        }
+                if (customContent != null) {
+                    customContent()
+                } else if (buttonText != null && onButtonClick != null) {
+                    Button(onClick = onButtonClick, shape = MaterialTheme.shapes.small) {
+                        Text(buttonText, style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -325,12 +411,10 @@ private fun SetupStepCard(
 
 private fun openShizukuInstallPage(context: Context) {
     try {
-        // Try Play Store first
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=moe.shizuku.privileged.api"))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     } catch (e: Exception) {
-        // Fallback to browser
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api"))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
@@ -346,7 +430,6 @@ private fun openShizukuApp(context: Context) {
             context.startActivity(intent)
         }
     } catch (e: Exception) {
-        // Fallback: open app info
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
         intent.data = Uri.parse("package:$packageName")
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
