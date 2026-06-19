@@ -107,7 +107,7 @@ fun HistoryScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(filteredLogs, key = { it.id }) { entry ->
+                items(filteredLogs, key = { "${it.id}-${it.date}" }) { entry ->
                     CallLogItem(
                         entry = entry,
                         onEditClick = { onEditClick(entry) },

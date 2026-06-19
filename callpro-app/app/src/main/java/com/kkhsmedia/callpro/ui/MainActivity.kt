@@ -376,7 +376,7 @@ fun MainApp(vm: MainViewModel) {
                 is Screen.Editor -> EditorScreen(
                     callLog = screen.callLog,
                     isNew = screen.isNew,
-                    onSave = { number, type, date, duration ->
+                    onSave = { number, name, type, date, duration ->
                         if (screen.isNew) {
                             vm.addCallLog(number, type, date, duration)
                         } else {
@@ -384,6 +384,7 @@ fun MainApp(vm: MainViewModel) {
                                 vm.editCallLog(
                                     callLogId = log.id,
                                     newNumber = number,
+                                    newName = name,
                                     newDate = date,
                                     newDuration = duration,
                                     newType = type

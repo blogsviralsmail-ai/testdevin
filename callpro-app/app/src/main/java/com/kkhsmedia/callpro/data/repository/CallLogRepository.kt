@@ -46,17 +46,21 @@ class CallLogRepository(private val context: Context) {
 
                 var count = 0
                 while (cursor.moveToNext() && count < limit) {
-                    callLogs.add(
-                        CallLogEntry(
-                            id = cursor.getLong(idIdx),
-                            number = cursor.getString(numberIdx) ?: "",
-                            name = cursor.getString(nameIdx),
-                            type = cursor.getInt(typeIdx),
-                            date = cursor.getLong(dateIdx),
-                            duration = cursor.getLong(durationIdx),
-                            simId = cursor.getString(simIdx)
+                    try {
+                        callLogs.add(
+                            CallLogEntry(
+                                id = cursor.getLong(idIdx),
+                                number = cursor.getString(numberIdx) ?: "",
+                                name = cursor.getString(nameIdx),
+                                type = cursor.getInt(typeIdx),
+                                date = cursor.getLong(dateIdx),
+                                duration = cursor.getLong(durationIdx),
+                                simId = cursor.getString(simIdx)
+                            )
                         )
-                    )
+                    } catch (_: Exception) {
+                        // Skip malformed entries
+                    }
                     count++
                 }
             }
@@ -69,6 +73,7 @@ class CallLogRepository(private val context: Context) {
     suspend fun editCallLog(
         callLogId: Long,
         newNumber: String? = null,
+        newName: String? = null,
         newDate: Long? = null,
         newDuration: Long? = null,
         newType: Int? = null
@@ -76,6 +81,7 @@ class CallLogRepository(private val context: Context) {
         try {
             val values = ContentValues()
             newNumber?.let { values.put(CallLog.Calls.NUMBER, it) }
+            newName?.let { values.put(CallLog.Calls.CACHED_NAME, it) }
             newDate?.let { values.put(CallLog.Calls.DATE, it) }
             newDuration?.let { values.put(CallLog.Calls.DURATION, it) }
             newType?.let { values.put(CallLog.Calls.TYPE, it) }

@@ -77,12 +77,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun editCallLog(
         callLogId: Long,
         newNumber: String?,
+        newName: String?,
         newDate: Long?,
         newDuration: Long?,
         newType: Int?
     ) {
         viewModelScope.launch {
-            val success = callLogRepo.editCallLog(callLogId, newNumber, newDate, newDuration, newType)
+            val success = callLogRepo.editCallLog(callLogId, newNumber, newName, newDate, newDuration, newType)
             if (success) {
                 _statusMessage.value = "Call log updated successfully"
                 loadCallLogs()

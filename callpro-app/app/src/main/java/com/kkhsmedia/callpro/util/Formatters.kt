@@ -52,11 +52,15 @@ object Formatters {
 
     fun getInitials(name: String?): String {
         if (name.isNullOrBlank()) return "#"
-        val parts = name.trim().split("\\s+".toRegex())
-        return when {
-            parts.size >= 2 -> "${parts[0].first().uppercase()}${parts[1].first().uppercase()}"
-            parts.size == 1 -> parts[0].first().uppercase()
-            else -> "#"
+        val parts = name.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        return try {
+            when {
+                parts.size >= 2 -> "${parts[0].first().uppercase()}${parts[1].first().uppercase()}"
+                parts.size == 1 && parts[0].isNotEmpty() -> parts[0].first().uppercase()
+                else -> "#"
+            }
+        } catch (_: Exception) {
+            "#"
         }
     }
 }

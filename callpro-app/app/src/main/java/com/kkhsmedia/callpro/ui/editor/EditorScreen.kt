@@ -56,12 +56,13 @@ import java.util.Calendar
 fun EditorScreen(
     callLog: CallLogEntry?,
     isNew: Boolean = false,
-    onSave: (number: String, type: Int, date: Long, duration: Long) -> Unit,
+    onSave: (number: String, name: String?, type: Int, date: Long, duration: Long) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
 
     var number by remember { mutableStateOf(callLog?.number ?: "") }
+    var contactName by remember { mutableStateOf(callLog?.name ?: "") }
     var selectedType by remember { mutableIntStateOf(callLog?.type ?: CallLogEntry.TYPE_INCOMING) }
     var selectedDate by remember { mutableLongStateOf(callLog?.date ?: System.currentTimeMillis()) }
     var durationMinutes by remember {
@@ -80,7 +81,9 @@ fun EditorScreen(
         CallLogEntry.TYPE_INCOMING to "Incoming",
         CallLogEntry.TYPE_OUTGOING to "Outgoing",
         CallLogEntry.TYPE_MISSED to "Missed",
-        CallLogEntry.TYPE_REJECTED to "Rejected"
+        CallLogEntry.TYPE_REJECTED to "Rejected",
+        CallLogEntry.TYPE_VOICEMAIL to "Voicemail",
+        CallLogEntry.TYPE_BLOCKED to "Blocked"
     )
 
     Column(
@@ -127,12 +130,21 @@ fun EditorScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            OutlinedTextField(
+                value = contactName,
+                onValueChange = { contactName = it },
+                label = { Text("Contact Name (optional)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("e.g. John, Office, etc.") }
+            )
+
             ExposedDropdownMenuBox(
                 expanded = typeExpanded,
                 onExpandedChange = { typeExpanded = !typeExpanded }
             ) {
                 OutlinedTextField(
-                    value = callTypes.first { it.first == selectedType }.second,
+                    value = (callTypes.firstOrNull { it.first == selectedType } ?: callTypes[0]).second,
                     onValueChange = { },
                     readOnly = true,
                     label = { Text("Call Type") },
@@ -248,7 +260,7 @@ fun EditorScreen(
                 onClick = {
                     val totalDuration = (durationMinutes.toLongOrNull() ?: 0) * 60 +
                             (durationSeconds.toLongOrNull() ?: 0)
-                    onSave(number, selectedType, selectedDate, totalDuration)
+                    onSave(number, contactName.ifBlank { null }, selectedType, selectedDate, totalDuration)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

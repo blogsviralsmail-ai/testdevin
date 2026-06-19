@@ -186,16 +186,22 @@ fun DialpadKey(
 }
 
 fun makeCall(context: Context, number: String) {
-    val intent = Intent(Intent.ACTION_CALL).apply {
-        data = Uri.parse("tel:$number")
-    }
+    if (number.isBlank()) return
     try {
+        val intent = Intent(Intent.ACTION_CALL).apply {
+            data = Uri.parse("tel:${Uri.encode(number)}")
+        }
         context.startActivity(intent)
     } catch (_: SecurityException) {
-        // Permission not granted, try ACTION_DIAL instead
-        val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-            data = Uri.parse("tel:$number")
+        try {
+            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                data = Uri.parse("tel:${Uri.encode(number)}")
+            }
+            context.startActivity(dialIntent)
+        } catch (_: Exception) {
+            // No dialer available
         }
-        context.startActivity(dialIntent)
+    } catch (_: Exception) {
+        // Catch any unexpected errors
     }
 }

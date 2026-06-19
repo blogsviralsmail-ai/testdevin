@@ -9,20 +9,28 @@ class CallService : InCallService() {
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
-        CallManager.updateCall(call)
+        try {
+            CallManager.updateCall(call)
 
-        val intent = Intent(this, InCallActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            val intent = Intent(this, InCallActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            }
+            startActivity(intent)
+
+            call.registerCallback(callCallback)
+        } catch (_: Exception) {
+            // Prevent crash in call handling
         }
-        startActivity(intent)
-
-        call.registerCallback(callCallback)
     }
 
     override fun onCallRemoved(call: Call) {
         super.onCallRemoved(call)
-        call.unregisterCallback(callCallback)
-        CallManager.updateCall(null)
+        try {
+            call.unregisterCallback(callCallback)
+            CallManager.updateCall(null)
+        } catch (_: Exception) {
+            // Prevent crash in call cleanup
+        }
     }
 
     private val callCallback = object : Call.Callback() {
