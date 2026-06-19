@@ -28,6 +28,7 @@ import com.kkhsmedia.callrecorder.onboarding.OnboardingStatus
 import com.kkhsmedia.callrecorder.ui.screens.DisclaimerScreen
 import com.kkhsmedia.callrecorder.ui.screens.PermissionsScreen
 import com.kkhsmedia.callrecorder.ui.screens.SettingsScreen
+import com.kkhsmedia.callrecorder.ui.screens.ShizukuSetupWizardScreen
 import com.kkhsmedia.callrecorder.ui.screens.SponsorScreen
 import com.kkhsmedia.callrecorder.ui.theme.ShizucallrecorderTheme
 import com.kkhsmedia.callrecorder.ui.viewmodels.AppNavigationViewModel
@@ -115,6 +116,10 @@ fun AppNavigationScreen() {
                 }
             )
 
+            AppScreen.ShizukuSetup -> ShizukuSetupWizardScreen(
+                onSetupComplete = { appNavViewModel.refresh() }
+            )
+
             AppScreen.Permissions -> PermissionsScreen(
                 status              = onboardingStatus,
                 onPermissionGranted = { appNavViewModel.refresh() }
@@ -147,10 +152,13 @@ fun AppNavigationScreen() {
 
 // -------- Private helpers
 
-/** The three top-level screens. [AppNavigationScreen] shows one of these at a time. */
+/** The top-level screens. [AppNavigationScreen] shows one of these at a time. */
 private enum class AppScreen {
     /** The user has not yet accepted the legal disclaimer. */
     Disclaimer,
+
+    /** Shizuku is not installed or not running - show setup wizard. */
+    ShizukuSetup,
 
     /** One or more required permissions are still missing. */
     Permissions,
@@ -177,6 +185,7 @@ private enum class AppScreen {
 private fun resolveScreen(status: OnboardingStatus.Status): AppScreen {
     return when {
         !status.disclaimerAccepted -> AppScreen.Disclaimer
+        !status.shizukuRunning || !status.shizukuPermissionGranted -> AppScreen.ShizukuSetup
         !status.isComplete()       -> AppScreen.Permissions
         else                       -> AppScreen.Settings
     }
