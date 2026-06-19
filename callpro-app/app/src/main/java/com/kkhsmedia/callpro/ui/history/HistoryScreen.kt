@@ -58,8 +58,7 @@ fun HistoryScreen(
     callLogs: List<CallLogEntry>,
     onEditClick: (CallLogEntry) -> Unit,
     onDeleteClick: (CallLogEntry) -> Unit,
-    onCallClick: (String) -> Unit,
-    onAddNoteClick: (CallLogEntry) -> Unit
+    onCallClick: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var searchActive by remember { mutableStateOf(false) }
@@ -112,8 +111,7 @@ fun HistoryScreen(
                         entry = entry,
                         onEditClick = { onEditClick(entry) },
                         onDeleteClick = { showDeleteDialog = entry },
-                        onCallClick = { onCallClick(entry.number) },
-                        onNoteClick = { onAddNoteClick(entry) }
+                        onCallClick = { onCallClick(entry.number) }
                     )
                 }
             }
@@ -147,8 +145,7 @@ fun CallLogItem(
     entry: CallLogEntry,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onCallClick: () -> Unit,
-    onNoteClick: () -> Unit
+    onCallClick: () -> Unit
 ) {
     val (icon, color) = when (entry.type) {
         CallLogEntry.TYPE_INCOMING -> Icons.Default.CallReceived to IncomingCall

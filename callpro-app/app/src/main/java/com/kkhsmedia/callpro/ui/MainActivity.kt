@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,7 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kkhsmedia.callpro.data.model.CallLogEntry
-import com.kkhsmedia.callpro.data.model.CallNote
 import com.kkhsmedia.callpro.ui.analytics.AnalyticsScreen
 import com.kkhsmedia.callpro.ui.backup.BackupScreen
 import com.kkhsmedia.callpro.ui.contacts.ContactsScreen
@@ -59,8 +57,6 @@ import com.kkhsmedia.callpro.ui.dialer.DialerScreen
 import com.kkhsmedia.callpro.ui.dialer.makeCall
 import com.kkhsmedia.callpro.ui.editor.EditorScreen
 import com.kkhsmedia.callpro.ui.history.HistoryScreen
-import com.kkhsmedia.callpro.ui.notes.NoteEditorDialog
-import com.kkhsmedia.callpro.ui.notes.NotesScreen
 import com.kkhsmedia.callpro.ui.settings.SettingsScreen
 import com.kkhsmedia.callpro.ui.theme.CallProTheme
 import androidx.lifecycle.lifecycleScope
@@ -107,7 +103,6 @@ sealed class Screen(val title: String, val icon: ImageVector) {
     data object History : Screen("History", Icons.Default.History)
     data object Contacts : Screen("Contacts", Icons.Default.Contacts)
     data object Analytics : Screen("Stats", Icons.Default.Analytics)
-    data object Notes : Screen("Notes", Icons.Default.NoteAlt)
     data object Backup : Screen("Backup", Icons.Default.Save)
     data object Settings : Screen("Settings", Icons.Default.Settings)
     data class Editor(val callLog: CallLogEntry? = null, val isNew: Boolean = false) :
@@ -127,14 +122,9 @@ fun MainApp(vm: MainViewModel) {
     val callLogs by vm.callLogs.collectAsState()
     val contacts by vm.contacts.collectAsState()
     val analytics by vm.analytics.collectAsState()
-    val notes by vm.notes.collectAsState()
     val statusMessage by vm.statusMessage.collectAsState()
     val isDarkMode by vm.isDarkMode.collectAsState()
     val isAppLockEnabled by vm.isAppLockEnabled.collectAsState()
-
-    var showNoteDialog by remember { mutableStateOf(false) }
-    var noteCallLog by remember { mutableStateOf<CallLogEntry?>(null) }
-    var editingNote by remember { mutableStateOf<CallNote?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -144,6 +134,8 @@ fun MainApp(vm: MainViewModel) {
             vm.loadContacts()
         }
     }
+
+    val notes by vm.notes.collectAsState()
 
     val backupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -240,7 +232,6 @@ fun MainApp(vm: MainViewModel) {
         Screen.History,
         Screen.Contacts,
         Screen.Analytics,
-        Screen.Notes,
         Screen.Backup,
         Screen.Settings
     )
@@ -315,13 +306,6 @@ fun MainApp(vm: MainViewModel) {
                     },
                     onCallClick = { number ->
                         makeCall(context, number)
-                    },
-                    onAddNoteClick = { entry ->
-                        noteCallLog = entry
-                        scope.launch {
-                            editingNote = vm.getNoteForCallLog(entry.id)
-                            showNoteDialog = true
-                        }
                     }
                 )
 
@@ -333,18 +317,6 @@ fun MainApp(vm: MainViewModel) {
                 )
 
                 Screen.Analytics -> AnalyticsScreen(analytics = analytics)
-
-                Screen.Notes -> NotesScreen(
-                    notes = notes,
-                    onEditNote = { note ->
-                        editingNote = note
-                        noteCallLog = null
-                        showNoteDialog = true
-                    },
-                    onDeleteNote = { note ->
-                        vm.deleteNote(note)
-                    }
-                )
 
                 Screen.Backup -> BackupScreen(
                     onBackup = {
@@ -403,31 +375,6 @@ fun MainApp(vm: MainViewModel) {
         }
     }
 
-    if (showNoteDialog) {
-        val callLog = noteCallLog
-        val existingNote = editingNote
-
-        NoteEditorDialog(
-            existingNote = existingNote,
-            phoneNumber = existingNote?.phoneNumber ?: callLog?.number ?: "",
-            callLogId = existingNote?.callLogId ?: callLog?.id ?: 0,
-            onSave = { noteText, label ->
-                if (existingNote != null) {
-                    vm.updateNote(existingNote, noteText, label)
-                } else if (callLog != null) {
-                    vm.saveNote(callLog.id, callLog.number, noteText, label)
-                }
-                showNoteDialog = false
-                editingNote = null
-                noteCallLog = null
-            },
-            onDismiss = {
-                showNoteDialog = false
-                editingNote = null
-                noteCallLog = null
-            }
-        )
-    }
 }
 
 private fun isDefaultDialer(context: android.content.Context): Boolean {
