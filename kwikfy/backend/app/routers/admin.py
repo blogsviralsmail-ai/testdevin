@@ -112,7 +112,7 @@ def update_billing(req: BillingUpdateReq, admin: Admin = Depends(get_current_adm
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     user.plan = req.plan
-    user.features = req.features
+    user.features = ",".join(req.features) if isinstance(req.features, list) else req.features
     db.commit()
     return {"status": "ok"}
 

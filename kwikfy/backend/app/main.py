@@ -88,6 +88,11 @@ async def serve_dashboard():
     return FileResponse(os.path.join(FRONTEND_DIR, "dashboard.html"))
 
 
+@app.get("/admin")
+async def serve_admin():
+    return FileResponse(os.path.join(FRONTEND_DIR, "admin.html"))
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": "0.1.0"}
