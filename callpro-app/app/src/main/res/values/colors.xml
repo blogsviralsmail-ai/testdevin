@@ -10,4 +10,5 @@
     <color name="incoming_call">#4CAF50</color>
     <color name="outgoing_call">#2196F3</color>
     <color name="missed_call">#F44336</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>
