@@ -1,0 +1,109 @@
+====================================
+PLAY STORE LISTING - CallPro
+====================================
+
+APP NAME: CallPro: Call Log Editor, Backup & Dialer
+
+------------------------------------
+SHORT DESCRIPTION (80 chars max):
+------------------------------------
+Edit call logs, add entries, backup & restore call history. Smart dialer app.
+
+------------------------------------
+FULL DESCRIPTION:
+------------------------------------
+CallPro is your all-in-one call management app — a smart dialer with powerful call log editing, backup, and organization features.
+
+KEY FEATURES:
+
+-- Call Log Editor --
+- Edit any call log entry — change number, contact name, date, time, and duration
+- Add new call log entries (incoming, outgoing, missed, rejected)
+- Delete individual or all call logs
+- Support for all call types including Voicemail and Blocked
+
+-- Smart Dialer --
+- Full-featured dialer with T9 keypad
+- Quick call from contacts or call history
+- Set as default phone app
+- Incoming & outgoing call screen
+
+-- Contacts --
+- Browse all your contacts with search
+- Tap to call any contact instantly
+- Contact names displayed in call history
+
+-- Backup & Restore --
+- Backup entire call history to JSON file
+- Restore from backup anytime
+- Export call logs to CSV or JSON format
+- Share exported files easily
+
+-- Call Analytics --
+- View call statistics and patterns
+- Most called contacts
+- Total call duration and averages
+- Calls by day and hour analysis
+
+-- Security --
+- App Lock with 4-digit PIN
+- Protect your call history from unauthorized access
+
+-- Customization --
+- Dark and Light theme support
+- Clean Material Design 3 interface
+
+WHY CALLPRO?
+- 100% offline — no internet required, no data collection
+- No ads — clean, distraction-free experience
+- Lightweight — minimal storage and battery usage
+- Privacy focused — all data stays on your device
+
+PERMISSIONS EXPLAINED:
+- Call Log: Required to read, edit, add, and delete call history
+- Contacts: Required to display your contacts list
+- Phone: Required for the dialer to make calls
+- Phone State: Required for incoming call detection
+
+Made with care by KKHS Media Private Limited
+Website: kkhsmedia.com
+Support: info@kkhsmedia.com
+
+------------------------------------
+CATEGORY: Tools
+CONTENT RATING: Everyone
+TAGS: call log editor, call history, dialer, backup, call manager
+------------------------------------
+
+====================================
+DATA SAFETY FORM ANSWERS:
+====================================
+
+Q: Does your app collect or share user data?
+A: No, the app does not collect or share user data with third parties.
+
+Q: Does your app collect any of these user data types?
+A: No data is collected or transmitted to servers.
+
+Q: Is all of the user data collected by your app encrypted in transit?
+A: N/A — no data is transmitted.
+
+Q: Do you provide a way for users to request that their data is deleted?
+A: All data is stored locally on the device. Users can clear app data from Android Settings.
+
+Q: Data types accessed:
+- Call logs (on-device only, not collected)
+- Contacts (on-device only, not collected)
+
+====================================
+CONTENT RATING QUESTIONNAIRE:
+====================================
+- Violence: No
+- Sexual content: No
+- Language: No
+- Controlled substance: No
+- Gambling: No
+- User-generated content: No
+- Shares user location: No
+- Contains ads: No
+- Target age: 13+
