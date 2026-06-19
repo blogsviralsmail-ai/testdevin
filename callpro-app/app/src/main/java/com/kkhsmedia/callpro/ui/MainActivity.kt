@@ -427,19 +427,26 @@ fun MainApp(vm: MainViewModel) {
                     }
                 )
 
-                Screen.Paywall -> PaywallScreen(
-                    editCount = editCount,
-                    onSubscribe = { planType ->
-                        val activity = context as? Activity
-                        if (activity != null) {
-                            vm.launchPurchase(activity, planType)
-                        }
-                    },
+                Screen.Paywall -> {
+                    val billingError = when (val state = purchaseState) {
+                        is com.kkhsmedia.callpro.billing.PurchaseState.Error -> state.message
+                        else -> null
+                    }
+                    PaywallScreen(
+                        editCount = editCount,
+                        errorMessage = billingError,
+                        onSubscribe = { planType ->
+                            val activity = context as? Activity
+                            if (activity != null) {
+                                vm.launchPurchase(activity, planType)
+                            }
+                        },
                     onDismiss = {
                         currentScreen = Screen.History
                         selectedTab = 1
                     }
-                )
+                    )
+                }
             }
         }
     }

@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun PaywallScreen(
     editCount: Int,
+    errorMessage: String? = null,
     onSubscribe: (planType: String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -218,6 +219,18 @@ fun PaywallScreen(
                     text = "Subscribe Now",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
+                )
+            }
+
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    fontSize = 13.sp,
+                    color = Color(0xFFF44336),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
                 )
             }
 
