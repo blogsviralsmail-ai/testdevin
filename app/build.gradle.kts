@@ -113,11 +113,11 @@ val ciVersionName = providers.gradleProperty("versionName").orElse("1.0.0")
 val ciBuildNumber = providers.gradleProperty("ciBuildNumber").orElse("Local")
 
 android {
-    namespace = "com.kitsumed.shizucallrecorder"
+    namespace = "com.kkhsmedia.callrecorder"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.kitsumed.shizucallrecorder"
+        applicationId = "com.kkhsmedia.callrecorder"
         minSdk = 30
         targetSdk = 36
         versionCode = ciVersionCode.get()
