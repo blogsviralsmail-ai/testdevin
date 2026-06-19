@@ -11,6 +11,7 @@ import com.kkhsmedia.callpro.data.model.Contact
 import com.kkhsmedia.callpro.data.repository.BackupRepository
 import com.kkhsmedia.callpro.data.repository.CallLogRepository
 import com.kkhsmedia.callpro.data.repository.ContactRepository
+import com.kkhsmedia.callpro.util.DeviceFingerprint
 import com.kkhsmedia.callpro.util.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,6 +56,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val appLockPin = preferencesManager.appLockPin.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), ""
     )
+
+    val editCount = preferencesManager.editCount.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), 0
+    )
+
+    val isPremium = preferencesManager.isPremium.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), false
+    )
+
+    val remainingFreeEdits = preferencesManager.remainingFreeEdits.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.FREE_EDIT_LIMIT
+    )
+
+    init {
+        viewModelScope.launch {
+            val deviceId = DeviceFingerprint.getDeviceId(application)
+            preferencesManager.saveDeviceId(deviceId)
+        }
+    }
+
+    suspend fun canEdit(): Boolean = preferencesManager.canEdit()
+
+    suspend fun consumeEdit() {
+        preferencesManager.incrementEditCount()
+    }
+
+    fun subscribePlan(planType: String) {
+        viewModelScope.launch {
+            preferencesManager.setPremium(true, planType)
+            _statusMessage.value = "Premium activated! Enjoy unlimited edits."
+        }
+    }
 
     fun loadCallLogs() {
         viewModelScope.launch {

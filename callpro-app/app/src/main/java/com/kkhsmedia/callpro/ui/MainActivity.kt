@@ -58,6 +58,8 @@ import com.kkhsmedia.callpro.ui.dialer.makeCall
 import com.kkhsmedia.callpro.ui.editor.EditorScreen
 import com.kkhsmedia.callpro.ui.history.HistoryScreen
 import com.kkhsmedia.callpro.ui.settings.SettingsScreen
+import com.kkhsmedia.callpro.ui.subscription.EditLimitDialog
+import com.kkhsmedia.callpro.ui.subscription.PaywallScreen
 import com.kkhsmedia.callpro.ui.theme.CallProTheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.first
@@ -107,6 +109,7 @@ sealed class Screen(val title: String, val icon: ImageVector) {
     data object Settings : Screen("Settings", Icons.Default.Settings)
     data class Editor(val callLog: CallLogEntry? = null, val isNew: Boolean = false) :
         Screen("Editor", Icons.Default.Dialpad)
+    data object Paywall : Screen("Upgrade", Icons.Default.Dialpad)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,6 +128,11 @@ fun MainApp(vm: MainViewModel) {
     val statusMessage by vm.statusMessage.collectAsState()
     val isDarkMode by vm.isDarkMode.collectAsState()
     val isAppLockEnabled by vm.isAppLockEnabled.collectAsState()
+    val editCount by vm.editCount.collectAsState()
+    val isPremium by vm.isPremium.collectAsState()
+    val remainingFreeEdits by vm.remainingFreeEdits.collectAsState()
+
+    var showLimitDialog by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -237,11 +245,12 @@ fun MainApp(vm: MainViewModel) {
     )
 
     val isEditorScreen = currentScreen is Screen.Editor
+    val isPaywallScreen = currentScreen is Screen.Paywall
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (!isEditorScreen) {
+            if (!isEditorScreen && !isPaywallScreen) {
                 TopAppBar(
                     title = {
                         Text(
@@ -250,6 +259,21 @@ fun MainApp(vm: MainViewModel) {
                             fontWeight = FontWeight.Bold
                         )
                     },
+                    actions = {
+                        if (currentScreen == Screen.History && !isPremium) {
+                            androidx.compose.material3.TextButton(
+                                onClick = { currentScreen = Screen.Paywall }
+                            ) {
+                                Text(
+                                    text = "$remainingFreeEdits edits left",
+                                    fontSize = 12.sp,
+                                    color = if (remainingFreeEdits <= 3)
+                                        androidx.compose.ui.graphics.Color(0xFFF44336)
+                                    else MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
@@ -257,7 +281,7 @@ fun MainApp(vm: MainViewModel) {
             }
         },
         bottomBar = {
-            if (!isEditorScreen) {
+            if (!isEditorScreen && !isPaywallScreen) {
                 NavigationBar {
                     tabs.forEachIndexed { index, screen ->
                         NavigationBarItem(
@@ -283,7 +307,13 @@ fun MainApp(vm: MainViewModel) {
             if (currentScreen == Screen.History) {
                 FloatingActionButton(
                     onClick = {
-                        currentScreen = Screen.Editor(callLog = null, isNew = true)
+                        scope.launch {
+                            if (vm.canEdit()) {
+                                currentScreen = Screen.Editor(callLog = null, isNew = true)
+                            } else {
+                                showLimitDialog = true
+                            }
+                        }
                     },
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
@@ -299,10 +329,23 @@ fun MainApp(vm: MainViewModel) {
                 Screen.History -> HistoryScreen(
                     callLogs = callLogs,
                     onEditClick = { entry ->
-                        currentScreen = Screen.Editor(callLog = entry, isNew = false)
+                        scope.launch {
+                            if (vm.canEdit()) {
+                                currentScreen = Screen.Editor(callLog = entry, isNew = false)
+                            } else {
+                                showLimitDialog = true
+                            }
+                        }
                     },
                     onDeleteClick = { entry ->
-                        vm.deleteCallLog(entry.id)
+                        scope.launch {
+                            if (vm.canEdit()) {
+                                vm.consumeEdit()
+                                vm.deleteCallLog(entry.id)
+                            } else {
+                                showLimitDialog = true
+                            }
+                        }
                     },
                     onCallClick = { number ->
                         makeCall(context, number)
@@ -349,24 +392,40 @@ fun MainApp(vm: MainViewModel) {
                     callLog = screen.callLog,
                     isNew = screen.isNew,
                     onSave = { number, name, type, date, duration ->
-                        if (screen.isNew) {
-                            vm.addCallLog(number, type, date, duration)
-                        } else {
-                            screen.callLog?.let { log ->
-                                vm.editCallLog(
-                                    callLogId = log.id,
-                                    newNumber = number,
-                                    newName = name,
-                                    newDate = date,
-                                    newDuration = duration,
-                                    newType = type
-                                )
+                        scope.launch {
+                            vm.consumeEdit()
+                            if (screen.isNew) {
+                                vm.addCallLog(number, type, date, duration)
+                            } else {
+                                screen.callLog?.let { log ->
+                                    vm.editCallLog(
+                                        callLogId = log.id,
+                                        newNumber = number,
+                                        newName = name,
+                                        newDate = date,
+                                        newDuration = duration,
+                                        newType = type
+                                    )
+                                }
                             }
+                            currentScreen = Screen.History
+                            selectedTab = 1
                         }
+                    },
+                    onBack = {
+                        currentScreen = Screen.History
+                        selectedTab = 1
+                    }
+                )
+
+                Screen.Paywall -> PaywallScreen(
+                    editCount = editCount,
+                    onSubscribe = { planType ->
+                        vm.subscribePlan(planType)
                         currentScreen = Screen.History
                         selectedTab = 1
                     },
-                    onBack = {
+                    onDismiss = {
                         currentScreen = Screen.History
                         selectedTab = 1
                     }
@@ -375,6 +434,16 @@ fun MainApp(vm: MainViewModel) {
         }
     }
 
+    if (showLimitDialog) {
+        EditLimitDialog(
+            editCount = editCount,
+            onUpgrade = {
+                showLimitDialog = false
+                currentScreen = Screen.Paywall
+            },
+            onDismiss = { showLimitDialog = false }
+        )
+    }
 }
 
 private fun isDefaultDialer(context: android.content.Context): Boolean {
