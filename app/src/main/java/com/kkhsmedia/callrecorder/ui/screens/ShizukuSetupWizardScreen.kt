@@ -30,9 +30,129 @@ import com.kkhsmedia.callrecorder.integrations.shizuku.ShizukuConnectionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Supported languages for the setup wizard */
+enum class WizardLanguage(val displayName: String, val code: String) {
+    ENGLISH("English", "en"),
+    HINDI("हिन्दी (Hindi)", "hi"),
+    TAMIL("தமிழ் (Tamil)", "ta"),
+    TELUGU("తెలుగు (Telugu)", "te"),
+    BENGALI("বাংলা (Bengali)", "bn"),
+    MARATHI("मराठी (Marathi)", "mr"),
+    GUJARATI("ગુજરાતી (Gujarati)", "gu"),
+    KANNADA("ಕನ್ನಡ (Kannada)", "kn"),
+    MALAYALAM("മലയാളം (Malayalam)", "ml"),
+    PUNJABI("ਪੰਜਾਬੀ (Punjabi)", "pa")
+}
+
+/** Localized strings for the setup wizard */
+private fun getStrings(lang: WizardLanguage): Map<String, String> {
+    return when (lang) {
+        WizardLanguage.HINDI -> mapOf(
+            "title" to "सेटअप - सिर्फ एक बार",
+            "subtitle" to "APP Call Recorder सेटअप करने के लिए नीचे के स्टेप्स फॉलो करें।",
+            "step1_title" to "Wireless Debugging चालू करें",
+            "step1_desc" to "Phone Settings > Developer Options > Wireless Debugging enable करें।\n\nDeveloper Options नहीं दिख रहा? Settings > About Phone > Build Number पर 7 बार tap करें।",
+            "step1_button" to "Developer Options खोलें",
+            "step2_title" to "Pairing Code डालें",
+            "step2_desc" to "Wireless Debugging > 'Pair device with pairing code' tap करें।\nजो code और port दिखेगा वो नीचे enter करें:",
+            "step3_title" to "Permission Allow करें",
+            "step3_desc" to "एक popup आएगा - 'Allow' button दबाएं।",
+            "step3_button" to "Permission दें",
+            "info_title" to "ज़रूरी जानकारी",
+            "info_text" to "• ये setup सिर्फ एक बार करना है\n• Phone restart होने पर दोबारा pairing करनी पड़ेगी\n• Settings में 'Manage Shizuku' ON करें तो auto-start होगा\n• कोई data या privacy issue नहीं - सब local है",
+            "pairing_code" to "Pairing Code (6 अंक)",
+            "pairing_port" to "Pairing Port (जैसे 37429)",
+            "pair_button" to "Pair करें और Start करें",
+            "pairing_progress" to "Pairing हो रही है...",
+            "pairing_success" to "Pairing सफल! Shizuku start हो रहा है...",
+            "pairing_fail" to "Pairing fail। Code/Port check करें और दोबारा try करें।",
+            "pairing_done" to "Pairing done! Shizuku start हो गया।",
+            "enter_code_error" to "6 digit code और port डालें",
+            "refresh" to "Refresh",
+            "continue_btn" to "Continue",
+            "select_language" to "भाषा चुनें"
+        )
+        WizardLanguage.TAMIL -> mapOf(
+            "title" to "அமைப்பு - ஒரு முறை மட்டும்",
+            "subtitle" to "APP Call Recorder-ஐ அமைக்க கீழே உள்ள படிகளைப் பின்பற்றவும்.",
+            "step1_title" to "Wireless Debugging-ஐ இயக்கவும்",
+            "step1_desc" to "Phone Settings > Developer Options > Wireless Debugging enable செய்யவும்.\n\nDeveloper Options தெரியவில்லையா? Settings > About Phone > Build Number-ஐ 7 முறை tap செய்யவும்.",
+            "step1_button" to "Developer Options திறக்கவும்",
+            "step2_title" to "Pairing Code உள்ளிடவும்",
+            "step2_desc" to "Wireless Debugging > 'Pair device with pairing code' tap செய்யவும்.\nகாண்பிக்கும் code மற்றும் port-ஐ கீழே உள்ளிடவும்:",
+            "step3_title" to "Permission அனுமதிக்கவும்",
+            "step3_desc" to "ஒரு popup வரும் - 'Allow' button அழுத்தவும்.",
+            "step3_button" to "Permission கொடுக்கவும்",
+            "info_title" to "முக்கிய தகவல்",
+            "info_text" to "• இந்த setup ஒரு முறை மட்டும்\n• Phone restart ஆனால் மீண்டும் pairing செய்ய வேண்டும்\n• Settings-ல் 'Manage Shizuku' ON செய்தால் auto-start ஆகும்\n• தரவு அல்லது privacy பிரச்சனை இல்லை",
+            "pairing_code" to "Pairing Code (6 இலக்கம்)",
+            "pairing_port" to "Pairing Port (எ.கா. 37429)",
+            "pair_button" to "Pair & Start",
+            "pairing_progress" to "Pairing நடக்கிறது...",
+            "pairing_success" to "Pairing வெற்றி! Shizuku தொடங்குகிறது...",
+            "pairing_fail" to "Pairing தோல்வி. Code/Port சரிபார்க்கவும்.",
+            "pairing_done" to "Pairing முடிந்தது! Shizuku தொடங்கியது.",
+            "enter_code_error" to "6 digit code மற்றும் port உள்ளிடவும்",
+            "refresh" to "Refresh",
+            "continue_btn" to "Continue",
+            "select_language" to "மொழியை தேர்ந்தெடுக்கவும்"
+        )
+        WizardLanguage.TELUGU -> mapOf(
+            "title" to "సెటప్ - ఒక్కసారి మాత్రమే",
+            "subtitle" to "APP Call Recorder సెటప్ చేయడానికి క్రింది స్టెప్స్ ఫాలో చేయండి.",
+            "step1_title" to "Wireless Debugging ఆన్ చేయండి",
+            "step1_desc" to "Phone Settings > Developer Options > Wireless Debugging enable చేయండి.\n\nDeveloper Options కనిపించడం లేదా? Settings > About Phone > Build Number పై 7 సార్లు tap చేయండి.",
+            "step1_button" to "Developer Options తెరవండి",
+            "step2_title" to "Pairing Code ఎంటర్ చేయండి",
+            "step2_desc" to "Wireless Debugging > 'Pair device with pairing code' tap చేయండి.\nకనిపించే code మరియు port క్రింద ఎంటర్ చేయండి:",
+            "step3_title" to "Permission Allow చేయండి",
+            "step3_desc" to "ఒక popup వస్తుంది - 'Allow' button నొక్కండి.",
+            "step3_button" to "Permission ఇవ్వండి",
+            "info_title" to "ముఖ్యమైన సమాచారం",
+            "info_text" to "• ఈ setup ఒక్కసారి మాత్రమే\n• Phone restart అయితే మళ్ళీ pairing చేయాలి\n• Settings లో 'Manage Shizuku' ON చేస్తే auto-start అవుతుంది\n• డేటా లేదా privacy సమస్య లేదు",
+            "pairing_code" to "Pairing Code (6 అంకెలు)",
+            "pairing_port" to "Pairing Port (ఉదా. 37429)",
+            "pair_button" to "Pair & Start",
+            "pairing_progress" to "Pairing జరుగుతోంది...",
+            "pairing_success" to "Pairing విజయవంతం! Shizuku ప్రారంభమవుతోంది...",
+            "pairing_fail" to "Pairing విఫలం. Code/Port తనిఖీ చేయండి.",
+            "pairing_done" to "Pairing పూర్తి! Shizuku ప్రారంభమైంది.",
+            "enter_code_error" to "6 digit code మరియు port ఎంటర్ చేయండి",
+            "refresh" to "Refresh",
+            "continue_btn" to "Continue",
+            "select_language" to "భాషను ఎంచుకోండి"
+        )
+        else -> mapOf(
+            "title" to "Setup - One Time Only",
+            "subtitle" to "Follow the steps below to setup APP Call Recorder. This is required only once.",
+            "step1_title" to "Enable Wireless Debugging",
+            "step1_desc" to "Go to Phone Settings > Developer Options > Enable Wireless Debugging.\n\nCan't find Developer Options? Go to Settings > About Phone > Tap Build Number 7 times.",
+            "step1_button" to "Open Developer Options",
+            "step2_title" to "Enter Pairing Code",
+            "step2_desc" to "In Wireless Debugging, tap 'Pair device with pairing code'.\nEnter the code and port shown below:",
+            "step3_title" to "Allow Permission",
+            "step3_desc" to "A popup will appear - tap the 'Allow' button.",
+            "step3_button" to "Grant Permission",
+            "info_title" to "Important Information",
+            "info_text" to "• This setup is required only ONCE\n• After phone restart, you'll need to pair again\n• Enable 'Manage Shizuku' in Settings for auto-start\n• No data or privacy issues - everything is local",
+            "pairing_code" to "Pairing Code (6 digits)",
+            "pairing_port" to "Pairing Port (e.g. 37429)",
+            "pair_button" to "Pair & Start",
+            "pairing_progress" to "Pairing in progress...",
+            "pairing_success" to "Pairing successful! Starting Shizuku...",
+            "pairing_fail" to "Pairing failed. Please check code/port and try again.",
+            "pairing_done" to "Pairing done! Shizuku started.",
+            "enter_code_error" to "Please enter 6 digit code and port",
+            "refresh" to "Refresh",
+            "continue_btn" to "Continue",
+            "select_language" to "Select Language"
+        )
+    }
+}
+
 /**
- * A step-by-step wizard that guides users through Shizuku setup
- * with built-in ADB pairing (no separate Shizuku app needed on Android 11+).
+ * Setup wizard with built-in ADB pairing and language selection.
+ * No separate Shizuku app download required on Android 11+.
  */
 @Composable
 fun ShizukuSetupWizardScreen(
@@ -41,18 +161,18 @@ fun ShizukuSetupWizardScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    var selectedLanguage by remember { mutableStateOf(WizardLanguage.ENGLISH) }
+    var showLanguageMenu by remember { mutableStateOf(false) }
     var currentStep by remember { mutableIntStateOf(0) }
     var pairingCode by remember { mutableStateOf("") }
     var pairingPort by remember { mutableStateOf("") }
-    var connectPort by remember { mutableStateOf("") }
     var statusMessage by remember { mutableStateOf("") }
     var isPairing by remember { mutableStateOf(false) }
-    var isConnecting by remember { mutableStateOf(false) }
     var pairingDone by remember { mutableStateOf(false) }
 
-    val isShizukuInstalled = remember(currentStep) {
-        ShizukuConnectionManager.getPackageName(context) != null
-    }
+    val strings = getStrings(selectedLanguage)
+
     val isShizukuRunning = remember(currentStep) {
         ShizukuConnectionManager.isAvailable()
     }
@@ -70,9 +190,6 @@ fun ShizukuSetupWizardScreen(
         }
     }
 
-    // Determine if we can use built-in ADB pairing (Android 11+)
-    val canUseBuiltInPairing = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-
     Surface(
         modifier = modifier.navigationBarsPadding().fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -83,18 +200,50 @@ fun ShizukuSetupWizardScreen(
                 .padding(horizontal = 24.dp)
                 .padding(top = 24.dp, bottom = 16.dp)
         ) {
+            // Language selector row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box {
+                    OutlinedButton(
+                        onClick = { showLanguageMenu = true },
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Icon(Icons.Default.Language, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(selectedLanguage.displayName, style = MaterialTheme.typography.labelMedium)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                    DropdownMenu(
+                        expanded = showLanguageMenu,
+                        onDismissRequest = { showLanguageMenu = false }
+                    ) {
+                        WizardLanguage.entries.forEach { lang ->
+                            DropdownMenuItem(
+                                text = { Text(lang.displayName) },
+                                onClick = {
+                                    selectedLanguage = lang
+                                    showLanguageMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Header
             Text(
-                text = "Setup - One Time Only",
+                text = strings["title"] ?: "Setup",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = if (canUseBuiltInPairing)
-                    "APP Call Recorder ko setup karne ke liye neeche ke steps follow karein. Ye sirf ek baar karna hai."
-                else
-                    "APP Call Recorder ko Shizuku app ki zaroorat hai. Neeche ke steps follow karein.",
+                text = strings["subtitle"] ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -108,175 +257,122 @@ fun ShizukuSetupWizardScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (canUseBuiltInPairing) {
-                    // BUILT-IN APPROACH (Android 11+): No Shizuku app needed
+                // Step 1: Enable Wireless Debugging
+                SetupStepCard(
+                    stepNumber = 1,
+                    title = strings["step1_title"] ?: "",
+                    description = strings["step1_desc"] ?: "",
+                    isCompleted = currentStep > 0 || isShizukuRunning,
+                    isActive = currentStep == 0 && !isShizukuRunning,
+                    icon = Icons.Default.Wifi,
+                    buttonText = strings["step1_button"],
+                    onButtonClick = { openDeveloperOptions(context) }
+                )
 
-                    // Step 0: Shizuku still needed as service host
-                    if (!isShizukuInstalled) {
-                        SetupStepCard(
-                            stepNumber = 1,
-                            title = "Shizuku App Install Karein",
-                            description = "Shizuku ek chhota sa helper app hai (3MB). Ye background mein kaam karta hai. Install karne ke baad kholne ki zaroorat nahi.",
-                            isCompleted = isShizukuInstalled,
-                            isActive = currentStep == 0 && !isShizukuInstalled,
-                            icon = Icons.Default.GetApp,
-                            buttonText = "Install (Play Store)",
-                            onButtonClick = { openShizukuInstallPage(context) }
-                        )
-                    }
+                // Step 2: Enter Pairing Code
+                SetupStepCard(
+                    stepNumber = 2,
+                    title = strings["step2_title"] ?: "",
+                    description = strings["step2_desc"] ?: "",
+                    isCompleted = pairingDone || isShizukuRunning,
+                    isActive = !isShizukuRunning,
+                    icon = Icons.Default.Pin,
+                    customContent = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = pairingCode,
+                                onValueChange = { pairingCode = it.filter { c -> c.isDigit() }.take(6) },
+                                label = { Text(strings["pairing_code"] ?: "Pairing Code") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = pairingPort,
+                                onValueChange = { pairingPort = it.filter { c -> c.isDigit() }.take(5) },
+                                label = { Text(strings["pairing_port"] ?: "Pairing Port") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
 
-                    // Step 1: Enable Wireless Debugging
-                    SetupStepCard(
-                        stepNumber = if (!isShizukuInstalled) 2 else 1,
-                        title = "Wireless Debugging ON Karein",
-                        description = "Phone Settings > Developer Options > Wireless Debugging enable karein.\n\n" +
-                            "Developer Options nahi dikh raha? Settings > About Phone > Build Number par 7 baar tap karein.",
-                        isCompleted = currentStep > 0 || isShizukuRunning,
-                        isActive = currentStep == 0 && isShizukuInstalled,
-                        icon = Icons.Default.Wifi,
-                        buttonText = "Developer Options Kholein",
-                        onButtonClick = { openDeveloperOptions(context) }
-                    )
-
-                    // Step 2: Enter Pairing Code (Built-in ADB pairing)
-                    SetupStepCard(
-                        stepNumber = if (!isShizukuInstalled) 3 else 2,
-                        title = "Pairing Code Enter Karein",
-                        description = "Wireless Debugging > 'Pair device with pairing code' tap karein.\n" +
-                            "Jo code aur port dikhega wo neeche enter karein:",
-                        isCompleted = pairingDone || isShizukuRunning,
-                        isActive = (currentStep == 0 && isShizukuInstalled) || currentStep == 1,
-                        icon = Icons.Default.Pin,
-                        customContent = {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedTextField(
-                                    value = pairingCode,
-                                    onValueChange = { pairingCode = it.filter { c -> c.isDigit() }.take(6) },
-                                    label = { Text("Pairing Code (6 digit)") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                            if (statusMessage.isNotEmpty()) {
+                                Text(
+                                    statusMessage,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (statusMessage.contains("success", true) ||
+                                        statusMessage.contains("सफल", true) ||
+                                        statusMessage.contains("வெற்றி", true) ||
+                                        statusMessage.contains("విజయ", true))
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.error
                                 )
-                                OutlinedTextField(
-                                    value = pairingPort,
-                                    onValueChange = { pairingPort = it.filter { c -> c.isDigit() }.take(5) },
-                                    label = { Text("Pairing Port (e.g. 37429)") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
+                            }
 
-                                if (statusMessage.isNotEmpty()) {
-                                    Text(
-                                        statusMessage,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = if (statusMessage.contains("Success") || statusMessage.contains("safal"))
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.error
-                                    )
-                                }
-
-                                Button(
-                                    onClick = {
-                                        if (pairingCode.length == 6 && pairingPort.isNotEmpty()) {
-                                            isPairing = true
-                                            statusMessage = "Pairing ho rahi hai..."
-                                            scope.launch {
-                                                val manager = AdbPairingManager(context)
-                                                val port = pairingPort.toIntOrNull() ?: 0
-                                                val success = manager.pair("127.0.0.1", port, pairingCode)
-                                                if (success) {
-                                                    statusMessage = "✓ Pairing safal! Ab Shizuku start ho raha hai..."
-                                                    pairingDone = true
-                                                    // Now try to auto-connect and start Shizuku
-                                                    delay(1000)
-                                                    val connected = manager.autoConnect()
-                                                    if (connected) {
-                                                        manager.startShizukuServer()
-                                                        delay(3000)
-                                                        currentStep = 2
-                                                    } else {
-                                                        statusMessage = "Pairing done! Ab Shizuku app mein 'Start' karein."
-                                                        currentStep = 2
-                                                    }
+                            Button(
+                                onClick = {
+                                    if (pairingCode.length == 6 && pairingPort.isNotEmpty()) {
+                                        isPairing = true
+                                        statusMessage = strings["pairing_progress"] ?: "Pairing..."
+                                        scope.launch {
+                                            val manager = AdbPairingManager(context)
+                                            val port = pairingPort.toIntOrNull() ?: 0
+                                            val success = manager.pair("127.0.0.1", port, pairingCode)
+                                            if (success) {
+                                                statusMessage = strings["pairing_success"] ?: "Success!"
+                                                pairingDone = true
+                                                delay(1000)
+                                                val connected = manager.autoConnect()
+                                                if (connected) {
+                                                    manager.startShizukuServer()
+                                                    delay(3000)
+                                                    currentStep = 2
                                                 } else {
-                                                    statusMessage = "Pairing fail. Code/Port check karein aur dobara try karein."
+                                                    statusMessage = strings["pairing_done"] ?: "Pairing done!"
+                                                    currentStep = 2
                                                 }
-                                                isPairing = false
+                                            } else {
+                                                statusMessage = strings["pairing_fail"] ?: "Pairing failed."
                                             }
-                                        } else {
-                                            statusMessage = "6 digit code aur port daalein"
+                                            isPairing = false
                                         }
-                                    },
-                                    enabled = !isPairing && pairingCode.length == 6 && pairingPort.isNotEmpty(),
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    if (isPairing) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(16.dp),
-                                            strokeWidth = 2.dp
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                    } else {
+                                        statusMessage = strings["enter_code_error"] ?: "Enter code and port"
                                     }
-                                    Text(if (isPairing) "Pairing..." else "Pair & Start")
+                                },
+                                enabled = !isPairing && pairingCode.length == 6 && pairingPort.isNotEmpty(),
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                if (isPairing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
                                 }
+                                Text(
+                                    if (isPairing) strings["pairing_progress"] ?: "Pairing..."
+                                    else strings["pair_button"] ?: "Pair & Start"
+                                )
                             }
                         }
-                    )
+                    }
+                )
 
-                    // Step 3: Grant Permission
-                    SetupStepCard(
-                        stepNumber = if (!isShizukuInstalled) 4 else 3,
-                        title = "Permission Allow Karein",
-                        description = "Ek popup aayega - 'Allow' button dabayein.",
-                        isCompleted = hasShizukuPermission,
-                        isActive = currentStep == 2 && isShizukuRunning,
-                        icon = Icons.Default.Security,
-                        buttonText = "Permission Dein",
-                        onButtonClick = {
-                            ShizukuConnectionManager.requestPermission()
-                        }
-                    )
-
-                } else {
-                    // FALLBACK (Android 10 and below): Need Shizuku app + PC
-
-                    SetupStepCard(
-                        stepNumber = 1,
-                        title = "Shizuku App Install Karein",
-                        description = "Play Store se Shizuku install karein.",
-                        isCompleted = isShizukuInstalled,
-                        isActive = !isShizukuInstalled,
-                        icon = Icons.Default.GetApp,
-                        buttonText = "Install Shizuku",
-                        onButtonClick = { openShizukuInstallPage(context) }
-                    )
-
-                    SetupStepCard(
-                        stepNumber = 2,
-                        title = "Computer se ADB Command Run Karein",
-                        description = "Computer par ADB install karein aur ye command run karein:\n\n" +
-                            "adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh\n\n" +
-                            "Ya phir Shizuku app kholein aur instructions follow karein.",
-                        isCompleted = isShizukuRunning,
-                        isActive = isShizukuInstalled && !isShizukuRunning,
-                        icon = Icons.Default.Computer,
-                        buttonText = "Shizuku Kholein",
-                        onButtonClick = { openShizukuApp(context) }
-                    )
-
-                    SetupStepCard(
-                        stepNumber = 3,
-                        title = "Permission Allow Karein",
-                        description = "Shizuku start hone ke baad 'Allow' button dabayein.",
-                        isCompleted = hasShizukuPermission,
-                        isActive = isShizukuRunning && !hasShizukuPermission,
-                        icon = Icons.Default.Security,
-                        buttonText = "Permission Dein",
-                        onButtonClick = { ShizukuConnectionManager.requestPermission() }
-                    )
-                }
+                // Step 3: Grant Permission
+                SetupStepCard(
+                    stepNumber = 3,
+                    title = strings["step3_title"] ?: "",
+                    description = strings["step3_desc"] ?: "",
+                    isCompleted = hasShizukuPermission,
+                    isActive = currentStep == 2 && isShizukuRunning,
+                    icon = Icons.Default.Security,
+                    buttonText = strings["step3_button"],
+                    onButtonClick = {
+                        ShizukuConnectionManager.requestPermission()
+                    }
+                )
 
                 // Info card
                 ElevatedCard(
@@ -289,19 +385,15 @@ fun ShizukuSetupWizardScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Zaruri Jaankari", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                strings["info_title"] ?: "Important",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall
+                            )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            if (canUseBuiltInPairing)
-                                "• Ye setup sirf EK BAAR karna hai\n" +
-                                "• Phone restart hone par dobara pairing karni padegi\n" +
-                                "• Settings mein 'Manage Shizuku' ON karein toh auto-start hoga\n" +
-                                "• Koi data ya privacy issue nahi hai - sab local hai"
-                            else
-                                "• Computer se ADB connection lagana padega\n" +
-                                "• Phone restart hone par dobara command run karna padega\n" +
-                                "• Android 11+ mein computer ki zaroorat nahi hoti",
+                            strings["info_text"] ?: "",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
@@ -325,7 +417,7 @@ fun ShizukuSetupWizardScreen(
                     modifier = Modifier.weight(1f),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Text("Refresh")
+                    Text(strings["refresh"] ?: "Refresh")
                 }
 
                 Button(
@@ -334,7 +426,7 @@ fun ShizukuSetupWizardScreen(
                     shape = MaterialTheme.shapes.medium,
                     enabled = isShizukuRunning && hasShizukuPermission
                 ) {
-                    Text("Continue")
+                    Text(strings["continue_btn"] ?: "Continue")
                 }
             }
         }
@@ -406,34 +498,6 @@ private fun SetupStepCard(
                 }
             }
         }
-    }
-}
-
-private fun openShizukuInstallPage(context: Context) {
-    try {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=moe.shizuku.privileged.api"))
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
-    } catch (e: Exception) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api"))
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
-    }
-}
-
-private fun openShizukuApp(context: Context) {
-    val packageName = ShizukuConnectionManager.getPackageName(context) ?: "moe.shizuku.privileged.api"
-    try {
-        val intent = context.packageManager.getLaunchIntentForPackage(packageName)
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        }
-    } catch (e: Exception) {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        intent.data = Uri.parse("package:$packageName")
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
     }
 }
 
