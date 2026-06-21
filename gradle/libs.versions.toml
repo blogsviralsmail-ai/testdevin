@@ -18,6 +18,7 @@ shizuku-provider = "13.1.5"
 # ADB
 libadb = "3.1.1"
 conscrypt = "2.5.3"
+sunSecurity = "1.1"
 
 # Utility
 aboutlibraries = "14.2.1"
@@ -56,6 +57,7 @@ aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3",
 # ADB
 libadb-core = { module = "com.github.MuntashirAkon:libadb-android", version.ref = "libadb" }
 conscrypt-android = { module = "org.conscrypt:conscrypt-android", version.ref = "conscrypt" }
+sun-security-android = { module = "com.github.MuntashirAkon:sun-security-android", version.ref = "sunSecurity" }
 
 # Libphonenumber
 libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
