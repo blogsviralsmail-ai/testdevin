@@ -168,13 +168,14 @@ class AdbPairingManager(private val context: Context) {
 
     suspend fun pairWithDetails(host: String, port: Int, pairingCode: String): PairResult = withContext(Dispatchers.IO) {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        var previousNetwork: Network? = null
         try {
+            // Force IPv4 stack - fixes "from /::" IPv6 socket issue on dual-stack devices
+            System.setProperty("java.net.preferIPv4Stack", "true")
+            AppLogger.i(TAG, "Forced IPv4 stack preference")
+
             // Bind process to Wi-Fi network to ensure connection goes through Wi-Fi
-            // This fixes ECONNREFUSED on devices where mobile data is default route
             val wifiNetwork = findWifiNetwork()
             if (wifiNetwork != null) {
-                previousNetwork = cm.activeNetwork
                 cm.bindProcessToNetwork(wifiNetwork)
                 AppLogger.i(TAG, "Bound process to Wi-Fi network")
             } else {
@@ -197,6 +198,7 @@ class AdbPairingManager(private val context: Context) {
         } finally {
             // Restore original network binding
             cm.bindProcessToNetwork(null)
+            System.setProperty("java.net.preferIPv4Stack", "false")
             AppLogger.i(TAG, "Restored default network binding")
         }
     }

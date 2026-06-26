@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kkhsmedia.callrecorder.integrations.adb.AdbPairingManager
+import com.kkhsmedia.callrecorder.integrations.adb.AdbServiceDiscovery
 import com.kkhsmedia.callrecorder.integrations.shizuku.ShizukuConnectionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -53,24 +54,29 @@ private fun getStrings(lang: WizardLanguage): Map<String, String> {
             "step1_title" to "Wireless Debugging चालू करें",
             "step1_desc" to "Phone Settings > Developer Options > Wireless Debugging enable करें।\n\nDeveloper Options नहीं दिख रहा? Settings > About Phone > Build Number पर 7 बार tap करें।",
             "step1_button" to "Developer Options खोलें",
-            "step2_title" to "Pairing Code डालें",
-            "step2_desc" to "Wireless Debugging > 'Pair device with pairing code' tap करें।\nजो code और port दिखेगा वो नीचे enter करें:",
+            "step2_title" to "Auto Setup",
+            "step2_desc" to "'Start Auto Setup' tap करें, फिर Wireless Debugging में 'Pair device with pairing code' tap करें। सिर्फ 6-digit code नीचे डालें — IP और port अपने आप detect हो जायेगा।",
             "step3_title" to "Permission Allow करें",
             "step3_desc" to "एक popup आएगा - 'Allow' button दबाएं।",
             "step3_button" to "Permission दें",
             "info_title" to "ज़रूरी जानकारी",
             "info_text" to "• ये setup सिर्फ एक बार करना है\n• Phone restart होने पर दोबारा pairing करनी पड़ेगी\n• Settings में 'Manage Shizuku' ON करें तो auto-start होगा\n• कोई data या privacy issue नहीं - सब local है",
             "pairing_code" to "Pairing Code (6 अंक)",
-            "pairing_port" to "Pairing Port (जैसे 37429)",
-            "pair_button" to "Pair करें और Start करें",
+            "pairing_port" to "Port",
+            "pair_button" to "Pair और Connect करें",
             "pairing_progress" to "Pairing हो रही है...",
             "pairing_success" to "Pairing सफल! Shizuku start हो रहा है...",
-            "pairing_fail" to "Pairing fail। Code/Port check करें और दोबारा try करें।",
+            "pairing_fail" to "Pairing fail। Code check करें और दोबारा try करें।",
             "pairing_done" to "Pairing done! Shizuku start हो गया।",
-            "enter_code_error" to "6 digit code और port डालें",
+            "enter_code_error" to "6 digit pairing code डालें",
             "refresh" to "Refresh",
             "continue_btn" to "Continue",
-            "select_language" to "भाषा चुनें"
+            "select_language" to "भाषा चुनें",
+            "auto_setup_btn" to "Auto Setup शुरू करें",
+            "auto_searching" to "Pairing service खोज रहे हैं...",
+            "auto_found" to "Service मिल गई! 6-digit code डालें:",
+            "auto_not_found" to "Auto-detect नहीं हुआ। Manually details डालें:",
+            "manual_mode" to "Manual Mode"
         )
         WizardLanguage.TAMIL -> mapOf(
             "title" to "அமைப்பு - ஒரு முறை மட்டும்",
@@ -78,24 +84,29 @@ private fun getStrings(lang: WizardLanguage): Map<String, String> {
             "step1_title" to "Wireless Debugging-ஐ இயக்கவும்",
             "step1_desc" to "Phone Settings > Developer Options > Wireless Debugging enable செய்யவும்.\n\nDeveloper Options தெரியவில்லையா? Settings > About Phone > Build Number-ஐ 7 முறை tap செய்யவும்.",
             "step1_button" to "Developer Options திறக்கவும்",
-            "step2_title" to "Pairing Code உள்ளிடவும்",
-            "step2_desc" to "Wireless Debugging > 'Pair device with pairing code' tap செய்யவும்.\nகாண்பிக்கும் code மற்றும் port-ஐ கீழே உள்ளிடவும்:",
+            "step2_title" to "Auto Setup",
+            "step2_desc" to "'Start Auto Setup' tap செய்யவும், பின்னர் Wireless Debugging-ல் 'Pair device with pairing code' tap செய்யவும். 6-digit code மட்டும் உள்ளிடவும்.",
             "step3_title" to "Permission அனுமதிக்கவும்",
             "step3_desc" to "ஒரு popup வரும் - 'Allow' button அழுத்தவும்.",
             "step3_button" to "Permission கொடுக்கவும்",
             "info_title" to "முக்கிய தகவல்",
             "info_text" to "• இந்த setup ஒரு முறை மட்டும்\n• Phone restart ஆனால் மீண்டும் pairing செய்ய வேண்டும்\n• Settings-ல் 'Manage Shizuku' ON செய்தால் auto-start ஆகும்\n• தரவு அல்லது privacy பிரச்சனை இல்லை",
             "pairing_code" to "Pairing Code (6 இலக்கம்)",
-            "pairing_port" to "Pairing Port (எ.கா. 37429)",
-            "pair_button" to "Pair & Start",
+            "pairing_port" to "Port",
+            "pair_button" to "Pair & Connect",
             "pairing_progress" to "Pairing நடக்கிறது...",
             "pairing_success" to "Pairing வெற்றி! Shizuku தொடங்குகிறது...",
-            "pairing_fail" to "Pairing தோல்வி. Code/Port சரிபார்க்கவும்.",
+            "pairing_fail" to "Pairing தோல்வி. Code சரிபார்க்கவும்.",
             "pairing_done" to "Pairing முடிந்தது! Shizuku தொடங்கியது.",
-            "enter_code_error" to "6 digit code மற்றும் port உள்ளிடவும்",
+            "enter_code_error" to "6 digit code உள்ளிடவும்",
             "refresh" to "Refresh",
             "continue_btn" to "Continue",
-            "select_language" to "மொழியை தேர்ந்தெடுக்கவும்"
+            "select_language" to "மொழியை தேர்ந்தெடுக்கவும்",
+            "auto_setup_btn" to "Auto Setup தொடங்கவும்",
+            "auto_searching" to "Pairing service தேடுகிறது...",
+            "auto_found" to "Service கிடைத்தது! 6-digit code உள்ளிடவும்:",
+            "auto_not_found" to "Auto-detect ஆகவில்லை. Manually உள்ளிடவும்:",
+            "manual_mode" to "Manual Mode"
         )
         WizardLanguage.TELUGU -> mapOf(
             "title" to "సెటప్ - ఒక్కసారి మాత్రమే",
@@ -103,24 +114,29 @@ private fun getStrings(lang: WizardLanguage): Map<String, String> {
             "step1_title" to "Wireless Debugging ఆన్ చేయండి",
             "step1_desc" to "Phone Settings > Developer Options > Wireless Debugging enable చేయండి.\n\nDeveloper Options కనిపించడం లేదా? Settings > About Phone > Build Number పై 7 సార్లు tap చేయండి.",
             "step1_button" to "Developer Options తెరవండి",
-            "step2_title" to "Pairing Code ఎంటర్ చేయండి",
-            "step2_desc" to "Wireless Debugging > 'Pair device with pairing code' tap చేయండి.\nకనిపించే code మరియు port క్రింద ఎంటర్ చేయండి:",
+            "step2_title" to "Auto Setup",
+            "step2_desc" to "'Start Auto Setup' tap చేయండి, తర్వాత Wireless Debugging లో 'Pair device with pairing code' tap చేయండి. 6-digit code మాత్రమే ఎంటర్ చేయండి.",
             "step3_title" to "Permission Allow చేయండి",
             "step3_desc" to "ఒక popup వస్తుంది - 'Allow' button నొక్కండి.",
             "step3_button" to "Permission ఇవ్వండి",
             "info_title" to "ముఖ్యమైన సమాచారం",
             "info_text" to "• ఈ setup ఒక్కసారి మాత్రమే\n• Phone restart అయితే మళ్ళీ pairing చేయాలి\n• Settings లో 'Manage Shizuku' ON చేస్తే auto-start అవుతుంది\n• డేటా లేదా privacy సమస్య లేదు",
             "pairing_code" to "Pairing Code (6 అంకెలు)",
-            "pairing_port" to "Pairing Port (ఉదా. 37429)",
-            "pair_button" to "Pair & Start",
+            "pairing_port" to "Port",
+            "pair_button" to "Pair & Connect",
             "pairing_progress" to "Pairing జరుగుతోంది...",
             "pairing_success" to "Pairing విజయవంతం! Shizuku ప్రారంభమవుతోంది...",
-            "pairing_fail" to "Pairing విఫలం. Code/Port తనిఖీ చేయండి.",
+            "pairing_fail" to "Pairing విఫలం. Code తనిఖీ చేయండి.",
             "pairing_done" to "Pairing పూర్తి! Shizuku ప్రారంభమైంది.",
-            "enter_code_error" to "6 digit code మరియు port ఎంటర్ చేయండి",
+            "enter_code_error" to "6 digit code ఎంటర్ చేయండి",
             "refresh" to "Refresh",
             "continue_btn" to "Continue",
-            "select_language" to "భాషను ఎంచుకోండి"
+            "select_language" to "భాషను ఎంచుకోండి",
+            "auto_setup_btn" to "Auto Setup ప్రారంభించండి",
+            "auto_searching" to "Pairing service వెతుకుతోంది...",
+            "auto_found" to "Service దొరికింది! 6-digit code ఎంటర్ చేయండి:",
+            "auto_not_found" to "Auto-detect కాలేదు. Manually ఎంటర్ చేయండి:",
+            "manual_mode" to "Manual Mode"
         )
         else -> mapOf(
             "title" to "Setup - One Time Only",
@@ -128,24 +144,29 @@ private fun getStrings(lang: WizardLanguage): Map<String, String> {
             "step1_title" to "Enable Wireless Debugging",
             "step1_desc" to "Go to Phone Settings > Developer Options > Enable Wireless Debugging.\n\nCan't find Developer Options? Go to Settings > About Phone > Tap Build Number 7 times.",
             "step1_button" to "Open Developer Options",
-            "step2_title" to "Enter Pairing Code",
-            "step2_desc" to "In Wireless Debugging, tap 'Pair device with pairing code'.\nEnter the code and port shown below:",
+            "step2_title" to "Auto Setup",
+            "step2_desc" to "Tap 'Start Auto Setup', then in Wireless Debugging tap 'Pair device with pairing code'. Enter only the 6-digit code below — IP and port are detected automatically.",
             "step3_title" to "Allow Permission",
             "step3_desc" to "A popup will appear - tap the 'Allow' button.",
             "step3_button" to "Grant Permission",
             "info_title" to "Important Information",
             "info_text" to "• This setup is required only ONCE\n• After phone restart, you'll need to pair again\n• Enable 'Manage Shizuku' in Settings for auto-start\n• No data or privacy issues - everything is local",
             "pairing_code" to "Pairing Code (6 digits)",
-            "pairing_port" to "Pairing Port (e.g. 37429)",
-            "pair_button" to "Pair & Start",
+            "pairing_port" to "Port",
+            "pair_button" to "Pair & Connect",
             "pairing_progress" to "Pairing in progress...",
             "pairing_success" to "Pairing successful! Starting Shizuku...",
-            "pairing_fail" to "Pairing failed. Please check code/port and try again.",
+            "pairing_fail" to "Pairing failed. Please check code and try again.",
             "pairing_done" to "Pairing done! Shizuku started.",
-            "enter_code_error" to "Please enter 6 digit code and port",
+            "enter_code_error" to "Please enter the 6-digit pairing code",
             "refresh" to "Refresh",
             "continue_btn" to "Continue",
-            "select_language" to "Select Language"
+            "select_language" to "Select Language",
+            "auto_setup_btn" to "Start Auto Setup",
+            "auto_searching" to "Searching for pairing service...",
+            "auto_found" to "Service found! Enter the 6-digit code:",
+            "auto_not_found" to "Could not auto-detect. Enter details manually:",
+            "manual_mode" to "Enter Manually"
         )
     }
 }
@@ -167,17 +188,13 @@ fun ShizukuSetupWizardScreen(
     var currentStep by remember { mutableIntStateOf(0) }
     var pairingCode by remember { mutableStateOf("") }
     var pairingPort by remember { mutableStateOf("") }
-    // Auto-detect Wi-Fi IP address for better default
-    val detectedIp = remember {
-        try {
-            val manager = AdbPairingManager(context)
-            manager.getDeviceWifiIp() ?: "127.0.0.1"
-        } catch (_: Exception) { "127.0.0.1" }
-    }
-    var pairingHost by remember { mutableStateOf(detectedIp) }
+    var pairingHost by remember { mutableStateOf("") }
     var statusMessage by remember { mutableStateOf("") }
     var isPairing by remember { mutableStateOf(false) }
     var pairingDone by remember { mutableStateOf(false) }
+    var isAutoSearching by remember { mutableStateOf(false) }
+    var autoDetected by remember { mutableStateOf(false) }
+    var showManualFields by remember { mutableStateOf(false) }
 
     val strings = getStrings(selectedLanguage)
 
@@ -277,7 +294,7 @@ fun ShizukuSetupWizardScreen(
                     onButtonClick = { openDeveloperOptions(context) }
                 )
 
-                // Step 2: Enter Pairing Code
+                // Step 2: Auto Setup
                 SetupStepCard(
                     stepNumber = 2,
                     title = strings["step2_title"] ?: "",
@@ -287,30 +304,103 @@ fun ShizukuSetupWizardScreen(
                     icon = Icons.Default.Pin,
                     customContent = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = pairingCode,
-                                onValueChange = { pairingCode = it.filter { c -> c.isDigit() }.take(6) },
-                                label = { Text(strings["pairing_code"] ?: "Pairing Code") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Auto Setup button
+                            if (!autoDetected && !showManualFields && !isAutoSearching) {
+                                Button(
+                                    onClick = {
+                                        isAutoSearching = true
+                                        statusMessage = strings["auto_searching"] ?: "Searching..."
+                                        scope.launch {
+                                            val discovery = AdbServiceDiscovery(context)
+                                            val service = discovery.discoverPairingService(20000)
+                                            if (service != null) {
+                                                pairingHost = service.host
+                                                pairingPort = service.port.toString()
+                                                autoDetected = true
+                                                statusMessage = strings["auto_found"] ?: "Service found!"
+                                            } else {
+                                                // Fallback: try Wi-Fi IP detection
+                                                val manager = AdbPairingManager(context)
+                                                val wifiIp = manager.getDeviceWifiIp()
+                                                if (wifiIp != null) {
+                                                    pairingHost = wifiIp
+                                                }
+                                                showManualFields = true
+                                                statusMessage = strings["auto_not_found"] ?: "Could not auto-detect."
+                                            }
+                                            isAutoSearching = false
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(strings["auto_setup_btn"] ?: "Start Auto Setup")
+                                }
+
+                                TextButton(
+                                    onClick = {
+                                        showManualFields = true
+                                        val manager = AdbPairingManager(context)
+                                        val wifiIp = manager.getDeviceWifiIp()
+                                        if (wifiIp != null) pairingHost = wifiIp
+                                    }
+                                ) {
+                                    Text(strings["manual_mode"] ?: "Enter Manually")
+                                }
+                            }
+
+                            // Searching indicator
+                            if (isAutoSearching) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Text(
+                                        strings["auto_searching"] ?: "Searching...",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+
+                            // Pairing code field (shown when auto-detected or manual mode)
+                            if (autoDetected || showManualFields) {
                                 OutlinedTextField(
-                                    value = pairingHost,
-                                    onValueChange = { pairingHost = it },
-                                    label = { Text("IP Address") },
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                                OutlinedTextField(
-                                    value = pairingPort,
-                                    onValueChange = { pairingPort = it.filter { c -> c.isDigit() }.take(5) },
-                                    label = { Text(strings["pairing_port"] ?: "Port") },
+                                    value = pairingCode,
+                                    onValueChange = { pairingCode = it.filter { c -> c.isDigit() }.take(6) },
+                                    label = { Text(strings["pairing_code"] ?: "Pairing Code") },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.fillMaxWidth(),
                                     singleLine = true
                                 )
+
+                                // Show IP/Port fields only in manual mode or if auto detected for visibility
+                                if (showManualFields || autoDetected) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedTextField(
+                                            value = pairingHost,
+                                            onValueChange = { pairingHost = it },
+                                            label = { Text("IP") },
+                                            modifier = Modifier.weight(1f),
+                                            singleLine = true,
+                                            enabled = !autoDetected
+                                        )
+                                        OutlinedTextField(
+                                            value = pairingPort,
+                                            onValueChange = { pairingPort = it.filter { c -> c.isDigit() }.take(5) },
+                                            label = { Text(strings["pairing_port"] ?: "Port") },
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            modifier = Modifier.weight(1f),
+                                            singleLine = true,
+                                            enabled = !autoDetected
+                                        )
+                                    }
+                                }
                             }
 
                             if (statusMessage.isNotEmpty()) {
@@ -318,62 +408,71 @@ fun ShizukuSetupWizardScreen(
                                     statusMessage,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (statusMessage.contains("success", true) ||
+                                        statusMessage.contains("found", true) ||
                                         statusMessage.contains("सफल", true) ||
+                                        statusMessage.contains("मिल", true) ||
                                         statusMessage.contains("வெற்றி", true) ||
                                         statusMessage.contains("విజయ", true))
                                         MaterialTheme.colorScheme.primary
+                                    else if (statusMessage.contains("search", true) ||
+                                        statusMessage.contains("खोज", true))
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                     else
                                         MaterialTheme.colorScheme.error
                                 )
                             }
 
-                            Button(
-                                onClick = {
-                                    if (pairingCode.length == 6 && pairingPort.isNotEmpty()) {
-                                        isPairing = true
-                                        statusMessage = strings["pairing_progress"] ?: "Pairing..."
-                                        scope.launch {
-                                            val manager = AdbPairingManager(context)
-                                            val port = pairingPort.toIntOrNull() ?: 0
-                                            val host = pairingHost.ifBlank { "127.0.0.1" }
-                                            val result = manager.pairWithDetails(host, port, pairingCode)
-                                            if (result.success) {
-                                                statusMessage = strings["pairing_success"] ?: "Success!"
-                                                pairingDone = true
-                                                delay(1000)
-                                                val connected = manager.autoConnect()
-                                                if (connected) {
-                                                    manager.startShizukuServer()
-                                                    delay(3000)
-                                                    currentStep = 2
+                            // Pair button (shown when code + port available)
+                            if (autoDetected || showManualFields) {
+                                Button(
+                                    onClick = {
+                                        if (pairingCode.length == 6 && pairingPort.isNotEmpty()) {
+                                            isPairing = true
+                                            statusMessage = strings["pairing_progress"] ?: "Pairing..."
+                                            scope.launch {
+                                                val manager = AdbPairingManager(context)
+                                                val port = pairingPort.toIntOrNull() ?: 0
+                                                val host = pairingHost.ifBlank { "127.0.0.1" }
+                                                val result = manager.pairWithDetails(host, port, pairingCode)
+                                                if (result.success) {
+                                                    statusMessage = strings["pairing_success"] ?: "Success!"
+                                                    pairingDone = true
+                                                    delay(1000)
+                                                    val connected = manager.autoConnect()
+                                                    if (connected) {
+                                                        manager.startShizukuServer()
+                                                        delay(3000)
+                                                        currentStep = 2
+                                                    } else {
+                                                        statusMessage = strings["pairing_done"] ?: "Pairing done!"
+                                                        currentStep = 2
+                                                    }
                                                 } else {
-                                                    statusMessage = strings["pairing_done"] ?: "Pairing done!"
-                                                    currentStep = 2
+                                                    statusMessage = (strings["pairing_fail"] ?: "Pairing failed.") +
+                                                        if (result.errorDetail.isNotEmpty()) "\n(${result.errorDetail})" else ""
                                                 }
-                                            } else {
-                                                statusMessage = (strings["pairing_fail"] ?: "Pairing failed.") +
-                                                    if (result.errorDetail.isNotEmpty()) "\n(${result.errorDetail})" else ""
+                                                isPairing = false
                                             }
-                                            isPairing = false
+                                        } else {
+                                            statusMessage = strings["enter_code_error"] ?: "Enter code"
                                         }
-                                    } else {
-                                        statusMessage = strings["enter_code_error"] ?: "Enter code and port"
+                                    },
+                                    enabled = !isPairing && pairingCode.length == 6 && pairingPort.isNotEmpty(),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    if (isPairing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
                                     }
-                                },
-                                enabled = !isPairing && pairingCode.length == 6 && pairingPort.isNotEmpty(),
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                if (isPairing) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
+                                    Text(
+                                        if (isPairing) strings["pairing_progress"] ?: "Pairing..."
+                                        else strings["pair_button"] ?: "Pair & Connect"
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
                                 }
-                                Text(
-                                    if (isPairing) strings["pairing_progress"] ?: "Pairing..."
-                                    else strings["pair_button"] ?: "Pair & Start"
-                                )
                             }
                         }
                     }
