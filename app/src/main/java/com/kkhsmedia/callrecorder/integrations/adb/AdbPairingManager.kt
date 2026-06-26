@@ -166,41 +166,73 @@ class AdbPairingManager(private val context: Context) {
         return null
     }
 
+    /**
+     * Pair using localhost (127.0.0.1) with retry logic.
+     * On same device, loopback is most reliable - no network binding needed.
+     * Falls back to WiFi IP if localhost fails.
+     */
     suspend fun pairWithDetails(host: String, port: Int, pairingCode: String): PairResult = withContext(Dispatchers.IO) {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        try {
-            // Force IPv4 stack - fixes "from /::" IPv6 socket issue on dual-stack devices
-            System.setProperty("java.net.preferIPv4Stack", "true")
-            AppLogger.i(TAG, "Forced IPv4 stack preference")
+        System.setProperty("java.net.preferIPv4Stack", "true")
 
-            // Bind process to Wi-Fi network to ensure connection goes through Wi-Fi
-            val wifiNetwork = findWifiNetwork()
-            if (wifiNetwork != null) {
-                cm.bindProcessToNetwork(wifiNetwork)
-                AppLogger.i(TAG, "Bound process to Wi-Fi network")
-            } else {
-                AppLogger.w(TAG, "No Wi-Fi network found, proceeding without binding")
-            }
-
-            AppLogger.i(TAG, "Pairing to $host:$port ...")
-            val result = connectionManager.pair(host, port, pairingCode)
-            AppLogger.i(TAG, "Pairing result: $result")
-            PairResult(result, if (!result) "Pairing returned false - code may have expired" else "")
-        } catch (e: java.lang.reflect.InvocationTargetException) {
-            val cause = e.cause ?: e
-            val msg = "${cause.javaClass.simpleName}: ${cause.message ?: "unknown"}"
-            AppLogger.e(TAG, "Pairing failed (ITE): $msg", cause)
-            PairResult(false, msg)
-        } catch (e: Exception) {
-            val msg = "${e.javaClass.simpleName}: ${e.message ?: "unknown"}"
-            AppLogger.e(TAG, "Pairing failed: $msg", e)
-            PairResult(false, msg)
-        } finally {
-            // Restore original network binding
-            cm.bindProcessToNetwork(null)
-            System.setProperty("java.net.preferIPv4Stack", "false")
-            AppLogger.i(TAG, "Restored default network binding")
+        // Try localhost first (most reliable on same device), then WiFi IP as fallback
+        val hostsToTry = mutableListOf("127.0.0.1")
+        val wifiIp = getDeviceWifiIp()
+        if (wifiIp != null && wifiIp != "127.0.0.1") {
+            hostsToTry.add(wifiIp)
         }
+        if (host != "127.0.0.1" && host != wifiIp) {
+            hostsToTry.add(host)
+        }
+
+        var lastError = ""
+        for (targetHost in hostsToTry) {
+            for (attempt in 1..3) {
+                try {
+                    AppLogger.i(TAG, "Pairing attempt $attempt to $targetHost:$port")
+                    val result = connectionManager.pair(targetHost, port, pairingCode)
+                    if (result) {
+                        AppLogger.i(TAG, "Pairing SUCCESS on $targetHost:$port (attempt $attempt)")
+                        return@withContext PairResult(true)
+                    }
+                    lastError = "Pairing returned false - code may have expired"
+                    AppLogger.w(TAG, "Pair returned false on $targetHost (attempt $attempt)")
+                } catch (e: java.lang.reflect.InvocationTargetException) {
+                    val cause = e.cause ?: e
+                    lastError = "${cause.javaClass.simpleName}: ${cause.message ?: "unknown"}"
+                    AppLogger.w(TAG, "Attempt $attempt on $targetHost: $lastError")
+                } catch (e: Exception) {
+                    lastError = "${e.javaClass.simpleName}: ${e.message ?: "unknown"}"
+                    AppLogger.w(TAG, "Attempt $attempt on $targetHost: $lastError")
+                }
+                if (attempt < 3) {
+                    Thread.sleep(500L * attempt)
+                }
+            }
+        }
+
+        // Final fallback: try with WiFi network binding
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val wifiNetwork = findWifiNetwork()
+        if (wifiNetwork != null && wifiIp != null) {
+            try {
+                cm.bindProcessToNetwork(wifiNetwork)
+                AppLogger.i(TAG, "Final attempt: bound to WiFi, connecting to $wifiIp:$port")
+                val result = connectionManager.pair(wifiIp, port, pairingCode)
+                if (result) {
+                    AppLogger.i(TAG, "Pairing SUCCESS with WiFi binding!")
+                    return@withContext PairResult(true)
+                }
+            } catch (e: Exception) {
+                lastError = "${e.javaClass.simpleName}: ${e.message ?: "unknown"}"
+                AppLogger.e(TAG, "WiFi-bound attempt failed: $lastError", e)
+            } finally {
+                cm.bindProcessToNetwork(null)
+            }
+        }
+
+        System.setProperty("java.net.preferIPv4Stack", "false")
+        AppLogger.e(TAG, "All pairing attempts failed. Last error: $lastError")
+        PairResult(false, lastError)
     }
 
     suspend fun autoConnect(): Boolean = withContext(Dispatchers.IO) {
@@ -216,21 +248,26 @@ class AdbPairingManager(private val context: Context) {
     }
 
     suspend fun connect(host: String, port: Int): Boolean = withContext(Dispatchers.IO) {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        try {
-            val wifiNetwork = findWifiNetwork()
-            if (wifiNetwork != null) {
-                cm.bindProcessToNetwork(wifiNetwork)
+        // Try localhost first, then provided host
+        val hostsToTry = mutableListOf("127.0.0.1")
+        if (host != "127.0.0.1") hostsToTry.add(host)
+        val wifiIp = getDeviceWifiIp()
+        if (wifiIp != null && wifiIp != "127.0.0.1" && wifiIp != host) hostsToTry.add(wifiIp)
+
+        for (targetHost in hostsToTry) {
+            try {
+                AppLogger.i(TAG, "Connecting to $targetHost:$port")
+                val result = connectionManager.connect(targetHost, port)
+                if (result) {
+                    AppLogger.i(TAG, "Connected to $targetHost:$port")
+                    return@withContext true
+                }
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Connect to $targetHost:$port failed: ${e.message}")
             }
-            val result = connectionManager.connect(host, port)
-            AppLogger.i(TAG, "Connect result: $result")
-            result
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Connect failed", e)
-            false
-        } finally {
-            cm.bindProcessToNetwork(null)
         }
+        AppLogger.e(TAG, "All connect attempts failed")
+        false
     }
 
     fun getDeviceWifiIp(): String? {
