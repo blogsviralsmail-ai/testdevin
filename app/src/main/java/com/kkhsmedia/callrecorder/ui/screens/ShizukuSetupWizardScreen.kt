@@ -167,7 +167,14 @@ fun ShizukuSetupWizardScreen(
     var currentStep by remember { mutableIntStateOf(0) }
     var pairingCode by remember { mutableStateOf("") }
     var pairingPort by remember { mutableStateOf("") }
-    var pairingHost by remember { mutableStateOf("127.0.0.1") }
+    // Auto-detect Wi-Fi IP address for better default
+    val detectedIp = remember {
+        try {
+            val manager = AdbPairingManager(context)
+            manager.getDeviceWifiIp() ?: "127.0.0.1"
+        } catch (_: Exception) { "127.0.0.1" }
+    }
+    var pairingHost by remember { mutableStateOf(detectedIp) }
     var statusMessage by remember { mutableStateOf("") }
     var isPairing by remember { mutableStateOf(false) }
     var pairingDone by remember { mutableStateOf(false) }

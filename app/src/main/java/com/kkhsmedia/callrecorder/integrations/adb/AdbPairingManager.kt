@@ -6,6 +6,9 @@
 package com.kkhsmedia.callrecorder.integrations.adb
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import com.kkhsmedia.callrecorder.utils.AppLogger
 import io.github.muntashirakon.adb.AbsAdbConnectionManager
@@ -152,8 +155,32 @@ class AdbPairingManager(private val context: Context) {
 
     data class PairResult(val success: Boolean, val errorDetail: String = "")
 
+    private fun findWifiNetwork(): Network? {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        for (network in cm.allNetworks) {
+            val caps = cm.getNetworkCapabilities(network) ?: continue
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                return network
+            }
+        }
+        return null
+    }
+
     suspend fun pairWithDetails(host: String, port: Int, pairingCode: String): PairResult = withContext(Dispatchers.IO) {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        var previousNetwork: Network? = null
         try {
+            // Bind process to Wi-Fi network to ensure connection goes through Wi-Fi
+            // This fixes ECONNREFUSED on devices where mobile data is default route
+            val wifiNetwork = findWifiNetwork()
+            if (wifiNetwork != null) {
+                previousNetwork = cm.activeNetwork
+                cm.bindProcessToNetwork(wifiNetwork)
+                AppLogger.i(TAG, "Bound process to Wi-Fi network")
+            } else {
+                AppLogger.w(TAG, "No Wi-Fi network found, proceeding without binding")
+            }
+
             AppLogger.i(TAG, "Pairing to $host:$port ...")
             val result = connectionManager.pair(host, port, pairingCode)
             AppLogger.i(TAG, "Pairing result: $result")
@@ -167,6 +194,10 @@ class AdbPairingManager(private val context: Context) {
             val msg = "${e.javaClass.simpleName}: ${e.message ?: "unknown"}"
             AppLogger.e(TAG, "Pairing failed: $msg", e)
             PairResult(false, msg)
+        } finally {
+            // Restore original network binding
+            cm.bindProcessToNetwork(null)
+            AppLogger.i(TAG, "Restored default network binding")
         }
     }
 
@@ -183,14 +214,38 @@ class AdbPairingManager(private val context: Context) {
     }
 
     suspend fun connect(host: String, port: Int): Boolean = withContext(Dispatchers.IO) {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         try {
+            val wifiNetwork = findWifiNetwork()
+            if (wifiNetwork != null) {
+                cm.bindProcessToNetwork(wifiNetwork)
+            }
             val result = connectionManager.connect(host, port)
             AppLogger.i(TAG, "Connect result: $result")
             result
         } catch (e: Exception) {
             AppLogger.e(TAG, "Connect failed", e)
             false
+        } finally {
+            cm.bindProcessToNetwork(null)
         }
+    }
+
+    fun getDeviceWifiIp(): String? {
+        try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val wifiNetwork = findWifiNetwork() ?: return null
+            val linkProperties = cm.getLinkProperties(wifiNetwork) ?: return null
+            for (addr in linkProperties.linkAddresses) {
+                val ip = addr.address
+                if (ip is java.net.Inet4Address && !ip.isLoopbackAddress) {
+                    return ip.hostAddress
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to get Wi-Fi IP", e)
+        }
+        return null
     }
 
     suspend fun startShizukuServer(): Boolean = withContext(Dispatchers.IO) {
