@@ -167,14 +167,13 @@ class AdbPairingManager(private val context: Context) {
     }
 
     /**
-     * Pair using localhost (127.0.0.1) with retry logic.
-     * On same device, loopback is most reliable - no network binding needed.
-     * Falls back to WiFi IP if localhost fails.
+     * Pair with ADB using IPv4 TCP proxy to bypass IPv6 socket issues.
+     *
+     * On some devices (e.g. OnePlus Open), the library's Socket(host, port)
+     * creates a dual-stack IPv6 socket (source /::`), causing ECONNREFUSED.
+     * We route all connections through an IPv4-only TCP proxy to fix this.
      */
     suspend fun pairWithDetails(host: String, port: Int, pairingCode: String): PairResult = withContext(Dispatchers.IO) {
-        System.setProperty("java.net.preferIPv4Stack", "true")
-
-        // Try localhost first (most reliable on same device), then WiFi IP as fallback
         val hostsToTry = mutableListOf("127.0.0.1")
         val wifiIp = getDeviceWifiIp()
         if (wifiIp != null && wifiIp != "127.0.0.1") {
@@ -185,11 +184,14 @@ class AdbPairingManager(private val context: Context) {
         }
 
         var lastError = ""
+
         for (targetHost in hostsToTry) {
             for (attempt in 1..3) {
+                val proxy = IPv4TcpProxy()
                 try {
-                    AppLogger.i(TAG, "Pairing attempt $attempt to $targetHost:$port")
-                    val result = connectionManager.pair(targetHost, port, pairingCode)
+                    val proxyPort = proxy.start(targetHost, port)
+                    AppLogger.i(TAG, "Attempt $attempt: pairing via IPv4 proxy 127.0.0.1:$proxyPort -> $targetHost:$port")
+                    val result = connectionManager.pair("127.0.0.1", proxyPort, pairingCode)
                     if (result) {
                         AppLogger.i(TAG, "Pairing SUCCESS on $targetHost:$port (attempt $attempt)")
                         return@withContext PairResult(true)
@@ -203,6 +205,8 @@ class AdbPairingManager(private val context: Context) {
                 } catch (e: Exception) {
                     lastError = "${e.javaClass.simpleName}: ${e.message ?: "unknown"}"
                     AppLogger.w(TAG, "Attempt $attempt on $targetHost: $lastError")
+                } finally {
+                    proxy.stop()
                 }
                 if (attempt < 3) {
                     Thread.sleep(500L * attempt)
@@ -210,27 +214,6 @@ class AdbPairingManager(private val context: Context) {
             }
         }
 
-        // Final fallback: try with WiFi network binding
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val wifiNetwork = findWifiNetwork()
-        if (wifiNetwork != null && wifiIp != null) {
-            try {
-                cm.bindProcessToNetwork(wifiNetwork)
-                AppLogger.i(TAG, "Final attempt: bound to WiFi, connecting to $wifiIp:$port")
-                val result = connectionManager.pair(wifiIp, port, pairingCode)
-                if (result) {
-                    AppLogger.i(TAG, "Pairing SUCCESS with WiFi binding!")
-                    return@withContext PairResult(true)
-                }
-            } catch (e: Exception) {
-                lastError = "${e.javaClass.simpleName}: ${e.message ?: "unknown"}"
-                AppLogger.e(TAG, "WiFi-bound attempt failed: $lastError", e)
-            } finally {
-                cm.bindProcessToNetwork(null)
-            }
-        }
-
-        System.setProperty("java.net.preferIPv4Stack", "false")
         AppLogger.e(TAG, "All pairing attempts failed. Last error: $lastError")
         PairResult(false, lastError)
     }
@@ -248,7 +231,6 @@ class AdbPairingManager(private val context: Context) {
     }
 
     suspend fun connect(host: String, port: Int): Boolean = withContext(Dispatchers.IO) {
-        // Try localhost first, then provided host
         val hostsToTry = mutableListOf("127.0.0.1")
         if (host != "127.0.0.1") hostsToTry.add(host)
         val wifiIp = getDeviceWifiIp()
