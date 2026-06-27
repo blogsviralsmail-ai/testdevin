@@ -43,7 +43,7 @@ fun EditLimitDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Plans start at just ₹49/month",
+                    text = "Subscribe to unlock all features!",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF1A73E8)

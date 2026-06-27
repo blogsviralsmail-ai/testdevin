@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.app.role.RoleManager
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
@@ -133,8 +132,10 @@ fun MainApp(vm: MainViewModel) {
     val isPremium by vm.isPremium.collectAsState()
     val remainingFreeEdits by vm.remainingFreeEdits.collectAsState()
     val purchaseState by vm.billingManager.purchaseState.collectAsState()
+    val productDetails by vm.billingManager.productDetails.collectAsState()
 
     var showLimitDialog by remember { mutableStateOf(false) }
+    var defaultDialerRequested by remember { mutableStateOf(false) }
 
     LaunchedEffect(isPremium) {
         if (isPremium && currentScreen is Screen.Paywall) {
@@ -150,6 +151,20 @@ fun MainApp(vm: MainViewModel) {
             vm.loadCallLogs()
             vm.loadContacts()
         }
+    }
+
+    val defaultDialerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.WRITE_CALL_LOG,
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.CALL_PHONE,
+                Manifest.permission.READ_PHONE_STATE
+            )
+        )
     }
 
     val notes by vm.notes.collectAsState()
@@ -226,15 +241,36 @@ fun MainApp(vm: MainViewModel) {
     }
 
     LaunchedEffect(Unit) {
-        permissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.READ_CALL_LOG,
-                Manifest.permission.WRITE_CALL_LOG,
-                Manifest.permission.READ_CONTACTS,
-                Manifest.permission.CALL_PHONE,
-                Manifest.permission.READ_PHONE_STATE
-            )
-        )
+        if (!defaultDialerRequested) {
+            defaultDialerRequested = true
+            val alreadyDefault = isDefaultDialer(context)
+            if (alreadyDefault) {
+                permissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.READ_CALL_LOG,
+                        Manifest.permission.WRITE_CALL_LOG,
+                        Manifest.permission.READ_CONTACTS,
+                        Manifest.permission.CALL_PHONE,
+                        Manifest.permission.READ_PHONE_STATE
+                    )
+                )
+            } else {
+                val intent = getDefaultDialerIntent(context)
+                if (intent != null) {
+                    defaultDialerLauncher.launch(intent)
+                } else {
+                    permissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.READ_CALL_LOG,
+                            Manifest.permission.WRITE_CALL_LOG,
+                            Manifest.permission.READ_CONTACTS,
+                            Manifest.permission.CALL_PHONE,
+                            Manifest.permission.READ_PHONE_STATE
+                        )
+                    )
+                }
+            }
+        }
     }
 
     LaunchedEffect(statusMessage) {
@@ -434,6 +470,7 @@ fun MainApp(vm: MainViewModel) {
                     }
                     PaywallScreen(
                         editCount = editCount,
+                        productDetails = productDetails,
                         errorMessage = billingError,
                         onSubscribe = { planType ->
                             val activity = context as? Activity
@@ -466,6 +503,19 @@ fun MainApp(vm: MainViewModel) {
 private fun isDefaultDialer(context: android.content.Context): Boolean {
     val telecomManager = context.getSystemService(android.content.Context.TELECOM_SERVICE) as? TelecomManager
     return telecomManager?.defaultDialerPackage == context.packageName
+}
+
+private fun getDefaultDialerIntent(context: android.content.Context): Intent? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val roleManager = context.getSystemService(android.content.Context.ROLE_SERVICE) as? RoleManager
+        if (roleManager?.isRoleAvailable(RoleManager.ROLE_DIALER) == true) {
+            roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER)
+        } else null
+    } else {
+        Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).apply {
+            putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, context.packageName)
+        }
+    }
 }
 
 private fun requestDefaultDialer(context: android.content.Context) {

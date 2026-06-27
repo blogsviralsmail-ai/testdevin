@@ -27,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,15 +47,78 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.android.billingclient.api.ProductDetails
+
+data class PlanPricing(
+    val monthlyPrice: String?,
+    val monthlyPeriod: String,
+    val yearlyPrice: String?,
+    val yearlyPeriod: String,
+    val yearlyOriginalPrice: String?,
+    val lifetimePrice: String?,
+    val lifetimePeriod: String
+)
+
+fun extractPricing(productDetails: Map<String, ProductDetails>): PlanPricing {
+    val monthlyDetails = productDetails["callpro_monthly_49"]
+    val yearlyDetails = productDetails["callpro_yearly_399"]
+    val lifetimeDetails = productDetails["callpro_lifetime_999"]
+
+    val monthlyPrice = monthlyDetails?.subscriptionOfferDetails
+        ?.firstOrNull()?.pricingPhases?.pricingPhaseList
+        ?.firstOrNull()?.formattedPrice
+
+    val yearlyPrice = yearlyDetails?.subscriptionOfferDetails
+        ?.firstOrNull()?.pricingPhases?.pricingPhaseList
+        ?.firstOrNull()?.formattedPrice
+
+    val lifetimePrice = lifetimeDetails?.oneTimePurchaseOfferDetails?.formattedPrice
+
+    val monthlyMicros = monthlyDetails?.subscriptionOfferDetails
+        ?.firstOrNull()?.pricingPhases?.pricingPhaseList
+        ?.firstOrNull()?.priceAmountMicros ?: 0L
+
+    val yearlyOriginalPrice = if (monthlyMicros > 0) {
+        val annualFromMonthly = monthlyMicros * 12
+        val currencyCode = monthlyDetails?.subscriptionOfferDetails
+            ?.firstOrNull()?.pricingPhases?.pricingPhaseList
+            ?.firstOrNull()?.priceCurrencyCode ?: ""
+        val amountWhole = annualFromMonthly / 1_000_000
+        formatSimplePrice(amountWhole, currencyCode)
+    } else null
+
+    return PlanPricing(
+        monthlyPrice = monthlyPrice,
+        monthlyPeriod = "/month",
+        yearlyPrice = yearlyPrice,
+        yearlyPeriod = "/year",
+        yearlyOriginalPrice = yearlyOriginalPrice,
+        lifetimePrice = lifetimePrice,
+        lifetimePeriod = "one-time"
+    )
+}
+
+private fun formatSimplePrice(amount: Long, currencyCode: String): String {
+    return when (currencyCode) {
+        "INR" -> "\u20B9$amount"
+        "USD" -> "\$$amount"
+        "EUR" -> "\u20AC$amount"
+        "GBP" -> "\u00A3$amount"
+        else -> "$currencyCode $amount"
+    }
+}
 
 @Composable
 fun PaywallScreen(
     editCount: Int,
+    productDetails: Map<String, ProductDetails> = emptyMap(),
     errorMessage: String? = null,
     onSubscribe: (planType: String) -> Unit,
     onDismiss: () -> Unit
 ) {
     var selectedPlan by remember { mutableStateOf("yearly") }
+    val pricing = remember(productDetails) { extractPricing(productDetails) }
+    val hasLoadedPrices = pricing.monthlyPrice != null || pricing.lifetimePrice != null
 
     Column(
         modifier = Modifier
@@ -173,38 +237,67 @@ fun PaywallScreen(
                 fontWeight = FontWeight.SemiBold
             )
 
-            PlanCard(
-                title = "Monthly",
-                price = "₹49",
-                period = "/month",
-                isSelected = selectedPlan == "monthly",
-                onClick = { selectedPlan = "monthly" }
-            )
+            if (!hasLoadedPrices) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = Color(0xFF1A73E8)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Loading prices...",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            } else {
+                if (pricing.monthlyPrice != null) {
+                    PlanCard(
+                        title = "Monthly",
+                        price = pricing.monthlyPrice,
+                        period = pricing.monthlyPeriod,
+                        isSelected = selectedPlan == "monthly",
+                        onClick = { selectedPlan = "monthly" }
+                    )
+                }
 
-            PlanCard(
-                title = "Yearly",
-                price = "₹399",
-                period = "/year",
-                badge = "SAVE 32%",
-                originalPrice = "₹588",
-                isSelected = selectedPlan == "yearly",
-                isRecommended = true,
-                onClick = { selectedPlan = "yearly" }
-            )
+                if (pricing.yearlyPrice != null) {
+                    PlanCard(
+                        title = "Yearly",
+                        price = pricing.yearlyPrice,
+                        period = pricing.yearlyPeriod,
+                        badge = "SAVE 32%",
+                        originalPrice = pricing.yearlyOriginalPrice,
+                        isSelected = selectedPlan == "yearly",
+                        isRecommended = true,
+                        onClick = { selectedPlan = "yearly" }
+                    )
+                }
 
-            PlanCard(
-                title = "Lifetime",
-                price = "₹999",
-                period = "one-time",
-                badge = "BEST VALUE",
-                isSelected = selectedPlan == "lifetime",
-                onClick = { selectedPlan = "lifetime" }
-            )
+                if (pricing.lifetimePrice != null) {
+                    PlanCard(
+                        title = "Lifetime",
+                        price = pricing.lifetimePrice,
+                        period = pricing.lifetimePeriod,
+                        badge = "BEST VALUE",
+                        isSelected = selectedPlan == "lifetime",
+                        onClick = { selectedPlan = "lifetime" }
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = { onSubscribe(selectedPlan) },
+                enabled = hasLoadedPrices,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -235,7 +328,7 @@ fun PaywallScreen(
             }
 
             Text(
-                text = "Cancel anytime • Secure payment via Google Play",
+                text = "Cancel anytime \u2022 Secure payment via Google Play",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center,
