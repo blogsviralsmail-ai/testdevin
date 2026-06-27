@@ -21,10 +21,20 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../callpro-release.keystore")
+            storePassword = "CallPro2024KKHSMedia"
+            keyAlias = "callpro"
+            keyPassword = "CallPro2024KKHSMedia"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
