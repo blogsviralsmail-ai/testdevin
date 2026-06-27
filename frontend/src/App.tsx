@@ -29,6 +29,7 @@ import PaymentLinksPage from './pages/payment-links/PaymentLinksPage';
 import ProductCatalogPage from './pages/product-catalog/ProductCatalogPage';
 import FacebookPage from './pages/facebook/FacebookPage';
 import InstagramPage from './pages/instagram/InstagramPage';
+import AiCallPage from './pages/ai-call/AiCallPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="product-catalog" element={<ProductCatalogPage />} />
           <Route path="facebook" element={<FacebookPage />} />
           <Route path="instagram" element={<InstagramPage />} />
+          <Route path="ai-call" element={<AiCallPage />} />
         </Route>
       </Routes>
     </>

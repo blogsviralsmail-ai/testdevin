@@ -57,6 +57,7 @@ const navItems: { section: string; items: NavItem[] }[] = [
   { section: 'Channels', items: [
     { to: '/facebook', icon: Facebook, label: 'Facebook', vendorOnly: true },
     { to: '/instagram', icon: Instagram, label: 'Instagram', vendorOnly: true },
+    { to: '/ai-call', icon: Phone, label: 'AI Call', vendorOnly: true },
   ]},
   { section: 'System', items: [
     { to: '/analytics', icon: BarChart3, label: 'Analytics' },

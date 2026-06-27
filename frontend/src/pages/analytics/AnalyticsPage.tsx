@@ -1,86 +1,112 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { BarChart3, Users, MessageSquare, Send } from 'lucide-react';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { BarChart3, TrendingUp, Users, MessageSquare, Send, Clock } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
 
-interface Overview {
-  totalContacts: number;
-  totalMessages: number;
-  totalCampaigns: number;
-  totalTemplates: number;
-  messagesToday: number;
-}
+interface Stats { totalMessages: number; sentMessages: number; receivedMessages: number; totalContacts: number; activeCampaigns: number; messagesByDay: { date: string; count: number }[]; }
 
 export default function AnalyticsPage() {
-  const [overview, setOverview] = useState<Overview | null>(null);
-  const [messageStats, setMessageStats] = useState<{ date: string; sent: number; received: number }[]>([]);
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 1;
+  const [stats, setStats] = useState<Stats>({ totalMessages: 0, sentMessages: 0, receivedMessages: 0, totalContacts: 0, activeCampaigns: 0, messagesByDay: [] });
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('7d');
 
   useEffect(() => {
-    const load = async () => {
+    const fetchAnalytics = async () => {
+      setLoading(true);
       try {
-        const [overviewRes, statsRes] = await Promise.all([
-          api.get('/analytics/overview'),
-          api.get('/analytics/messages?days=30'),
-        ]);
-        setOverview(overviewRes.data?.data || overviewRes.data);
-        setMessageStats(statsRes.data?.data || statsRes.data || []);
-      } catch (err) {
-        console.error('Analytics load error', err);
-      } finally {
-        setLoading(false);
-      }
+        const { data } = await api.get(`/analytics/overview?period=${period}`);
+        const d = data.data || data;
+        setStats(d);
+      } catch { /* ignore */ }
+      finally { setLoading(false); }
     };
-    load();
-  }, []);
+    fetchAnalytics();
+  }, [period]);
 
-  if (loading) return <div className="animate-pulse space-y-4"><div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-48" /><div className="grid grid-cols-1 md:grid-cols-4 gap-4">{[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-200 dark:bg-slate-700 rounded-xl" />)}</div></div>;
+  const statCards = [
+    { label: 'Total Messages', value: stats.totalMessages, icon: MessageSquare, color: 'text-blue-500 bg-blue-50' },
+    { label: 'Sent Messages', value: stats.sentMessages, icon: Send, color: 'text-emerald-500 bg-emerald-50' },
+    { label: 'Received', value: stats.receivedMessages, icon: TrendingUp, color: 'text-purple-500 bg-purple-50' },
+    { label: 'Total Contacts', value: stats.totalContacts, icon: Users, color: 'text-orange-500 bg-orange-50' },
+    { label: 'Active Campaigns', value: stats.activeCampaigns, icon: Send, color: 'text-pink-500 bg-pink-50' },
+  ];
 
-  const cards = overview ? [
-    { label: 'Total Contacts', value: overview.totalContacts, icon: Users, color: 'text-blue-500' },
-    { label: 'Total Messages', value: overview.totalMessages, icon: MessageSquare, color: 'text-emerald-500' },
-    { label: 'Total Campaigns', value: overview.totalCampaigns, icon: Send, color: 'text-purple-500' },
-    { label: 'Messages Today', value: overview.messagesToday, icon: BarChart3, color: 'text-orange-500' },
-  ] : [];
+  const maxCount = Math.max(...(stats.messagesByDay || []).map(d => d.count), 1);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold dark:text-white">Analytics</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Message and engagement analytics</p>
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold dark:text-white">Analytics</h1><p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{isAdmin ? 'Platform-wide analytics' : 'Your messaging analytics'}</p></div>
+        <div className="flex gap-2">
+          {['7d', '30d', '90d'].map(p => (
+            <button key={p} onClick={() => setPeriod(p)} className={`px-3 py-1.5 rounded-lg text-sm ${period === p ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 border dark:border-slate-700 dark:text-gray-300'}`}>{p === '7d' ? '7 Days' : p === '30d' ? '30 Days' : '90 Days'}</button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cards.map((card) => (
-          <div key={card.label} className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{card.label}</p>
-                <p className="text-2xl font-bold mt-1 dark:text-white">{card.value.toLocaleString()}</p>
+      {/* Stat Cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">{[1,2,3,4,5].map(i => <div key={i} className="h-24 bg-gray-100 dark:bg-slate-700 rounded-xl animate-pulse" />)}</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {statCards.map(s => (
+            <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div><p className="text-sm text-gray-500">{s.label}</p><p className="text-2xl font-bold dark:text-white mt-1">{s.value}</p></div>
+                <div className={`p-3 rounded-xl ${s.color}`}><s.icon size={20} /></div>
               </div>
-              <card.icon size={32} className={card.color} />
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Message Chart */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border dark:border-slate-700">
+        <h3 className="font-semibold dark:text-white mb-4">Messages Over Time</h3>
+        {(stats.messagesByDay || []).length === 0 ? (
+          <div className="h-48 flex items-center justify-center text-gray-400"><BarChart3 size={48} className="opacity-30" /><p className="ml-4">No data for selected period</p></div>
+        ) : (
+          <div className="flex items-end gap-1 h-48">
+            {stats.messagesByDay.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center">
+                <div className="w-full bg-emerald-500 rounded-t min-h-[2px] transition-all hover:bg-emerald-400" style={{ height: `${(d.count / maxCount) * 100}%` }} title={`${d.date}: ${d.count} messages`} />
+                <span className="text-[10px] text-gray-400 mt-1 truncate w-full text-center">{new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm">
-        <h3 className="text-lg font-semibold dark:text-white mb-4">Message Volume (Last 30 days)</h3>
-        <div className="h-72">
-          {messageStats.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={messageStats}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
-                <Tooltip />
-                <Bar dataKey="sent" fill="#10B981" name="Sent" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="received" fill="#6366F1" name="Received" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">No message data available</div>
-          )}
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border dark:border-slate-700">
+          <h3 className="font-semibold dark:text-white mb-4">Message Breakdown</h3>
+          <div className="space-y-3">
+            {[
+              { label: 'Sent', value: stats.sentMessages, pct: stats.totalMessages > 0 ? (stats.sentMessages / stats.totalMessages * 100).toFixed(1) : '0', color: 'bg-emerald-500' },
+              { label: 'Received', value: stats.receivedMessages, pct: stats.totalMessages > 0 ? (stats.receivedMessages / stats.totalMessages * 100).toFixed(1) : '0', color: 'bg-blue-500' },
+            ].map(item => (
+              <div key={item.label}>
+                <div className="flex justify-between mb-1"><span className="text-sm dark:text-gray-300">{item.label}</span><span className="text-sm dark:text-white">{item.value} ({item.pct}%)</span></div>
+                <div className="w-full bg-gray-200 dark:bg-slate-600 rounded-full h-2"><div className={`${item.color} h-2 rounded-full`} style={{ width: `${item.pct}%` }} /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border dark:border-slate-700">
+          <h3 className="font-semibold dark:text-white mb-4">Quick Stats</h3>
+          <div className="space-y-3">
+            {[
+              { label: 'Avg. Messages/Day', value: stats.messagesByDay?.length > 0 ? Math.round(stats.totalMessages / stats.messagesByDay.length) : 0 },
+              { label: 'Contacts Reached', value: stats.totalContacts },
+              { label: 'Active Campaigns', value: stats.activeCampaigns },
+              { label: 'Response Rate', value: stats.sentMessages > 0 ? `${((stats.receivedMessages / stats.sentMessages) * 100).toFixed(1)}%` : '0%' },
+            ].map(item => (
+              <div key={item.label} className="flex justify-between py-2 border-b dark:border-slate-700"><span className="text-sm text-gray-500">{item.label}</span><span className="text-sm font-semibold dark:text-white">{item.value}</span></div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
