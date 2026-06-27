@@ -38,6 +38,8 @@ import { PaymentLinksModule } from './modules/payment-links/payment-links.module
 import { ProductCatalogModule } from './modules/product-catalog/product-catalog.module';
 import { AiCallModule } from './modules/ai-call/ai-call.module';
 import { WebsocketModule } from './gateway/websocket.module';
+import { VendorFeaturesModule } from './modules/vendor-features/vendor-features.module';
+import { AdminFeaturesModule } from './modules/admin-features/admin-features.module';
 
 @Module({
   imports: [
@@ -82,6 +84,8 @@ import { WebsocketModule } from './gateway/websocket.module';
     PaymentLinksModule,
     ProductCatalogModule,
     AiCallModule,
+    VendorFeaturesModule,
+    AdminFeaturesModule,
   ],
   providers: [
     {
