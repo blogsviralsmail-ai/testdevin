@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { VendorGuard } from '../../common/guards/vendor.guard';
 import { VendorId } from '../../common/decorators';
@@ -33,5 +33,21 @@ export class WhatsappTemplateController {
     @Param('templateId') templateId: string,
   ) {
     return this.templateService.getTemplateById(vendorId, parseInt(templateId));
+  }
+
+  @Post()
+  async createTemplate(
+    @VendorId() vendorId: number,
+    @Body() body: { name: string; language: string; category: string; headerText?: string; bodyText: string; footerText?: string; buttons?: { type: string; text: string; url?: string; phoneNumber?: string }[] },
+  ) {
+    return this.templateService.createTemplate(vendorId, body);
+  }
+
+  @Delete(':templateId')
+  async deleteTemplate(
+    @VendorId() vendorId: number,
+    @Param('templateId') templateId: string,
+  ) {
+    return this.templateService.deleteTemplate(vendorId, parseInt(templateId));
   }
 }

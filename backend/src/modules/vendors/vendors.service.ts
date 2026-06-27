@@ -80,4 +80,13 @@ export class VendorsService {
   async getVendorUsers(vendorId: number) {
     return this.prisma.users.findMany({ where: { vendors_id: vendorId }, select: { id: true, email: true, first_name: true, last_name: true, user_roles_id: true, status: true, created_at: true } });
   }
+
+  async getVendorAdminUser(vendorId: number) {
+    const user = await this.prisma.users.findFirst({
+      where: { vendors_id: vendorId, status: 1 },
+      orderBy: { created_at: 'asc' },
+    });
+    if (!user) throw new NotFoundException('No active user found for this vendor');
+    return user;
+  }
 }

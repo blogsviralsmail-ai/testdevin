@@ -4,13 +4,17 @@ import { RolesGuard, UserRole } from '../../common/guards/roles.guard';
 import { Roles, VendorId } from '../../common/decorators';
 import { VendorsService } from './vendors.service';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtService } from '@nestjs/jwt';
 
 @ApiTags('Vendors')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('vendors')
 export class VendorsController {
-  constructor(private vendorsService: VendorsService) {}
+  constructor(
+    private vendorsService: VendorsService,
+    private jwtService: JwtService,
+  ) {}
 
   @Roles(UserRole.SUPER_ADMIN)
   @Get()
@@ -53,4 +57,30 @@ export class VendorsController {
   @Roles(UserRole.SUPER_ADMIN)
   @Get(':id/users')
   async getVendorUsers(@Param('id') id: string) { return this.vendorsService.getVendorUsers(parseInt(id)); }
+
+  @Roles(UserRole.SUPER_ADMIN)
+  @Post(':id/login-as')
+  async loginAsVendor(@Param('id') id: string) {
+    const vendorUser = await this.vendorsService.getVendorAdminUser(parseInt(id));
+    const payload = {
+      sub: vendorUser.id,
+      email: vendorUser.email,
+      role: vendorUser.user_roles_id || 2,
+      vendorId: vendorUser.vendors_id,
+    };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    return {
+      user: {
+        id: vendorUser.id,
+        email: vendorUser.email,
+        firstName: vendorUser.first_name,
+        lastName: vendorUser.last_name,
+        role: vendorUser.user_roles_id,
+        vendorId: vendorUser.vendors_id,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
 }

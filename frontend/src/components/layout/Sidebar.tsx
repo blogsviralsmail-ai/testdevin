@@ -29,6 +29,13 @@ const navItems: { section: string; items: NavItem[] }[] = [
     { to: '/chat', icon: MessageSquare, label: 'Chat', vendorOnly: true },
     { to: '/contacts', icon: Users, label: 'Contacts', vendorOnly: true },
   ]},
+  { section: 'Admin', items: [
+    { to: '/vendors', icon: Building, label: 'Vendors', adminOnly: true },
+    { to: '/users', icon: UserCog, label: 'Users', adminOnly: true },
+    { to: '/subscription', icon: CreditCard, label: 'Subscription Plans', adminOnly: true },
+    { to: '/pages', icon: FileCode, label: 'Pages', adminOnly: true },
+    { to: '/blog', icon: BookOpen, label: 'Blog', adminOnly: true },
+  ]},
   { section: 'Messaging', items: [
     { to: '/campaigns', icon: Send, label: 'Campaigns', vendorOnly: true },
     { to: '/bot-reply', icon: Bot, label: 'Bot Reply', vendorOnly: true },
@@ -40,12 +47,6 @@ const navItems: { section: string; items: NavItem[] }[] = [
     { to: '/forms', icon: FormInput, label: 'Forms', vendorOnly: true },
     { to: '/flows', icon: GitBranch, label: 'WhatsApp Flows', vendorOnly: true },
     { to: '/marketing', icon: TrendingUp, label: 'Marketing', vendorOnly: true },
-  ]},
-  { section: 'Admin', items: [
-    { to: '/vendors', icon: Building, label: 'Vendors', adminOnly: true },
-    { to: '/users', icon: UserCog, label: 'Users', adminOnly: true },
-    { to: '/pages', icon: FileCode, label: 'Pages', adminOnly: true },
-    { to: '/blog', icon: BookOpen, label: 'Blog', adminOnly: true },
   ]},
   { section: 'Business', items: [
     { to: '/subscription', icon: CreditCard, label: 'Subscription', vendorOnly: true },

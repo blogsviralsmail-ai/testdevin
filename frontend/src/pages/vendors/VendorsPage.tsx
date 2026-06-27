@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { Building, Plus, Search, Edit, Trash2, Eye, ToggleLeft, ToggleRight, X, Settings, Users as UsersIcon } from 'lucide-react';
+import { Building, Plus, Search, Edit, Trash2, Eye, ToggleLeft, ToggleRight, X, Settings, Users as UsersIcon, LogIn } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
 
 interface Vendor { id: number; uid: string; title: string; slug: string; status: number; created_at: string; }
 interface VendorUser { id: number; email: string; first_name: string; last_name: string; user_roles_id: number; status: number; }
 
 export default function VendorsPage() {
+  const { setAuth } = useAuthStore();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -73,6 +75,17 @@ export default function VendorsPage() {
       const { data } = await api.get(`/vendors/${vendor.id}/users`);
       setVendorUsers(data.data || data || []);
     } catch { /* ignore */ }
+  };
+
+  const handleLoginAs = async (vendor: Vendor) => {
+    if (!confirm(`Login as vendor "${vendor.title}"? You will be logged in as this vendor's admin user.`)) return;
+    try {
+      const { data } = await api.post(`/vendors/${vendor.id}/login-as`);
+      const d = data.data || data;
+      setAuth(d.user, d.accessToken, d.refreshToken);
+      toast.success(`Logged in as ${vendor.title}`);
+      window.location.href = '/dashboard';
+    } catch { toast.error('Failed to login as vendor'); }
   };
 
   const openSettings = async (vendor: Vendor) => {
@@ -145,6 +158,7 @@ export default function VendorsPage() {
                         <button onClick={() => viewVendorDetails(v)} className="p-1 text-gray-400 hover:text-blue-500" title="View"><Eye size={16} /></button>
                         <button onClick={() => openSettings(v)} className="p-1 text-gray-400 hover:text-purple-500" title="Settings"><Settings size={16} /></button>
                         <button onClick={() => { setEditVendor(v); setFormData({ title: v.title, email: '', password: '' }); }} className="p-1 text-gray-400 hover:text-emerald-500" title="Edit"><Edit size={16} /></button>
+                        <button onClick={() => handleLoginAs(v)} className="p-1 text-gray-400 hover:text-orange-500" title="Login as Vendor"><LogIn size={16} /></button>
                         <button onClick={() => handleToggle(v)} className="p-1">{v.status === 1 ? <ToggleRight size={20} className="text-emerald-500" /> : <ToggleLeft size={20} className="text-gray-400" />}</button>
                         <button onClick={() => handleDelete(v.id)} className="p-1 text-gray-400 hover:text-red-500" title="Delete"><Trash2 size={16} /></button>
                       </div>

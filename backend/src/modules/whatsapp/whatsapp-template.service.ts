@@ -99,6 +99,86 @@ export class WhatsappTemplateService {
     };
   }
 
+  async createTemplate(vendorId: number, data: { name: string; language: string; category: string; headerText?: string; bodyText: string; footerText?: string; buttons?: { type: string; text: string; url?: string; phoneNumber?: string }[] }) {
+    const settings = await this.getVendorWhatsAppSettings(vendorId);
+    if (!settings.businessAccountId || !settings.accessToken) {
+      throw new BadRequestException('WhatsApp not configured. Set your WhatsApp API credentials in Settings first.');
+    }
+
+    const components: Record<string, unknown>[] = [];
+    if (data.headerText) {
+      components.push({ type: 'HEADER', format: 'TEXT', text: data.headerText });
+    }
+    components.push({ type: 'BODY', text: data.bodyText });
+    if (data.footerText) {
+      components.push({ type: 'FOOTER', text: data.footerText });
+    }
+    if (data.buttons && data.buttons.length > 0) {
+      components.push({
+        type: 'BUTTONS',
+        buttons: data.buttons.map(b => {
+          if (b.type === 'URL') return { type: 'URL', text: b.text, url: b.url };
+          if (b.type === 'PHONE_NUMBER') return { type: 'PHONE_NUMBER', text: b.text, phone_number: b.phoneNumber };
+          return { type: 'QUICK_REPLY', text: b.text };
+        }),
+      });
+    }
+
+    try {
+      const response = await axios.post(
+        `${this.graphApiUrl}/${settings.businessAccountId}/message_templates`,
+        { name: data.name, language: data.language, category: data.category, components },
+        { headers: { Authorization: `Bearer ${settings.accessToken}`, 'Content-Type': 'application/json' } },
+      );
+
+      const templateId = response.data.id;
+      await this.prisma.whatsapp_templates.create({
+        data: {
+          uid: uuidv4(),
+          vendors_id: vendorId,
+          template_id: templateId,
+          template_name: data.name,
+          language: data.language,
+          category: data.category,
+          status: 'PENDING',
+          components: JSON.stringify(components),
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      });
+
+      return { id: templateId, status: 'PENDING', message: 'Template submitted to Meta for approval' };
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      const errorMsg = axiosError.response?.data?.error?.message || axiosError.message || 'Failed to create template';
+      this.logger.error(`Template create error: ${errorMsg}`);
+      throw new BadRequestException(errorMsg);
+    }
+  }
+
+  async deleteTemplate(vendorId: number, templateId: number) {
+    const template = await this.prisma.whatsapp_templates.findFirst({
+      where: { id: templateId, vendors_id: vendorId },
+    });
+    if (!template) throw new BadRequestException('Template not found');
+
+    const settings = await this.getVendorWhatsAppSettings(vendorId);
+    if (settings.businessAccountId && settings.accessToken && template.template_name) {
+      try {
+        await axios.delete(
+          `${this.graphApiUrl}/${settings.businessAccountId}/message_templates`,
+          { headers: { Authorization: `Bearer ${settings.accessToken}` }, params: { name: template.template_name } },
+        );
+      } catch (error: unknown) {
+        const axiosError = error as { response?: { data?: unknown }; message?: string };
+        this.logger.warn(`Template delete from Meta failed: ${JSON.stringify(axiosError.response?.data || axiosError.message)}`);
+      }
+    }
+
+    await this.prisma.whatsapp_templates.delete({ where: { id: templateId } });
+    return { success: true };
+  }
+
   private async getVendorWhatsAppSettings(vendorId: number) {
     const settings = await this.prisma.vendor_settings.findMany({
       where: { vendors_id: vendorId },
