@@ -15,8 +15,8 @@ export default function SubscriptionPage() {
     const load = async () => {
       try {
         const [plansRes, currentRes] = await Promise.all([
-          api.get('/subscription/plans'),
-          api.get('/subscription/current').catch(() => null),
+          api.get('/subscriptions/plans'),
+          api.get('/subscriptions/current').catch(() => null),
         ]);
         const pd = plansRes.data?.data || plansRes.data;
         setPlans(pd.items || pd || []);

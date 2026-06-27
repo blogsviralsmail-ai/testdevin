@@ -38,7 +38,8 @@ export default function CrudPage({ title, subtitle, endpoint, columns, createFie
       if (search) params.set('search', search);
       const { data } = await api.get(`${endpoint}?${params}`);
       const d = data.data || data;
-      setItems(d.items || d || []);
+      const list = d.items || d.data || (Array.isArray(d) ? d : []);
+      setItems(Array.isArray(list) ? list : []);
       if (d.meta) setMeta(d.meta);
     } catch (err) {
       console.error(`Failed to load ${title}`, err);
