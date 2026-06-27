@@ -45,4 +45,12 @@ export class SubscriptionController {
 
   @Get('history')
   async getHistory(@VendorId() vendorId: number) { return this.subscriptionService.getPaymentHistory(vendorId); }
+
+  @UseGuards(RolesGuard) @Roles(UserRole.SUPER_ADMIN)
+  @Get('auto')
+  async getAutoSubscriptions() { return this.subscriptionService.getAutoSubscriptions(); }
+
+  @UseGuards(RolesGuard) @Roles(UserRole.SUPER_ADMIN)
+  @Get('manual')
+  async getManualSubscriptions() { return this.subscriptionService.getManualSubscriptions(); }
 }

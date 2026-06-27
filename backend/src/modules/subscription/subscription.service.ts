@@ -60,4 +60,20 @@ export class SubscriptionService {
   async getPaymentHistory(vendorId: number) {
     return this.prisma.subscriptions.findMany({ where: { vendors_id: vendorId }, orderBy: { created_at: 'desc' } });
   }
+
+  async getAutoSubscriptions() {
+    const subs = await this.prisma.subscriptions.findMany({
+      where: { payment_method: { not: 'manual' } },
+      orderBy: { created_at: 'desc' },
+    });
+    return subs;
+  }
+
+  async getManualSubscriptions() {
+    const subs = await this.prisma.subscriptions.findMany({
+      where: { payment_method: 'manual' },
+      orderBy: { created_at: 'desc' },
+    });
+    return subs;
+  }
 }

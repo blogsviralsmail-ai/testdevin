@@ -11,7 +11,7 @@ import {
   Cake, UsersRound, ScrollText, Droplets, QrCode, ChevronDown,
   Megaphone, PiggyBank, Rocket, Zap, Brain, Tag, Table2, Key,
   Smartphone, ArrowUpCircle, DollarSign, Share2, MoreHorizontal, Wrench,
-  Crown, Inbox, MousePointerClick, FileBarChart, Bell, Code, Store
+  Crown, Inbox, MousePointerClick, FileBarChart, Bell, Code, Store, Shuffle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -97,8 +97,8 @@ const adminItems: NavItem[] = [
   { to: '/contact-inquiries', icon: Mail, label: 'Contact Inquiries' },
   { to: '/invoices', icon: Receipt, label: 'Billing & Invoices' },
   { to: '/addons', icon: Puzzle, label: 'Addons' },
-  { to: '/pages', icon: FileCode, label: 'Pages' },
-  { to: '/users', icon: UserCog, label: 'Users' },
+  { to: '/mobile-app', icon: Smartphone, label: 'Mobile App' },
+  { to: '/update-panel', icon: ArrowUpCircle, label: 'Update Panel' },
   { to: '/one-click-signup', icon: MousePointerClick, label: 'One-Click Signup' },
   { to: '/site-settings', icon: Globe, label: 'Site Settings' },
   { icon: Settings, label: 'Configuration', children: [
@@ -147,6 +147,7 @@ const vendorItems: NavItem[] = [
     { to: '/ai-call', icon: Phone, label: 'AI Call Assistant' },
     { to: '/bot-reply', icon: Bot, label: 'Chatbot Rules' },
     { to: '/bot-flow', icon: Workflow, label: 'Flows Builder' },
+    { to: '/auto-followup', icon: Shuffle, label: 'Automation Flows' },
   ]},
   { icon: Store, label: 'Store & Orders', children: [
     { to: '/product-catalog', icon: Package, label: 'Product Catalog' },

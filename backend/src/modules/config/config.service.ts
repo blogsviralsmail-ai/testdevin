@@ -39,4 +39,30 @@ export class ConfigurationService {
     }
     return { success: true };
   }
+
+  async getConfigByType(pageType: string) {
+    const prefix = `config_${pageType.replace(/-/g, '_')}_`;
+    const settings = await this.prisma.site_settings.findMany({
+      where: { name: { startsWith: prefix } },
+    });
+    const result: Record<string, string> = {};
+    for (const s of settings) {
+      const key = (s.name || '').replace(prefix, '');
+      result[key] = s.value || '';
+    }
+    return result;
+  }
+
+  async updateConfigByType(pageType: string, data: Record<string, string>) {
+    const prefix = `config_${pageType.replace(/-/g, '_')}_`;
+    for (const [key, value] of Object.entries(data)) {
+      const name = prefix + key;
+      await this.prisma.site_settings.upsert({
+        where: { name },
+        update: { value: String(value) },
+        create: { uid: uuidv4(), name, value: String(value) },
+      });
+    }
+    return { success: true };
+  }
 }

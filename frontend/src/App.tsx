@@ -17,6 +17,8 @@ import FormsPage from './pages/forms/FormsPage';
 import FlowsPage from './pages/flows/FlowsPage';
 import VendorsPage from './pages/vendors/VendorsPage';
 import SubscriptionPage from './pages/subscription/SubscriptionPage';
+import AutoSubscriptionPage from './pages/subscription/AutoSubscriptionPage';
+import ManualSubscriptionPage from './pages/subscription/ManualSubscriptionPage';
 import InvoicesPage from './pages/invoices/InvoicesPage';
 import IntegrationsPage from './pages/integrations/IntegrationsPage';
 import PagesBuilderPage from './pages/pages-builder/PagesBuilderPage';
@@ -33,6 +35,8 @@ import AiCallPage from './pages/ai-call/AiCallPage';
 import TranslationsPage from './pages/translations/TranslationsPage';
 import ContactInquiriesPage from './pages/contact-inquiries/ContactInquiriesPage';
 import AddonsPage from './pages/addons/AddonsPage';
+import MobileAppPage from './pages/mobile-app/MobileAppPage';
+import UpdatePanelPage from './pages/update-panel/UpdatePanelPage';
 import SiteSettingsPage from './pages/site-settings/SiteSettingsPage';
 import AutoFollowupPage from './pages/auto-followup/AutoFollowupPage';
 import EcommercePage from './pages/ecommerce/EcommercePage';
@@ -150,8 +154,8 @@ export default function App() {
           {/* Billing */}
           <Route path="invoices" element={<InvoicesPage />} />
           <Route path="subscription" element={<SubscriptionPage />} />
-          <Route path="subscription/auto" element={<SubscriptionPage />} />
-          <Route path="subscription/manual" element={<SubscriptionPage />} />
+          <Route path="subscription/auto" element={<AutoSubscriptionPage />} />
+          <Route path="subscription/manual" element={<ManualSubscriptionPage />} />
 
           {/* Admin pages */}
           <Route path="vendors" element={<VendorsPage />} />
@@ -161,6 +165,8 @@ export default function App() {
           <Route path="translations" element={<TranslationsPage />} />
           <Route path="contact-inquiries" element={<ContactInquiriesPage />} />
           <Route path="addons" element={<AddonsPage />} />
+          <Route path="mobile-app" element={<MobileAppPage />} />
+          <Route path="update-panel" element={<UpdatePanelPage />} />
           <Route path="site-settings" element={<SiteSettingsPage />} />
           <Route path="one-click-signup" element={<OneClickSignupPage />} />
           <Route path="config/:pageType" element={<ConfigPage />} />
