@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, MessageSquare, Users, Send, Bot, Workflow, FileText,
   MessageCircle, FormInput, GitBranch, Building, CreditCard, Receipt,
@@ -14,42 +15,50 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
-const navItems = [
+interface NavItem {
+  to: string;
+  icon: LucideIcon;
+  label: string;
+  adminOnly?: boolean;
+  vendorOnly?: boolean;
+}
+
+const navItems: { section: string; items: NavItem[] }[] = [
   { section: 'Main', items: [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/chat', icon: MessageSquare, label: 'Chat' },
-    { to: '/contacts', icon: Users, label: 'Contacts' },
+    { to: '/chat', icon: MessageSquare, label: 'Chat', vendorOnly: true },
+    { to: '/contacts', icon: Users, label: 'Contacts', vendorOnly: true },
   ]},
   { section: 'Messaging', items: [
-    { to: '/campaigns', icon: Send, label: 'Campaigns' },
-    { to: '/bot-reply', icon: Bot, label: 'Bot Reply' },
-    { to: '/bot-flow', icon: Workflow, label: 'Bot Flow' },
-    { to: '/templates', icon: FileText, label: 'Templates' },
-    { to: '/preset-messages', icon: MessageCircle, label: 'Preset Messages' },
+    { to: '/campaigns', icon: Send, label: 'Campaigns', vendorOnly: true },
+    { to: '/bot-reply', icon: Bot, label: 'Bot Reply', vendorOnly: true },
+    { to: '/bot-flow', icon: Workflow, label: 'Bot Flow', vendorOnly: true },
+    { to: '/templates', icon: FileText, label: 'Templates', vendorOnly: true },
+    { to: '/preset-messages', icon: MessageCircle, label: 'Preset Messages', vendorOnly: true },
   ]},
   { section: 'Automation', items: [
-    { to: '/forms', icon: FormInput, label: 'Forms' },
-    { to: '/flows', icon: GitBranch, label: 'WhatsApp Flows' },
-    { to: '/marketing', icon: TrendingUp, label: 'Marketing' },
+    { to: '/forms', icon: FormInput, label: 'Forms', vendorOnly: true },
+    { to: '/flows', icon: GitBranch, label: 'WhatsApp Flows', vendorOnly: true },
+    { to: '/marketing', icon: TrendingUp, label: 'Marketing', vendorOnly: true },
+  ]},
+  { section: 'Admin', items: [
+    { to: '/vendors', icon: Building, label: 'Vendors', adminOnly: true },
+    { to: '/users', icon: UserCog, label: 'Users', adminOnly: true },
+    { to: '/pages', icon: FileCode, label: 'Pages', adminOnly: true },
+    { to: '/blog', icon: BookOpen, label: 'Blog', adminOnly: true },
   ]},
   { section: 'Business', items: [
-    { to: '/vendors', icon: Building, label: 'Vendors', adminOnly: true },
-    { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+    { to: '/subscription', icon: CreditCard, label: 'Subscription', vendorOnly: true },
     { to: '/invoices', icon: Receipt, label: 'Invoices' },
-    { to: '/payment-links', icon: Link2, label: 'Payment Links' },
-    { to: '/product-catalog', icon: Package, label: 'Products' },
-    { to: '/integrations', icon: ShoppingBag, label: 'Integrations' },
+    { to: '/payment-links', icon: Link2, label: 'Payment Links', vendorOnly: true },
+    { to: '/product-catalog', icon: Package, label: 'Products', vendorOnly: true },
+    { to: '/integrations', icon: ShoppingBag, label: 'Integrations', vendorOnly: true },
   ]},
   { section: 'Channels', items: [
-    { to: '/facebook', icon: Facebook, label: 'Facebook' },
-    { to: '/instagram', icon: Instagram, label: 'Instagram' },
-  ]},
-  { section: 'Content', items: [
-    { to: '/pages', icon: FileCode, label: 'Pages' },
-    { to: '/blog', icon: BookOpen, label: 'Blog' },
+    { to: '/facebook', icon: Facebook, label: 'Facebook', vendorOnly: true },
+    { to: '/instagram', icon: Instagram, label: 'Instagram', vendorOnly: true },
   ]},
   { section: 'System', items: [
-    { to: '/users', icon: UserCog, label: 'Users', adminOnly: true },
     { to: '/analytics', icon: BarChart3, label: 'Analytics' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ]},
@@ -58,6 +67,12 @@ const navItems = [
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 1;
+
+  const filterItem = (item: NavItem) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.vendorOnly && isAdmin) return false;
+    return true;
+  };
 
   return (
     <aside
@@ -77,17 +92,18 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2">
-        {navItems.map((section) => (
-          <div key={section.section} className="mb-4">
-            {!collapsed && (
-              <span className="px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-                {section.section}
-              </span>
-            )}
-            <div className="mt-2 space-y-0.5">
-              {section.items
-                .filter((item) => !('adminOnly' in item && item.adminOnly) || isAdmin)
-                .map((item) => (
+        {navItems.map((section) => {
+          const visibleItems = section.items.filter(filterItem);
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={section.section} className="mb-4">
+              {!collapsed && (
+                <span className="px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+                  {section.section}
+                </span>
+              )}
+              <div className="mt-2 space-y-0.5">
+                {visibleItems.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
@@ -105,9 +121,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                     {!collapsed && <span>{item.label}</span>}
                   </NavLink>
                 ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
     </aside>
   );

@@ -1,44 +1,36 @@
-import { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { Plus, Search, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Facebook, Instagram, ShoppingBag, ShoppingCart } from 'lucide-react';
+
+const integrations = [
+  { name: 'Facebook', description: 'Connect your Facebook Page for messaging', icon: Facebook, color: 'bg-blue-500', path: '/facebook' },
+  { name: 'Instagram', description: 'Connect Instagram Business Account', icon: Instagram, color: 'bg-gradient-to-tr from-purple-600 to-pink-500', path: '/instagram' },
+  { name: 'Shopify', description: 'Sync products and orders from Shopify', icon: ShoppingBag, color: 'bg-green-600', path: '/integrations' },
+  { name: 'WooCommerce', description: 'Connect your WooCommerce store', icon: ShoppingCart, color: 'bg-purple-600', path: '/integrations' },
+];
 
 export default function IntegrationsPage() {
-  const [data, setData] = useState<Record<string, unknown>[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    setLoading(false); // API call placeholder
-  }, []);
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold dark:text-white">Integrations</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Connect Shopify, WooCommerce & more</p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition">
-          <Plus size={16} /> Add New
-        </button>
-      </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-          <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2 max-w-sm">
-            <Search size={16} className="text-gray-400" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className="bg-transparent border-none outline-none text-sm flex-1 dark:text-white" />
-          </div>
-        </div>
-        <div className="p-8 text-center text-gray-400">
-          {loading ? (
-            <div className="animate-pulse space-y-4">
-              {[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 dark:bg-slate-700 rounded-lg" />)}
+      <div><h1 className="text-2xl font-bold dark:text-white">Integrations</h1><p className="text-sm text-gray-500 mt-1">Connect third-party services</p></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {integrations.map((integration) => (
+          <div key={integration.name} onClick={() => navigate(integration.path)} className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm cursor-pointer hover:shadow-md transition border dark:border-slate-700">
+            <div className="flex items-center gap-4 mb-4">
+              <div className={`w-12 h-12 ${integration.color} rounded-lg flex items-center justify-center`}>
+                <integration.icon size={24} className="text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold dark:text-white">{integration.name}</h3>
+                <p className="text-sm text-gray-500">{integration.description}</p>
+              </div>
             </div>
-          ) : (
-            <p>No data yet. Click "Add New" to get started.</p>
-          )}
-        </div>
+            <button className="w-full py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded-lg">
+              Configure
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,45 +1,33 @@
-import { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { Plus, Search, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import CrudPage from '../../components/shared/CrudPage';
 
 export default function BotReplyPage() {
-  const [data, setData] = useState<Record<string, unknown>[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    setLoading(false); // API call placeholder
-  }, []);
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold dark:text-white">Bot Replies</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure auto-reply rules</p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition">
-          <Plus size={16} /> Add New
-        </button>
-      </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-          <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2 max-w-sm">
-            <Search size={16} className="text-gray-400" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className="bg-transparent border-none outline-none text-sm flex-1 dark:text-white" />
-          </div>
-        </div>
-        <div className="p-8 text-center text-gray-400">
-          {loading ? (
-            <div className="animate-pulse space-y-4">
-              {[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 dark:bg-slate-700 rounded-lg" />)}
-            </div>
-          ) : (
-            <p>No data yet. Click "Add New" to get started.</p>
-          )}
-        </div>
-      </div>
-    </div>
+    <CrudPage
+      title="Bot Reply"
+      subtitle="Auto-reply rules for incoming messages"
+      endpoint="/bot-replies"
+      columns={[
+        { key: 'id', label: 'ID' },
+        { key: 'name', label: 'Name' },
+        { key: 'keyword', label: 'Keyword' },
+        { key: 'match_type', label: 'Match Type', render: (v) => (
+          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">{(v as string) || 'exact'}</span>
+        )},
+        { key: 'reply_type', label: 'Reply Type' },
+        { key: 'trigger_count', label: 'Triggers' },
+        { key: 'status', label: 'Status', render: (v) => (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${v === 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {v === 1 ? 'Active' : 'Inactive'}
+          </span>
+        )},
+      ]}
+      createFields={[
+        { key: 'name', label: 'Rule Name', required: true },
+        { key: 'keyword', label: 'Keyword', required: true },
+        { key: 'matchType', label: 'Match Type', type: 'select', options: [{ value: 'exact', label: 'Exact' }, { value: 'contains', label: 'Contains' }, { value: 'startsWith', label: 'Starts With' }] },
+        { key: 'replyMessage', label: 'Reply Message', type: 'textarea', required: true },
+        { key: 'replyType', label: 'Reply Type', type: 'select', options: [{ value: 'text', label: 'Text' }, { value: 'template', label: 'Template' }, { value: 'media', label: 'Media' }] },
+      ]}
+    />
   );
 }
