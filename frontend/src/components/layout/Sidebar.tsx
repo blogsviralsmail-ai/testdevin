@@ -5,7 +5,10 @@ import {
   LayoutDashboard, MessageSquare, Users, Send, Bot, Workflow, FileText,
   MessageCircle, FormInput, GitBranch, Building, CreditCard, Receipt,
   ShoppingBag, Facebook, Instagram, FileCode, BookOpen, Settings, UserCog,
-  TrendingUp, BarChart3, Link2, Package, ChevronLeft, ChevronRight, Phone
+  TrendingUp, BarChart3, Link2, Package, ChevronLeft, ChevronRight, Phone,
+  Languages, Mail, Puzzle, Globe, RefreshCw, ShoppingCart, ClipboardList,
+  Cake, UsersRound, ScrollText, Droplets, QrCode, Smartphone, ArrowUpCircle,
+  UserPlus, Wrench, KeyRound, Code
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,10 +34,16 @@ const navItems: { section: string; items: NavItem[] }[] = [
   ]},
   { section: 'Admin', items: [
     { to: '/vendors', icon: Building, label: 'Vendors', adminOnly: true },
-    { to: '/users', icon: UserCog, label: 'Users', adminOnly: true },
-    { to: '/subscription', icon: CreditCard, label: 'Subscription Plans', adminOnly: true },
-    { to: '/pages', icon: FileCode, label: 'Pages', adminOnly: true },
+    { to: '/subscription', icon: CreditCard, label: 'Subscriptions', adminOnly: true },
+    { to: '/translations', icon: Languages, label: 'Translations', adminOnly: true },
     { to: '/blog', icon: BookOpen, label: 'Blog', adminOnly: true },
+    { to: '/contact-inquiries', icon: Mail, label: 'Contact Inquiries', adminOnly: true },
+    { to: '/invoices', icon: Receipt, label: 'Billing & Invoices', adminOnly: true },
+    { to: '/addons', icon: Puzzle, label: 'Addons', adminOnly: true },
+    { to: '/pages', icon: FileCode, label: 'Pages', adminOnly: true },
+    { to: '/users', icon: UserCog, label: 'Users', adminOnly: true },
+    { to: '/site-settings', icon: Globe, label: 'Site Settings', adminOnly: true },
+    { to: '/settings', icon: Settings, label: 'Configuration', adminOnly: true },
   ]},
   { section: 'Messaging', items: [
     { to: '/campaigns', icon: Send, label: 'Campaigns', vendorOnly: true },
@@ -42,15 +51,20 @@ const navItems: { section: string; items: NavItem[] }[] = [
     { to: '/bot-flow', icon: Workflow, label: 'Bot Flow', vendorOnly: true },
     { to: '/templates', icon: FileText, label: 'Templates', vendorOnly: true },
     { to: '/preset-messages', icon: MessageCircle, label: 'Preset Messages', vendorOnly: true },
+    { to: '/drip-campaigns', icon: Droplets, label: 'Drip Campaigns', vendorOnly: true },
   ]},
   { section: 'Automation', items: [
+    { to: '/auto-followup', icon: RefreshCw, label: 'Auto Follow-up', vendorOnly: true },
     { to: '/forms', icon: FormInput, label: 'Forms', vendorOnly: true },
     { to: '/flows', icon: GitBranch, label: 'WhatsApp Flows', vendorOnly: true },
     { to: '/marketing', icon: TrendingUp, label: 'Marketing', vendorOnly: true },
+    { to: '/birthday-wishes', icon: Cake, label: 'Birthday Wishes', vendorOnly: true },
+    { to: '/feedback', icon: ClipboardList, label: 'Feedback/Survey', vendorOnly: true },
   ]},
   { section: 'Business', items: [
-    { to: '/subscription', icon: CreditCard, label: 'Subscription', vendorOnly: true },
-    { to: '/invoices', icon: Receipt, label: 'Invoices' },
+    { to: '/ecommerce', icon: ShoppingCart, label: 'E-Commerce', vendorOnly: true },
+    { to: '/subscription', icon: CreditCard, label: 'My Subscription', vendorOnly: true },
+    { to: '/invoices', icon: Receipt, label: 'Billing & Invoices', vendorOnly: true },
     { to: '/payment-links', icon: Link2, label: 'Payment Links', vendorOnly: true },
     { to: '/product-catalog', icon: Package, label: 'Products', vendorOnly: true },
     { to: '/integrations', icon: ShoppingBag, label: 'Integrations', vendorOnly: true },
@@ -60,9 +74,14 @@ const navItems: { section: string; items: NavItem[] }[] = [
     { to: '/instagram', icon: Instagram, label: 'Instagram', vendorOnly: true },
     { to: '/ai-call', icon: Phone, label: 'AI Call', vendorOnly: true },
   ]},
+  { section: 'Tools', items: [
+    { to: '/team', icon: UsersRound, label: 'Team Management', vendorOnly: true },
+    { to: '/message-logs', icon: ScrollText, label: 'Message Logs', vendorOnly: true },
+    { to: '/qr-code', icon: QrCode, label: 'QR Code', vendorOnly: true },
+  ]},
   { section: 'System', items: [
     { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
+    { to: '/settings', icon: Settings, label: 'Settings', vendorOnly: true },
   ]},
 ];
 
@@ -107,7 +126,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               <div className="mt-2 space-y-0.5">
                 {visibleItems.map((item) => (
                   <NavLink
-                    key={item.to}
+                    key={item.to + item.label}
                     to={item.to}
                     onClick={onMobileClose}
                     className={({ isActive }) =>

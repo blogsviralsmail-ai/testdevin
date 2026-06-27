@@ -30,6 +30,18 @@ import ProductCatalogPage from './pages/product-catalog/ProductCatalogPage';
 import FacebookPage from './pages/facebook/FacebookPage';
 import InstagramPage from './pages/instagram/InstagramPage';
 import AiCallPage from './pages/ai-call/AiCallPage';
+import TranslationsPage from './pages/translations/TranslationsPage';
+import ContactInquiriesPage from './pages/contact-inquiries/ContactInquiriesPage';
+import AddonsPage from './pages/addons/AddonsPage';
+import SiteSettingsPage from './pages/site-settings/SiteSettingsPage';
+import AutoFollowupPage from './pages/auto-followup/AutoFollowupPage';
+import EcommercePage from './pages/ecommerce/EcommercePage';
+import FeedbackPage from './pages/feedback/FeedbackPage';
+import BirthdayWishesPage from './pages/birthday-wishes/BirthdayWishesPage';
+import TeamManagementPage from './pages/team-management/TeamManagementPage';
+import MessageLogsPage from './pages/message-logs/MessageLogsPage';
+import DripCampaignsPage from './pages/drip-campaigns/DripCampaignsPage';
+import QrCodePage from './pages/qr-code/QrCodePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -76,6 +88,20 @@ export default function App() {
           <Route path="facebook" element={<FacebookPage />} />
           <Route path="instagram" element={<InstagramPage />} />
           <Route path="ai-call" element={<AiCallPage />} />
+          {/* New admin pages */}
+          <Route path="translations" element={<TranslationsPage />} />
+          <Route path="contact-inquiries" element={<ContactInquiriesPage />} />
+          <Route path="addons" element={<AddonsPage />} />
+          <Route path="site-settings" element={<SiteSettingsPage />} />
+          {/* New vendor pages */}
+          <Route path="auto-followup" element={<AutoFollowupPage />} />
+          <Route path="ecommerce" element={<EcommercePage />} />
+          <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="birthday-wishes" element={<BirthdayWishesPage />} />
+          <Route path="team" element={<TeamManagementPage />} />
+          <Route path="message-logs" element={<MessageLogsPage />} />
+          <Route path="drip-campaigns" element={<DripCampaignsPage />} />
+          <Route path="qr-code" element={<QrCodePage />} />
         </Route>
       </Routes>
     </>
