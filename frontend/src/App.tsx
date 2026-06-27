@@ -42,6 +42,25 @@ import TeamManagementPage from './pages/team-management/TeamManagementPage';
 import MessageLogsPage from './pages/message-logs/MessageLogsPage';
 import DripCampaignsPage from './pages/drip-campaigns/DripCampaignsPage';
 import QrCodePage from './pages/qr-code/QrCodePage';
+import PresetCampaignsPage from './pages/preset-campaigns/PresetCampaignsPage';
+import CtwaPage from './pages/marketing-sub/CtwaPage';
+import LeadFormsPage from './pages/marketing-sub/LeadFormsPage';
+import CatalogsPage from './pages/marketing-sub/CatalogsPage';
+import EventNotificationsPage from './pages/marketing-sub/EventNotificationsPage';
+import ApiIntegrationPage from './pages/marketing-sub/ApiIntegrationPage';
+import WhatsAppOrdersPage from './pages/whatsapp-orders/WhatsAppOrdersPage';
+import LabelsPage from './pages/labels/LabelsPage';
+import ContactGroupsPage from './pages/contact-groups/ContactGroupsPage';
+import ContactFieldsPage from './pages/contact-fields/ContactFieldsPage';
+import OneClickSignupPage from './pages/one-click-signup/OneClickSignupPage';
+import ConfigPage from './pages/config/ConfigPage';
+import ApiDocsPage from './pages/api-docs/ApiDocsPage';
+import LicencePage from './pages/licence/LicencePage';
+import VendorSettingsPage from './pages/vendor-settings/VendorSettingsPage';
+import ShopifyPage from './pages/integrations/ShopifyPage';
+import WooCommercePage from './pages/integrations/WooCommercePage';
+import GoogleSheetsPage from './pages/integrations/GoogleSheetsPage';
+import ApiAccessPage from './pages/integrations/ApiAccessPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -63,45 +82,94 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+
+          {/* Inbox / Chat */}
           <Route path="chat" element={<ChatPage />} />
           <Route path="chat/:contactUid" element={<ChatPage />} />
+
+          {/* Contacts & Labels */}
           <Route path="contacts" element={<ContactsPage />} />
+          <Route path="contact-groups" element={<ContactGroupsPage />} />
+          <Route path="contact-fields" element={<ContactFieldsPage />} />
+          <Route path="labels" element={<LabelsPage />} />
+
+          {/* Marketing & Campaigns */}
           <Route path="campaigns" element={<CampaignsPage />} />
-          <Route path="bot-reply" element={<BotReplyPage />} />
-          <Route path="bot-flow" element={<BotFlowPage />} />
+          <Route path="drip-campaigns" element={<DripCampaignsPage />} />
           <Route path="templates" element={<TemplatesPage />} />
-          <Route path="preset-messages" element={<PresetMessagesPage />} />
           <Route path="forms" element={<FormsPage />} />
           <Route path="flows" element={<FlowsPage />} />
-          <Route path="vendors" element={<VendorsPage />} />
-          <Route path="subscription" element={<SubscriptionPage />} />
-          <Route path="invoices" element={<InvoicesPage />} />
-          <Route path="integrations" element={<IntegrationsPage />} />
-          <Route path="pages" element={<PagesBuilderPage />} />
-          <Route path="blog" element={<BlogPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="marketing" element={<MarketingPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
+
+          {/* Save Money Free Campaign */}
+          <Route path="preset-campaigns" element={<PresetCampaignsPage />} />
+          <Route path="preset-messages" element={<PresetMessagesPage />} />
+
+          {/* Standalone vendor features */}
+          <Route path="auto-followup" element={<AutoFollowupPage />} />
+          <Route path="ecommerce" element={<EcommercePage />} />
           <Route path="payment-links" element={<PaymentLinksPage />} />
+          <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="birthday-wishes" element={<BirthdayWishesPage />} />
+
+          {/* Marketing sub-pages */}
+          <Route path="marketing" element={<MarketingPage />} />
+          <Route path="marketing/ctwa" element={<CtwaPage />} />
+          <Route path="marketing/lead-forms" element={<LeadFormsPage />} />
+          <Route path="marketing/catalogs" element={<CatalogsPage />} />
+          <Route path="marketing/events" element={<EventNotificationsPage />} />
+          <Route path="marketing/api" element={<ApiIntegrationPage />} />
+
+          {/* AI & Automation */}
+          <Route path="ai-call" element={<AiCallPage />} />
+          <Route path="bot-reply" element={<BotReplyPage />} />
+          <Route path="bot-flow" element={<BotFlowPage />} />
+
+          {/* Store & Orders */}
           <Route path="product-catalog" element={<ProductCatalogPage />} />
+          <Route path="whatsapp-orders" element={<WhatsAppOrdersPage />} />
+
+          {/* Integrations */}
+          <Route path="integrations" element={<IntegrationsPage />} />
+          <Route path="integrations/shopify" element={<ShopifyPage />} />
+          <Route path="integrations/woocommerce" element={<WooCommercePage />} />
+          <Route path="integrations/google-sheets" element={<GoogleSheetsPage />} />
+          <Route path="integrations/api-access" element={<ApiAccessPage />} />
+
+          {/* Channels */}
           <Route path="facebook" element={<FacebookPage />} />
           <Route path="instagram" element={<InstagramPage />} />
-          <Route path="ai-call" element={<AiCallPage />} />
-          {/* New admin pages */}
+
+          {/* Tools */}
+          <Route path="team" element={<TeamManagementPage />} />
+          <Route path="message-logs" element={<MessageLogsPage />} />
+          <Route path="qr-code" element={<QrCodePage />} />
+
+          {/* Vendor Settings */}
+          <Route path="settings/:pageType" element={<VendorSettingsPage />} />
+
+          {/* Billing */}
+          <Route path="invoices" element={<InvoicesPage />} />
+          <Route path="subscription" element={<SubscriptionPage />} />
+          <Route path="subscription/auto" element={<SubscriptionPage />} />
+          <Route path="subscription/manual" element={<SubscriptionPage />} />
+
+          {/* Admin pages */}
+          <Route path="vendors" element={<VendorsPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="pages" element={<PagesBuilderPage />} />
+          <Route path="blog" element={<BlogPage />} />
           <Route path="translations" element={<TranslationsPage />} />
           <Route path="contact-inquiries" element={<ContactInquiriesPage />} />
           <Route path="addons" element={<AddonsPage />} />
           <Route path="site-settings" element={<SiteSettingsPage />} />
-          {/* New vendor pages */}
-          <Route path="auto-followup" element={<AutoFollowupPage />} />
-          <Route path="ecommerce" element={<EcommercePage />} />
-          <Route path="feedback" element={<FeedbackPage />} />
-          <Route path="birthday-wishes" element={<BirthdayWishesPage />} />
-          <Route path="team" element={<TeamManagementPage />} />
-          <Route path="message-logs" element={<MessageLogsPage />} />
-          <Route path="drip-campaigns" element={<DripCampaignsPage />} />
-          <Route path="qr-code" element={<QrCodePage />} />
+          <Route path="one-click-signup" element={<OneClickSignupPage />} />
+          <Route path="config/:pageType" element={<ConfigPage />} />
+          <Route path="api-docs" element={<ApiDocsPage />} />
+          <Route path="licence" element={<LicencePage />} />
+
+          {/* Shared */}
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
       </Routes>
     </>

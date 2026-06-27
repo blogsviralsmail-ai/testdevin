@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -7,8 +8,10 @@ import {
   ShoppingBag, Facebook, Instagram, FileCode, BookOpen, Settings, UserCog,
   TrendingUp, BarChart3, Link2, Package, ChevronLeft, ChevronRight, Phone,
   Languages, Mail, Puzzle, Globe, RefreshCw, ShoppingCart, ClipboardList,
-  Cake, UsersRound, ScrollText, Droplets, QrCode, Smartphone, ArrowUpCircle,
-  UserPlus, Wrench, KeyRound, Code
+  Cake, UsersRound, ScrollText, Droplets, QrCode, ChevronDown,
+  Megaphone, PiggyBank, Rocket, Zap, Brain, Tag, Table2, Key,
+  Smartphone, ArrowUpCircle, DollarSign, Share2, MoreHorizontal, Wrench,
+  Crown, Inbox, MousePointerClick, FileBarChart, Bell, Code, Store
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -18,82 +21,168 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
-interface NavItem {
+interface NavChild {
   to: string;
+  icon: LucideIcon;
+  label: string;
+}
+
+interface NavItem {
+  to?: string;
   icon: LucideIcon;
   label: string;
   adminOnly?: boolean;
   vendorOnly?: boolean;
+  children?: NavChild[];
+  external?: boolean;
 }
 
-const navItems: { section: string; items: NavItem[] }[] = [
-  { section: 'Main', items: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/chat', icon: MessageSquare, label: 'Chat', vendorOnly: true },
-    { to: '/contacts', icon: Users, label: 'Contacts', vendorOnly: true },
+function SubMenu({ item, collapsed, onMobileClose }: { item: NavItem; collapsed: boolean; onMobileClose: () => void }) {
+  const location = useLocation();
+  const isChildActive = item.children?.some(c => location.pathname.startsWith(c.to)) ?? false;
+  const [open, setOpen] = useState(isChildActive);
+
+  if (!item.children) return null;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors
+          ${isChildActive ? 'text-emerald-400' : 'text-white/70 hover:bg-sidebar-hover hover:text-white'}
+          ${collapsed ? 'justify-center' : ''}`}
+      >
+        <item.icon size={18} />
+        {!collapsed && (
+          <>
+            <span className="flex-1 text-left">{item.label}</span>
+            <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          </>
+        )}
+      </button>
+      {open && !collapsed && (
+        <div className="ml-4 pl-3 border-l border-white/10 mt-1 space-y-0.5">
+          {item.children.map((child) => (
+            <NavLink
+              key={child.to}
+              to={child.to}
+              onClick={onMobileClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors
+                ${isActive
+                  ? 'text-emerald-400 bg-emerald-500/10'
+                  : 'text-white/60 hover:bg-sidebar-hover hover:text-white'}`
+              }
+            >
+              <child.icon size={14} />
+              <span>{child.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const adminItems: NavItem[] = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/vendors', icon: Building, label: 'Vendors' },
+  { icon: CreditCard, label: 'Subscriptions', children: [
+    { to: '/subscription/auto', icon: RefreshCw, label: 'Auto' },
+    { to: '/subscription/manual', icon: DollarSign, label: 'Manual' },
+    { to: '/subscription', icon: Tag, label: 'Plans & Pricing' },
   ]},
-  { section: 'Admin', items: [
-    { to: '/vendors', icon: Building, label: 'Vendors', adminOnly: true },
-    { to: '/subscription', icon: CreditCard, label: 'Subscriptions', adminOnly: true },
-    { to: '/translations', icon: Languages, label: 'Translations', adminOnly: true },
-    { to: '/blog', icon: BookOpen, label: 'Blog', adminOnly: true },
-    { to: '/contact-inquiries', icon: Mail, label: 'Contact Inquiries', adminOnly: true },
-    { to: '/invoices', icon: Receipt, label: 'Billing & Invoices', adminOnly: true },
-    { to: '/addons', icon: Puzzle, label: 'Addons', adminOnly: true },
-    { to: '/pages', icon: FileCode, label: 'Pages', adminOnly: true },
-    { to: '/users', icon: UserCog, label: 'Users', adminOnly: true },
-    { to: '/site-settings', icon: Globe, label: 'Site Settings', adminOnly: true },
-    { to: '/settings', icon: Settings, label: 'Configuration', adminOnly: true },
+  { to: '/translations', icon: Languages, label: 'Translations' },
+  { to: '/blog', icon: BookOpen, label: 'Blog' },
+  { to: '/contact-inquiries', icon: Mail, label: 'Contact Inquiries' },
+  { to: '/invoices', icon: Receipt, label: 'Billing & Invoices' },
+  { to: '/addons', icon: Puzzle, label: 'Addons' },
+  { to: '/pages', icon: FileCode, label: 'Pages' },
+  { to: '/users', icon: UserCog, label: 'Users' },
+  { to: '/one-click-signup', icon: MousePointerClick, label: 'One-Click Signup' },
+  { to: '/site-settings', icon: Globe, label: 'Site Settings' },
+  { icon: Settings, label: 'Configuration', children: [
+    { to: '/config/user-vendor', icon: UserCog, label: 'User & Vendor' },
+    { to: '/config/currency', icon: DollarSign, label: 'Currency' },
+    { to: '/config/payment', icon: CreditCard, label: 'Payment' },
+    { to: '/config/email', icon: Mail, label: 'Email' },
+    { to: '/config/social-login', icon: Share2, label: 'Social Login' },
+    { to: '/config/other', icon: MoreHorizontal, label: 'Other' },
+    { to: '/config/misc', icon: Wrench, label: 'Misc' },
   ]},
-  { section: 'Messaging', items: [
-    { to: '/campaigns', icon: Send, label: 'Campaigns', vendorOnly: true },
-    { to: '/bot-reply', icon: Bot, label: 'Bot Reply', vendorOnly: true },
-    { to: '/bot-flow', icon: Workflow, label: 'Bot Flow', vendorOnly: true },
-    { to: '/templates', icon: FileText, label: 'Templates', vendorOnly: true },
-    { to: '/preset-messages', icon: MessageCircle, label: 'Preset Messages', vendorOnly: true },
-    { to: '/drip-campaigns', icon: Droplets, label: 'Drip Campaigns', vendorOnly: true },
+  { to: '/api-docs', icon: Code, label: 'API Documentation' },
+  { to: '/licence', icon: Key, label: 'Licence' },
+];
+
+const vendorItems: NavItem[] = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { icon: Inbox, label: 'Inbox', children: [
+    { to: '/chat', icon: MessageSquare, label: 'WhatsApp Messages' },
+    { to: '/facebook', icon: Facebook, label: 'Facebook Messages' },
+    { to: '/instagram', icon: Instagram, label: 'Instagram Messages' },
   ]},
-  { section: 'Automation', items: [
-    { to: '/auto-followup', icon: RefreshCw, label: 'Auto Follow-up', vendorOnly: true },
-    { to: '/forms', icon: FormInput, label: 'Forms', vendorOnly: true },
-    { to: '/flows', icon: GitBranch, label: 'WhatsApp Flows', vendorOnly: true },
-    { to: '/marketing', icon: TrendingUp, label: 'Marketing', vendorOnly: true },
-    { to: '/birthday-wishes', icon: Cake, label: 'Birthday Wishes', vendorOnly: true },
-    { to: '/feedback', icon: ClipboardList, label: 'Feedback/Survey', vendorOnly: true },
+  { icon: Megaphone, label: 'Marketing & Campaigns', children: [
+    { to: '/campaigns', icon: Send, label: 'Campaign Manager' },
+    { to: '/drip-campaigns', icon: Droplets, label: 'Drip Campaigns' },
+    { to: '/templates', icon: FileText, label: 'Message Templates' },
+    { to: '/forms', icon: FormInput, label: 'WhatsApp Forms' },
   ]},
-  { section: 'Business', items: [
-    { to: '/ecommerce', icon: ShoppingCart, label: 'E-Commerce', vendorOnly: true },
-    { to: '/subscription', icon: CreditCard, label: 'My Subscription', vendorOnly: true },
-    { to: '/invoices', icon: Receipt, label: 'Billing & Invoices', vendorOnly: true },
-    { to: '/payment-links', icon: Link2, label: 'Payment Links', vendorOnly: true },
-    { to: '/product-catalog', icon: Package, label: 'Products', vendorOnly: true },
-    { to: '/integrations', icon: ShoppingBag, label: 'Integrations', vendorOnly: true },
+  { icon: PiggyBank, label: 'Save Money Free Campaign', children: [
+    { to: '/preset-campaigns', icon: Rocket, label: 'Preset Campaigns' },
+    { to: '/preset-messages', icon: MessageCircle, label: 'Preset Template' },
   ]},
-  { section: 'Channels', items: [
-    { to: '/facebook', icon: Facebook, label: 'Facebook', vendorOnly: true },
-    { to: '/instagram', icon: Instagram, label: 'Instagram', vendorOnly: true },
-    { to: '/ai-call', icon: Phone, label: 'AI Call', vendorOnly: true },
+  { to: '/auto-followup', icon: RefreshCw, label: 'Auto Follow-up' },
+  { to: '/ecommerce', icon: ShoppingCart, label: 'E-Commerce' },
+  { to: '/payment-links', icon: Link2, label: 'Payment Links' },
+  { to: '/feedback', icon: ClipboardList, label: 'Feedback/Survey' },
+  { to: '/birthday-wishes', icon: Cake, label: 'Birthday Wishes' },
+  { icon: TrendingUp, label: 'Marketing', children: [
+    { to: '/marketing/ctwa', icon: MousePointerClick, label: 'Click To WhatsApp Ads' },
+    { to: '/marketing/lead-forms', icon: FileBarChart, label: 'Lead Generation Forms' },
+    { to: '/marketing/catalogs', icon: Package, label: 'Product Catalogs' },
+    { to: '/marketing/events', icon: Bell, label: 'Event Notifications' },
+    { to: '/marketing/api', icon: Code, label: 'API Integration' },
   ]},
-  { section: 'Tools', items: [
-    { to: '/team', icon: UsersRound, label: 'Team Management', vendorOnly: true },
-    { to: '/message-logs', icon: ScrollText, label: 'Message Logs', vendorOnly: true },
-    { to: '/qr-code', icon: QrCode, label: 'QR Code', vendorOnly: true },
+  { icon: Brain, label: 'AI & Automation', children: [
+    { to: '/ai-call', icon: Phone, label: 'AI Call Assistant' },
+    { to: '/bot-reply', icon: Bot, label: 'Chatbot Rules' },
+    { to: '/bot-flow', icon: Workflow, label: 'Flows Builder' },
   ]},
-  { section: 'System', items: [
-    { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-    { to: '/settings', icon: Settings, label: 'Settings', vendorOnly: true },
+  { icon: Store, label: 'Store & Orders', children: [
+    { to: '/product-catalog', icon: Package, label: 'Product Catalog' },
+    { to: '/whatsapp-orders', icon: Receipt, label: 'Product Orders' },
+    { to: '/integrations/shopify', icon: ShoppingBag, label: 'Shopify Integration' },
+    { to: '/integrations/woocommerce', icon: ShoppingBag, label: 'WooCommerce' },
   ]},
+  { icon: Users, label: 'Contacts & Labels', children: [
+    { to: '/contacts', icon: Users, label: 'Contact List' },
+    { to: '/contact-groups', icon: UsersRound, label: 'Contact Groups' },
+    { to: '/contact-fields', icon: FileText, label: 'Custom Attributes' },
+    { to: '/labels', icon: Tag, label: 'Labels' },
+  ]},
+  { icon: GitBranch, label: 'Integrations', children: [
+    { to: '/integrations/google-sheets', icon: Table2, label: 'Google Sheets' },
+    { to: '/integrations/api-access', icon: Key, label: 'API Access' },
+  ]},
+  { to: '/team', icon: UsersRound, label: 'Team Management' },
+  { to: '/message-logs', icon: ScrollText, label: 'Message Logs' },
+  { to: '/invoices', icon: Receipt, label: 'Billing & My Invoices' },
+  { icon: Settings, label: 'Settings', children: [
+    { to: '/settings/general', icon: Settings, label: 'General Settings' },
+    { to: '/settings/whatsapp', icon: MessageSquare, label: 'WhatsApp Configuration' },
+    { to: '/settings/facebook', icon: Facebook, label: 'Facebook Configuration' },
+    { to: '/settings/instagram', icon: Instagram, label: 'Instagram Configuration' },
+    { to: '/settings/ai-bot', icon: Brain, label: 'AI Bot Settings' },
+    { to: '/api-docs', icon: Code, label: 'API Documentation' },
+  ]},
+  { to: '/subscription', icon: Crown, label: 'My Subscription' },
+  { to: '/qr-code', icon: QrCode, label: 'QR Code' },
 ];
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 1;
-
-  const filterItem = (item: NavItem) => {
-    if (item.adminOnly && !isAdmin) return false;
-    if (item.vendorOnly && isAdmin) return false;
-    return true;
-  };
+  const items = isAdmin ? adminItems : vendorItems;
 
   return (
     <aside
@@ -102,7 +191,6 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0`}
     >
-      {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
         {!collapsed && <span className="text-xl font-bold text-emerald-400">WabaPanel</span>}
         {collapsed && <span className="text-xl font-bold text-emerald-400 mx-auto">W</span>}
@@ -111,39 +199,28 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
-        {navItems.map((section) => {
-          const visibleItems = section.items.filter(filterItem);
-          if (visibleItems.length === 0) return null;
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+        {items.map((item) => {
+          if (item.children) {
+            return <SubMenu key={item.label} item={item} collapsed={collapsed} onMobileClose={onMobileClose} />;
+          }
           return (
-            <div key={section.section} className="mb-4">
-              {!collapsed && (
-                <span className="px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-                  {section.section}
-                </span>
-              )}
-              <div className="mt-2 space-y-0.5">
-                {visibleItems.map((item) => (
-                  <NavLink
-                    key={item.to + item.label}
-                    to={item.to}
-                    onClick={onMobileClose}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors
-                      ${isActive
-                        ? 'bg-emerald-500/20 text-emerald-400 border-l-3 border-emerald-400'
-                        : 'text-white/70 hover:bg-sidebar-hover hover:text-white'
-                      }
-                      ${collapsed ? 'justify-center' : ''}`
-                    }
-                  >
-                    <item.icon size={18} />
-                    {!collapsed && <span>{item.label}</span>}
-                  </NavLink>
-                ))}
-              </div>
-            </div>
+            <NavLink
+              key={item.to! + item.label}
+              to={item.to!}
+              onClick={onMobileClose}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors
+                ${isActive
+                  ? 'bg-emerald-500/20 text-emerald-400 border-l-3 border-emerald-400'
+                  : 'text-white/70 hover:bg-sidebar-hover hover:text-white'
+                }
+                ${collapsed ? 'justify-center' : ''}`
+              }
+            >
+              <item.icon size={18} />
+              {!collapsed && <span>{item.label}</span>}
+            </NavLink>
           );
         })}
       </nav>
