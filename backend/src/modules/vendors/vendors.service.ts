@@ -42,7 +42,12 @@ export class VendorsService {
   }
 
   async updateVendor(vendorId: number, data: Record<string, unknown>) {
-    return this.prisma.vendors.update({ where: { id: vendorId }, data: { ...data, updated_at: new Date() } });
+    const allowed: Record<string, unknown> = { updated_at: new Date() };
+    if (data.title) allowed.title = data.title as string;
+    if (data.slug) allowed.slug = data.slug as string;
+    if (data.status !== undefined) allowed.status = data.status as number;
+    if (data.phone) allowed.phone = data.phone as string;
+    return this.prisma.vendors.update({ where: { id: vendorId }, data: allowed });
   }
 
   async deleteVendor(vendorId: number) {

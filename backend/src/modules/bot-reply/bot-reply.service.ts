@@ -23,7 +23,15 @@ export class BotReplyService {
   async updateBotReply(vendorId: number, id: number, data: Record<string, unknown>) {
     const bot = await this.prisma.bot_replies.findFirst({ where: { id: id, vendors_id: vendorId } });
     if (!bot) throw new NotFoundException('Bot reply not found');
-    return this.prisma.bot_replies.update({ where: { id: id }, data: { ...data, updated_at: new Date() } });
+    const allowed: Record<string, unknown> = { updated_at: new Date() };
+    if (data.name) allowed.name = data.name as string;
+    if (data.keyword) allowed.keyword = data.keyword as string;
+    if (data.matchType) allowed.match_type = data.matchType as string;
+    if (data.replyMessage) allowed.reply_message = data.replyMessage as string;
+    if (data.replyType) allowed.reply_type = data.replyType as string;
+    if (data.priority !== undefined) allowed.priority = data.priority as number;
+    if (data.status !== undefined) allowed.status = data.status as number;
+    return this.prisma.bot_replies.update({ where: { id: id }, data: allowed });
   }
 
   async deleteBotReply(vendorId: number, id: number) {

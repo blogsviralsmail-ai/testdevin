@@ -9,6 +9,13 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+
+interface AuthenticatedSocket extends Socket {
+  userId?: number;
+  vendorId?: number;
+}
 
 @WebSocketGateway({
   cors: {
@@ -24,8 +31,28 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   private readonly logger = new Logger(WebsocketGateway.name);
   private connectedClients: Map<string, { vendorId: number; userId: number }> = new Map();
 
-  handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {}
+
+  async handleConnection(client: AuthenticatedSocket) {
+    try {
+      const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.replace('Bearer ', '');
+      if (!token) {
+        client.disconnect();
+        return;
+      }
+      const payload = this.jwtService.verify(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+      client.userId = payload.sub;
+      client.vendorId = payload.vendorId;
+      this.logger.log(`Client connected: ${client.id} (user: ${payload.sub})`);
+    } catch {
+      this.logger.warn(`Client ${client.id} rejected: invalid token`);
+      client.disconnect();
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -35,12 +62,15 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('subscribe_vendor')
   handleSubscribeVendor(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { vendorId: number; userId: number },
   ) {
-    const room = `vendor_${data.vendorId}`;
+    const vendorId = client.vendorId || data.vendorId;
+    const userId = client.userId || data.userId;
+    if (!vendorId) return { event: 'error', data: { message: 'No vendor context' } };
+    const room = `vendor_${vendorId}`;
     client.join(room);
-    this.connectedClients.set(client.id, { vendorId: data.vendorId, userId: data.userId });
+    this.connectedClients.set(client.id, { vendorId, userId });
     this.logger.log(`Client ${client.id} joined vendor room: ${room}`);
     return { event: 'subscribed', data: { room } };
   }

@@ -28,8 +28,13 @@ export class UsersService {
   }
 
   async updateUser(userId: number, data: Record<string, unknown>) {
-    if (data.password) data.password = await bcrypt.hash(data.password as string, 10);
-    return this.prisma.users.update({ where: { id: userId }, data: { ...data, updated_at: new Date() } });
+    const allowed: Record<string, unknown> = { updated_at: new Date() };
+    if (data.firstName) allowed.first_name = data.firstName as string;
+    if (data.lastName !== undefined) allowed.last_name = data.lastName as string;
+    if (data.email) allowed.email = data.email as string;
+    if (data.password) allowed.password = await bcrypt.hash(data.password as string, 10);
+    if (data.status !== undefined) allowed.status = data.status as number;
+    return this.prisma.users.update({ where: { id: userId }, data: allowed });
   }
 
   async deleteUser(userId: number) {

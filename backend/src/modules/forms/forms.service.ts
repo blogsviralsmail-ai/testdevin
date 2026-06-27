@@ -33,8 +33,15 @@ export class FormsService {
   }
 
   async updateForm(vendorId: number, formId: number, data: Record<string, unknown>) {
-    if (data.fields) data.fields = JSON.stringify(data.fields);
-    return this.prisma.whatsapp_forms.update({ where: { id: formId }, data: { ...data, updated_at: new Date() } });
+    const form = await this.prisma.whatsapp_forms.findFirst({ where: { id: formId, vendors_id: vendorId } });
+    if (!form) throw new NotFoundException('Form not found');
+    const allowed: Record<string, unknown> = { updated_at: new Date() };
+    if (data.title) allowed.title = data.title as string;
+    if (data.description !== undefined) allowed.description = data.description as string;
+    if (data.fields) allowed.fields = JSON.stringify(data.fields);
+    if (data.confirmationMessage) allowed.confirmation_message = data.confirmationMessage as string;
+    if (data.status !== undefined) allowed.status = data.status as number;
+    return this.prisma.whatsapp_forms.update({ where: { id: formId }, data: allowed });
   }
 
   async deleteForm(vendorId: number, formId: number) {

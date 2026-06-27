@@ -33,6 +33,8 @@ export class FlowsService {
   }
 
   async deleteFlow(vendorId: number, flowId: number) {
+    const flow = await this.prisma.whatsapp_flows.findFirst({ where: { id: flowId, vendors_id: vendorId } });
+    if (!flow) throw new NotFoundException('Flow not found');
     await this.prisma.whatsapp_flows.delete({ where: { id: flowId } });
     return { success: true };
   }

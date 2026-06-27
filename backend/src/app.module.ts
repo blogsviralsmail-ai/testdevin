@@ -34,7 +34,7 @@ import { PresetMessagesModule } from './modules/preset-messages/preset-messages.
 import { PaymentLinksModule } from './modules/payment-links/payment-links.module';
 import { ProductCatalogModule } from './modules/product-catalog/product-catalog.module';
 import { AiCallModule } from './modules/ai-call/ai-call.module';
-import { WebsocketGateway } from './gateway/websocket.gateway';
+import { WebsocketModule } from './gateway/websocket.module';
 
 @Module({
   imports: [
@@ -47,6 +47,7 @@ import { WebsocketGateway } from './gateway/websocket.gateway';
       },
     }),
     PrismaModule,
+    WebsocketModule,
     AuthModule,
     DashboardModule,
     WhatsappModule,
@@ -79,6 +80,6 @@ import { WebsocketGateway } from './gateway/websocket.gateway';
     ProductCatalogModule,
     AiCallModule,
   ],
-  providers: [WebsocketGateway],
+  providers: [],
 })
 export class AppModule {}

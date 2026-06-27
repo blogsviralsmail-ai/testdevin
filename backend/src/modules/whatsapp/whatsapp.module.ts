@@ -6,7 +6,6 @@ import { WhatsappWebhookController } from './whatsapp-webhook.controller';
 import { WhatsappTemplateService } from './whatsapp-template.service';
 import { WhatsappTemplateController } from './whatsapp-template.controller';
 import { MessageQueueProcessor } from './processors/message-queue.processor';
-import { WebsocketGateway } from '../../gateway/websocket.gateway';
 
 @Module({
   imports: [
@@ -17,7 +16,7 @@ import { WebsocketGateway } from '../../gateway/websocket.gateway';
     ),
   ],
   controllers: [WhatsappController, WhatsappWebhookController, WhatsappTemplateController],
-  providers: [WhatsappService, WhatsappTemplateService, MessageQueueProcessor, WebsocketGateway],
+  providers: [WhatsappService, WhatsappTemplateService, MessageQueueProcessor],
   exports: [WhatsappService, WhatsappTemplateService],
 })
 export class WhatsappModule {}

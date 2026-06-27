@@ -18,8 +18,13 @@ export class SubscriptionService {
   }
 
   async updatePlan(planId: number, data: Record<string, unknown>) {
-    if (data.features) data.features = JSON.stringify(data.features);
-    return this.prisma.subscription_plans.update({ where: { id: planId }, data: { ...data, updated_at: new Date() } });
+    const allowed: Record<string, unknown> = { updated_at: new Date() };
+    if (data.name) allowed.name = data.name as string;
+    if (data.price !== undefined) allowed.price = data.price as number;
+    if (data.duration !== undefined) allowed.duration_days = data.duration as number;
+    if (data.features) allowed.features = JSON.stringify(data.features);
+    if (data.status !== undefined) allowed.status = data.status as number;
+    return this.prisma.subscription_plans.update({ where: { id: planId }, data: allowed });
   }
 
   async deletePlan(planId: number) {

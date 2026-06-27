@@ -136,6 +136,8 @@ export class ContactsService {
   }
 
   async blockContact(vendorId: number, contactId: number) {
+    const contact = await this.prisma.contacts.findFirst({ where: { id: contactId, vendors_id: vendorId } });
+    if (!contact) throw new NotFoundException('Contact not found');
     return this.prisma.contacts.update({
       where: { id: contactId },
       data: { status: 0 },
@@ -143,6 +145,8 @@ export class ContactsService {
   }
 
   async unblockContact(vendorId: number, contactId: number) {
+    const contact = await this.prisma.contacts.findFirst({ where: { id: contactId, vendors_id: vendorId } });
+    if (!contact) throw new NotFoundException('Contact not found');
     return this.prisma.contacts.update({
       where: { id: contactId },
       data: { status: 1 },

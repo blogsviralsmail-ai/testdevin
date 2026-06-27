@@ -120,6 +120,8 @@ export class CampaignsService {
   }
 
   async deleteCampaign(vendorId: number, campaignId: number) {
+    const campaign = await this.prisma.campaigns.findFirst({ where: { id: campaignId, vendors_id: vendorId } });
+    if (!campaign) throw new NotFoundException('Campaign not found');
     await this.prisma.campaign_logs.deleteMany({ where: { campaigns_id: campaignId } });
     await this.prisma.campaigns.delete({ where: { id: campaignId } });
     return { success: true };

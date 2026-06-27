@@ -25,7 +25,7 @@ async function bootstrap() {
   // Session
   app.use(
     session({
-      secret: configService.get<string>('SESSION_SECRET', 'wabapanel-secret-key'),
+      secret: configService.getOrThrow<string>('SESSION_SECRET'),
       resave: false,
       saveUninitialized: false,
       cookie: {

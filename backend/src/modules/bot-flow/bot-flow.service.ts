@@ -27,6 +27,8 @@ export class BotFlowService {
   }
 
   async updateFlow(vendorId: number, flowId: number, data: { name?: string; flowData?: Record<string, unknown>; status?: number }) {
+    const flow = await this.prisma.bot_flows.findFirst({ where: { id: flowId, vendors_id: vendorId } });
+    if (!flow) throw new NotFoundException('Bot flow not found');
     const updateData: Record<string, unknown> = { updated_at: new Date() };
     if (data.name) updateData.name = data.name;
     if (data.flowData) updateData.flow_data = JSON.stringify(data.flowData);
@@ -35,6 +37,8 @@ export class BotFlowService {
   }
 
   async deleteFlow(vendorId: number, flowId: number) {
+    const flow = await this.prisma.bot_flows.findFirst({ where: { id: flowId, vendors_id: vendorId } });
+    if (!flow) throw new NotFoundException('Bot flow not found');
     await this.prisma.bot_flows.delete({ where: { id: flowId } });
     return { success: true };
   }

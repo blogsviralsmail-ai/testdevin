@@ -116,7 +116,7 @@ export class AuthService {
         password: hashedPassword,
         first_name: data.firstName,
         last_name: data.lastName,
-        user_roles_id: data.vendorId ? 2 : 1,
+        user_roles_id: 2,
         vendors_id: data.vendorId || null,
         status: 1,
         created_at: new Date(),
@@ -170,7 +170,7 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET', 'wabapanel-refresh-secret'),
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
       const user = await this.prisma.users.findFirst({ where: { id: payload.sub } });
       if (!user) throw new UnauthorizedException('Invalid token');
@@ -234,7 +234,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' });
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET', 'wabapanel-refresh-secret'),
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       expiresIn: '7d',
     });
 

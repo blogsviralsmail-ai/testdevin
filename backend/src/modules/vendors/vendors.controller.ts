@@ -50,6 +50,7 @@ export class VendorsController {
     return this.vendorsService.updateVendorSettings(vendorId, body.settings);
   }
 
+  @Roles(UserRole.SUPER_ADMIN)
   @Get(':id/users')
   async getVendorUsers(@Param('id') id: string) { return this.vendorsService.getVendorUsers(parseInt(id)); }
 }
