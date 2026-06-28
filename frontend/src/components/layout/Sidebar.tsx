@@ -87,6 +87,7 @@ function SubMenu({ item, collapsed, onMobileClose }: { item: NavItem; collapsed:
 const adminItems: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/vendors', icon: Building, label: 'Vendors' },
+  { to: '/users', icon: Users, label: 'Users' },
   { icon: CreditCard, label: 'Subscriptions', children: [
     { to: '/subscription/auto', icon: RefreshCw, label: 'Auto' },
     { to: '/subscription/manual', icon: DollarSign, label: 'Manual' },

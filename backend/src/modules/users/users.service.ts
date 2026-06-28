@@ -34,6 +34,8 @@ export class UsersService {
     if (data.email) allowed.email = data.email as string;
     if (data.password) allowed.password = await bcrypt.hash(data.password as string, 10);
     if (data.status !== undefined) allowed.status = data.status as number;
+    if (data.roleId !== undefined) allowed.user_roles_id = data.roleId as number;
+    if (data.role !== undefined) allowed.user_roles_id = data.role as number;
     return this.prisma.users.update({ where: { id: userId }, data: allowed });
   }
 

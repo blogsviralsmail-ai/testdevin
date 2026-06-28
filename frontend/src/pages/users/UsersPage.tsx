@@ -16,7 +16,7 @@ export default function UsersPage() {
   const [meta, setMeta] = useState<{ total: number; totalPages: number }>({ total: 0, totalPages: 1 });
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState({ email: '', password: '', firstName: '', lastName: '', role: '3' });
+  const [formData, setFormData] = useState({ email: '', password: '', firstName: '', lastName: '', role: '1' });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -34,9 +34,9 @@ export default function UsersPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/users', formData);
+      await api.post('/users', { email: formData.email, password: formData.password, firstName: formData.firstName, lastName: formData.lastName, roleId: parseInt(formData.role) });
       toast.success('User created'); setShowCreate(false);
-      setFormData({ email: '', password: '', firstName: '', lastName: '', role: '3' }); fetchUsers();
+      setFormData({ email: '', password: '', firstName: '', lastName: '', role: '1' }); fetchUsers();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Failed');
@@ -47,7 +47,7 @@ export default function UsersPage() {
     e.preventDefault();
     if (!editUser) return;
     try {
-      await api.put(`/users/${editUser.id}`, { firstName: formData.firstName, lastName: formData.lastName, role: parseInt(formData.role) });
+      await api.put(`/users/${editUser.id}`, { firstName: formData.firstName, lastName: formData.lastName, roleId: parseInt(formData.role) });
       toast.success('Updated'); setEditUser(null); fetchUsers();
     } catch { toast.error('Failed'); }
   };
@@ -147,7 +147,7 @@ export default function UsersPage() {
               <div><label className="block text-sm font-medium dark:text-gray-300 mb-1">Password *</label><input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required minLength={6} className="w-full px-3 py-2 border dark:border-slate-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white" /></div>
               <div><label className="block text-sm font-medium dark:text-gray-300 mb-1">Role</label>
                 <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-3 py-2 border dark:border-slate-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white">
-                  <option value="2">Vendor Admin</option><option value="3">Vendor User</option>
+                  <option value="1">Super Admin</option><option value="2">Vendor Admin</option><option value="3">Vendor User</option>
                 </select>
               </div>
               <div className="flex gap-2 pt-2">
@@ -171,7 +171,7 @@ export default function UsersPage() {
               </div>
               <div><label className="block text-sm font-medium dark:text-gray-300 mb-1">Role</label>
                 <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-3 py-2 border dark:border-slate-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white">
-                  <option value="2">Vendor Admin</option><option value="3">Vendor User</option>
+                  <option value="1">Super Admin</option><option value="2">Vendor Admin</option><option value="3">Vendor User</option>
                 </select>
               </div>
               <div className="flex gap-2 pt-2">
